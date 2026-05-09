@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4242";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
 const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_URL}/api/create-checkout-session`;
 
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
@@ -223,7 +223,7 @@ function validatePlanId(planId) {
 
 function getCheckoutErrorMessage(error) {
   if (error?.name === "TypeError") {
-    return "Le serveur de paiement Stripe local n’est pas joignable. Lance node server.js sur le port 4242, ou configure VITE_CHECKOUT_API_URL vers ton backend en production.";
+    return "Le serveur de paiement Stripe n’est pas joignable. En local, lance node server.js sur le port 4242. En production, vérifie les variables Stripe dans Vercel.";
   }
   return error?.message || "Impossible de lancer le paiement pour le moment.";
 }
