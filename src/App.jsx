@@ -233,6 +233,29 @@ function getStoredAccessEmail() {
   return window.localStorage.getItem("movento_access_email") || "";
 }
 
+async function copyTextToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+
+    try {
+      return document.execCommand("copy");
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+}
+
 function runSelfTests() {
   console.assert(validatePlanId("monthly"), "monthly should be valid");
   console.assert(validatePlanId("yearly"), "yearly should be valid");
@@ -357,7 +380,8 @@ export default function MoventoSite() {
       });
       if (!response.ok) throw new Error("Prompt introuvable");
       const data = await response.json();
-      await navigator.clipboard.writeText(data.prompt);
+      const copied = await copyTextToClipboard(data.prompt);
+      if (!copied) throw new Error("Copie refusée par le navigateur");
       setCopiedCard(item.title);
       setTimeout(() => setCopiedCard(""), 1600);
     } catch (error) {
