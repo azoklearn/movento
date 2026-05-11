@@ -516,9 +516,7 @@ export default function MoventoSite() {
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/65 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> Offre de lancement • Prix fondateur</div>
           <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">Choisis ton accès</h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">Gagne des heures sur chaque landing page. Copie un prompt premium, colle-le dans ton outil IA, et transforme une idée en site moderne en quelques minutes.</p>
-          <p className="mx-auto mt-4 inline-flex rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/55">
-            Code test Stripe : <span className="ml-1 font-semibold text-white">testonly</span>
-          </p>
+
         </div>
 
         {checkoutStatus.error && <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p></div>}
