@@ -269,6 +269,7 @@ app.post("/api/create-checkout-session", async (req, res) => {
       mode: plan === "lifetime" ? "payment" : "subscription",
       allow_promotion_codes: true,
       payment_method_types: ["card"],
+      customer_creation: plan === "lifetime" ? "always" : undefined,
       line_items: [
         {
           price: priceId,

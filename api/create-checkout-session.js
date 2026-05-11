@@ -19,6 +19,7 @@ export default async function handler(req, res) {
       mode: plan === "lifetime" ? "payment" : "subscription",
       allow_promotion_codes: true,
       payment_method_types: ["card"],
+      customer_creation: plan === "lifetime" ? "always" : undefined,
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { plan },
       success_url: `${clientUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
