@@ -50,30 +50,26 @@ export async function customerHasStripeAccess(email) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail || !process.env.STRIPE_SECRET_KEY) return false;
 
-  const customers = await stripe.customers.list({
-    email: normalizedEmail,
-    limit: 10,
-  });
+  try {
+    const customers = await stripe.customers.list({ email: normalizedEmail, limit: 10 });
 
-  for (const customer of customers.data) {
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id,
-      limit: 10,
-      status: "all",
-    });
+    for (const customer of customers.data) {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customer.id,
+        status: "active",
+        limit: 5,
+      });
+      if (subscriptions.data.length > 0) return true;
 
-    if (subscriptions.data.some((s) => ["active", "trialing"].includes(s.status))) {
-      return true;
+      const charges = await stripe.charges.list({
+        customer: customer.id,
+        limit: 10,
+      });
+      if (charges.data.some((c) => c.paid && !c.refunded)) return true;
     }
-
-    const sessions = await stripe.checkout.sessions.list({
-      customer: customer.id,
-      limit: 100,
-    });
-
-    if (sessions.data.some((s) => s.payment_status === "paid")) {
-      return true;
-    }
+  } catch (error) {
+    console.error("Stripe customerHasStripeAccess error:", error);
+    return false;
   }
 
   return false;
