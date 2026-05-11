@@ -1,3 +1,4 @@
+import { kv } from "@vercel/kv";
 import Stripe from "stripe";
 
 export const PROMPTS_REPO = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/prompts/";
@@ -48,7 +49,17 @@ export function extractPrompt(md) {
 
 export async function customerHasStripeAccess(email) {
   const normalizedEmail = normalizeEmail(email);
-  if (!normalizedEmail || !process.env.STRIPE_SECRET_KEY) return false;
+  if (!normalizedEmail) return false;
+
+  try {
+    // Check KV store first (set by webhook on payment)
+    const record = await kv.get(`access:${normalizedEmail}`);
+    if (record) return true;
+  } catch {
+    // KV not available, fall through to Stripe API
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) return false;
 
   try {
     const customers = await stripe.customers.list({ email: normalizedEmail, limit: 10 });

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "latest",
+    "@vercel/kv": "^3.0.0",
     "cors": "latest",
     "dotenv": "latest",
     "express": "latest",
