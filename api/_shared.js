@@ -62,16 +62,16 @@ export async function customerHasStripeAccess(email) {
       status: "all",
     });
 
-    if (subscriptions.data.some((subscription) => ["active", "trialing"].includes(subscription.status))) {
+    if (subscriptions.data.some((s) => ["active", "trialing"].includes(s.status))) {
       return true;
     }
 
-    const paymentIntents = await stripe.paymentIntents.list({
+    const sessions = await stripe.checkout.sessions.list({
       customer: customer.id,
-      limit: 10,
+      limit: 100,
     });
 
-    if (paymentIntents.data.some((intent) => intent.status === "succeeded")) {
+    if (sessions.data.some((s) => s.payment_status === "paid")) {
       return true;
     }
   }
