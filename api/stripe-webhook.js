@@ -1,4 +1,4 @@
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_missing", {
@@ -41,7 +41,8 @@ export default async function handler(req, res) {
     const email = session.customer_details?.email?.trim().toLowerCase();
 
     if (email && session.payment_status === "paid") {
-      await kv.set(`access:${email}`, {
+      const redis = Redis.fromEnv();
+      await redis.set(`access:${email}`, {
         plan: session.metadata?.plan || "unknown",
         paidAt: new Date().toISOString(),
         sessionId: session.id,

@@ -1,4 +1,4 @@
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
 import Stripe from "stripe";
 
 export const PROMPTS_REPO = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/prompts/";
@@ -52,11 +52,11 @@ export async function customerHasStripeAccess(email) {
   if (!normalizedEmail) return false;
 
   try {
-    // Check KV store first (set by webhook on payment)
-    const record = await kv.get(`access:${normalizedEmail}`);
+    const redis = Redis.fromEnv();
+    const record = await redis.get(`access:${normalizedEmail}`);
     if (record) return true;
   } catch {
-    // KV not available, fall through to Stripe API
+    // Redis not available, fall through to Stripe API
   }
 
   if (!process.env.STRIPE_SECRET_KEY) return false;
