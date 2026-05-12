@@ -296,6 +296,7 @@ export default function MoventoSite() {
   const [leadEmailInput, setLeadEmailInput] = useState("");
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
+  const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -476,6 +477,8 @@ export default function MoventoSite() {
     }
   }
 
+  if (isMentionsPage) return <MentionsLegales />;
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#05060a] text-white">
       <AnimatePresence>
@@ -608,8 +611,94 @@ export default function MoventoSite() {
           ))}
         </div>
 
-        <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl"><p className="text-sm leading-6 text-white/60">Un seul bon prompt peut te faire économiser plusieurs heures de design, d’intégration et d’allers-retours client. Movento est fait pour passer de “j’ai une idée” à “j’ai une page qui donne envie”.</p></div>
+        <div className=”mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl”><p className=”text-sm leading-6 text-white/60”>Un seul bon prompt peut te faire économiser plusieurs heures de design, d’intégration et d’allers-retours client. Movento est fait pour passer de “j’ai une idée” à “j’ai une page qui donne envie”.</p></div>
       </section>
+
+      <footer className=”relative z-10 border-t border-white/[0.06] py-10”>
+        <div className=”mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8”>
+          <Logo />
+          <p className=”text-sm text-white/30”>© {new Date().getFullYear()} Movento. Tous droits réservés.</p>
+          <a href=”/mentions-legales” className=”text-sm text-white/30 hover:text-white transition”>Mentions légales</a>
+        </div>
+      </footer>
+    </main>
+  );
+}
+
+function MentionsLegales() {
+  return (
+    <main className=”min-h-screen bg-[#05060a] text-white”>
+      <div className=”pointer-events-none fixed inset-0”>
+        <div className=”absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]” />
+      </div>
+      <header className=”relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8”>
+        <a href=”/”><Logo /></a>
+        <a href=”/” className=”rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black”>← Retour</a>
+      </header>
+      <section className=”relative z-10 mx-auto max-w-3xl px-6 pb-24 pt-12 lg:px-8”>
+        <h1 className=”text-4xl font-semibold tracking-tight text-white md:text-5xl”>Mentions légales</h1>
+        <p className=”mt-3 text-sm text-white/40”>Dernière mise à jour : {new Date().toLocaleDateString(“fr-FR”, { year: “numeric”, month: “long”, day: “numeric” })}</p>
+
+        <div className=”mt-12 space-y-10 text-sm leading-7 text-white/65”>
+          <div>
+            <h2 className=”mb-3 text-base font-semibold text-white”>1. Éditeur du site</h2>
+            <p>Le site <strong className=”text-white/80”>movento.app</strong> est édité par :</p>
+            <ul className=”mt-3 space-y-1 pl-4”>
+              <li>Nom : <span className=”text-white/80”>[Votre nom ou raison sociale]</span></li>
+              <li>Adresse : <span className=”text-white/80”>[Votre adresse]</span></li>
+              <li>Email : <span className=”text-white/80”>contact@movento.app</span></li>
+              <li>Statut : <span className=”text-white/80”>Entrepreneur individuel / Auto-entrepreneur</span></li>
+            </ul>
+          </div>
+
+          <div>
+            <h2 className=”mb-3 text-base font-semibold text-white”>2. Hébergement</h2>
+            <p>Le site est hébergé par :</p>
+            <ul className=”mt-3 space-y-1 pl-4”>
+              <li>Société : <span className=”text-white/80”>Vercel Inc.</span></li>
+              <li>Adresse : <span className=”text-white/80”>340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis</span></li>
+              <li>Site : <span className=”text-white/80”>vercel.com</span></li>
+            </ul>
+          </div>
+
+          <div>
+            <h2 className=”mb-3 text-base font-semibold text-white”>3. Propriété intellectuelle</h2>
+            <p>L’ensemble des contenus présents sur Movento (textes, prompts, visuels, structure) est la propriété exclusive de l’éditeur et est protégé par les lois en vigueur sur la propriété intellectuelle. Toute reproduction, même partielle, est strictement interdite sans autorisation préalable.</p>
+          </div>
+
+          <div>
+            <h2 className=”mb-3 text-base font-semibold text-white”>4. Données personnelles</h2>
+            <p>Dans le cadre de l’utilisation du site, Movento collecte les données suivantes :</p>
+            <ul className=”mt-3 space-y-1 pl-4”>
+              <li>— Adresse email (lors de l’accès aux prompts gratuits ou d’un abonnement)</li>
+              <li>— Données de paiement traitées par <span className=”text-white/80”>Stripe</span> (non stockées directement par Movento)</li>
+            </ul>
+            <p className=”mt-4”>Ces données sont utilisées uniquement pour gérer l’accès aux contenus et n’sont jamais revendues à des tiers. Conformément au RGPD, vous disposez d’un droit d’accès, de rectification et de suppression de vos données en nous contactant à l’adresse email mentionnée ci-dessus.</p>
+          </div>
+
+          <div>
+            <h2 className=”mb-3 text-base font-semibold text-white”>5. Paiement</h2>
+            <p>Les paiements sont traités de manière sécurisée par <span className=”text-white/80”>Stripe</span>. Movento ne stocke aucune information bancaire. Les abonnements mensuels et annuels sont résiliables à tout moment. L’accès Lifetime est un achat unique sans abonnement.</p>
+          </div>
+
+          <div>
+            <h2 className=”mb-3 text-base font-semibold text-white”>6. Cookies</h2>
+            <p>Movento utilise uniquement des données stockées localement sur votre appareil (localStorage) pour mémoriser votre accès et votre email. Aucun cookie de tracking tiers n’est utilisé.</p>
+          </div>
+
+          <div>
+            <h2 className=”mb-3 text-base font-semibold text-white”>7. Contact</h2>
+            <p>Pour toute question relative aux présentes mentions légales ou à vos données personnelles, vous pouvez nous contacter à : <span className=”text-white/80”>contact@movento.app</span></p>
+          </div>
+        </div>
+      </section>
+      <footer className=”relative z-10 border-t border-white/[0.06] py-10”>
+        <div className=”mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8”>
+          <Logo />
+          <p className=”text-sm text-white/30”>© {new Date().getFullYear()} Movento. Tous droits réservés.</p>
+          <a href=”/” className=”text-sm text-white/30 hover:text-white transition”>Retour à l’accueil</a>
+        </div>
+      </footer>
     </main>
   );
 }
