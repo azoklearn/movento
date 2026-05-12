@@ -88,34 +88,34 @@ const plans = [
     id: "monthly",
     name: "Monthly",
     price: "20€",
-    period: "/ mois",
+    period: "/ mo",
     badge: "Flexible",
-    description: "Pour tester Movento sans engagement.",
-    cta: "Commencer maintenant",
+    description: "Try Movento with no commitment.",
+    cta: "Get started",
     featured: false,
-    features: ["Accès à tous les prompts", "Copy prompt en un clic", "Aperçus vidéo / visuels", "Nouveaux prompts inclus", "Annulable à tout moment"],
+    features: ["Access to all prompts", "One-click prompt copy", "Video & visual previews", "New prompts included", "Cancel anytime"],
   },
   {
     id: "yearly",
     name: "Yearly",
     price: "120€",
-    period: "/ an",
-    badge: "Meilleur choix",
-    description: "Pour créer régulièrement des sites premium avec l'IA.",
-    cta: "Prendre l'offre annuelle",
+    period: "/ yr",
+    badge: "Best value",
+    description: "Build premium AI websites regularly.",
+    cta: "Get the annual plan",
     featured: true,
-    features: ["Tout le catalogue Movento", "Mises à jour toute l'année", "Nouvelles catégories premium", "Prompts optimisés Lovable / v0 / Bolt", "Économise plus de 45%"],
+    features: ["Full Movento catalog", "Year-round updates", "New premium categories", "Optimized for Lovable / v0 / Bolt", "Save over 45%"],
   },
   {
     id: "lifetime",
     name: "Lifetime",
     price: "200€",
-    period: "à vie",
+    period: "forever",
     badge: "One shot",
-    description: "Tu payes une fois. Tu gardes l'accès pour toujours.",
-    cta: "Débloquer à vie",
+    description: "One-time payment. Yours forever.",
+    cta: "Get lifetime access",
     featured: false,
-    features: ["Accès à vie", "Toutes les futures mises à jour", "Aucun abonnement", "Toutes les previews incluses", "Parfait pour freelances & agences"],
+    features: ["Lifetime access", "All future updates", "No subscription", "All previews included", "Perfect for freelancers & agencies"],
   },
 ];
 
@@ -189,7 +189,7 @@ function PreviewCard({ item }) {
       <div className="relative aspect-[1.45] overflow-hidden rounded-[22px] bg-[#080913]">
         {hasVideo ? <SmartVideo className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105" src={item.preview} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105" src={item.preview} alt={`${item.title} preview`} onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/80 backdrop-blur-md"><Icon name="play" className="h-3 w-3" /> Aperçu visuel</div>
+        <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/80 backdrop-blur-md"><Icon name="play" className="h-3 w-3" /> Visual preview</div>
         <div className={`absolute right-4 top-4 rounded-full border px-3 py-1.5 text-xs font-semibold backdrop-blur-md ${isFree ? "border-emerald-300/25 bg-emerald-400/15 text-emerald-100" : "border-violet-300/20 bg-violet-400/15 text-violet-100"}`}>
           {isFree ? "Gratuit" : "Premium"}
         </div>
@@ -338,7 +338,7 @@ export default function MoventoSite() {
   async function verifyAccess(email = accessEmail, options = {}) {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) {
-      setAccessStatus({ loading: false, message: "", error: "Entre l'email utilisé pendant le paiement." });
+      setAccessStatus({ loading: false, message: "", error: "Enter the email used at checkout." });
       return false;
     }
 
@@ -354,23 +354,23 @@ export default function MoventoSite() {
       });
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || "Impossible de vérifier l'accès.");
+      if (!response.ok) throw new Error(data.error || "Unable to verify access.");
 
       setHasPremiumAccess(Boolean(data.hasAccess));
       setAccessEmail(normalizedEmail);
 
       if (data.hasAccess) {
         window.localStorage.setItem("movento_access_email", normalizedEmail);
-        if (!options.silent) setAccessStatus({ loading: false, message: "Accès premium activé sur cet appareil.", error: "" });
+        if (!options.silent) setAccessStatus({ loading: false, message: "Premium access activated on this device.", error: "" });
         return true;
       }
 
       window.localStorage.removeItem("movento_access_email");
-      if (!options.silent) setAccessStatus({ loading: false, message: "", error: "Aucun paiement trouvé pour cet email." });
+      if (!options.silent) setAccessStatus({ loading: false, message: "", error: "No payment found for this email." });
       return false;
     } catch (error) {
-      console.error("Erreur vérification accès", error);
-      if (!options.silent) setAccessStatus({ loading: false, message: "", error: error.message || "Impossible de vérifier l'accès." });
+      console.error("Access verification error", error);
+      if (!options.silent) setAccessStatus({ loading: false, message: "", error: error.message || "Unable to verify access." });
       return false;
     }
   }
@@ -383,15 +383,15 @@ export default function MoventoSite() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file: item.file, email }),
       });
-      if (!response.ok) throw new Error("Prompt introuvable");
+      if (!response.ok) throw new Error("Prompt not found");
       const data = await response.json();
       const copied = await copyTextToClipboard(data.prompt);
-      if (!copied) throw new Error("Copie refusée par le navigateur");
+      if (!copied) throw new Error("Copy denied by browser");
       setCopiedCard(item.title);
       setTimeout(() => setCopiedCard(""), 1600);
     } catch (error) {
-      console.error("Erreur copie prompt", error);
-      setCopiedCard("Erreur");
+      console.error("Prompt copy error", error);
+      setCopiedCard("Error");
       setTimeout(() => setCopiedCard(""), 1600);
     }
   }
@@ -400,7 +400,7 @@ export default function MoventoSite() {
     const isFree = FREE_PROMPT_FILES.has(item.file);
 
     if (!isFree && !hasPremiumAccess) {
-      setUnlockNotice(`${item.title} est inclus dans l'accès premium Movento.`);
+      setUnlockNotice(`${item.title} is included in Movento premium access.`);
       document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
       setTimeout(() => setUnlockNotice(""), 2600);
       return;
@@ -446,7 +446,7 @@ export default function MoventoSite() {
     setCheckoutStatus({ loading: planId, error: "" });
 
     try {
-      if (!validatePlanId(planId)) throw new Error("Plan invalide.");
+      if (!validatePlanId(planId)) throw new Error("Invalid plan.");
 
       const response = await fetch(CHECKOUT_API_URL, {
         method: "POST",
@@ -482,13 +482,13 @@ export default function MoventoSite() {
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d0e18] p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setShowLeadModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
               <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-500/30 to-cyan-500/20 border border-violet-300/20"><Icon name="sparkles" className="h-5 w-5 text-violet-300" /></div>
-              <h2 className="text-2xl font-semibold tracking-tight text-white">Accède aux prompts gratuits</h2>
-              <p className="mt-2 text-sm leading-6 text-white/50">Entre ton email pour copier les prompts offerts. Pas de spam, promis.</p>
+              <h2 className="text-2xl font-semibold tracking-tight text-white">Access free prompts</h2>
+              <p className="mt-2 text-sm leading-6 text-white/50">Enter your email to copy free prompts. No spam, ever.</p>
               <form onSubmit={submitLeadEmail} className="mt-6 flex flex-col gap-3">
-                <input autoFocus value={leadEmailInput} onChange={(e) => setLeadEmailInput(e.target.value)} type="email" required placeholder="ton@email.com" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-violet-400/50" />
-                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? "Un instant..." : "Copier le prompt gratuit →"}</button>
+                <input autoFocus value={leadEmailInput} onChange={(e) => setLeadEmailInput(e.target.value)} type="email" required placeholder="you@example.com" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-violet-400/50" />
+                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? "Just a moment..." : "Copy free prompt →"}</button>
               </form>
-              <p className="mt-4 text-center text-xs text-white/25">Tes données ne seront jamais partagées.</p>
+              <p className="mt-4 text-center text-xs text-white/25">Your data will never be shared.</p>
             </motion.div>
           </motion.div>
         )}
@@ -506,7 +506,7 @@ export default function MoventoSite() {
           <a href="#pricing" className="hover:text-white">Pricing</a>
           <a href="#how" className="hover:text-white">Guide</a>
         </nav>
-        <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">Explorer</a>
+        <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">Explore</a>
       </header>
 
       {isSuccessPage && (
@@ -515,50 +515,50 @@ export default function MoventoSite() {
             <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl border border-emerald-200/20 bg-emerald-300/10 text-emerald-100">
               <Icon name="check" className="h-6 w-6" />
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">Paiement confirmé</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">Payment confirmed</h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-white/60 md:text-base">
-              {accessStatus.loading ? "On confirme ton paiement avec Stripe." : hasPremiumAccess ? "Ton accès Movento est prêt. Tu peux revenir à la galerie et copier les prompts premium." : "Paiement reçu. Si l'accès ne s'active pas automatiquement, entre ton email plus bas."}
+              {accessStatus.loading ? "Confirming your payment with Stripe." : hasPremiumAccess ? "Your Movento access is ready. Go back to the gallery and copy premium prompts." : "Payment received. If your access does not activate automatically, enter your email below."}
             </p>
             {accessStatus.message && <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-emerald-100">{accessStatus.message}</p>}
             {accessStatus.error && <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-red-100">{accessStatus.error}</p>}
             <a href="/#prompts" className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.02]">
-              Retour aux prompts <Icon name="arrow" className="h-4 w-4" />
+              Back to prompts <Icon name="arrow" className="h-4 w-4" />
             </a>
           </div>
         </section>
       )}
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-16 pt-16 text-center lg:px-8 lg:pt-24">
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/70 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> Bibliothèque française de prompts web premium</motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mx-auto max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white md:text-7xl lg:text-8xl">Créez des sites modernes sans coder.</motion.h1>
-        <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-white/60 md:text-xl">Des prompts prêts à copier, des aperçus animés, et une direction artistique pensée pour les gens de la com, les freelances et les équipes marketing.</motion.p>
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/70 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> Premium web design prompt library</motion.div>
+        <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mx-auto max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white md:text-7xl lg:text-8xl">Build modern websites without coding.</motion.h1>
+        <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-white/60 md:text-xl">Ready-to-copy prompts, animated previews and curated design direction for marketers, freelancers and creative teams.</motion.p>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.02]">Explorer les prompts <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-          <a href="#pricing" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">Voir les offres</a>
+          <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.02]">Explore prompts <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
+          <a href="#pricing" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">See plans</a>
         </motion.div>
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid gap-4 rounded-[34px] border border-white/10 bg-white/[0.035] p-3 shadow-2xl shadow-black/50 backdrop-blur-2xl md:grid-cols-3">
-          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="zap" className="mb-5 h-6 w-6 text-violet-300" /><h3 className="text-lg font-semibold">Copier-coller</h3><p className="mt-2 text-sm leading-6 text-white/55">Un prompt propre, prêt pour Lovable, v0, Bolt, Cursor ou Claude.</p></div>
-          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="layers" className="mb-5 h-6 w-6 text-blue-300" /><h3 className="text-lg font-semibold">Aperçu visuel</h3><p className="mt-2 text-sm leading-6 text-white/55">Tu vois le style avant de générer : dark UI, vidéo, glass, portfolio, SaaS.</p></div>
-          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="code" className="mb-5 h-6 w-6 text-cyan-300" /><h3 className="text-lg font-semibold">Sans coder</h3><p className="mt-2 text-sm leading-6 text-white/55">Pensé pour les profils marketing, communication et création.</p></div>
+          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="zap" className="mb-5 h-6 w-6 text-violet-300" /><h3 className="text-lg font-semibold">Copy & paste</h3><p className="mt-2 text-sm leading-6 text-white/55">A clean prompt, ready for Lovable, v0, Bolt, Cursor or Claude.</p></div>
+          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="layers" className="mb-5 h-6 w-6 text-blue-300" /><h3 className="text-lg font-semibold">Visual preview</h3><p className="mt-2 text-sm leading-6 text-white/55">See the style before generating: dark UI, video, glass, portfolio, SaaS.</p></div>
+          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="code" className="mb-5 h-6 w-6 text-cyan-300" /><h3 className="text-lg font-semibold">No coding</h3><p className="mt-2 text-sm leading-6 text-white/55">Built for marketing, communication and creative profiles.</p></div>
         </div>
       </section>
 
       <section id="prompts" className="relative z-10 mx-auto max-w-7xl px-6 py-24 lg:px-8">
         <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
-          <div><p className="text-sm uppercase tracking-[0.3em] text-white/35">Galerie</p><h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Prompts premium</h2><p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">{hasPremiumAccess ? "Accès premium actif. Tous les prompts peuvent être copiés." : "Un prompt est offert pour tester la qualité. Le reste du catalogue se débloque avec un accès Movento."}</p></div>
-          <div className="relative w-full md:w-80"><Icon name="search" className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un style..." className="w-full rounded-full border border-white/10 bg-white/[0.05] py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50" /></div>
+          <div><p className="text-sm uppercase tracking-[0.3em] text-white/35">Gallery</p><h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Premium prompts</h2><p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">{hasPremiumAccess ? "Premium access active. All prompts can be copied." : "One free prompt to test the quality. The full catalog unlocks with a Movento plan."}</p></div>
+          <div className="relative w-full md:w-80"><Icon name="search" className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search a style..." className="w-full rounded-full border border-white/10 bg-white/[0.05] py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50" /></div>
         </div>
         <div className="mb-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:gap-5">
           <div>
-            <p className="text-sm font-semibold text-white">{hasPremiumAccess ? "Accès premium actif" : "Déjà client ?"}</p>
-            <p className="mt-1 text-sm leading-6 text-white/50">{hasPremiumAccess ? `Connecté avec ${accessEmail}.` : "Entre l'email utilisé au paiement pour débloquer les prompts premium sur cet appareil."}</p>
+            <p className="text-sm font-semibold text-white">{hasPremiumAccess ? "Premium access active" : "Already a member?"}</p>
+            <p className="mt-1 text-sm leading-6 text-white/50">{hasPremiumAccess ? `Signed in as ${accessEmail}.` : "Enter the email used at checkout to unlock premium prompts on this device."}</p>
           </div>
           <form className="mt-4 flex flex-col gap-3 sm:flex-row md:mt-0" onSubmit={(event) => { event.preventDefault(); verifyAccess(); }}>
-            <input value={accessEmail} onChange={(event) => setAccessEmail(event.target.value)} type="email" placeholder="email@exemple.com" className="min-w-0 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50 sm:w-72" />
-            <button disabled={accessStatus.loading} className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{accessStatus.loading ? "Vérification..." : hasPremiumAccess ? "Revérifier" : "Débloquer"}</button>
+            <input value={accessEmail} onChange={(event) => setAccessEmail(event.target.value)} type="email" placeholder="email@example.com" className="min-w-0 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50 sm:w-72" />
+            <button disabled={accessStatus.loading} className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{accessStatus.loading ? "Verifying..." : hasPremiumAccess ? "Re-verify" : "Unlock"}</button>
           </form>
         </div>
         {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 backdrop-blur-xl ${accessStatus.error ? "border-red-400/20 bg-red-500/10 text-red-100" : "border-emerald-300/20 bg-emerald-400/10 text-emerald-100"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
@@ -569,7 +569,7 @@ export default function MoventoSite() {
             {filtered.map((item) => (
               <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
                 <PreviewCard item={item} />
-                <div className="absolute inset-x-0 bottom-0 z-20 p-5"><button onClick={() => copyPrompt(item)} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-sm font-medium text-white backdrop-blur-xl transition hover:bg-white hover:text-black">{copiedCard === item.title ? <><Icon name="check" className="h-4 w-4" /> Copié</> : copiedCard === "Erreur" ? <><Icon name="alert" className="h-4 w-4" /> Erreur</> : FREE_PROMPT_FILES.has(item.file) ? <><Icon name="copy" className="h-4 w-4" /> Copy Prompt gratuit</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> Copy Prompt</> : <><Icon name="sparkles" className="h-4 w-4" /> Débloquer le prompt</>}</button></div>
+                <div className="absolute inset-x-0 bottom-0 z-20 p-5"><button onClick={() => copyPrompt(item)} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-sm font-medium text-white backdrop-blur-xl transition hover:bg-white hover:text-black">{copiedCard === item.title ? <><Icon name="check" className="h-4 w-4" /> Copied</> : copiedCard === "Error" ? <><Icon name="alert" className="h-4 w-4" /> Error</> : FREE_PROMPT_FILES.has(item.file) ? <><Icon name="copy" className="h-4 w-4" /> Copy free prompt</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> Copy Prompt</> : <><Icon name="sparkles" className="h-4 w-4" /> Unlock prompt</>}</button></div>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -577,14 +577,14 @@ export default function MoventoSite() {
       </section>
 
       <section id="how" className="relative z-10 mx-auto max-w-7xl px-6 pb-24 lg:px-8">
-        <div className="rounded-[40px] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-8 backdrop-blur-xl md:p-12"><div className="grid gap-10 md:grid-cols-3">{["Choisis un style", "Copie le prompt", "Génère ton site"].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/[0.06] text-sm font-bold text-white/70">0{i + 1}</div><h3 className="text-xl font-semibold">{step}</h3><p className="mt-3 text-sm leading-6 text-white/55">{i === 0 ? "Parcours les aperçus et trouve une direction artistique adaptée à ton offre." : i === 1 ? "Le prompt est chargé depuis la source brute pour rester intact." : "Colle-le dans ton outil IA préféré et personnalise le résultat."}</p></div>)}</div></div>
+        <div className="rounded-[40px] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-8 backdrop-blur-xl md:p-12"><div className="grid gap-10 md:grid-cols-3">{["Choose a style", "Copy the prompt", "Generate your site"].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/[0.06] text-sm font-bold text-white/70">0{i + 1}</div><h3 className="text-xl font-semibold">{step}</h3><p className="mt-3 text-sm leading-6 text-white/55">{i === 0 ? "Browse previews and find a design direction that suits your offer." : i === 1 ? "The prompt is loaded directly from the source to stay intact." : "Paste it into your favorite AI tool and customize the result."}</p></div>)}</div></div>
       </section>
 
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/65 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> Offre de lancement • Prix fondateur</div>
-          <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">Choisis ton accès</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">Gagne des heures sur chaque landing page. Copie un prompt premium, colle-le dans ton outil IA, et transforme une idée en site moderne en quelques minutes.</p>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/65 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> Launch offer - Founder pricing</div>
+          <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">Choose your plan</h2>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">Save hours on every landing page. Copy a premium prompt, paste it into your AI tool, and turn an idea into a modern site in minutes.</p>
 
         </div>
 
@@ -597,7 +597,7 @@ export default function MoventoSite() {
               <div className="relative rounded-[28px] border border-white/10 bg-[#080910]/90 p-7">
                 <div className="mb-7 flex items-start justify-between gap-4"><div><h3 className="text-2xl font-semibold tracking-tight text-white">{plan.name}</h3><p className="mt-2 text-sm leading-6 text-white/45">{plan.description}</p></div><span className={`rounded-full border px-3 py-1 text-xs font-medium ${plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span></div>
                 <div className="mb-7"><div className="flex items-end gap-2"><span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span><span className="pb-2 text-white/40">{plan.period}</span></div></div>
-                <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>{checkoutStatus.loading === plan.id ? "Redirection..." : plan.cta}<Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></button>
+                <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>{checkoutStatus.loading === plan.id ? "Redirecting..." : plan.cta}<Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></button>
                 <div className="my-7 h-px bg-white/10" />
                 <div className="space-y-3">{plan.features.map((item) => <div key={item} className="flex items-center gap-3 text-sm text-white/65"><div className="grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10"><Icon name="check" className="h-3.5 w-3.5 text-white" /></div>{item}</div>)}</div>
               </div>
@@ -605,14 +605,14 @@ export default function MoventoSite() {
           ))}
         </div>
 
-        <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl"><p className="text-sm leading-6 text-white/60">Un seul bon prompt peut te faire économiser plusieurs heures de design, d'intégration et d'allers-retours client. Movento est fait pour passer de l'idée au site qui impressionne.</p></div>
+        <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl"><p className="text-sm leading-6 text-white/60">One great prompt can save you hours of design, integration and client back-and-forth. Movento helps you go from idea to impressive site.</p></div>
       </section>
 
       <footer className="relative z-10 border-t border-white/[0.06] py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. Tous droits réservés.</p>
-          <a href="/mentions-legales" className="text-sm text-white/30 hover:text-white transition">Mentions légales</a>
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. All rights reserved.</p>
+          <a href="/mentions-legales" className="text-sm text-white/30 hover:text-white transition">Legal notice</a>
         </div>
       </footer>
     </main>
@@ -627,70 +627,70 @@ function MentionsLegales() {
       </div>
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <a href="/"><Logo /></a>
-        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← Retour</a>
+        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← Back</a>
       </header>
       <section className="relative z-10 mx-auto max-w-3xl px-6 pb-24 pt-12 lg:px-8">
-        <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Mentions légales</h1>
-        <p className="mt-3 text-sm text-white/40">Dernière mise à jour : {new Date().toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })}</p>
+        <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Legal notice</h1>
+        <p className="mt-3 text-sm text-white/40">Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
 
         <div className="mt-12 space-y-10 text-sm leading-7 text-white/65">
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">1. Éditeur du site</h2>
-            <p>Le site <strong className="text-white/80">movento.app</strong> est édité par :</p>
+            <h2 className="mb-3 text-base font-semibold text-white">1. Website publisher</h2>
+            <p>This website <strong className="text-white/80">movento.app</strong> is published by:</p>
             <ul className="mt-3 space-y-1 pl-4">
-              <li>Nom : <span className="text-white/80">[Votre nom ou raison sociale]</span></li>
-              <li>Adresse : <span className="text-white/80">[Votre adresse]</span></li>
+              <li>Name: <span className="text-white/80">[Your name or company]</span></li>
+              <li>Address: <span className="text-white/80">[Your address]</span></li>
               <li>Email : <span className="text-white/80">contact@movento.app</span></li>
-              <li>Statut : <span className="text-white/80">Entrepreneur individuel / Auto-entrepreneur</span></li>
+              <li>Status: <span className="text-white/80">Sole trader / Self-employed</span></li>
             </ul>
           </div>
 
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">2. Hébergement</h2>
-            <p>Le site est hébergé par :</p>
+            <h2 className="mb-3 text-base font-semibold text-white">2. Hosting</h2>
+            <p>This website is hosted by:</p>
             <ul className="mt-3 space-y-1 pl-4">
-              <li>Société : <span className="text-white/80">Vercel Inc.</span></li>
-              <li>Adresse : <span className="text-white/80">340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis</span></li>
-              <li>Site : <span className="text-white/80">vercel.com</span></li>
+              <li>Company: <span className="text-white/80">Vercel Inc.</span></li>
+              <li>Address: <span className="text-white/80">340 S Lemon Ave #4133, Walnut, CA 91789, United States</span></li>
+              <li>Website: <span className="text-white/80">vercel.com</span></li>
             </ul>
           </div>
 
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">3. Propriété intellectuelle</h2>
-            <p>L'ensemble des contenus présents sur Movento (textes, prompts, visuels, structure) est la propriété exclusive de l'éditeur et est protégé par les lois en vigueur sur la propriété intellectuelle. Toute reproduction, même partielle, est strictement interdite sans autorisation préalable.</p>
+            <h2 className="mb-3 text-base font-semibold text-white">3. Intellectual property</h2>
+            <p>All content on Movento (text, prompts, visuals, structure) is the exclusive property of the publisher and is protected by applicable intellectual property laws. Any reproduction, even partial, is strictly prohibited without prior authorization.</p>
           </div>
 
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">4. Données personnelles</h2>
-            <p>Dans le cadre de l'utilisation du site, Movento collecte les données suivantes :</p>
+            <h2 className="mb-3 text-base font-semibold text-white">4. Personal data</h2>
+            <p>When using this website, Movento collects the following data:</p>
             <ul className="mt-3 space-y-1 pl-4">
-              <li>— Adresse email (lors de l'accès aux prompts gratuits ou d'un abonnement)</li>
-              <li>— Données de paiement traitées par <span className="text-white/80">Stripe</span> (non stockées directement par Movento)</li>
+              <li>- Email address (when accessing free prompts or subscribing)</li>
+              <li>- Payment data processed by <span className="text-white/80">Stripe</span> (not stored directly by Movento)</li>
             </ul>
-            <p className="mt-4">Ces données sont utilisées uniquement pour gérer l'accès aux contenus et n'sont jamais revendues à des tiers. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos données en nous contactant à l'adresse email mentionnée ci-dessus.</p>
+            <p className="mt-4">This data is used solely to manage content access and is never sold to third parties. Under GDPR, you have the right to access, correct or delete your data by contacting us at the email address above.</p>
           </div>
 
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">5. Paiement</h2>
-            <p>Les paiements sont traités de manière sécurisée par <span className="text-white/80">Stripe</span>. Movento ne stocke aucune information bancaire. Les abonnements mensuels et annuels sont résiliables à tout moment. L'accès Lifetime est un achat unique sans abonnement.</p>
+            <h2 className="mb-3 text-base font-semibold text-white">5. Payment</h2>
+            <p>Payments are securely processed by <span className="text-white/80">Stripe</span>. Movento does not store any banking information. Monthly and annual subscriptions can be cancelled at any time. Lifetime access is a one-time purchase with no subscription.</p>
           </div>
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">6. Cookies</h2>
-            <p>Movento utilise uniquement des données stockées localement sur votre appareil (localStorage) pour mémoriser votre accès et votre email. Aucun cookie de tracking tiers n'est utilisé.</p>
+            <p>Movento only uses data stored locally on your device (localStorage) to remember your access and email. No third-party tracking cookies are used.</p>
           </div>
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">7. Contact</h2>
-            <p>Pour toute question relative aux présentes mentions légales ou à vos données personnelles, vous pouvez nous contacter à : <span className="text-white/80">contact@movento.app</span></p>
+            <p>For any questions about this legal notice or your personal data, contact us at: <span className="text-white/80">contact@movento.app</span></p>
           </div>
         </div>
       </section>
       <footer className="relative z-10 border-t border-white/[0.06] py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. Tous droits réservés.</p>
-          <a href="/" className="text-sm text-white/30 hover:text-white transition">Retour à l'accueil</a>
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. All rights reserved.</p>
+          <a href="/" className="text-sm text-white/30 hover:text-white transition">Back to home</a>
         </div>
       </footer>
     </main>
