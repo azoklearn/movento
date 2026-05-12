@@ -149,7 +149,7 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 function Logo() {
   return (
-    <img src="/logo.png" alt="Movento" className="h-8 w-auto" />
+    <img src="/logo.png" alt="Movento" className="h-12 w-auto" />
   );
 }
 
