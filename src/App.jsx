@@ -101,10 +101,10 @@ const plans = [
     price: "120€",
     period: "/ an",
     badge: "Meilleur choix",
-    description: "Pour créer régulièrement des sites premium avec l’IA.",
-    cta: "Prendre l’offre annuelle",
+    description: "Pour créer régulièrement des sites premium avec l'IA.",
+    cta: "Prendre l'offre annuelle",
     featured: true,
-    features: ["Tout le catalogue Movento", "Mises à jour toute l’année", "Nouvelles catégories premium", "Prompts optimisés Lovable / v0 / Bolt", "Économise plus de 45%"],
+    features: ["Tout le catalogue Movento", "Mises à jour toute l'année", "Nouvelles catégories premium", "Prompts optimisés Lovable / v0 / Bolt", "Économise plus de 45%"],
   },
   {
     id: "lifetime",
@@ -112,7 +112,7 @@ const plans = [
     price: "200€",
     period: "à vie",
     badge: "One shot",
-    description: "Tu payes une fois. Tu gardes l’accès pour toujours.",
+    description: "Tu payes une fois. Tu gardes l'accès pour toujours.",
     cta: "Débloquer à vie",
     featured: false,
     features: ["Accès à vie", "Toutes les futures mises à jour", "Aucun abonnement", "Toutes les previews incluses", "Parfait pour freelances & agences"],
@@ -223,7 +223,7 @@ function validatePlanId(planId) {
 
 function getCheckoutErrorMessage(error) {
   if (error?.name === "TypeError") {
-    return "Le serveur de paiement Stripe n’est pas joignable. En local, lance node server.js sur le port 4242. En production, vérifie les variables Stripe dans Vercel.";
+    return "Le serveur de paiement Stripe n'est pas joignable. En local, lance node server.js sur le port 4242. En production, vérifie les variables Stripe dans Vercel.";
   }
   return error?.message || "Impossible de lancer le paiement pour le moment.";
 }
@@ -338,7 +338,7 @@ export default function MoventoSite() {
   async function verifyAccess(email = accessEmail, options = {}) {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) {
-      setAccessStatus({ loading: false, message: "", error: "Entre l’email utilisé pendant le paiement." });
+      setAccessStatus({ loading: false, message: "", error: "Entre l'email utilisé pendant le paiement." });
       return false;
     }
 
@@ -354,7 +354,7 @@ export default function MoventoSite() {
       });
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || "Impossible de vérifier l’accès.");
+      if (!response.ok) throw new Error(data.error || "Impossible de vérifier l'accès.");
 
       setHasPremiumAccess(Boolean(data.hasAccess));
       setAccessEmail(normalizedEmail);
@@ -370,7 +370,7 @@ export default function MoventoSite() {
       return false;
     } catch (error) {
       console.error("Erreur vérification accès", error);
-      if (!options.silent) setAccessStatus({ loading: false, message: "", error: error.message || "Impossible de vérifier l’accès." });
+      if (!options.silent) setAccessStatus({ loading: false, message: "", error: error.message || "Impossible de vérifier l'accès." });
       return false;
     }
   }
@@ -462,7 +462,7 @@ export default function MoventoSite() {
       }
 
       if (!response.ok) throw new Error(data.error || `Erreur serveur paiement (${response.status}).`);
-      if (!data.checkoutUrl || typeof data.checkoutUrl !== "string") throw new Error("Le backend n’a pas renvoyé de checkoutUrl Stripe.");
+      if (!data.checkoutUrl || typeof data.checkoutUrl !== "string") throw new Error("Le backend n'a pas renvoyé de checkoutUrl Stripe.");
 
       window.location.assign(data.checkoutUrl);
     } catch (error) {
@@ -517,7 +517,7 @@ export default function MoventoSite() {
             </div>
             <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">Paiement confirmé</h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-white/60 md:text-base">
-              {accessStatus.loading ? "On confirme ton paiement avec Stripe." : hasPremiumAccess ? "Ton accès Movento est prêt. Tu peux revenir à la galerie et copier les prompts premium." : "Paiement reçu. Si l’accès ne s’active pas automatiquement, entre ton email plus bas."}
+              {accessStatus.loading ? "On confirme ton paiement avec Stripe." : hasPremiumAccess ? "Ton accès Movento est prêt. Tu peux revenir à la galerie et copier les prompts premium." : "Paiement reçu. Si l'accès ne s'active pas automatiquement, entre ton email plus bas."}
             </p>
             {accessStatus.message && <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-emerald-100">{accessStatus.message}</p>}
             {accessStatus.error && <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-red-100">{accessStatus.error}</p>}
@@ -554,7 +554,7 @@ export default function MoventoSite() {
         <div className="mb-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:gap-5">
           <div>
             <p className="text-sm font-semibold text-white">{hasPremiumAccess ? "Accès premium actif" : "Déjà client ?"}</p>
-            <p className="mt-1 text-sm leading-6 text-white/50">{hasPremiumAccess ? `Connecté avec ${accessEmail}.` : "Entre l’email utilisé au paiement pour débloquer les prompts premium sur cet appareil."}</p>
+            <p className="mt-1 text-sm leading-6 text-white/50">{hasPremiumAccess ? `Connecté avec ${accessEmail}.` : "Entre l'email utilisé au paiement pour débloquer les prompts premium sur cet appareil."}</p>
           </div>
           <form className="mt-4 flex flex-col gap-3 sm:flex-row md:mt-0" onSubmit={(event) => { event.preventDefault(); verifyAccess(); }}>
             <input value={accessEmail} onChange={(event) => setAccessEmail(event.target.value)} type="email" placeholder="email@exemple.com" className="min-w-0 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50 sm:w-72" />
@@ -605,14 +605,14 @@ export default function MoventoSite() {
           ))}
         </div>
 
-        <div className=”mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl”><p className=”text-sm leading-6 text-white/60”>Un seul bon prompt peut te faire économiser plusieurs heures de design, d’intégration et d’allers-retours client. Movento est fait pour passer de l’idée au site qui impressionne.</p></div>
+        <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl"><p className="text-sm leading-6 text-white/60">Un seul bon prompt peut te faire économiser plusieurs heures de design, d'intégration et d'allers-retours client. Movento est fait pour passer de l'idée au site qui impressionne.</p></div>
       </section>
 
-      <footer className=”relative z-10 border-t border-white/[0.06] py-10”>
-        <div className=”mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8”>
+      <footer className="relative z-10 border-t border-white/[0.06] py-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className=”text-sm text-white/30”>© {new Date().getFullYear()} Movento. Tous droits réservés.</p>
-          <a href=”/mentions-legales” className=”text-sm text-white/30 hover:text-white transition”>Mentions légales</a>
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. Tous droits réservés.</p>
+          <a href="/mentions-legales" className="text-sm text-white/30 hover:text-white transition">Mentions légales</a>
         </div>
       </footer>
     </main>
@@ -621,76 +621,76 @@ export default function MoventoSite() {
 
 function MentionsLegales() {
   return (
-    <main className=”min-h-screen bg-[#05060a] text-white”>
-      <div className=”pointer-events-none fixed inset-0”>
-        <div className=”absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]” />
+    <main className="min-h-screen bg-[#05060a] text-white">
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
       </div>
-      <header className=”relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8”>
-        <a href=”/”><Logo /></a>
-        <a href=”/” className=”rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black”>← Retour</a>
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <a href="/"><Logo /></a>
+        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← Retour</a>
       </header>
-      <section className=”relative z-10 mx-auto max-w-3xl px-6 pb-24 pt-12 lg:px-8”>
-        <h1 className=”text-4xl font-semibold tracking-tight text-white md:text-5xl”>Mentions légales</h1>
-        <p className=”mt-3 text-sm text-white/40”>Dernière mise à jour : {new Date().toLocaleDateString(“fr-FR”, { year: “numeric”, month: “long”, day: “numeric” })}</p>
+      <section className="relative z-10 mx-auto max-w-3xl px-6 pb-24 pt-12 lg:px-8">
+        <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Mentions légales</h1>
+        <p className="mt-3 text-sm text-white/40">Dernière mise à jour : {new Date().toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })}</p>
 
-        <div className=”mt-12 space-y-10 text-sm leading-7 text-white/65”>
+        <div className="mt-12 space-y-10 text-sm leading-7 text-white/65">
           <div>
-            <h2 className=”mb-3 text-base font-semibold text-white”>1. Éditeur du site</h2>
-            <p>Le site <strong className=”text-white/80”>movento.app</strong> est édité par :</p>
-            <ul className=”mt-3 space-y-1 pl-4”>
-              <li>Nom : <span className=”text-white/80”>[Votre nom ou raison sociale]</span></li>
-              <li>Adresse : <span className=”text-white/80”>[Votre adresse]</span></li>
-              <li>Email : <span className=”text-white/80”>contact@movento.app</span></li>
-              <li>Statut : <span className=”text-white/80”>Entrepreneur individuel / Auto-entrepreneur</span></li>
+            <h2 className="mb-3 text-base font-semibold text-white">1. Éditeur du site</h2>
+            <p>Le site <strong className="text-white/80">movento.app</strong> est édité par :</p>
+            <ul className="mt-3 space-y-1 pl-4">
+              <li>Nom : <span className="text-white/80">[Votre nom ou raison sociale]</span></li>
+              <li>Adresse : <span className="text-white/80">[Votre adresse]</span></li>
+              <li>Email : <span className="text-white/80">contact@movento.app</span></li>
+              <li>Statut : <span className="text-white/80">Entrepreneur individuel / Auto-entrepreneur</span></li>
             </ul>
           </div>
 
           <div>
-            <h2 className=”mb-3 text-base font-semibold text-white”>2. Hébergement</h2>
+            <h2 className="mb-3 text-base font-semibold text-white">2. Hébergement</h2>
             <p>Le site est hébergé par :</p>
-            <ul className=”mt-3 space-y-1 pl-4”>
-              <li>Société : <span className=”text-white/80”>Vercel Inc.</span></li>
-              <li>Adresse : <span className=”text-white/80”>340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis</span></li>
-              <li>Site : <span className=”text-white/80”>vercel.com</span></li>
+            <ul className="mt-3 space-y-1 pl-4">
+              <li>Société : <span className="text-white/80">Vercel Inc.</span></li>
+              <li>Adresse : <span className="text-white/80">340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis</span></li>
+              <li>Site : <span className="text-white/80">vercel.com</span></li>
             </ul>
           </div>
 
           <div>
-            <h2 className=”mb-3 text-base font-semibold text-white”>3. Propriété intellectuelle</h2>
-            <p>L’ensemble des contenus présents sur Movento (textes, prompts, visuels, structure) est la propriété exclusive de l’éditeur et est protégé par les lois en vigueur sur la propriété intellectuelle. Toute reproduction, même partielle, est strictement interdite sans autorisation préalable.</p>
+            <h2 className="mb-3 text-base font-semibold text-white">3. Propriété intellectuelle</h2>
+            <p>L'ensemble des contenus présents sur Movento (textes, prompts, visuels, structure) est la propriété exclusive de l'éditeur et est protégé par les lois en vigueur sur la propriété intellectuelle. Toute reproduction, même partielle, est strictement interdite sans autorisation préalable.</p>
           </div>
 
           <div>
-            <h2 className=”mb-3 text-base font-semibold text-white”>4. Données personnelles</h2>
-            <p>Dans le cadre de l’utilisation du site, Movento collecte les données suivantes :</p>
-            <ul className=”mt-3 space-y-1 pl-4”>
-              <li>— Adresse email (lors de l’accès aux prompts gratuits ou d’un abonnement)</li>
-              <li>— Données de paiement traitées par <span className=”text-white/80”>Stripe</span> (non stockées directement par Movento)</li>
+            <h2 className="mb-3 text-base font-semibold text-white">4. Données personnelles</h2>
+            <p>Dans le cadre de l'utilisation du site, Movento collecte les données suivantes :</p>
+            <ul className="mt-3 space-y-1 pl-4">
+              <li>— Adresse email (lors de l'accès aux prompts gratuits ou d'un abonnement)</li>
+              <li>— Données de paiement traitées par <span className="text-white/80">Stripe</span> (non stockées directement par Movento)</li>
             </ul>
-            <p className=”mt-4”>Ces données sont utilisées uniquement pour gérer l’accès aux contenus et n’sont jamais revendues à des tiers. Conformément au RGPD, vous disposez d’un droit d’accès, de rectification et de suppression de vos données en nous contactant à l’adresse email mentionnée ci-dessus.</p>
+            <p className="mt-4">Ces données sont utilisées uniquement pour gérer l'accès aux contenus et n'sont jamais revendues à des tiers. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos données en nous contactant à l'adresse email mentionnée ci-dessus.</p>
           </div>
 
           <div>
-            <h2 className=”mb-3 text-base font-semibold text-white”>5. Paiement</h2>
-            <p>Les paiements sont traités de manière sécurisée par <span className=”text-white/80”>Stripe</span>. Movento ne stocke aucune information bancaire. Les abonnements mensuels et annuels sont résiliables à tout moment. L’accès Lifetime est un achat unique sans abonnement.</p>
+            <h2 className="mb-3 text-base font-semibold text-white">5. Paiement</h2>
+            <p>Les paiements sont traités de manière sécurisée par <span className="text-white/80">Stripe</span>. Movento ne stocke aucune information bancaire. Les abonnements mensuels et annuels sont résiliables à tout moment. L'accès Lifetime est un achat unique sans abonnement.</p>
           </div>
 
           <div>
-            <h2 className=”mb-3 text-base font-semibold text-white”>6. Cookies</h2>
-            <p>Movento utilise uniquement des données stockées localement sur votre appareil (localStorage) pour mémoriser votre accès et votre email. Aucun cookie de tracking tiers n’est utilisé.</p>
+            <h2 className="mb-3 text-base font-semibold text-white">6. Cookies</h2>
+            <p>Movento utilise uniquement des données stockées localement sur votre appareil (localStorage) pour mémoriser votre accès et votre email. Aucun cookie de tracking tiers n'est utilisé.</p>
           </div>
 
           <div>
-            <h2 className=”mb-3 text-base font-semibold text-white”>7. Contact</h2>
-            <p>Pour toute question relative aux présentes mentions légales ou à vos données personnelles, vous pouvez nous contacter à : <span className=”text-white/80”>contact@movento.app</span></p>
+            <h2 className="mb-3 text-base font-semibold text-white">7. Contact</h2>
+            <p>Pour toute question relative aux présentes mentions légales ou à vos données personnelles, vous pouvez nous contacter à : <span className="text-white/80">contact@movento.app</span></p>
           </div>
         </div>
       </section>
-      <footer className=”relative z-10 border-t border-white/[0.06] py-10”>
-        <div className=”mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8”>
+      <footer className="relative z-10 border-t border-white/[0.06] py-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className=”text-sm text-white/30”>© {new Date().getFullYear()} Movento. Tous droits réservés.</p>
-          <a href=”/” className=”text-sm text-white/30 hover:text-white transition”>Retour à l’accueil</a>
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. Tous droits réservés.</p>
+          <a href="/" className="text-sm text-white/30 hover:text-white transition">Retour à l'accueil</a>
         </div>
       </footer>
     </main>
