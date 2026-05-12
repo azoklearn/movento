@@ -2,6 +2,7 @@ import { Redis } from "@upstash/redis";
 import Stripe from "stripe";
 
 export const PROMPTS_REPO = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/prompts/";
+export const CUSTOM_PROMPTS_REPO = "https://raw.githubusercontent.com/azoklearn/movento/main/prompts/";
 export const FREE_PROMPT_FILES = new Set([
   "AI_Automation_Hero.md",
   "Aethera_Studio.md",
