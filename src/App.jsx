@@ -76,7 +76,12 @@ const prompts = [
 ];
 
 const categories = ["Tous", "AI / SaaS", "Landing Page", "Hero Section", "SaaS", "Agency", "Portfolio", "Web3", "Component", "Presentation", "Automotive", "Fintech"];
-const FREE_PROMPT_FILE = "AI_Automation_Hero.md";
+const FREE_PROMPT_FILES = new Set([
+  "AI_Automation_Hero.md",
+  "Aethera_Studio.md",
+  "Bloom_AI.md",
+  "Dark_Portfolio_Hero.md",
+]);
 
 const plans = [
   {
@@ -180,7 +185,7 @@ function GeneratedPreview({ item }) {
 
 function PreviewCard({ item }) {
   const [previewFailed, setPreviewFailed] = useState(false);
-  const isFree = item.file === FREE_PROMPT_FILE;
+  const isFree = FREE_PROMPT_FILES.has(item.file);
   const hasVideo = !previewFailed && item.preview && (item.preview.endsWith(".mp4") || item.preview.endsWith(".webm"));
   const hasImage = !previewFailed && item.preview && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => item.preview.endsWith(ext) || item.preview.includes(`${ext}?`));
 
@@ -365,7 +370,7 @@ export default function MoventoSite() {
   }
 
   async function copyPrompt(item) {
-    if (item.file !== FREE_PROMPT_FILE && !hasPremiumAccess) {
+    if (!FREE_PROMPT_FILES.has(item.file) && !hasPremiumAccess) {
       setUnlockNotice(`${item.title} est inclus dans l'accès premium Movento.`);
       document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
       setTimeout(() => setUnlockNotice(""), 2600);
@@ -500,7 +505,7 @@ export default function MoventoSite() {
             {filtered.map((item) => (
               <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
                 <PreviewCard item={item} />
-                <div className="absolute inset-x-0 bottom-0 z-20 p-5"><button onClick={() => copyPrompt(item)} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-sm font-medium text-white backdrop-blur-xl transition hover:bg-white hover:text-black">{copiedCard === item.title ? <><Icon name="check" className="h-4 w-4" /> Copié</> : copiedCard === "Erreur" ? <><Icon name="alert" className="h-4 w-4" /> Erreur</> : item.file === FREE_PROMPT_FILE ? <><Icon name="copy" className="h-4 w-4" /> Copy Prompt gratuit</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> Copy Prompt</> : <><Icon name="sparkles" className="h-4 w-4" /> Débloquer le prompt</>}</button></div>
+                <div className="absolute inset-x-0 bottom-0 z-20 p-5"><button onClick={() => copyPrompt(item)} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-sm font-medium text-white backdrop-blur-xl transition hover:bg-white hover:text-black">{copiedCard === item.title ? <><Icon name="check" className="h-4 w-4" /> Copié</> : copiedCard === "Erreur" ? <><Icon name="alert" className="h-4 w-4" /> Erreur</> : FREE_PROMPT_FILES.has(item.file) ? <><Icon name="copy" className="h-4 w-4" /> Copy Prompt gratuit</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> Copy Prompt</> : <><Icon name="sparkles" className="h-4 w-4" /> Débloquer le prompt</>}</button></div>
               </motion.div>
             ))}
           </AnimatePresence>

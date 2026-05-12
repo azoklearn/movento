@@ -1,7 +1,7 @@
 import {
   customerHasStripeAccess,
   extractPrompt,
-  FREE_PROMPT_FILE,
+  FREE_PROMPT_FILES,
   isSafePromptFile,
   methodNotAllowed,
   normalizeEmail,
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   const { file } = req.body || {};
   const email = normalizeEmail(req.body?.email);
-  const isFreePrompt = file === FREE_PROMPT_FILE;
+  const isFreePrompt = FREE_PROMPT_FILES.has(file);
 
   if (!isSafePromptFile(file)) {
     return res.status(400).json({ error: "Prompt invalide." });
