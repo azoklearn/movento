@@ -605,7 +605,7 @@ export default function MoventoSite() {
           ))}
         </div>
 
-        <div className=”mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl”><p className=”text-sm leading-6 text-white/60”>Un seul bon prompt peut te faire économiser plusieurs heures de design, d’intégration et d’allers-retours client. Movento est fait pour passer de &ldquo;j&apos;ai une idée&rdquo; à &ldquo;j&apos;ai une page qui donne envie&rdquo;.</p></div>
+        <div className=”mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl”><p className=”text-sm leading-6 text-white/60”>Un seul bon prompt peut te faire économiser plusieurs heures de design, d’intégration et d’allers-retours client. Movento est fait pour passer de l’idée au site qui impressionne.</p></div>
       </section>
 
       <footer className=”relative z-10 border-t border-white/[0.06] py-10”>
