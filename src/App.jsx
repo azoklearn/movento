@@ -89,7 +89,7 @@ const plans = [
   {
     id: "monthly",
     name: "Monthly",
-    price: "20€",
+    price: "7.99€",
     period: "/ mo",
     badge: "Flexible",
     description: "Try Movento with no commitment.",
