@@ -142,6 +142,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   if (name === "code") children = <><path d="m16 18 6-6-6-6" /><path d="m8 6-6 6 6 6" /></>;
   if (name === "layers") children = <><path d="m12 2 10 6-10 6L2 8l10-6z" /><path d="m2 17 10 6 10-6" /><path d="m2 12 10 6 10-6" /></>;
   if (name === "alert") children = <><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></>;
+  if (name === "close") children = <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>;
 
   return <svg {...common}>{children}</svg>;
 }
@@ -238,6 +239,11 @@ function getStoredAccessEmail() {
   return window.localStorage.getItem("movento_access_email") || "";
 }
 
+function getStoredLeadEmail() {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem("movento_lead_email") || "";
+}
+
 async function copyTextToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -284,6 +290,11 @@ export default function MoventoSite() {
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
   const [accessStatus, setAccessStatus] = useState({ loading: false, message: "", error: "" });
   const [checkoutStatus, setCheckoutStatus] = useState({ loading: "", error: "" });
+  const [leadEmail, setLeadEmail] = useState(getStoredLeadEmail);
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [pendingFreeItem, setPendingFreeItem] = useState(null);
+  const [leadEmailInput, setLeadEmailInput] = useState("");
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
 
   useEffect(() => {
@@ -369,19 +380,13 @@ export default function MoventoSite() {
     }
   }
 
-  async function copyPrompt(item) {
-    if (!FREE_PROMPT_FILES.has(item.file) && !hasPremiumAccess) {
-      setUnlockNotice(`${item.title} est inclus dans l'accès premium Movento.`);
-      document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      setTimeout(() => setUnlockNotice(""), 2600);
-      return;
-    }
-
+  async function fetchAndCopyPrompt(item, emailOverride) {
     try {
+      const email = emailOverride || accessEmail || leadEmail;
       const response = await fetch(`${API_BASE_URL}/api/prompt`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file: item.file, email: accessEmail }),
+        body: JSON.stringify({ file: item.file, email }),
       });
       if (!response.ok) throw new Error("Prompt introuvable");
       const data = await response.json();
@@ -393,6 +398,50 @@ export default function MoventoSite() {
       console.error("Erreur copie prompt", error);
       setCopiedCard("Erreur");
       setTimeout(() => setCopiedCard(""), 1600);
+    }
+  }
+
+  async function copyPrompt(item) {
+    const isFree = FREE_PROMPT_FILES.has(item.file);
+
+    if (!isFree && !hasPremiumAccess) {
+      setUnlockNotice(`${item.title} est inclus dans l'accès premium Movento.`);
+      document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => setUnlockNotice(""), 2600);
+      return;
+    }
+
+    if (isFree && !accessEmail && !leadEmail) {
+      setPendingFreeItem(item);
+      setShowLeadModal(true);
+      return;
+    }
+
+    await fetchAndCopyPrompt(item);
+  }
+
+  async function submitLeadEmail(e) {
+    e.preventDefault();
+    const email = leadEmailInput.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+    setLeadSubmitting(true);
+    try {
+      await fetch(`${API_BASE_URL}/api/collect-lead`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+    } catch (_) {}
+
+    window.localStorage.setItem("movento_lead_email", email);
+    setLeadEmail(email);
+    setShowLeadModal(false);
+    setLeadSubmitting(false);
+
+    if (pendingFreeItem) {
+      await fetchAndCopyPrompt(pendingFreeItem, email);
+      setPendingFreeItem(null);
     }
   }
 
@@ -429,6 +478,24 @@ export default function MoventoSite() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#05060a] text-white">
+      <AnimatePresence>
+        {showLeadModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowLeadModal(false)}>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d0e18] p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowLeadModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
+              <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-500/30 to-cyan-500/20 border border-violet-300/20"><Icon name="sparkles" className="h-5 w-5 text-violet-300" /></div>
+              <h2 className="text-2xl font-semibold tracking-tight text-white">Accède aux prompts gratuits</h2>
+              <p className="mt-2 text-sm leading-6 text-white/50">Entre ton email pour copier les prompts offerts. Pas de spam, promis.</p>
+              <form onSubmit={submitLeadEmail} className="mt-6 flex flex-col gap-3">
+                <input autoFocus value={leadEmailInput} onChange={(e) => setLeadEmailInput(e.target.value)} type="email" required placeholder="ton@email.com" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-violet-400/50" />
+                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? "Un instant..." : "Copier le prompt gratuit →"}</button>
+              </form>
+              <p className="mt-4 text-center text-xs text-white/25">Tes données ne seront jamais partagées.</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-blue-500/20 blur-[140px]" />
