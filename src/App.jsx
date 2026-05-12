@@ -636,11 +636,11 @@ function MentionsLegales() {
         <div className="mt-12 space-y-10 text-sm leading-7 text-white/65">
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">1. Website publisher</h2>
-            <p>This website <strong className="text-white/80">movento.app</strong> is published by:</p>
+            <p>This website <strong className="text-white/80">movento.dev</strong> is published by:</p>
             <ul className="mt-3 space-y-1 pl-4">
               <li>Name: <span className="text-white/80">noanweb</span></li>
               <li>Address: <span className="text-white/80">[Your address]</span></li>
-              <li>Email : <span className="text-white/80">contact@movento.app</span></li>
+              <li>Email : <span className="text-white/80">contact@movento.dev</span></li>
               <li>Status: <span className="text-white/80">Sole trader / Self-employed</span></li>
             </ul>
           </div>
@@ -682,7 +682,7 @@ function MentionsLegales() {
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">7. Contact</h2>
-            <p>For any questions about this legal notice or your personal data, contact us at: <span className="text-white/80">contact@movento.app</span></p>
+            <p>For any questions about this legal notice or your personal data, contact us at: <span className="text-white/80">contact@movento.dev</span></p>
           </div>
         </div>
       </section>
