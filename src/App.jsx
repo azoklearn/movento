@@ -149,13 +149,7 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 function Logo() {
   return (
-    <div className="flex items-center gap-3">
-      <div className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-violet-500/20">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-violet-500 to-cyan-300 opacity-80" />
-        <span className="relative text-lg font-black tracking-[-0.08em] text-white">M</span>
-      </div>
-      <span className="text-lg font-semibold tracking-tight text-white">Movento</span>
-    </div>
+    <img src="/logo.png" alt="Movento" className="h-8 w-auto" />
   );
 }
 
