@@ -638,7 +638,7 @@ function MentionsLegales() {
             <h2 className="mb-3 text-base font-semibold text-white">1. Website publisher</h2>
             <p>This website <strong className="text-white/80">movento.app</strong> is published by:</p>
             <ul className="mt-3 space-y-1 pl-4">
-              <li>Name: <span className="text-white/80">[Your name or company]</span></li>
+              <li>Name: <span className="text-white/80">noanweb</span></li>
               <li>Address: <span className="text-white/80">[Your address]</span></li>
               <li>Email : <span className="text-white/80">contact@movento.app</span></li>
               <li>Status: <span className="text-white/80">Sole trader / Self-employed</span></li>
