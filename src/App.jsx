@@ -535,9 +535,12 @@ export default function MoventoSite() {
         <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mx-auto max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white md:text-7xl lg:text-8xl">Build modern websites without coding.</motion.h1>
         <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-white/60 md:text-xl">Ready-to-copy prompts, animated previews and curated design direction for marketers, freelancers and creative teams.</motion.p>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.02]">Explore prompts <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-          <a href="#pricing" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">See plans</a>
+          <a href="#pricing" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-8 py-3.5 text-sm font-bold text-white shadow-2xl shadow-violet-500/40 transition hover:scale-[1.04] hover:shadow-violet-500/60">
+            <span className="relative z-10 flex items-center gap-2">Start for free <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+          </a>
+          <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">Explore prompts</a>
         </motion.div>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-4 text-xs text-white/30">1 day free — then 7.99€/mo. Cancel anytime.</motion.p>
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
