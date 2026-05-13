@@ -93,7 +93,7 @@ const plans = [
     period: "/ mo",
     badge: "Flexible",
     description: "Try Movento with no commitment.",
-    cta: "Get started",
+    cta: "Start free trial",
     featured: false,
     features: ["Access to all prompts", "One-click prompt copy", "Video & visual previews", "New prompts included", "Cancel anytime"],
   },
