@@ -643,23 +643,12 @@ function MentionsLegales() {
         <div className="mt-12 space-y-10 text-sm leading-7 text-white/65">
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">1. Website publisher</h2>
-            <p>This website <strong className="text-white/80">movento.dev</strong> is published by:</p>
-            <ul className="mt-3 space-y-1 pl-4">
-              <li>Name: <span className="text-white/80">noanweb</span></li>
-              <li>Address: <span className="text-white/80">[Your address]</span></li>
-              <li>Email : <span className="text-white/80">contact@movento.dev</span></li>
-              <li>Status: <span className="text-white/80">Sole trader / Self-employed</span></li>
-            </ul>
+            <p>This website <strong className="text-white/80">movento.dev</strong> is published by <span className="text-white/80">noanweb</span>.</p>
           </div>
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">2. Hosting</h2>
-            <p>This website is hosted by:</p>
-            <ul className="mt-3 space-y-1 pl-4">
-              <li>Company: <span className="text-white/80">Vercel Inc.</span></li>
-              <li>Address: <span className="text-white/80">340 S Lemon Ave #4133, Walnut, CA 91789, United States</span></li>
-              <li>Website: <span className="text-white/80">vercel.com</span></li>
-            </ul>
+            <p>This website is hosted by <span className="text-white/80">Vercel Inc.</span> — 340 S Lemon Ave #4133, Walnut, CA 91789, United States — vercel.com</p>
           </div>
 
           <div>
@@ -669,17 +658,12 @@ function MentionsLegales() {
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">4. Personal data</h2>
-            <p>When using this website, Movento collects the following data:</p>
-            <ul className="mt-3 space-y-1 pl-4">
-              <li>- Email address (when accessing free prompts or subscribing)</li>
-              <li>- Payment data processed by <span className="text-white/80">Stripe</span> (not stored directly by Movento)</li>
-            </ul>
-            <p className="mt-4">This data is used solely to manage content access and is never sold to third parties. Under GDPR, you have the right to access, correct or delete your data by contacting us at the email address above.</p>
+            <p>Movento collects your email address to manage access to content. Payment data is processed by <span className="text-white/80">Stripe</span> and is not stored by Movento. Your data is never sold to third parties. You may request access, correction or deletion by contacting us.</p>
           </div>
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">5. Payment</h2>
-            <p>Payments are securely processed by <span className="text-white/80">Stripe</span>. Movento does not store any banking information. Monthly and annual subscriptions can be cancelled at any time. Lifetime access is a one-time purchase with no subscription.</p>
+            <p>Payments are securely processed by <span className="text-white/80">Stripe</span>. Monthly and annual subscriptions can be cancelled at any time. Lifetime access is a one-time purchase with no subscription.</p>
           </div>
 
           <div>
@@ -689,7 +673,7 @@ function MentionsLegales() {
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">7. Contact</h2>
-            <p>For any questions about this legal notice or your personal data, contact us at: <span className="text-white/80">contact@movento.dev</span></p>
+            <p>For any questions: <span className="text-white/80">movento.dev@gmail.com</span></p>
           </div>
         </div>
       </section>
