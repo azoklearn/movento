@@ -100,7 +100,7 @@ const plans = [
   {
     id: "yearly",
     name: "Yearly",
-    price: "120€",
+    price: "50€",
     period: "/ yr",
     badge: "Best value",
     description: "Build premium AI websites regularly.",
@@ -111,7 +111,7 @@ const plans = [
   {
     id: "lifetime",
     name: "Lifetime",
-    price: "200€",
+    price: "100€",
     period: "forever",
     badge: "One shot",
     description: "One-time payment. Yours forever.",
