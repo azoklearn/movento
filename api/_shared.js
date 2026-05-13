@@ -3,12 +3,7 @@ import Stripe from "stripe";
 
 export const PROMPTS_REPO = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/prompts/";
 export const CUSTOM_PROMPTS_REPO = "https://raw.githubusercontent.com/azoklearn/movento/main/prompts/";
-export const FREE_PROMPT_FILES = new Set([
-  "AI_Automation_Hero.md",
-  "Aethera_Studio.md",
-  "Bloom_AI.md",
-  "Dark_Portfolio_Hero.md",
-]);
+export const FREE_PROMPT_FILES = new Set([]);
 
 export const priceIds = {
   monthly: process.env.STRIPE_MONTHLY_PRICE_ID,

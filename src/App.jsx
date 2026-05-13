@@ -78,12 +78,7 @@ const prompts = [
 ];
 
 const categories = ["Tous", "AI / SaaS", "Landing Page", "Hero Section", "SaaS", "Agency", "Portfolio", "Web3", "Component", "Presentation", "Automotive", "Fintech"];
-const FREE_PROMPT_FILES = new Set([
-  "AI_Automation_Hero.md",
-  "Aethera_Studio.md",
-  "Bloom_AI.md",
-  "Dark_Portfolio_Hero.md",
-]);
+const FREE_PROMPT_FILES = new Set([]);
 
 const plans = [
   {
