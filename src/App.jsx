@@ -288,6 +288,7 @@ export default function MoventoSite() {
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
+  const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -474,6 +475,7 @@ export default function MoventoSite() {
   }
 
   if (isMentionsPage) return <MentionsLegales />;
+  if (isPricingPage) return <PricingPage />;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#05060a] text-white">
@@ -505,7 +507,7 @@ export default function MoventoSite() {
         <Logo />
         <nav className="hidden items-center gap-8 text-sm text-white/55 md:flex">
           <a href="#prompts" className="hover:text-white">Prompts</a>
-          <a href="#pricing" className="hover:text-white">Pricing</a>
+          <a href="/pricing" className="hover:text-white">Pricing</a>
           <a href="#how" className="hover:text-white">Guide</a>
         </nav>
         <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">Explore</a>
@@ -532,10 +534,10 @@ export default function MoventoSite() {
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-16 pt-16 text-center lg:px-8 lg:pt-24">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/70 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> Premium web design prompt library</motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mx-auto max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white md:text-7xl lg:text-8xl">Build modern websites without coding.</motion.h1>
+        <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mx-auto max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white md:text-7xl lg:text-8xl">Build <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">modern</span> websites without coding.</motion.h1>
         <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-white/60 md:text-xl">Ready-to-copy prompts, animated previews and curated design direction for marketers, freelancers and creative teams.</motion.p>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <a href="#pricing" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-8 py-3.5 text-sm font-bold text-white shadow-2xl shadow-violet-500/40 transition hover:scale-[1.04] hover:shadow-violet-500/60">
+          <a href="/pricing" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-8 py-3.5 text-sm font-bold text-white shadow-2xl shadow-violet-500/40 transition hover:scale-[1.04] hover:shadow-violet-500/60">
             <span className="relative z-10 flex items-center gap-2">Start for free <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></span>
           </a>
           <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">Explore prompts</a>
@@ -552,9 +554,10 @@ export default function MoventoSite() {
       </section>
 
       <section id="prompts" className="relative z-10 mx-auto max-w-7xl px-6 py-24 lg:px-8">
-        <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
-          <div><p className="text-sm uppercase tracking-[0.3em] text-white/35">Gallery</p><h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Premium prompts</h2><p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">{hasPremiumAccess ? "Premium access active. All prompts can be copied." : "One free prompt to test the quality. The full catalog unlocks with a Movento plan."}</p></div>
-          <div className="relative w-full md:w-80"><Icon name="search" className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search a style..." className="w-full rounded-full border border-white/10 bg-white/[0.05] py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50" /></div>
+        <div className="mb-8">
+          <p className="text-sm uppercase tracking-[0.3em] text-white/35">Gallery</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Premium prompts</h2>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">{hasPremiumAccess ? "Premium access active. All prompts can be copied." : "The full catalog unlocks with a Movento plan."}</p>
         </div>
         <div className="mb-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:gap-5">
           <div>
@@ -676,6 +679,116 @@ function MentionsLegales() {
           </div>
         </div>
       </section>
+      <footer className="relative z-10 border-t border-white/[0.06] py-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
+          <Logo />
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. All rights reserved.</p>
+          <a href="/" className="text-sm text-white/30 hover:text-white transition">Back to home</a>
+        </div>
+      </footer>
+    </main>
+  );
+}
+
+function PricingPage() {
+  const [checkoutStatus, setCheckoutStatus] = useState({ loading: "", error: "" });
+
+  async function goToCheckout(planId) {
+    if (checkoutStatus.loading) return;
+    setCheckoutStatus({ loading: planId, error: "" });
+    try {
+      if (!validatePlanId(planId)) throw new Error("Invalid plan.");
+      const response = await fetch(CHECKOUT_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+      let data = {};
+      try { data = await response.json(); } catch { data = {}; }
+      if (!response.ok) throw new Error(data.error || `Server error (${response.status}).`);
+      if (!data.checkoutUrl) throw new Error("No checkout URL returned.");
+      window.location.assign(data.checkoutUrl);
+    } catch (error) {
+      setCheckoutStatus({ loading: "", error: getCheckoutErrorMessage(error) });
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-[#05060a] text-white">
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-fuchsia-600/10 blur-[120px]" />
+      </div>
+
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <a href="/"><Logo /></a>
+        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← Back</a>
+      </header>
+
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/65 backdrop-blur-xl">
+            <Icon name="sparkles" className="h-4 w-4 text-violet-300" /> Launch offer - Founder pricing
+          </div>
+          <h1 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">Choose your plan</h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">Save hours on every landing page. Copy a premium prompt, paste it into your AI tool, and turn an idea into a modern site in minutes.</p>
+        </div>
+
+        {checkoutStatus.error && (
+          <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl">
+            <Icon name="alert" className="mt-1 h-4 w-4 flex-none" />
+            <p>{checkoutStatus.error}</p>
+          </div>
+        )}
+
+        <div className="mx-auto mt-14 grid max-w-6xl gap-5 lg:grid-cols-3">
+          {plans.map((plan) => (
+            <div key={plan.id} className={`relative overflow-hidden rounded-[34px] border p-3 shadow-2xl backdrop-blur-2xl transition hover:-translate-y-1 ${plan.id === "monthly" ? "border-violet-400/40 bg-gradient-to-br from-violet-500/[0.22] via-fuchsia-500/[0.08] to-cyan-500/[0.12] shadow-violet-900/30" : plan.featured ? "border-violet-300/30 bg-gradient-to-br from-violet-500/[0.18] via-white/[0.06] to-cyan-500/[0.12] shadow-violet-900/25" : "border-white/10 bg-white/[0.035] shadow-black/40"}`}>
+              {plan.id === "monthly" && <div className="pointer-events-none absolute -left-10 -top-10 h-56 w-56 rounded-full bg-fuchsia-500/25 blur-[80px]" />}
+              {plan.featured && <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-500/30 blur-[100px]" />}
+              <div className="relative rounded-[28px] border border-white/10 bg-[#080910]/90 p-7">
+                <div className="mb-7 flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-2xl font-semibold tracking-tight text-white">{plan.name}</h3>
+                    <p className="mt-2 text-sm leading-6 text-white/45">{plan.description}</p>
+                  </div>
+                  <span className={`rounded-full border px-3 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span>
+                </div>
+                <div className="mb-7">
+                  <div className="flex items-end gap-2">
+                    <span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span>
+                    <span className="pb-2 text-white/40">{plan.period}</span>
+                  </div>
+                </div>
+                <button
+                  disabled={Boolean(checkoutStatus.loading)}
+                  onClick={() => goToCheckout(plan.id)}
+                  className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50" : plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}
+                >
+                  {checkoutStatus.loading === plan.id ? "Redirecting..." : plan.cta}
+                  <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
+                </button>
+                <div className="my-7 h-px bg-white/10" />
+                <div className="space-y-3">
+                  {plan.features.map((item) => (
+                    <div key={item} className="flex items-center gap-3 text-sm text-white/65">
+                      <div className="grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10">
+                        <Icon name="check" className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl">
+          <p className="text-sm leading-6 text-white/60">One great prompt can save you hours of design, integration and client back-and-forth. Movento helps you go from idea to impressive site.</p>
+        </div>
+      </section>
+
       <footer className="relative z-10 border-t border-white/[0.06] py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
