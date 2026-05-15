@@ -666,7 +666,7 @@ function MentionsLegales() {
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">5. Payment</h2>
             <p>Payments are securely processed by <span className="text-white/80">Stripe</span>. Monthly and annual subscriptions can be cancelled at any time. Lifetime access is a one-time purchase with no subscription.</p>
-            <p className="mt-3">Movento reserves the right to modify subscription prices at any time. Existing subscribers will be notified in advance of any price change and may cancel their subscription before the new price takes effect.</p>
+            <p className="mt-3">Movento reserves the right to modify subscription prices at any time.</p>
           </div>
 
           <div>
