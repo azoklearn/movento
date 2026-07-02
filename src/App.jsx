@@ -283,6 +283,7 @@ export default function MoventoSite() {
   const [checkoutStatus, setCheckoutStatus] = useState({ loading: "", error: "" });
   const [leadEmail, setLeadEmail] = useState(getStoredLeadEmail);
   const [showLeadModal, setShowLeadModal] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
   const [pendingFreeItem, setPendingFreeItem] = useState(null);
   const [leadEmailInput, setLeadEmailInput] = useState("");
   const [leadSubmitting, setLeadSubmitting] = useState(false);
@@ -398,9 +399,7 @@ export default function MoventoSite() {
     const isFree = FREE_PROMPT_FILES.has(item.file);
 
     if (!isFree && !hasPremiumAccess) {
-      setUnlockNotice(`${item.title} is included in Movento premium access.`);
-      document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      setTimeout(() => setUnlockNotice(""), 2600);
+      setShowPricingModal(true);
       return;
     }
 
@@ -493,6 +492,56 @@ export default function MoventoSite() {
                 <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? "Just a moment..." : "Copy free prompt →"}</button>
               </form>
               <p className="mt-4 text-center text-xs text-white/25">Your data will never be shared.</p>
+            </motion.div>
+          </motion.div>
+        )}
+        {showPricingModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-y-auto" onClick={() => setShowPricingModal(false)}>
+            <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-5xl rounded-[32px] border border-white/10 bg-[#0d0e18] p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowPricingModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-white/65"><Icon name="sparkles" className="h-3.5 w-3.5 text-violet-300" /> Founder pricing</div>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">Unlock all prompts</h2>
+              <p className="mt-2 text-sm text-white/50">Choose a plan to access the full Movento catalog.</p>
+              {checkoutStatus.error && (
+                <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-100">
+                  <Icon name="alert" className="mt-0.5 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p>
+                </div>
+              )}
+              <div className="mt-7 grid gap-4 md:grid-cols-3">
+                {plans.map((plan) => (
+                  <div key={plan.id} className={`relative overflow-hidden rounded-[24px] border p-3 backdrop-blur-2xl transition hover:-translate-y-1 ${plan.id === "monthly" ? "border-violet-400/40 bg-gradient-to-br from-violet-500/[0.22] via-fuchsia-500/[0.08] to-cyan-500/[0.12]" : plan.featured ? "border-violet-300/30 bg-gradient-to-br from-violet-500/[0.18] via-white/[0.06] to-cyan-500/[0.12]" : "border-white/10 bg-white/[0.035]"}`}>
+                    {plan.id === "monthly" && <div className="pointer-events-none absolute -left-8 -top-8 h-40 w-40 rounded-full bg-fuchsia-500/25 blur-[60px]" />}
+                    {plan.featured && <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-violet-500/30 blur-[70px]" />}
+                    <div className="relative rounded-[18px] border border-white/10 bg-[#080910]/90 p-5">
+                      <div className="mb-5 flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">{plan.name}</h3>
+                          <p className="mt-1 text-xs leading-5 text-white/45">{plan.description}</p>
+                        </div>
+                        <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span>
+                      </div>
+                      <div className="mb-5 flex items-end gap-1.5">
+                        <span className="text-4xl font-bold tracking-[-0.06em] text-white">{plan.price}</span>
+                        <span className="pb-1 text-sm text-white/40">{plan.period}</span>
+                      </div>
+                      <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30" : plan.featured ? "bg-white text-black hover:bg-white/90" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>
+                        {checkoutStatus.loading === plan.id ? "Redirecting..." : plan.cta}
+                        <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
+                      </button>
+                      <div className="my-5 h-px bg-white/10" />
+                      <div className="space-y-2.5">
+                        {plan.features.map((feat) => (
+                          <div key={feat} className="flex items-center gap-2.5 text-xs text-white/65">
+                            <div className="grid h-4 w-4 flex-none place-items-center rounded-full bg-white/10"><Icon name="check" className="h-3 w-3 text-white" /></div>
+                            {feat}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </motion.div>
           </motion.div>
         )}
