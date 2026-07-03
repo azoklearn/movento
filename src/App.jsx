@@ -8,6 +8,7 @@ const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_UR
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Lumora Hero", category: "Landing Page", type: "Hero", file: "Lumora_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/prompts%20(i've%20added%20them%20to%20the%20motionsites)/endless.mp4", tags: ["Mindfulness", "Video", "Glass"], gradient: "from-amber-200 via-orange-400 to-stone-900" },
   { title: "CargoX Group Hero", category: "Landing Page", type: "Hero", file: "CargoX_Group_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/prompts%20(i've%20added%20them%20to%20the%20motionsites)/carArea.mp4", tags: ["Logistics", "Video", "Dark"], gradient: "from-yellow-400 via-amber-600 to-slate-900" },
   { title: "Veldara Hero", category: "Landing Page", type: "Landing", file: "Veldara_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(21).webp", tags: ["Scroll", "3D", "Dark"], gradient: "from-blue-400 via-cyan-600 to-black" },
   { title: "Creative Studio Showcase", category: "Portfolio", type: "Landing", file: "Creative_Studio_Showcase.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/newpsotArea.mp4", tags: ["Studio", "Creative", "Spotlight"], gradient: "from-sky-200 via-cyan-400 to-slate-900" },
