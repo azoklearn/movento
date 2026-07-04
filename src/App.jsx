@@ -5,6 +5,9 @@ const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.a
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
 const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_URL}/api/create-checkout-session`;
 
+const lang = (() => { try { return (navigator.language || "").startsWith("fr") ? "fr" : "en"; } catch { return "en"; } })();
+function t(en, fr) { return lang === "fr" ? fr : en; }
+
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
@@ -87,36 +90,36 @@ const FREE_PROMPT_FILES = new Set([]);
 const plans = [
   {
     id: "monthly",
-    name: "Monthly",
+    name: t("Monthly", "Mensuel"),
     price: "7.99€",
-    period: "/ mo",
-    badge: "Try for free",
-    description: "3 days free, then 7.99€/mo. Cancel anytime.",
-    cta: "Try free for 3 days →",
+    period: t("/ mo", "/ mois"),
+    badge: t("Try for free", "Essai gratuit"),
+    description: t("3 days free, then 7.99€/mo. Cancel anytime.", "3 jours gratuits, puis 7,99€/mois. Résiliez à tout moment."),
+    cta: t("Try free for 3 days →", "Essai gratuit 3 jours →"),
     featured: false,
-    features: ["Access to all prompts", "One-click prompt copy", "Video & visual previews", "New prompts included", "Cancel anytime"],
+    features: [t("Access to all prompts", "Accès à tous les prompts"), t("One-click prompt copy", "Copie en un clic"), t("Video & visual previews", "Aperçus vidéo & visuels"), t("New prompts included", "Nouveaux prompts inclus"), t("Cancel anytime", "Résiliez à tout moment")],
   },
   {
     id: "yearly",
-    name: "Yearly",
+    name: t("Yearly", "Annuel"),
     price: "50€",
-    period: "/ yr",
-    badge: "Best value",
-    description: "Build premium AI websites regularly.",
-    cta: "Get the annual plan",
+    period: t("/ yr", "/ an"),
+    badge: t("Best value", "Meilleur rapport"),
+    description: t("Build premium AI websites regularly.", "Créez des sites premium toute l'année."),
+    cta: t("Get the annual plan", "Prendre l'offre annuelle"),
     featured: true,
-    features: ["Full Movento catalog", "Year-round updates", "New premium categories", "Optimized for Lovable / v0 / Bolt", "Save over 45%"],
+    features: [t("Full Movento catalog", "Catalogue Movento complet"), t("Year-round updates", "Mises à jour toute l'année"), t("New premium categories", "Nouvelles catégories premium"), t("Optimized for Lovable / v0 / Bolt", "Optimisé pour Lovable / v0 / Bolt"), t("Save over 45%", "Économisez plus de 45%")],
   },
   {
     id: "lifetime",
-    name: "Lifetime",
+    name: t("Lifetime", "À vie"),
     price: "100€",
-    period: "forever",
-    badge: "One shot",
-    description: "One-time payment. Yours forever.",
-    cta: "Get lifetime access",
+    period: t("forever", "à vie"),
+    badge: t("One shot", "Une fois pour toutes"),
+    description: t("One-time payment. Yours forever.", "Paiement unique. À vous pour toujours."),
+    cta: t("Get lifetime access", "Obtenir l'accès à vie"),
     featured: false,
-    features: ["Lifetime access", "All future updates", "No subscription", "All previews included", "Perfect for freelancers & agencies"],
+    features: [t("Lifetime access", "Accès à vie"), t("All future updates", "Toutes les mises à jour futures"), t("No subscription", "Sans abonnement"), t("All previews included", "Tous les aperçus inclus"), t("Perfect for freelancers & agencies", "Parfait pour les freelances & agences")],
   },
 ];
 
@@ -489,13 +492,13 @@ export default function MoventoSite() {
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d0e18] p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setShowLeadModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
               <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-500/30 to-cyan-500/20 border border-violet-300/20"><Icon name="sparkles" className="h-5 w-5 text-violet-300" /></div>
-              <h2 className="text-2xl font-semibold tracking-tight text-white">Access free prompts</h2>
-              <p className="mt-2 text-sm leading-6 text-white/50">Enter your email to copy free prompts. No spam, ever.</p>
+              <h2 className="text-2xl font-semibold tracking-tight text-white">{t("Access free prompts", "Accéder aux prompts gratuits")}</h2>
+              <p className="mt-2 text-sm leading-6 text-white/50">{t("Enter your email to copy free prompts. No spam, ever.", "Entrez votre email pour copier les prompts gratuits. Jamais de spam.")}</p>
               <form onSubmit={submitLeadEmail} className="mt-6 flex flex-col gap-3">
                 <input autoFocus value={leadEmailInput} onChange={(e) => setLeadEmailInput(e.target.value)} type="email" required placeholder="you@example.com" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-violet-400/50" />
-                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? "Just a moment..." : "Copy free prompt →"}</button>
+                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? t("Just a moment...", "Un instant...") : t("Copy free prompt →", "Copier le prompt gratuit →")}</button>
               </form>
-              <p className="mt-4 text-center text-xs text-white/25">Your data will never be shared.</p>
+              <p className="mt-4 text-center text-xs text-white/25">{t("Your data will never be shared.", "Vos données ne seront jamais partagées.")}</p>
             </motion.div>
           </motion.div>
         )}
@@ -504,9 +507,9 @@ export default function MoventoSite() {
             <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-5xl rounded-[32px] border border-white/10 bg-[#0d0e18] p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setShowPricingModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-white/65"><Icon name="sparkles" className="h-3.5 w-3.5 text-violet-300" /> Founder pricing</div>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">Unlock all prompts</h2>
-              <p className="mt-2 text-sm text-white/50">Choose a plan to access the full Movento catalog.</p>
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-white/65"><Icon name="sparkles" className="h-3.5 w-3.5 text-violet-300" /> {t("Founder pricing", "Prix fondateurs")}</div>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">{t("Unlock all prompts", "Débloquer tous les prompts")}</h2>
+              <p className="mt-2 text-sm text-white/50">{t("Choose a plan to access the full Movento catalog.", "Choisissez une offre pour accéder au catalogue complet Movento.")}</p>
               {checkoutStatus.error && (
                 <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-100">
                   <Icon name="alert" className="mt-0.5 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p>
@@ -530,7 +533,7 @@ export default function MoventoSite() {
                         <span className="pb-1 text-sm text-white/40">{plan.period}</span>
                       </div>
                       <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30" : plan.featured ? "bg-white text-black hover:bg-white/90" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>
-                        {checkoutStatus.loading === plan.id ? "Redirecting..." : plan.cta}
+                        {checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}
                         <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
                       </button>
                       <div className="my-5 h-px bg-white/10" />
@@ -560,10 +563,10 @@ export default function MoventoSite() {
         <Logo />
         <nav className="hidden items-center gap-8 text-sm text-white/55 md:flex">
           <a href="#prompts" className="hover:text-white">Prompts</a>
-          <a href="/pricing" className="hover:text-white">Pricing</a>
-          <a href="#how" className="hover:text-white">Guide</a>
+          <a href="/pricing" className="hover:text-white">{t("Pricing", "Tarifs")}</a>
+          <a href="#how" className="hover:text-white">{t("Guide", "Guide")}</a>
         </nav>
-        <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">Explore</a>
+        <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">{t("Explore", "Explorer")}</a>
       </header>
 
       {isSuccessPage && (
@@ -572,54 +575,56 @@ export default function MoventoSite() {
             <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl border border-emerald-200/20 bg-emerald-300/10 text-emerald-100">
               <Icon name="check" className="h-6 w-6" />
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">Payment confirmed</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">{t("Payment confirmed", "Paiement confirmé")}</h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-white/60 md:text-base">
-              {accessStatus.loading ? "Confirming your payment with Stripe." : hasPremiumAccess ? "Your Movento access is ready. Go back to the gallery and copy premium prompts." : "Payment received. If your access does not activate automatically, enter your email below."}
+              {accessStatus.loading ? t("Confirming your payment with Stripe.", "Confirmation de votre paiement avec Stripe.") : hasPremiumAccess ? t("Your Movento access is ready. Go back to the gallery and copy premium prompts.", "Votre accès Movento est prêt. Retournez à la galerie et copiez les prompts premium.") : t("Payment received. If your access does not activate automatically, enter your email below.", "Paiement reçu. Si votre accès ne s'active pas automatiquement, entrez votre email ci-dessous.")}
             </p>
             {accessStatus.message && <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-emerald-100">{accessStatus.message}</p>}
             {accessStatus.error && <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-red-100">{accessStatus.error}</p>}
             <a href="/#prompts" className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.02]">
-              Back to prompts <Icon name="arrow" className="h-4 w-4" />
+              {t("Back to prompts", "Retour aux prompts")} <Icon name="arrow" className="h-4 w-4" />
             </a>
           </div>
         </section>
       )}
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-16 pt-16 text-center lg:px-8 lg:pt-24">
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/70 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> Premium web design prompt library</motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mx-auto max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white md:text-7xl lg:text-8xl">Build <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">modern</span> websites without coding.</motion.h1>
-        <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-white/60 md:text-xl">Ready-to-copy prompts, animated previews and curated design direction for marketers, freelancers and creative teams.</motion.p>
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/70 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> {t("Premium web design prompt library", "Bibliothèque de prompts design web premium")}</motion.div>
+        <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mx-auto max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white md:text-7xl lg:text-8xl">
+          {lang === "fr" ? <>Créez des sites web <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">modernes</span> sans coder.</> : <>Build <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">modern</span> websites without coding.</>}
+        </motion.h1>
+        <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-white/60 md:text-xl">{t("Ready-to-copy prompts, animated previews and curated design direction for marketers, freelancers and creative teams.", "Prompts prêts à copier, aperçus animés et direction design soignée pour les marketeurs, freelances et équipes créatives.")}</motion.p>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <a href="/pricing" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-8 py-3.5 text-sm font-bold text-white shadow-2xl shadow-violet-500/40 transition hover:scale-[1.04] hover:shadow-violet-500/60">
-            <span className="relative z-10 flex items-center gap-2">Start for free <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+            <span className="relative z-10 flex items-center gap-2">{t("Start for free", "Commencer gratuitement")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></span>
           </a>
-          <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">Explore prompts</a>
+          <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">{t("Explore prompts", "Voir les prompts")}</a>
         </motion.div>
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-4 text-xs text-white/30">1 day free — then 7.99€/mo. Cancel anytime.</motion.p>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-4 text-xs text-white/30">{t("3 days free — then 7.99€/mo. Cancel anytime.", "3 jours gratuits — puis 7,99€/mois. Résiliez à tout moment.")}</motion.p>
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid gap-4 rounded-[34px] border border-white/10 bg-white/[0.035] p-3 shadow-2xl shadow-black/50 backdrop-blur-2xl md:grid-cols-3">
-          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="zap" className="mb-5 h-6 w-6 text-violet-300" /><h3 className="text-lg font-semibold">Copy & paste</h3><p className="mt-2 text-sm leading-6 text-white/55">A clean prompt, ready for Lovable, v0, Bolt, Cursor or Claude.</p></div>
-          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="layers" className="mb-5 h-6 w-6 text-blue-300" /><h3 className="text-lg font-semibold">Visual preview</h3><p className="mt-2 text-sm leading-6 text-white/55">See the style before generating: dark UI, video, glass, portfolio, SaaS.</p></div>
-          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="code" className="mb-5 h-6 w-6 text-cyan-300" /><h3 className="text-lg font-semibold">No coding</h3><p className="mt-2 text-sm leading-6 text-white/55">Built for marketing, communication and creative profiles.</p></div>
+          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="zap" className="mb-5 h-6 w-6 text-violet-300" /><h3 className="text-lg font-semibold">{t("Copy & paste", "Copier-coller")}</h3><p className="mt-2 text-sm leading-6 text-white/55">{t("A clean prompt, ready for Lovable, v0, Bolt, Cursor or Claude.", "Un prompt propre, prêt pour Lovable, v0, Bolt, Cursor ou Claude.")}</p></div>
+          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="layers" className="mb-5 h-6 w-6 text-blue-300" /><h3 className="text-lg font-semibold">{t("Visual preview", "Aperçu visuel")}</h3><p className="mt-2 text-sm leading-6 text-white/55">{t("See the style before generating: dark UI, video, glass, portfolio, SaaS.", "Voyez le style avant de générer : dark UI, vidéo, glass, portfolio, SaaS.")}</p></div>
+          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="code" className="mb-5 h-6 w-6 text-cyan-300" /><h3 className="text-lg font-semibold">{t("No coding", "Sans code")}</h3><p className="mt-2 text-sm leading-6 text-white/55">{t("Built for marketing, communication and creative profiles.", "Conçu pour les profils marketing, communication et créatifs.")}</p></div>
         </div>
       </section>
 
       <section id="prompts" className="relative z-10 mx-auto max-w-7xl px-6 py-24 lg:px-8">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.3em] text-white/35">Gallery</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Premium prompts</h2>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">{hasPremiumAccess ? "Premium access active. All prompts can be copied." : "The full catalog unlocks with a Movento plan."}</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-white/35">{t("Gallery", "Galerie")}</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">{t("Premium prompts", "Prompts premium")}</h2>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : t("The full catalog unlocks with a Movento plan.", "Le catalogue complet se débloque avec un abonnement Movento.")}</p>
         </div>
         <div className="mb-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:gap-5">
           <div>
-            <p className="text-sm font-semibold text-white">{hasPremiumAccess ? "Premium access active" : "Already a member?"}</p>
-            <p className="mt-1 text-sm leading-6 text-white/50">{hasPremiumAccess ? `Signed in as ${accessEmail}.` : "Enter the email used at checkout to unlock premium prompts on this device."}</p>
+            <p className="text-sm font-semibold text-white">{hasPremiumAccess ? t("Premium access active", "Accès premium actif") : t("Already a member?", "Déjà membre ?")}</p>
+            <p className="mt-1 text-sm leading-6 text-white/50">{hasPremiumAccess ? `${t("Signed in as", "Connecté en tant que")} ${accessEmail}.` : t("Enter the email used at checkout to unlock premium prompts on this device.", "Entrez l'email utilisé lors de l'achat pour accéder aux prompts premium.")}</p>
           </div>
           <form className="mt-4 flex flex-col gap-3 sm:flex-row md:mt-0" onSubmit={(event) => { event.preventDefault(); verifyAccess(); }}>
             <input value={accessEmail} onChange={(event) => setAccessEmail(event.target.value)} type="email" placeholder="email@example.com" className="min-w-0 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50 sm:w-72" />
-            <button disabled={accessStatus.loading} className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{accessStatus.loading ? "Verifying..." : hasPremiumAccess ? "Re-verify" : "Unlock"}</button>
+            <button disabled={accessStatus.loading} className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{accessStatus.loading ? t("Verifying...", "Vérification...") : hasPremiumAccess ? t("Re-verify", "Re-vérifier") : t("Unlock", "Déverrouiller")}</button>
           </form>
         </div>
         {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 backdrop-blur-xl ${accessStatus.error ? "border-red-400/20 bg-red-500/10 text-red-100" : "border-emerald-300/20 bg-emerald-400/10 text-emerald-100"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
@@ -630,7 +635,7 @@ export default function MoventoSite() {
             {filtered.map((item) => (
               <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
                 <PreviewCard item={item} />
-                <div className="absolute inset-x-0 bottom-0 z-20 p-5"><button onClick={() => copyPrompt(item)} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-sm font-medium text-white backdrop-blur-xl transition hover:bg-white hover:text-black">{copiedCard === item.title ? <><Icon name="check" className="h-4 w-4" /> Copied</> : copiedCard === "Error" ? <><Icon name="alert" className="h-4 w-4" /> Error</> : item.link && hasPremiumAccess ? <><Icon name="arrow" className="h-4 w-4" /> Open prompt</> : item.link && FREE_PROMPT_FILES.has(item.file) ? <><Icon name="arrow" className="h-4 w-4" /> Open free prompt</> : FREE_PROMPT_FILES.has(item.file) ? <><Icon name="copy" className="h-4 w-4" /> Copy free prompt</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> Copy Prompt</> : <><Icon name="copy" className="h-4 w-4" /> Copy prompt</>}</button></div>
+                <div className="absolute inset-x-0 bottom-0 z-20 p-5"><button onClick={() => copyPrompt(item)} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-sm font-medium text-white backdrop-blur-xl transition hover:bg-white hover:text-black">{copiedCard === item.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-4 w-4" /> {t("Error", "Erreur")}</> : item.link && hasPremiumAccess ? <><Icon name="arrow" className="h-4 w-4" /> {t("Open prompt", "Ouvrir le prompt")}</> : item.link && FREE_PROMPT_FILES.has(item.file) ? <><Icon name="arrow" className="h-4 w-4" /> {t("Open free prompt", "Ouvrir le prompt gratuit")}</> : FREE_PROMPT_FILES.has(item.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy free prompt", "Copier le prompt gratuit")}</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy Prompt", "Copier le prompt")}</> : <><Icon name="copy" className="h-4 w-4" /> {t("Copy prompt", "Copier le prompt")}</>}</button></div>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -638,14 +643,14 @@ export default function MoventoSite() {
       </section>
 
       <section id="how" className="relative z-10 mx-auto max-w-7xl px-6 pb-24 lg:px-8">
-        <div className="rounded-[40px] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-8 backdrop-blur-xl md:p-12"><div className="grid gap-10 md:grid-cols-3">{["Choose a style", "Copy the prompt", "Generate your site"].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/[0.06] text-sm font-bold text-white/70">0{i + 1}</div><h3 className="text-xl font-semibold">{step}</h3><p className="mt-3 text-sm leading-6 text-white/55">{i === 0 ? "Browse previews and find a design direction that suits your offer." : i === 1 ? "The prompt is loaded directly from the source to stay intact." : "Paste it into your favorite AI tool and customize the result."}</p></div>)}</div></div>
+        <div className="rounded-[40px] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-8 backdrop-blur-xl md:p-12"><div className="grid gap-10 md:grid-cols-3">{[t("Choose a style", "Choisir un style"), t("Copy the prompt", "Copier le prompt"), t("Generate your site", "Générer votre site")].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/[0.06] text-sm font-bold text-white/70">0{i + 1}</div><h3 className="text-xl font-semibold">{step}</h3><p className="mt-3 text-sm leading-6 text-white/55">{i === 0 ? t("Browse previews and find a design direction that suits your offer.", "Parcourez les aperçus et trouvez une direction design adaptée à votre offre.") : i === 1 ? t("The prompt is loaded directly from the source to stay intact.", "Le prompt est chargé directement depuis la source pour rester intact.") : t("Paste it into your favorite AI tool and customize the result.", "Collez-le dans votre outil IA préféré et personnalisez le résultat.")}</p></div>)}</div></div>
       </section>
 
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/65 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> Launch offer - Founder pricing</div>
-          <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">Choose your plan</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">Save hours on every landing page. Copy a premium prompt, paste it into your AI tool, and turn an idea into a modern site in minutes.</p>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/65 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> {t("Launch offer - Founder pricing", "Offre de lancement - Prix fondateurs")}</div>
+          <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Save hours on every landing page. Copy a premium prompt, paste it into your AI tool, and turn an idea into a modern site in minutes.", "Économisez des heures sur chaque landing page. Copiez un prompt premium, collez-le dans votre outil IA, et transformez une idée en site moderne en quelques minutes.")}</p>
 
         </div>
 
@@ -659,7 +664,7 @@ export default function MoventoSite() {
               <div className="relative rounded-[28px] border border-white/10 bg-[#080910]/90 p-7">
                 <div className="mb-7 flex items-start justify-between gap-4"><div><h3 className="text-2xl font-semibold tracking-tight text-white">{plan.name}</h3><p className="mt-2 text-sm leading-6 text-white/45">{plan.description}</p></div><span className={`rounded-full border px-3 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span></div>
                 <div className="mb-7"><div className="flex items-end gap-2"><span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span><span className="pb-2 text-white/40">{plan.period}</span></div></div>
-                <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50" : plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>{checkoutStatus.loading === plan.id ? "Redirecting..." : plan.cta}<Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></button>
+                <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50" : plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>{checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}<Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></button>
                 <div className="my-7 h-px bg-white/10" />
                 <div className="space-y-3">{plan.features.map((item) => <div key={item} className="flex items-center gap-3 text-sm text-white/65"><div className="grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10"><Icon name="check" className="h-3.5 w-3.5 text-white" /></div>{item}</div>)}</div>
               </div>
@@ -667,14 +672,14 @@ export default function MoventoSite() {
           ))}
         </div>
 
-        <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl"><p className="text-sm leading-6 text-white/60">One great prompt can save you hours of design, integration and client back-and-forth. Movento helps you go from idea to impressive site.</p></div>
+        <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl"><p className="text-sm leading-6 text-white/60">{t("One great prompt can save you hours of design, integration and client back-and-forth. Movento helps you go from idea to impressive site.", "Un bon prompt peut vous faire gagner des heures de design, d'intégration et d'échanges client. Movento vous aide à passer de l'idée au site impressionnant.")}</p></div>
       </section>
 
       <footer className="relative z-10 border-t border-white/[0.06] py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. All rights reserved.</p>
-          <a href="/mentions-legales" className="text-sm text-white/30 hover:text-white transition">Legal notice</a>
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <a href="/mentions-legales" className="text-sm text-white/30 hover:text-white transition">{t("Legal notice", "Mentions légales")}</a>
         </div>
       </footer>
     </main>
@@ -689,10 +694,10 @@ function MentionsLegales() {
       </div>
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <a href="/"><Logo /></a>
-        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← Back</a>
+        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← {t("Back", "Retour")}</a>
       </header>
       <section className="relative z-10 mx-auto max-w-3xl px-6 pb-24 pt-12 lg:px-8">
-        <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Legal notice</h1>
+        <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">{t("Legal notice", "Mentions légales")}</h1>
         <p className="mt-3 text-sm text-white/40">Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
 
         <div className="mt-12 space-y-10 text-sm leading-7 text-white/65">
@@ -736,8 +741,8 @@ function MentionsLegales() {
       <footer className="relative z-10 border-t border-white/[0.06] py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. All rights reserved.</p>
-          <a href="/" className="text-sm text-white/30 hover:text-white transition">Back to home</a>
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <a href="/" className="text-sm text-white/30 hover:text-white transition">{t("Back to home", "Retour à l'accueil")}</a>
         </div>
       </footer>
     </main>
@@ -776,16 +781,16 @@ function PricingPage() {
 
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <a href="/"><Logo /></a>
-        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← Back</a>
+        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← {t("Back", "Retour")}</a>
       </header>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/65 backdrop-blur-xl">
-            <Icon name="sparkles" className="h-4 w-4 text-violet-300" /> Launch offer - Founder pricing
+            <Icon name="sparkles" className="h-4 w-4 text-violet-300" /> {t("Launch offer - Founder pricing", "Offre de lancement - Prix fondateurs")}
           </div>
-          <h1 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">Choose your plan</h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">Save hours on every landing page. Copy a premium prompt, paste it into your AI tool, and turn an idea into a modern site in minutes.</p>
+          <h1 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Save hours on every landing page. Copy a premium prompt, paste it into your AI tool, and turn an idea into a modern site in minutes.", "Économisez des heures sur chaque landing page. Copiez un prompt premium, collez-le dans votre outil IA, et transformez une idée en site moderne en quelques minutes.")}</p>
         </div>
 
         {checkoutStatus.error && (
@@ -819,7 +824,7 @@ function PricingPage() {
                   onClick={() => goToCheckout(plan.id)}
                   className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50" : plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}
                 >
-                  {checkoutStatus.loading === plan.id ? "Redirecting..." : plan.cta}
+                  {checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}
                   <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
                 </button>
                 <div className="my-7 h-px bg-white/10" />
@@ -839,15 +844,15 @@ function PricingPage() {
         </div>
 
         <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl">
-          <p className="text-sm leading-6 text-white/60">One great prompt can save you hours of design, integration and client back-and-forth. Movento helps you go from idea to impressive site.</p>
+          <p className="text-sm leading-6 text-white/60">{t("One great prompt can save you hours of design, integration and client back-and-forth. Movento helps you go from idea to impressive site.", "Un bon prompt peut vous faire gagner des heures de design, d'intégration et d'échanges client. Movento vous aide à passer de l'idée au site impressionnant.")}</p>
         </div>
       </section>
 
       <footer className="relative z-10 border-t border-white/[0.06] py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. All rights reserved.</p>
-          <a href="/" className="text-sm text-white/30 hover:text-white transition">Back to home</a>
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <a href="/" className="text-sm text-white/30 hover:text-white transition">{t("Back to home", "Retour à l'accueil")}</a>
         </div>
       </footer>
     </main>
