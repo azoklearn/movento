@@ -16,7 +16,9 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_missing", 
 });
 
 export function normalizeEmail(email) {
-  return String(email || "").trim().toLowerCase();
+  // Strip every whitespace/zero-width char (mobile autocomplete can inject a
+  // non-breaking or zero-width space that trim() leaves behind).
+  return String(email || "").replace(/[\s\u200B-\u200D\uFEFF]/g, "").toLowerCase();
 }
 
 export function isSafePromptFile(file) {

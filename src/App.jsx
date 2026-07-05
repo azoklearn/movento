@@ -342,7 +342,9 @@ export default function MoventoSite() {
   }, [query, category]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
-    const normalizedEmail = email.trim().toLowerCase();
+    // Emails never contain whitespace, so strip every whitespace/zero-width char
+    // (mobile autocomplete often injects a non-breaking or zero-width space that trim() misses).
+    const normalizedEmail = String(email).replace(/[\s\u200B-\u200D\uFEFF]/g, "").toLowerCase();
     if (!normalizedEmail) {
       setAccessStatus({ loading: false, message: "", error: "Enter the email used at checkout." });
       return false;
@@ -623,7 +625,7 @@ export default function MoventoSite() {
             <p className="mt-1 text-sm leading-6 text-white/50">{hasPremiumAccess ? `${t("Signed in as", "Connecté en tant que")} ${accessEmail}.` : t("Enter the email used at checkout to unlock premium prompts on this device.", "Entrez l'email utilisé lors de l'achat pour accéder aux prompts premium.")}</p>
           </div>
           <form className="mt-4 flex flex-col gap-3 sm:flex-row md:mt-0" onSubmit={(event) => { event.preventDefault(); verifyAccess(); }}>
-            <input value={accessEmail} onChange={(event) => setAccessEmail(event.target.value)} type="email" placeholder="email@example.com" className="min-w-0 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50 sm:w-72" />
+            <input value={accessEmail} onChange={(event) => setAccessEmail(event.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50 sm:w-72" />
             <button disabled={accessStatus.loading} className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{accessStatus.loading ? t("Verifying...", "Vérification...") : hasPremiumAccess ? t("Re-verify", "Re-vérifier") : t("Unlock", "Déverrouiller")}</button>
           </form>
         </div>
