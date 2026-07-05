@@ -40,14 +40,18 @@ export default async function handler(req, res) {
     const session = event.data.object;
     const email = session.customer_details?.email?.trim().toLowerCase();
 
-    if (email && session.payment_status === "paid") {
+    // "paid" for immediate payments, "no_payment_required" when a free trial starts.
+    const grantsAccess = session.payment_status === "paid" || session.payment_status === "no_payment_required";
+
+    if (email && grantsAccess) {
       const redis = Redis.fromEnv();
       await redis.set(`access:${email}`, {
         plan: session.metadata?.plan || "unknown",
+        paymentStatus: session.payment_status,
         paidAt: new Date().toISOString(),
         sessionId: session.id,
       });
-      console.log("Access granted via webhook:", email);
+      console.log("Access granted via webhook:", email, session.payment_status);
     }
   }
 

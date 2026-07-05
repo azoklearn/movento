@@ -65,13 +65,15 @@ export async function customerHasStripeAccess(email) {
   try {
     const customers = await stripe.customers.list({ email: normalizedEmail, limit: 10 });
 
+    const ACCESS_STATUSES = new Set(["active", "trialing", "past_due"]);
+
     for (const customer of customers.data) {
       const subscriptions = await stripe.subscriptions.list({
         customer: customer.id,
-        status: "active",
-        limit: 5,
+        status: "all",
+        limit: 20,
       });
-      if (subscriptions.data.length > 0) return true;
+      if (subscriptions.data.some((s) => ACCESS_STATUSES.has(s.status))) return true;
 
       const charges = await stripe.charges.list({
         customer: customer.id,
