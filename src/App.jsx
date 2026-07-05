@@ -703,7 +703,7 @@ function MentionsLegales() {
         <div className="mt-12 space-y-10 text-sm leading-7 text-white/65">
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">1. Website publisher</h2>
-            <p>This website <strong className="text-white/80">movento.dev</strong> is published by <span className="text-white/80">noanweb</span>.</p>
+            <p>This website <strong className="text-white/80">movento.dev</strong> is published by <span className="text-white/80">Movento</span>.</p>
           </div>
 
           <div>
