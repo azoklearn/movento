@@ -344,7 +344,7 @@ export default function MoventoSite() {
   async function verifyAccess(email = accessEmail, options = {}) {
     // Emails never contain whitespace, so strip every whitespace/zero-width char
     // (mobile autocomplete often injects a non-breaking or zero-width space that trim() misses).
-    const normalizedEmail = String(email).replace(/[\s\u200B-\u200D\uFEFF]/g, "").toLowerCase();
+    const normalizedEmail = String(email).replace(/[\s\u00AD\u200B-\u200D\u2060\uFEFF]/g, "").toLowerCase();
     if (!normalizedEmail) {
       setAccessStatus({ loading: false, message: "", error: "Enter the email used at checkout." });
       return false;
@@ -374,7 +374,7 @@ export default function MoventoSite() {
       }
 
       window.localStorage.removeItem("movento_access_email");
-      if (!options.silent) setAccessStatus({ loading: false, message: "", error: "No payment found for this email." });
+      if (!options.silent) setAccessStatus({ loading: false, message: "", error: `No payment found for "${normalizedEmail}". Make sure it matches your checkout email exactly.` });
       return false;
     } catch (error) {
       console.error("Access verification error", error);
