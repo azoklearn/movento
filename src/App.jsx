@@ -84,6 +84,20 @@ const prompts = [
   { title: "xPortfolio Hero", category: "Hero Section", type: "Hero", file: "xPortfolio_Hero.md", preview: "https://motionsites.ai/assets/hero-xportfolio-preview-D4A8maiC.gif", tags: ["Portfolio", "Hero", "Creative"], gradient: "from-fuchsia-300 via-violet-500 to-black" },
 ];
 
+// Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
+// external link) are shown. Add a filename here as its content is added to the repo.
+const AVAILABLE_FILES = new Set([
+  "CargoX_Group_Hero.md",
+  "Veldara_Hero.md",
+  "Creative_Studio_Showcase.md",
+  "Lumora_Hero.md",
+  "PureFlow_Air_Hero.md",
+]);
+
+function isPromptAvailable(item) {
+  return Boolean(item.link) || AVAILABLE_FILES.has(item.file);
+}
+
 const categories = ["Tous", "AI / SaaS", "Landing Page", "Hero Section", "SaaS", "Agency", "Portfolio", "Web3", "Component", "Presentation", "Automotive", "Fintech"];
 const FREE_PROMPT_FILES = new Set([]);
 
@@ -335,6 +349,7 @@ export default function MoventoSite() {
 
   const filtered = useMemo(() => {
     return prompts.filter((p) => {
+      if (!isPromptAvailable(p)) return false;
       const matchCategory = category === "Tous" || p.category === category;
       const matchQuery = `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase());
       return matchCategory && matchQuery;
