@@ -59,24 +59,15 @@ async function redisGetAccess(normalizedEmail) {
   }
 }
 
-async function redisClearAccess(normalizedEmail) {
-  try {
-    const redis = Redis.fromEnv();
-    await redis.del(`access:${normalizedEmail}`);
-  } catch {
-    // Redis not available, nothing to clear
-  }
-}
-
 export async function customerHasStripeAccess(email) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return false;
 
-  // Stripe is the source of truth so that deleting/refunding a customer revokes
-  // access. Redis is only used as a fallback when Stripe can't be reached.
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return redisGetAccess(normalizedEmail);
-  }
+  // Grant access if a checkout/trial grant exists in Redis. This never deletes
+  // the grant, so a Stripe hiccup can't lock out paying customers.
+  if (await redisGetAccess(normalizedEmail)) return true;
+
+  if (!process.env.STRIPE_SECRET_KEY) return false;
 
   try {
     const customers = await stripe.customers.list({ email: normalizedEmail, limit: 10 });
@@ -99,17 +90,11 @@ export async function customerHasStripeAccess(email) {
       });
       if (charges.data.some((c) => c.paid && !c.refunded)) return true;
     }
-
-    // Stripe answered and grants no access → purge any stale Redis grant so a
-    // deleted/refunded customer can no longer slip through the fallback.
-    await redisClearAccess(normalizedEmail);
-    return false;
   } catch (error) {
     console.error("Stripe customerHasStripeAccess error:", error);
-    // Stripe unreachable → fall back to Redis so paying users aren't locked out
-    // during a Stripe outage.
-    return redisGetAccess(normalizedEmail);
   }
+
+  return false;
 }
 
 export function methodNotAllowed(res, allowed = "POST") {
