@@ -11,6 +11,9 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Equilibrium Hero", category: "Landing Page", type: "Hero", file: "Equilibrium_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(93).webp", tags: ["Wellness", "Glass", "Video"], gradient: "from-emerald-200 via-teal-500 to-slate-900" },
+  { title: "Fearless Studio Hero", category: "Agency", type: "Hero", file: "Fearless_Studio_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(71).webp", tags: ["Studio", "Bold", "Video"], gradient: "from-violet-400 via-purple-700 to-black" },
+  { title: "MicroVisuals Hero", category: "AI / SaaS", type: "Hero", file: "MicroVisuals_Hero.md", preview: "https://image.mux.com/i9kUFJpB6GrWoe2UXRZG4lIP02g00LGulS1GTVrMMwZI00/animated.webp?width=640&fps=15", tags: ["AI", "Glass", "Serif"], gradient: "from-zinc-200 via-slate-500 to-black" },
   { title: "LinkFlow Hero", category: "SaaS", type: "Hero", file: "LinkFlow_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(55).webp", tags: ["AI", "Workflow", "Video"], gradient: "from-lime-300 via-emerald-600 to-stone-900" },
   { title: "Lumora Hero", category: "Landing Page", type: "Hero", file: "Lumora_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/prompts%20(i've%20added%20them%20to%20the%20motionsites)/endless.mp4", tags: ["Mindfulness", "Video", "Glass"], gradient: "from-amber-200 via-orange-400 to-stone-900" },
   { title: "CargoX Group Hero", category: "Landing Page", type: "Hero", file: "CargoX_Group_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/prompts%20(i've%20added%20them%20to%20the%20motionsites)/carArea.mp4", tags: ["Logistics", "Video", "Dark"], gradient: "from-yellow-400 via-amber-600 to-slate-900" },
@@ -88,6 +91,9 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Equilibrium_Hero.md",
+  "Fearless_Studio_Hero.md",
+  "MicroVisuals_Hero.md",
   "LinkFlow_Hero.md",
   "CargoX_Group_Hero.md",
   "Veldara_Hero.md",
