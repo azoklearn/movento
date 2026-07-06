@@ -131,9 +131,9 @@ const plans = [
     name: t("Monthly", "Mensuel"),
     price: "7.99€",
     period: t("/ mo", "/ mois"),
-    badge: t("Try for free", "Essai gratuit"),
-    description: t("3 days free, then 7.99€/mo. Cancel anytime.", "3 jours gratuits, puis 7,99€/mois. Résiliez à tout moment."),
-    cta: t("Try free for 3 days →", "Essai gratuit 3 jours →"),
+    badge: t("Monthly", "Mensuel"),
+    description: t("7.99€/mo. Cancel anytime.", "7,99€/mois. Résiliez à tout moment."),
+    cta: t("Get started →", "Commencer →"),
     featured: false,
     features: [t("Access to all prompts", "Accès à tous les prompts"), t("One-click prompt copy", "Copie en un clic"), t("Video & visual previews", "Aperçus vidéo & visuels"), t("New prompts included", "Nouveaux prompts inclus"), t("Cancel anytime", "Résiliez à tout moment")],
   },
@@ -692,7 +692,7 @@ export default function MoventoSite() {
           </a>
           <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">{t("Explore prompts", "Voir les prompts")}</a>
         </motion.div>
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-4 text-xs text-white/30">{t("3 days free — then 7.99€/mo. Cancel anytime.", "3 jours gratuits — puis 7,99€/mois. Résiliez à tout moment.")}</motion.p>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-4 text-xs text-white/30">{t("7.99€/mo. Cancel anytime.", "7,99€/mois. Résiliez à tout moment.")}</motion.p>
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
