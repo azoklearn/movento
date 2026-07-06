@@ -327,6 +327,7 @@ export default function MoventoSite() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Tous");
   const [copiedCard, setCopiedCard] = useState("");
+  const [copyError, setCopyError] = useState("");
   const [unlockNotice, setUnlockNotice] = useState("");
   const [accessEmail, setAccessEmail] = useState(getStoredAccessEmail);
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
@@ -428,15 +429,34 @@ export default function MoventoSite() {
     }
   }
 
+  function reportCopyError(error) {
+    console.error("Prompt copy error", error);
+    setCopiedCard("Error");
+    setTimeout(() => setCopiedCard(""), 1600);
+
+    const name = error?.name || "";
+    const msg = String(error?.message || "");
+    let message;
+    if (msg === "Prompt not found") {
+      message = "Prompt introuvable sur le serveur (erreur 404). Ce n'est pas votre presse-papiers — signalez-le nous.";
+    } else if (name === "TypeError" || msg.toLowerCase().includes("fetch") || msg.toLowerCase().includes("network")) {
+      message = "Connexion au serveur impossible. Vérifiez votre réseau et réessayez.";
+    } else {
+      message = `Copie bloquée par votre navigateur (${name || "NotAllowedError"}). Réessayez, ou copiez depuis un autre navigateur (Chrome).`;
+    }
+    setCopyError(message);
+    setTimeout(() => setCopyError(""), 8000);
+  }
+
   async function fetchAndCopyPrompt(item, emailOverride) {
     const email = emailOverride || accessEmail || leadEmail;
+    setCopyError("");
     const textPromise = fetchPromptText(item, email);
+    textPromise.catch(() => {}); // avoid unhandled-rejection noise
 
-    // Preferred path: Safari/Chrome accept a Promise inside ClipboardItem, which
-    // keeps the user gesture valid across the network round-trip. Plain
-    // writeText() after an await is rejected by Safari/iOS/Firefox, which is why
-    // copy failed for some users but not on Chrome. This must run synchronously
-    // from the click (no await before it) to preserve the gesture.
+    // Primary: ClipboardItem with a Promise keeps the click gesture valid across
+    // the network round-trip (Safari/iOS/Chrome). Must run synchronously from the
+    // click — no await before it.
     try {
       if (typeof ClipboardItem !== "undefined" && navigator.clipboard && navigator.clipboard.write) {
         await navigator.clipboard.write([
@@ -447,19 +467,24 @@ export default function MoventoSite() {
         return;
       }
     } catch {
-      // Fall through to the text-based copy below.
+      // Fall through — resolve the text to tell a 404 apart from a clipboard block.
+    }
+
+    let text;
+    try {
+      text = await textPromise;
+    } catch (error) {
+      reportCopyError(error); // server "Prompt not found" / network
+      return;
     }
 
     try {
-      const text = await textPromise;
       const copied = await copyTextToClipboard(text);
-      if (!copied) throw new Error("Copy denied by browser");
+      if (!copied) throw Object.assign(new Error("Copy denied by browser"), { name: "NotAllowedError" });
       setCopiedCard(item.title);
       setTimeout(() => setCopiedCard(""), 1600);
     } catch (error) {
-      console.error("Prompt copy error", error);
-      setCopiedCard("Error");
-      setTimeout(() => setCopiedCard(""), 1600);
+      reportCopyError(error); // clipboard blocked by browser
     }
   }
 
@@ -690,6 +715,7 @@ export default function MoventoSite() {
         </div>
         {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 backdrop-blur-xl ${accessStatus.error ? "border-red-400/20 bg-red-500/10 text-red-100" : "border-emerald-300/20 bg-emerald-400/10 text-emerald-100"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-violet-300/20 bg-violet-500/10 p-4 text-sm leading-6 text-violet-50 backdrop-blur-xl"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
+        {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
         <div className="mb-8 flex gap-2 overflow-x-auto pb-2">{categories.map((cat) => <button key={cat} onClick={() => setCategory(cat)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${category === cat ? "border-white/20 bg-white text-black" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/10"}`}>{cat}</button>)}</div>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence>
