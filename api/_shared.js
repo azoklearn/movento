@@ -59,6 +59,21 @@ async function redisGetAccess(normalizedEmail) {
   }
 }
 
+// Stripe's customers.list({ email }) filter is CASE-SENSITIVE, so a lowercased
+// query misses customers who signed up with capitals in their email. The Search
+// API matches case-insensitively; fall back to list if search is unavailable.
+async function findStripeCustomers(normalizedEmail) {
+  try {
+    const escaped = normalizedEmail.replace(/[\\']/g, "\\$&");
+    const result = await stripe.customers.search({ query: `email:'${escaped}'`, limit: 10 });
+    return result.data;
+  } catch (error) {
+    console.error("Stripe customer search failed, falling back to list:", error);
+    const result = await stripe.customers.list({ email: normalizedEmail, limit: 10 });
+    return result.data;
+  }
+}
+
 export async function customerHasStripeAccess(email) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return false;
@@ -70,7 +85,7 @@ export async function customerHasStripeAccess(email) {
   if (!process.env.STRIPE_SECRET_KEY) return false;
 
   try {
-    const customers = await stripe.customers.list({ email: normalizedEmail, limit: 10 });
+    const customers = await findStripeCustomers(normalizedEmail);
 
     const ACCESS_STATUSES = new Set(["active", "trialing", "past_due"]);
 
