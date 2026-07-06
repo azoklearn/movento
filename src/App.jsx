@@ -274,6 +274,18 @@ function getStoredLeadEmail() {
   return window.localStorage.getItem("movento_lead_email") || "";
 }
 
+function fetchPromptText(item, email) {
+  return fetch(`${API_BASE_URL}/api/prompt`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ file: item.file, email }),
+  }).then(async (response) => {
+    if (!response.ok) throw new Error("Prompt not found");
+    const data = await response.json();
+    return data.prompt;
+  });
+}
+
 async function copyTextToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -417,16 +429,30 @@ export default function MoventoSite() {
   }
 
   async function fetchAndCopyPrompt(item, emailOverride) {
+    const email = emailOverride || accessEmail || leadEmail;
+    const textPromise = fetchPromptText(item, email);
+
+    // Preferred path: Safari/Chrome accept a Promise inside ClipboardItem, which
+    // keeps the user gesture valid across the network round-trip. Plain
+    // writeText() after an await is rejected by Safari/iOS/Firefox, which is why
+    // copy failed for some users but not on Chrome. This must run synchronously
+    // from the click (no await before it) to preserve the gesture.
     try {
-      const email = emailOverride || accessEmail || leadEmail;
-      const response = await fetch(`${API_BASE_URL}/api/prompt`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file: item.file, email }),
-      });
-      if (!response.ok) throw new Error("Prompt not found");
-      const data = await response.json();
-      const copied = await copyTextToClipboard(data.prompt);
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard && navigator.clipboard.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "text/plain": textPromise.then((t) => new Blob([t], { type: "text/plain" })) }),
+        ]);
+        setCopiedCard(item.title);
+        setTimeout(() => setCopiedCard(""), 1600);
+        return;
+      }
+    } catch {
+      // Fall through to the text-based copy below.
+    }
+
+    try {
+      const text = await textPromise;
+      const copied = await copyTextToClipboard(text);
       if (!copied) throw new Error("Copy denied by browser");
       setCopiedCard(item.title);
       setTimeout(() => setCopiedCard(""), 1600);
