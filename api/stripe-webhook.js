@@ -55,5 +55,22 @@ export default async function handler(req, res) {
     }
   }
 
+  // When a subscription actually ends (after a cancellation reaches period end),
+  // remove the Redis grant so access is revoked instead of lingering forever.
+  if (event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object;
+    try {
+      const customer = await stripe.customers.retrieve(subscription.customer);
+      const email = customer && !customer.deleted ? customer.email?.trim().toLowerCase() : null;
+      if (email) {
+        const redis = Redis.fromEnv();
+        await redis.del(`access:${email}`);
+        console.log("Access revoked via webhook (subscription ended):", email);
+      }
+    } catch (error) {
+      console.error("Failed to revoke access on subscription end:", error);
+    }
+  }
+
   return res.json({ received: true });
 }

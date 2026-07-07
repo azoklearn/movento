@@ -62,7 +62,7 @@ async function redisGetAccess(normalizedEmail) {
 // Stripe's customers.list({ email }) filter is CASE-SENSITIVE, so a lowercased
 // query misses customers who signed up with capitals in their email. The Search
 // API matches case-insensitively; fall back to list if search is unavailable.
-async function findStripeCustomers(normalizedEmail) {
+export async function findStripeCustomers(normalizedEmail) {
   try {
     const escaped = normalizedEmail.replace(/[\\']/g, "\\$&");
     const result = await stripe.customers.search({ query: `email:'${escaped}'`, limit: 10 });
@@ -72,6 +72,78 @@ async function findStripeCustomers(normalizedEmail) {
     const result = await stripe.customers.list({ email: normalizedEmail, limit: 10 });
     return result.data;
   }
+}
+
+const PLAN_LABELS = { monthly: "Monthly", yearly: "Yearly", lifetime: "Lifetime" };
+
+// Returns the most relevant subscription for an email, or lifetime purchase info.
+export async function getSubscriptionInfo(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || !process.env.STRIPE_SECRET_KEY) {
+    return { found: false, active: false };
+  }
+
+  const ACCESS_STATUSES = new Set(["active", "trialing", "past_due"]);
+  const customers = await findStripeCustomers(normalizedEmail);
+
+  let bestSub = null;
+  let hasLifetime = false;
+
+  for (const customer of customers) {
+    if (customer.deleted) continue;
+
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customer.id,
+      status: "all",
+      limit: 20,
+    });
+    for (const sub of subscriptions.data) {
+      if (ACCESS_STATUSES.has(sub.status)) {
+        if (!bestSub || sub.created > bestSub.created) bestSub = sub;
+      }
+    }
+
+    // A lifetime buyer has a paid one-time charge but no active subscription.
+    const charges = await stripe.charges.list({ customer: customer.id, limit: 10 });
+    if (charges.data.some((c) => c.paid && !c.refunded)) hasLifetime = true;
+  }
+
+  if (bestSub) {
+    return {
+      found: true,
+      active: true,
+      type: "subscription",
+      subscriptionId: bestSub.id,
+      status: bestSub.status,
+      plan: PLAN_LABELS[bestSub.metadata?.plan] || (bestSub.items?.data?.[0]?.price?.recurring?.interval === "year" ? "Yearly" : "Monthly"),
+      cancelAtPeriodEnd: Boolean(bestSub.cancel_at_period_end),
+      currentPeriodEnd: bestSub.current_period_end || null,
+      trialEnd: bestSub.trial_end || null,
+    };
+  }
+
+  if (hasLifetime) {
+    return { found: true, active: true, type: "lifetime", plan: "Lifetime" };
+  }
+
+  return { found: false, active: false };
+}
+
+// Cancels the active subscription for an email at period end. Returns updated info.
+export async function cancelSubscriptionForEmail(email) {
+  const info = await getSubscriptionInfo(email);
+  if (!info.found || info.type !== "subscription") {
+    return { ok: false, reason: "no_subscription" };
+  }
+  if (info.cancelAtPeriodEnd) {
+    return { ok: true, alreadyScheduled: true, currentPeriodEnd: info.currentPeriodEnd, trialEnd: info.trialEnd };
+  }
+  const updated = await stripe.subscriptions.update(info.subscriptionId, { cancel_at_period_end: true });
+  return {
+    ok: true,
+    currentPeriodEnd: updated.current_period_end || info.currentPeriodEnd,
+    trialEnd: updated.trial_end || info.trialEnd,
+  };
 }
 
 export async function customerHasStripeAccess(email) {

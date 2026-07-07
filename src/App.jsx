@@ -348,6 +348,7 @@ export default function MoventoSite() {
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
+  const isSubscriptionPage = typeof window !== "undefined" && window.location.pathname === "/subscription";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -574,6 +575,7 @@ export default function MoventoSite() {
 
   if (isMentionsPage) return <MentionsLegales />;
   if (isPricingPage) return <PricingPage />;
+  if (isSubscriptionPage) return <SubscriptionPage />;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#05060a] text-white">
@@ -656,6 +658,7 @@ export default function MoventoSite() {
         <nav className="hidden items-center gap-8 text-sm text-white/55 md:flex">
           <a href="#prompts" className="hover:text-white">Prompts</a>
           <a href="/pricing" className="hover:text-white">{t("Pricing", "Tarifs")}</a>
+          <a href="/subscription" className="hover:text-white">{t("My subscription", "Mon abonnement")}</a>
           <a href="#how" className="hover:text-white">{t("Guide", "Guide")}</a>
         </nav>
         <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">{t("Explore", "Explorer")}</a>
@@ -772,7 +775,10 @@ export default function MoventoSite() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
           <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
-          <a href="/mentions-legales" className="text-sm text-white/30 hover:text-white transition">{t("Legal notice", "Mentions légales")}</a>
+          <div className="flex items-center gap-5">
+            <a href="/subscription" className="text-sm text-white/30 hover:text-white transition">{t("My subscription", "Mon abonnement")}</a>
+            <a href="/mentions-legales" className="text-sm text-white/30 hover:text-white transition">{t("Legal notice", "Mentions légales")}</a>
+          </div>
         </div>
       </footer>
     </main>
@@ -940,6 +946,147 @@ function PricingPage() {
         <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl">
           <p className="text-sm leading-6 text-white/60">{t("One great prompt can save you hours of design, integration and client back-and-forth. Movento helps you go from idea to impressive site.", "Un bon prompt peut vous faire gagner des heures de design, d'intégration et d'échanges client. Movento vous aide à passer de l'idée au site impressionnant.")}</p>
         </div>
+      </section>
+
+      <footer className="relative z-10 border-t border-white/[0.06] py-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
+          <Logo />
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <a href="/" className="text-sm text-white/30 hover:text-white transition">{t("Back to home", "Retour à l'accueil")}</a>
+        </div>
+      </footer>
+    </main>
+  );
+}
+
+function formatDate(unixSeconds) {
+  if (!unixSeconds) return "";
+  return new Date(unixSeconds * 1000).toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", { year: "numeric", month: "long", day: "numeric" });
+}
+
+function SubscriptionPage() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState({ loading: false, error: "", data: null, checked: false });
+  const [cancelState, setCancelState] = useState({ loading: false, error: "", done: false });
+
+  const clean = (v) => String(v).replace(/[\s\u00AD\u200B-\u200D\u2060\uFEFF]/g, "").toLowerCase();
+
+  async function lookup(e) {
+    if (e) e.preventDefault();
+    const normalized = clean(email);
+    if (!normalized) return;
+    setStatus({ loading: true, error: "", data: null, checked: false });
+    setCancelState({ loading: false, error: "", done: false });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/subscription-status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalized }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Error");
+      setStatus({ loading: false, error: "", data, checked: true });
+    } catch (error) {
+      setStatus({ loading: false, error: t("Unable to retrieve your subscription. Please try again.", "Impossible de récupérer votre abonnement. Réessayez."), data: null, checked: true });
+    }
+  }
+
+  async function cancel() {
+    const normalized = clean(email);
+    if (!normalized || cancelState.loading) return;
+    if (!window.confirm(t("Cancel your subscription? You keep access until the end of the current period.", "Résilier votre abonnement ? Vous gardez l'accès jusqu'à la fin de la période en cours."))) return;
+    setCancelState({ loading: true, error: "", done: false });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/cancel-subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalized }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Error");
+      setCancelState({ loading: false, error: "", done: true, endDate: data.trialEnd || data.currentPeriodEnd });
+      await lookup();
+    } catch (error) {
+      setCancelState({ loading: false, error: t("Cancellation failed. Please contact movento.dev@gmail.com.", "Échec de la résiliation. Contactez movento.dev@gmail.com."), done: false });
+    }
+  }
+
+  const data = status.data;
+  const statusLabel = (s) => ({
+    active: t("Active", "Actif"),
+    trialing: t("Free trial", "Essai gratuit"),
+    past_due: t("Payment overdue", "Paiement en retard"),
+  })[s] || s;
+
+  return (
+    <main className="min-h-screen bg-[#05060a] text-white">
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
+      </div>
+
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <a href="/"><Logo /></a>
+        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← {t("Back", "Retour")}</a>
+      </header>
+
+      <section className="relative z-10 mx-auto max-w-2xl px-6 pb-24 pt-8 lg:px-8">
+        <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">{t("My subscription", "Mon abonnement")}</h1>
+        <p className="mt-3 text-sm leading-6 text-white/50">{t("Enter the email you used at checkout to view and manage your subscription.", "Entrez l'email utilisé lors de l'achat pour voir et gérer votre abonnement.")}</p>
+
+        <form onSubmit={lookup} className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50" />
+          <button type="submit" disabled={status.loading} className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{status.loading ? t("Checking...", "Vérification...") : t("View", "Voir")}</button>
+        </form>
+
+        {status.error && <div className="mt-6 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{status.error}</p></div>}
+
+        {status.checked && !status.error && data && !data.found && (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+            <p className="text-sm leading-6 text-white/70">{t("No active subscription found for this email.", "Aucun abonnement actif trouvé pour cet email.")}</p>
+            <a href="/pricing" className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-6 py-3 text-sm font-bold text-white transition hover:scale-[1.03]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4" /></a>
+          </div>
+        )}
+
+        {status.checked && data && data.found && (
+          <div className="mt-6 rounded-[28px] border border-white/10 bg-white/[0.04] p-7 backdrop-blur-xl">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-white/40">{t("Plan", "Offre")}</p>
+                <h2 className="mt-1 text-2xl font-semibold text-white">{data.plan}</h2>
+              </div>
+              {data.type === "subscription" ? (
+                <span className={`rounded-full border px-3 py-1 text-xs font-medium ${data.status === "past_due" ? "border-red-400/30 bg-red-500/15 text-red-100" : "border-emerald-300/25 bg-emerald-400/15 text-emerald-100"}`}>{statusLabel(data.status)}</span>
+              ) : (
+                <span className="rounded-full border border-violet-300/25 bg-violet-500/15 px-3 py-1 text-xs font-medium text-violet-100">{t("Lifetime access", "Accès à vie")}</span>
+              )}
+            </div>
+
+            {data.type === "subscription" && (
+              <div className="mt-6 space-y-2 text-sm text-white/65">
+                {data.trialEnd && data.status === "trialing" && <p>{t("Free trial ends on", "Fin de l'essai gratuit le")} <span className="text-white">{formatDate(data.trialEnd)}</span>.</p>}
+                {data.cancelAtPeriodEnd ? (
+                  <p className="text-amber-200">{t("Your subscription is cancelled and will end on", "Votre abonnement est résilié et se terminera le")} <span className="font-medium">{formatDate(data.currentPeriodEnd)}</span>.</p>
+                ) : (
+                  data.currentPeriodEnd && <p>{t("Next renewal on", "Prochain renouvellement le")} <span className="text-white">{formatDate(data.currentPeriodEnd)}</span>.</p>
+                )}
+              </div>
+            )}
+
+            {data.type === "lifetime" && (
+              <p className="mt-6 text-sm leading-6 text-white/65">{t("You have lifetime access — no subscription to manage.", "Vous avez un accès à vie — aucun abonnement à gérer.")}</p>
+            )}
+
+            {data.type === "subscription" && !data.cancelAtPeriodEnd && (
+              <div className="mt-7 border-t border-white/10 pt-6">
+                <button onClick={cancel} disabled={cancelState.loading} className="rounded-2xl border border-red-400/30 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-100 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60">{cancelState.loading ? t("Cancelling...", "Résiliation...") : t("Cancel subscription", "Résilier l'abonnement")}</button>
+                <p className="mt-3 text-xs leading-5 text-white/40">{t("You keep access until the end of the current period. No further charge.", "Vous gardez l'accès jusqu'à la fin de la période en cours. Aucun prélèvement supplémentaire.")}</p>
+              </div>
+            )}
+
+            {cancelState.error && <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{cancelState.error}</p></div>}
+            {cancelState.done && <div className="mt-4 flex items-start gap-3 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100"><Icon name="check" className="mt-1 h-4 w-4 flex-none" /><p>{t("Subscription cancelled. Access remains until", "Abonnement résilié. Accès conservé jusqu'au")} {formatDate(cancelState.endDate)}.</p></div>}
+          </div>
+        )}
       </section>
 
       <footer className="relative z-10 border-t border-white/[0.06] py-10">
