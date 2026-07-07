@@ -11,6 +11,7 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "USD Halo", category: "Fintech", type: "Landing", file: "USD_Halo.md", preview: "https://motionsites.ai/assets/halo-usd-hero-CtMXOklk.gif", tags: ["Stablecoin", "DeFi", "Video"], gradient: "from-neutral-200 via-slate-400 to-[#2B2644]" },
   { title: "CargoX Group Hero", category: "Landing Page", type: "Hero", file: "CargoX_Group_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/prompts%20(i've%20added%20them%20to%20the%20motionsites)/carArea.mp4", tags: ["Logistics", "Video", "Dark"], gradient: "from-yellow-400 via-amber-600 to-slate-900" },
   { title: "Portal Cinematic", category: "Landing Page", type: "Hero", file: "Portal_Cinematic.md", preview: "https://motionsites.ai/assets/hero-portal-preview-DEscBr2T.gif", tags: ["Cinematic", "Streaming", "Video"], gradient: "from-slate-300 via-indigo-600 to-black" },
   { title: "Equilibrium Hero", category: "Landing Page", type: "Hero", file: "Equilibrium_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(93).webp", tags: ["Wellness", "Glass", "Video"], gradient: "from-emerald-200 via-teal-500 to-slate-900" },
@@ -99,6 +100,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "USD_Halo.md",
   "Mainframe_Hero.md",
   "Prisma_Studio.md",
   "TOONHUB_Carousel.md",
