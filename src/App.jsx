@@ -11,6 +11,7 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Mainframe Hero", category: "Agency", type: "Hero", file: "Mainframe_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(42).webp", tags: ["Interactive", "Typewriter", "Video"], gradient: "from-neutral-200 via-emerald-700 to-black" },
   { title: "Prisma Studio", category: "Agency", type: "Landing", file: "Prisma_Studio.md", preview: "https://motionsites.ai/assets/hero-prisma-preview-D4QeI0Bn.gif", tags: ["Studio", "Cinematic", "Video"], gradient: "from-stone-300 via-neutral-600 to-black" },
   { title: "TOONHUB Carousel", category: "Landing Page", type: "Hero", file: "TOONHUB_Carousel.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(24).webp", tags: ["3D", "Carousel", "Playful"], gradient: "from-orange-300 via-pink-500 to-sky-500" },
   { title: "Axion Studio", category: "Agency", type: "Landing", file: "Axion_Studio.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(27).webp", tags: ["Agency", "Shader", "Clean"], gradient: "from-neutral-200 via-orange-400 to-neutral-900" },
@@ -98,6 +99,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Mainframe_Hero.md",
   "Prisma_Studio.md",
   "TOONHUB_Carousel.md",
   "Axion_Studio.md",
