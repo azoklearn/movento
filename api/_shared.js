@@ -89,7 +89,7 @@ export async function customerHasStripeAccess(email) {
 
     const ACCESS_STATUSES = new Set(["active", "trialing", "past_due"]);
 
-    for (const customer of customers.data) {
+    for (const customer of customers) {
       if (customer.deleted) continue;
 
       const subscriptions = await stripe.subscriptions.list({
