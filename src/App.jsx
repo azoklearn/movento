@@ -213,9 +213,9 @@ function Logo() {
   );
 }
 
-function SmartVideo({ src, className, onError }) {
+function SmartVideo({ src, className, onError, onLoadedMetadata }) {
   if (!src) return null;
-  return <video src={src} className={className} autoPlay loop muted playsInline preload="metadata" onError={onError} />;
+  return <video src={src} className={className} autoPlay loop muted playsInline preload="metadata" onError={onError} onLoadedMetadata={onLoadedMetadata} />;
 }
 
 function GeneratedPreview({ item }) {
@@ -240,14 +240,29 @@ function GeneratedPreview({ item }) {
 
 function PreviewCard({ item }) {
   const [previewFailed, setPreviewFailed] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
   const isFree = FREE_PROMPT_FILES.has(item.file);
   const hasVideo = !previewFailed && item.preview && (item.preview.endsWith(".mp4") || item.preview.endsWith(".webm"));
   const hasImage = !previewFailed && item.preview && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => item.preview.endsWith(ext) || item.preview.includes(`${ext}?`));
 
+  function checkOrientation(width, height) {
+    if (width && height && height > width * 1.05) setIsPortrait(true);
+  }
+
   return (
     <motion.div layout whileHover={{ y: -6 }} className="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
       <div className="relative aspect-[1.45] overflow-hidden rounded-[22px] bg-[#080913]">
-        {hasVideo ? <SmartVideo className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105" src={item.preview} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105" src={item.preview} alt={`${item.title} preview`} onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
+        {hasVideo ? (
+          <>
+            {isPortrait && <SmartVideo className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-2xl" src={item.preview} />}
+            <SmartVideo className={`relative h-full w-full opacity-85 transition duration-500 group-hover:scale-105 ${isPortrait ? "object-contain" : "object-cover"}`} src={item.preview} onError={() => setPreviewFailed(true)} onLoadedMetadata={(e) => checkOrientation(e.currentTarget.videoWidth, e.currentTarget.videoHeight)} />
+          </>
+        ) : hasImage ? (
+          <>
+            {isPortrait && <img className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-2xl" src={item.preview} alt="" aria-hidden="true" />}
+            <img className={`relative h-full w-full opacity-85 transition duration-500 group-hover:scale-105 ${isPortrait ? "object-contain" : "object-cover"}`} src={item.preview} alt={`${item.title} preview`} onError={() => setPreviewFailed(true)} onLoad={(e) => checkOrientation(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)} />
+          </>
+        ) : <GeneratedPreview item={item} />}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
         <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/80 backdrop-blur-md"><Icon name="play" className="h-3 w-3" /> Visual preview</div>
         <div className={`absolute right-4 top-4 rounded-full border px-3 py-1.5 text-xs font-semibold backdrop-blur-md ${isFree ? "border-emerald-300/25 bg-emerald-400/15 text-emerald-100" : "border-violet-300/20 bg-violet-400/15 text-violet-100"}`}>
