@@ -609,12 +609,12 @@ export default function MoventoSite() {
           </motion.div>
         )}
         {showPricingModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-y-auto" onClick={() => setShowPricingModal(false)}>
-            <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-5xl rounded-[32px] border border-white/10 bg-[#0d0e18] p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setShowPricingModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-3 py-6 sm:items-center sm:px-4 sm:py-8" onClick={() => setShowPricingModal(false)}>
+            <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative my-auto w-full max-w-5xl rounded-3xl border border-white/10 bg-[#0d0e18] p-5 shadow-2xl sm:rounded-[32px] sm:p-8" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowPricingModal(false)} className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition sm:right-5 sm:top-5"><Icon name="close" className="h-4 w-4" /></button>
               <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-white/65"><Icon name="sparkles" className="h-3.5 w-3.5 text-violet-300" /> {t("Founder pricing", "Prix fondateurs")}</div>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">{t("Unlock all prompts", "Débloquer tous les prompts")}</h2>
+              <h2 className="mt-2 pr-10 text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">{t("Unlock all prompts", "Débloquer tous les prompts")}</h2>
               <p className="mt-2 text-sm text-white/50">{t("Choose a plan to access the full Movento catalog.", "Choisissez une offre pour accéder au catalogue complet Movento.")}</p>
               {checkoutStatus.error && (
                 <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-100">
