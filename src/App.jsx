@@ -11,6 +11,7 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "TerraElix Hero", category: "Landing Page", type: "Hero", file: "TerraElix_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(11).webp", tags: ["Wellness", "E-commerce", "Clean"], gradient: "from-emerald-200 via-lime-400 to-neutral-900" },
   { title: "Aurai Hero", category: "Landing Page", type: "Hero", file: "Aurai_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(32).webp", tags: ["Wellness", "Glass", "Video"], gradient: "from-rose-200 via-violet-400 to-slate-900" },
   { title: "Forma Contact", category: "Agency", type: "Landing", file: "Forma_Contact.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(45).webp", tags: ["Contact", "Form", "Video"], gradient: "from-neutral-200 via-neutral-500 to-black" },
   { title: "Foldcraft Hero", category: "Agency", type: "Hero", file: "Foldcraft_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(14).webp", tags: ["Studio", "Video", "Minimal"], gradient: "from-neutral-300 via-neutral-600 to-black" },
@@ -104,6 +105,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "TerraElix_Hero.md",
   "Aurai_Hero.md",
   "Forma_Contact.md",
   "Foldcraft_Hero.md",
