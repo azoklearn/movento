@@ -106,6 +106,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Viktor_Portfolio.md",
   "Flowpath_Hero.md",
   "Aethera_Studio.md",
   "TerraElix_Hero.md",
