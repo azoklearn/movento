@@ -11,6 +11,8 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Kubric Hero", category: "SaaS", type: "Hero", file: "Kubric_Hero.md", preview: "https://admin.lafys.com/api/media/file/original-f090c3b87518834b3e341885608b20e3_UJTcmHeh%20(1).mp4", tags: ["SaaS", "Video", "Dark"], gradient: "from-neutral-300 via-neutral-600 to-[#1e1e1e]" },
+  { title: "VALMAX Hero", category: "Portfolio", type: "Landing", file: "Valmax_Hero.md", preview: "https://admin.lafys.com/api/media/file/valmax_NCXFcrZo.mp4", tags: ["Photography", "Stars", "Video"], gradient: "from-lime-300 via-neutral-700 to-black" },
   { title: "Pelmatech Hero", category: "SaaS", type: "Landing", file: "Pelmatech_Hero.md", preview: "https://admin.lafys.com/api/media/file/Pelmatech1.mp4", tags: ["Health", "Carousel", "Video"], gradient: "from-emerald-200 via-teal-500 to-neutral-900" },
   { title: "dot. Hero", category: "Landing Page", type: "Hero", file: "Dot_Hero.md", preview: "https://motionsites.ai/assets/dot-hero-Csf49OgS.gif", tags: ["Messaging", "Video", "Minimal"], gradient: "from-blue-200 via-sky-400 to-stone-800" },
   { title: "Mainframe A.R.I.A. Hero", category: "Agency", type: "Hero", file: "Mainframe_ARIA_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(46).webp", tags: ["Agency", "Typewriter", "Video"], gradient: "from-stone-200 via-neutral-500 to-black" },
@@ -111,6 +113,8 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Kubric_Hero.md",
+  "Valmax_Hero.md",
   "Pelmatech_Hero.md",
   "Dot_Hero.md",
   "Mainframe_ARIA_Hero.md",
