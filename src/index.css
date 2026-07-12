@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Outfit", Inter, system-ui, sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -11,5 +15,33 @@ html {
 body {
   margin: 0;
   background: #05060a;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(167, 139, 250, 0.35);
+  color: #fff;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(167, 139, 250, 0.7);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:active:not(:disabled),
+a[href]:active {
+  transform: scale(0.98);
 }

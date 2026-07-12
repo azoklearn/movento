@@ -174,6 +174,7 @@ const plans = [
     name: t("Yearly", "Annuel"),
     price: "50€",
     period: t("/ yr", "/ an"),
+    subPrice: t("≈ 4.17€/mo — save 72% vs monthly", "≈ 4,17€/mois — 72% d'économie vs mensuel"),
     badge: t("Best value", "Meilleur rapport"),
     description: t("Build premium AI websites regularly.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
@@ -217,6 +218,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   if (name === "layers") children = <><path d="m12 2 10 6-10 6L2 8l10-6z" /><path d="m2 17 10 6 10-6" /><path d="m2 12 10 6 10-6" /></>;
   if (name === "alert") children = <><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></>;
   if (name === "close") children = <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>;
+  if (name === "shield") children = <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></>;
 
   return <svg {...common}>{children}</svg>;
 }
@@ -654,9 +656,12 @@ export default function MoventoSite() {
                         </div>
                         <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span>
                       </div>
-                      <div className="mb-5 flex items-end gap-1.5">
-                        <span className="text-4xl font-bold tracking-[-0.06em] text-white">{plan.price}</span>
-                        <span className="pb-1 text-sm text-white/40">{plan.period}</span>
+                      <div className="mb-5">
+                        <div className="flex items-end gap-1.5">
+                          <span className="text-4xl font-bold tracking-[-0.06em] text-white">{plan.price}</span>
+                          <span className="pb-1 text-sm text-white/40">{plan.period}</span>
+                        </div>
+                        {plan.subPrice && <p className="mt-1.5 text-[11px] font-medium text-emerald-300/90">{plan.subPrice}</p>}
                       </div>
                       <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30" : plan.featured ? "bg-white text-black hover:bg-white/90" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>
                         {checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}
@@ -692,8 +697,9 @@ export default function MoventoSite() {
           <a href="/pricing" className="hover:text-white">{t("Pricing", "Tarifs")}</a>
           <a href="/subscription" className="hover:text-white">{t("My subscription", "Mon abonnement")}</a>
           <a href="#how" className="hover:text-white">{t("Guide", "Guide")}</a>
+          <a href="#faq" className="hover:text-white">FAQ</a>
         </nav>
-        <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">{t("Explore", "Explorer")}</a>
+        <a href="/pricing" className="rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/45 hover:brightness-110">{t("Start free", "Essai gratuit")}</a>
       </header>
 
       {isSuccessPage && (
@@ -727,7 +733,16 @@ export default function MoventoSite() {
           </a>
           <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">{t("Explore prompts", "Voir les prompts")}</a>
         </motion.div>
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-4 text-xs text-white/30">{t("3 days free — then 14.99€/mo. Cancel anytime.", "3 jours gratuits — puis 14,99€/mois. Résiliez à tout moment.")}</motion.p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-8 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs text-white/45">
+          <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("3 days free, cancel anytime", "3 jours gratuits, résiliable à tout moment")}</span>
+          <span className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-violet-300" /> {t("Secure payment via Stripe", "Paiement sécurisé via Stripe")}</span>
+          <span className="flex items-center gap-2"><Icon name="zap" className="h-3.5 w-3.5 text-amber-300" /> {t("Instant access after checkout", "Accès immédiat après paiement")}</span>
+        </motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 backdrop-blur"><span className="text-xl font-bold text-white">{prompts.filter(isPromptAvailable).length}+</span><span className="ml-2 text-sm text-white/50">{t("premium prompts", "prompts premium")}</span></div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 backdrop-blur"><span className="text-sm text-white/50">{t("Works with", "Compatible")}</span><span className="ml-2 text-sm font-semibold text-white">Lovable · v0 · Bolt · Cursor</span></div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 backdrop-blur"><span className="text-sm text-white/50">{t("New prompts", "Nouveaux prompts")}</span><span className="ml-2 text-sm font-semibold text-white">{t("every week", "chaque semaine")}</span></div>
+        </motion.div>
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
@@ -791,7 +806,7 @@ export default function MoventoSite() {
               {plan.featured && <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-500/30 blur-[100px]" />}
               <div className="relative rounded-[28px] border border-white/10 bg-[#080910]/90 p-7">
                 <div className="mb-7 flex items-start justify-between gap-4"><div><h3 className="text-2xl font-semibold tracking-tight text-white">{plan.name}</h3><p className="mt-2 text-sm leading-6 text-white/45">{plan.description}</p></div><span className={`rounded-full border px-3 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span></div>
-                <div className="mb-7"><div className="flex items-end gap-2"><span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span><span className="pb-2 text-white/40">{plan.period}</span></div></div>
+                <div className="mb-7"><div className="flex items-end gap-2"><span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span><span className="pb-2 text-white/40">{plan.period}</span></div>{plan.subPrice && <p className="mt-2 text-xs font-medium text-emerald-300/90">{plan.subPrice}</p>}</div>
                 <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50" : plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>{checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}<Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></button>
                 <div className="my-7 h-px bg-white/10" />
                 <div className="space-y-3">{plan.features.map((item) => <div key={item} className="flex items-center gap-3 text-sm text-white/65"><div className="grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10"><Icon name="check" className="h-3.5 w-3.5 text-white" /></div>{item}</div>)}</div>
@@ -800,7 +815,45 @@ export default function MoventoSite() {
           ))}
         </div>
 
-        <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl"><p className="text-sm leading-6 text-white/60">{t("One great prompt can save you hours of design, integration and client back-and-forth. Movento helps you go from idea to impressive site.", "Un bon prompt peut vous faire gagner des heures de design, d'intégration et d'échanges client. Movento vous aide à passer de l'idée au site impressionnant.")}</p></div>
+        <div className="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-white/45">
+          <span className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-violet-300" /> {t("Payment secured by Stripe", "Paiement sécurisé par Stripe")}</span>
+          <span className="flex items-center gap-2"><Icon name="zap" className="h-3.5 w-3.5 text-amber-300" /> {t("Instant access", "Accès immédiat")}</span>
+          <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("Cancel in 2 clicks from My subscription", "Résiliation en 2 clics depuis Mon abonnement")}</span>
+        </div>
+      </section>
+
+      <section id="faq" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 lg:px-8">
+        <div className="mb-14 max-w-2xl">
+          <p className="text-sm uppercase tracking-[0.3em] text-white/35">FAQ</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">{t("Questions, answered", "Vos questions, nos réponses")}</h2>
+        </div>
+        <div className="grid gap-x-12 gap-y-10 md:grid-cols-2">
+          {[
+            { q: t("How does it work?", "Comment ça marche ?"), a: t("Pick a prompt in the gallery, copy it in one click, paste it into Lovable, v0, Bolt or Cursor. The AI generates the full site — you just customize the content.", "Choisissez un prompt dans la galerie, copiez-le en un clic, collez-le dans Lovable, v0, Bolt ou Cursor. L'IA génère le site complet — il ne vous reste qu'à personnaliser le contenu.") },
+            { q: t("Which tools are supported?", "Quels outils sont compatibles ?"), a: t("Any AI tool that accepts a text prompt: Lovable, v0, Bolt, Cursor, Claude, ChatGPT... The prompts describe every detail (fonts, colors, animations) so the result stays faithful.", "Tous les outils IA qui acceptent un prompt texte : Lovable, v0, Bolt, Cursor, Claude, ChatGPT... Les prompts décrivent chaque détail (polices, couleurs, animations) pour un résultat fidèle.") },
+            { q: t("How does the free trial work?", "Comment fonctionne l'essai gratuit ?"), a: t("The monthly plan starts with 3 free days. You won't be charged if you cancel before the trial ends — cancellation takes 2 clicks from the My subscription page.", "L'offre mensuelle commence par 3 jours gratuits. Vous n'êtes pas débité si vous résiliez avant la fin de l'essai — la résiliation prend 2 clics depuis la page Mon abonnement.") },
+            { q: t("How do I access prompts after paying?", "Comment j'accède aux prompts après paiement ?"), a: t("The email you used at checkout is your access key. Enter it in the gallery on any device and every prompt unlocks instantly.", "L'email utilisé au paiement est votre clé d'accès. Entrez-le dans la galerie sur n'importe quel appareil et tous les prompts se débloquent instantanément.") },
+            { q: t("Is the catalog updated?", "Le catalogue est-il mis à jour ?"), a: t("Yes — new premium prompts are added regularly, and they're all included in your plan at no extra cost.", "Oui — de nouveaux prompts premium sont ajoutés régulièrement, et ils sont tous inclus dans votre abonnement sans surcoût.") },
+            { q: t("Can I use the sites commercially?", "Puis-je utiliser les sites commercialement ?"), a: t("Yes. The sites you generate from our prompts are yours — client projects, portfolios, product launches, anything.", "Oui. Les sites que vous générez à partir de nos prompts vous appartiennent — projets clients, portfolios, lancements de produits, tout est permis.") },
+          ].map((item) => (
+            <div key={item.q} className="border-t border-white/10 pt-6">
+              <h3 className="text-base font-semibold text-white">{item.q}</h3>
+              <p className="mt-3 max-w-lg text-sm leading-7 text-white/55">{item.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-28 lg:px-8">
+        <div className="relative overflow-hidden rounded-[40px] border border-violet-400/25 bg-gradient-to-br from-violet-600/[0.16] via-[#0a0b14] to-fuchsia-600/[0.12] px-8 py-16 text-center shadow-2xl shadow-violet-950/40 md:py-20">
+          <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-500/25 blur-[100px]" />
+          <h2 className="relative mx-auto max-w-2xl text-3xl font-semibold tracking-tight text-white md:text-5xl">{t("Your next site is one prompt away.", "Votre prochain site est à un prompt près.")}</h2>
+          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-white/55 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
+          <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-8 py-3.5 text-sm font-bold text-white shadow-2xl shadow-violet-500/40 transition hover:scale-[1.04] hover:shadow-violet-500/60">{t("Try free for 3 days", "Essayer gratuitement 3 jours")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
+            <span className="text-xs text-white/40">{t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment")}</span>
+          </div>
+        </div>
       </section>
 
       <footer className="relative z-10 border-t border-white/[0.06] py-10">
@@ -950,6 +1003,7 @@ function PricingPage() {
                     <span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span>
                     <span className="pb-2 text-white/40">{plan.period}</span>
                   </div>
+                  {plan.subPrice && <p className="mt-2 text-xs font-medium text-emerald-300/90">{plan.subPrice}</p>}
                 </div>
                 <button
                   disabled={Boolean(checkoutStatus.loading)}
