@@ -260,12 +260,12 @@ function PreviewCard({ item }) {
   const hasImage = !previewFailed && item.preview && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => item.preview.endsWith(ext) || item.preview.includes(`${ext}?`));
 
   return (
-    <motion.div layout whileHover={{ y: -6 }} className="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
-      <div className="relative aspect-[1.45] overflow-hidden rounded-[22px] bg-[#080913]">
+    <motion.div layout whileHover={{ y: -6 }} className="group relative overflow-hidden rounded-[28px] bg-white/[0.035] shadow-2xl shadow-black/40 backdrop-blur-xl">
+      <div className="relative aspect-[1.45] overflow-hidden bg-[#080913]">
         {hasVideo ? <SmartVideo className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
       </div>
-      <div className="space-y-3 px-2 py-4">
+      <div className="space-y-3 px-5 py-4">
         <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.24em] text-white/40">{item.category}</p><h3 className="mt-1 text-lg font-semibold tracking-tight text-white">{item.title}</h3></div><span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60">{item.type}</span></div>
         <div className="flex flex-wrap gap-2">{item.tags.map((tag) => <span key={tag} className="rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-white/55">{tag}</span>)}</div>
       </div>
