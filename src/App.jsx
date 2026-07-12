@@ -254,7 +254,7 @@ function GeneratedPreview({ item }) {
   );
 }
 
-function PreviewCard({ item }) {
+function PreviewCard({ item, action }) {
   const [previewFailed, setPreviewFailed] = useState(false);
   const hasVideo = !previewFailed && item.preview && (item.preview.endsWith(".mp4") || item.preview.endsWith(".webm"));
   const hasImage = !previewFailed && item.preview && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => item.preview.endsWith(ext) || item.preview.includes(`${ext}?`));
@@ -265,9 +265,10 @@ function PreviewCard({ item }) {
         {hasVideo ? <SmartVideo className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
       </div>
-      <div className="space-y-3 px-5 py-4">
+      <div className="space-y-3 px-5 pb-5 pt-4">
         <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.24em] text-white/40">{item.category}</p><h3 className="mt-1 text-lg font-semibold tracking-tight text-white">{item.title}</h3></div><span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60">{item.type}</span></div>
         <div className="flex flex-wrap gap-2">{item.tags.map((tag) => <span key={tag} className="rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-white/55">{tag}</span>)}</div>
+        {action}
       </div>
     </motion.div>
   );
@@ -772,8 +773,9 @@ export default function MoventoSite() {
           <AnimatePresence>
             {filtered.map((item) => (
               <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
-                <PreviewCard item={item} />
-                <div className="absolute inset-x-0 bottom-0 z-20 p-5"><button onClick={() => copyPrompt(item)} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-sm font-medium text-white backdrop-blur-xl transition hover:bg-white hover:text-black">{copiedCard === item.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-4 w-4" /> {t("Error", "Erreur")}</> : item.link && hasPremiumAccess ? <><Icon name="arrow" className="h-4 w-4" /> {t("Open prompt", "Ouvrir le prompt")}</> : item.link && FREE_PROMPT_FILES.has(item.file) ? <><Icon name="arrow" className="h-4 w-4" /> {t("Open free prompt", "Ouvrir le prompt gratuit")}</> : FREE_PROMPT_FILES.has(item.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy free prompt", "Copier le prompt gratuit")}</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy Prompt", "Copier le prompt")}</> : <><Icon name="copy" className="h-4 w-4" /> {t("Copy prompt", "Copier le prompt")}</>}</button></div>
+                <PreviewCard item={item} action={
+                  <button onClick={() => copyPrompt(item)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-medium text-white transition hover:bg-white hover:text-black">{copiedCard === item.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-4 w-4" /> {t("Error", "Erreur")}</> : item.link && hasPremiumAccess ? <><Icon name="arrow" className="h-4 w-4" /> {t("Open prompt", "Ouvrir le prompt")}</> : item.link && FREE_PROMPT_FILES.has(item.file) ? <><Icon name="arrow" className="h-4 w-4" /> {t("Open free prompt", "Ouvrir le prompt gratuit")}</> : FREE_PROMPT_FILES.has(item.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy free prompt", "Copier le prompt gratuit")}</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy Prompt", "Copier le prompt")}</> : <><Icon name="copy" className="h-4 w-4" /> {t("Copy prompt", "Copier le prompt")}</>}</button>
+                } />
               </motion.div>
             ))}
           </AnimatePresence>
