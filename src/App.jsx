@@ -183,7 +183,7 @@ const plans = [
   {
     id: "lifetime",
     name: t("Lifetime", "À vie"),
-    price: "100€",
+    price: "120€",
     period: t("forever", "à vie"),
     badge: t("One shot", "Une fois pour toutes"),
     description: t("One-time payment. Yours forever.", "Paiement unique. À vous pour toujours."),
