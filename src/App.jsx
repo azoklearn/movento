@@ -219,6 +219,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   if (name === "alert") children = <><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></>;
   if (name === "close") children = <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>;
   if (name === "shield") children = <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></>;
+  if (name === "lock") children = <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>;
 
   return <svg {...common}>{children}</svg>;
 }
@@ -254,21 +255,22 @@ function GeneratedPreview({ item }) {
   );
 }
 
-function PreviewCard({ item, action }) {
+function PreviewCard({ item, badge, onClick }) {
   const [previewFailed, setPreviewFailed] = useState(false);
   const hasVideo = !previewFailed && item.preview && (item.preview.endsWith(".mp4") || item.preview.endsWith(".webm"));
   const hasImage = !previewFailed && item.preview && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => item.preview.endsWith(ext) || item.preview.includes(`${ext}?`));
 
   return (
-    <motion.div layout whileHover={{ y: -6 }} className="group relative overflow-hidden rounded-[28px] bg-white/[0.035] shadow-2xl shadow-black/40 backdrop-blur-xl">
+    <motion.div layout whileHover={{ y: -5 }} onClick={onClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] bg-white/[0.04] shadow-xl shadow-black/30 transition hover:bg-white/[0.07]">
       <div className="relative aspect-[1.45] overflow-hidden bg-[#080913]">
-        {hasVideo ? <SmartVideo className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        {hasVideo ? <SmartVideo className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
-      <div className="space-y-3 px-5 pb-5 pt-4">
-        <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.24em] text-white/40">{item.category}</p><h3 className="mt-1 text-lg font-semibold tracking-tight text-white">{item.title}</h3></div><span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60">{item.type}</span></div>
-        <div className="flex flex-wrap gap-2">{item.tags.map((tag) => <span key={tag} className="rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-white/55">{tag}</span>)}</div>
-        {action}
+      <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+        <div className="min-w-0">
+          <h3 className="truncate text-[15px] font-semibold tracking-tight text-white">{item.title}</h3>
+          <p className="mt-0.5 text-xs text-white/40">{item.category}</p>
+        </div>
+        {badge}
       </div>
     </motion.div>
   );
@@ -720,9 +722,9 @@ export default function MoventoSite() {
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-16 pt-16 text-center lg:px-8 lg:pt-24">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/70 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> {t("Premium web design prompt library", "Bibliothèque de prompts design web premium")}</motion.div>
         <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mx-auto max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white md:text-7xl lg:text-8xl">
-          {lang === "fr" ? <>Créez des sites web <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">modernes</span> sans coder.</> : <>Build <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">modern</span> websites without coding.</>}
+          {lang === "fr" ? <>Créez des sites web <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text pr-1 italic text-transparent" style={{ fontFamily: '"Instrument Serif", serif', fontWeight: 400 }}>modernes</span> sans coder.</> : <>Build <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text pr-1 italic text-transparent" style={{ fontFamily: '"Instrument Serif", serif', fontWeight: 400 }}>modern</span> websites without coding.</>}
         </motion.h1>
-        <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-white/60 md:text-xl">{t("Ready-to-copy prompts, animated previews and curated design direction for marketers, freelancers and creative teams.", "Prompts prêts à copier, aperçus animés et direction design soignée pour les marketeurs, freelances et équipes créatives.")}</motion.p>
+        <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-white/60 md:text-xl">{t("Ready-to-use prompts to build beautiful landing pages in minutes. Copy, paste, launch.", "Des prompts prêts à l'emploi pour créer de superbes landing pages en quelques minutes. Copiez, collez, lancez.")}</motion.p>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <a href="/pricing" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-8 py-3.5 text-sm font-bold text-white shadow-2xl shadow-violet-500/40 transition hover:scale-[1.04] hover:shadow-violet-500/60">
             <span className="relative z-10 flex items-center gap-2">{t("Start for free", "Commencer gratuitement")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></span>
@@ -753,7 +755,7 @@ export default function MoventoSite() {
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.3em] text-white/35">{t("Gallery", "Galerie")}</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">{t("Premium prompts", "Prompts premium")}</h2>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : t("The full catalog unlocks with a Movento plan.", "Le catalogue complet se débloque avec un abonnement Movento.")}</p>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : `${prompts.filter(isPromptAvailable).length}+ ${t("premium prompts. The full catalog unlocks with a Movento plan.", "prompts premium. Le catalogue complet se débloque avec un abonnement Movento.")}`}</p>
         </div>
         <div className="mb-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:gap-5">
           <div>
@@ -769,15 +771,20 @@ export default function MoventoSite() {
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-violet-300/20 bg-violet-500/10 p-4 text-sm leading-6 text-violet-50 backdrop-blur-xl"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
         {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
         <div className="mb-8 flex gap-2 overflow-x-auto pb-2">{categories.map((cat) => <button key={cat} onClick={() => setCategory(cat)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${category === cat ? "border-white/20 bg-white text-black" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/10"}`}>{cat}</button>)}</div>
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <AnimatePresence>
-            {filtered.map((item) => (
-              <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
-                <PreviewCard item={item} action={
-                  <button onClick={() => copyPrompt(item)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-medium text-white transition hover:bg-white hover:text-black">{copiedCard === item.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-4 w-4" /> {t("Error", "Erreur")}</> : item.link && hasPremiumAccess ? <><Icon name="arrow" className="h-4 w-4" /> {t("Open prompt", "Ouvrir le prompt")}</> : item.link && FREE_PROMPT_FILES.has(item.file) ? <><Icon name="arrow" className="h-4 w-4" /> {t("Open free prompt", "Ouvrir le prompt gratuit")}</> : FREE_PROMPT_FILES.has(item.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy free prompt", "Copier le prompt gratuit")}</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy Prompt", "Copier le prompt")}</> : <><Icon name="copy" className="h-4 w-4" /> {t("Copy prompt", "Copier le prompt")}</>}</button>
-                } />
-              </motion.div>
-            ))}
+            {filtered.map((item) => {
+              const unlocked = hasPremiumAccess || FREE_PROMPT_FILES.has(item.file);
+              return (
+                <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
+                  <PreviewCard item={item} onClick={() => copyPrompt(item)} badge={
+                    <span className={`flex flex-none items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${copiedCard === item.title ? "bg-emerald-400/15 text-emerald-200" : copiedCard === "Error" ? "bg-red-400/15 text-red-200" : "bg-white/[0.08] text-white/80 group-hover:bg-white group-hover:text-black"}`}>
+                      {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> {t("Error", "Erreur")}</> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> Premium</> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> {t("Open", "Ouvrir")}</> : <><Icon name="copy" className="h-3.5 w-3.5" /> {t("Copy", "Copier")}</>}
+                    </span>
+                  } />
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
       </section>
