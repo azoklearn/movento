@@ -1,5 +1,5 @@
 import {
-  customerHasStripeAccess,
+  customerHasWhopAccess,
   CUSTOM_PROMPTS_REPO,
   extractPrompt,
   FREE_PROMPT_FILES,
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid prompt." });
   }
 
-  if (!isFreePrompt && !(await customerHasStripeAccess(email))) {
+  if (!isFreePrompt && !(await customerHasWhopAccess(email))) {
     return res.status(403).json({ error: "Premium access required." });
   }
 

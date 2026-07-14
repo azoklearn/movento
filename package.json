@@ -5,21 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "node server.js",
-    "start": "node server.js",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@stripe/stripe-js": "latest",
     "@upstash/redis": "^1.38.0",
     "cors": "latest",
     "dotenv": "latest",
     "express": "latest",
     "framer-motion": "latest",
     "react": "latest",
-    "react-dom": "latest",
-    "stripe": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {
     "@tailwindcss/vite": "latest",

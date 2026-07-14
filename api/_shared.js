@@ -1,19 +1,24 @@
 import { Redis } from "@upstash/redis";
-import Stripe from "stripe";
 
 export const PROMPTS_REPO = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/prompts/";
 export const CUSTOM_PROMPTS_REPO = "https://raw.githubusercontent.com/azoklearn/movento/main/prompts/";
 export const FREE_PROMPT_FILES = new Set([]);
 
-export const priceIds = {
-  monthly: process.env.STRIPE_MONTHLY_PRICE_ID,
-  yearly: process.env.STRIPE_YEARLY_PRICE_ID,
-  lifetime: process.env.STRIPE_LIFETIME_PRICE_ID,
+const WHOP_API = "https://api.whop.com/api/v1";
+
+// Hosted Whop checkout links, one per plan (set in Vercel env).
+export const checkoutUrls = {
+  monthly: process.env.WHOP_MONTHLY_URL,
+  yearly: process.env.WHOP_YEARLY_URL,
+  lifetime: process.env.WHOP_LIFETIME_URL,
 };
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_missing", {
-  apiVersion: "2025-04-30.basil",
-});
+// Where customers manage/cancel their membership.
+export const WHOP_PORTAL_URL = process.env.WHOP_PORTAL_URL || "https://whop.com/orders/";
+
+// Whop membership statuses that grant access. "canceling" is still valid until
+// the period ends; "completed" covers one-time (lifetime) purchases.
+const ACCESS_STATUSES = new Set(["active", "trialing", "past_due", "canceling", "completed"]);
 
 export function normalizeEmail(email) {
   // Strip every whitespace/zero-width char (mobile autocomplete can inject a
@@ -59,129 +64,103 @@ async function redisGetAccess(normalizedEmail) {
   }
 }
 
-// Stripe's customers.list({ email }) filter is CASE-SENSITIVE, so a lowercased
-// query misses customers who signed up with capitals in their email. The Search
-// API matches case-insensitively; fall back to list if search is unavailable.
-export async function findStripeCustomers(normalizedEmail) {
+export async function redisSetAccess(normalizedEmail, record) {
+  const redis = Redis.fromEnv();
+  await redis.set(`access:${normalizedEmail}`, record);
+}
+
+export async function redisClearAccess(normalizedEmail) {
   try {
-    const escaped = normalizedEmail.replace(/[\\']/g, "\\$&");
-    const result = await stripe.customers.search({ query: `email:'${escaped}'`, limit: 10 });
-    return result.data;
-  } catch (error) {
-    console.error("Stripe customer search failed, falling back to list:", error);
-    const result = await stripe.customers.list({ email: normalizedEmail, limit: 10 });
-    return result.data;
+    const redis = Redis.fromEnv();
+    await redis.del(`access:${normalizedEmail}`);
+  } catch {
+    // Redis unavailable — nothing to clear.
   }
 }
 
-const PLAN_LABELS = { monthly: "Monthly", yearly: "Yearly", lifetime: "Lifetime" };
+function whopConfigured() {
+  return Boolean(process.env.WHOP_API_KEY && process.env.WHOP_COMPANY_ID);
+}
 
-// Returns the most relevant subscription for an email, or lifetime purchase info.
-export async function getSubscriptionInfo(email) {
-  const normalizedEmail = normalizeEmail(email);
-  if (!normalizedEmail || !process.env.STRIPE_SECRET_KEY) {
-    return { found: false, active: false };
-  }
+// Whop's memberships endpoint has NO email filter, so we page through the
+// access-granting statuses and match the email ourselves. Pages are capped so a
+// large membership list can't hang the request.
+async function findWhopMembership(normalizedEmail) {
+  if (!whopConfigured()) return null;
 
-  const ACCESS_STATUSES = new Set(["active", "trialing", "past_due"]);
-  const customers = await findStripeCustomers(normalizedEmail);
+  let after = null;
+  for (let page = 0; page < 20; page++) {
+    const params = new URLSearchParams({ company_id: process.env.WHOP_COMPANY_ID, first: "100" });
+    for (const status of ACCESS_STATUSES) params.append("statuses[]", status);
+    if (after) params.set("after", after);
 
-  let bestSub = null;
-  let hasLifetime = false;
-
-  for (const customer of customers) {
-    if (customer.deleted) continue;
-
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id,
-      status: "all",
-      limit: 20,
+    const response = await fetch(`${WHOP_API}/memberships?${params}`, {
+      headers: { Authorization: `Bearer ${process.env.WHOP_API_KEY}` },
     });
-    for (const sub of subscriptions.data) {
-      if (ACCESS_STATUSES.has(sub.status)) {
-        if (!bestSub || sub.created > bestSub.created) bestSub = sub;
-      }
+    if (!response.ok) {
+      throw new Error(`Whop API ${response.status}: ${await response.text()}`);
     }
 
-    // A lifetime buyer has a paid one-time charge but no active subscription.
-    const charges = await stripe.charges.list({ customer: customer.id, limit: 10 });
-    if (charges.data.some((c) => c.paid && !c.refunded)) hasLifetime = true;
+    const body = await response.json();
+    const match = (body.data || []).find(
+      (m) => normalizeEmail(m.user?.email) === normalizedEmail && ACCESS_STATUSES.has(m.status)
+    );
+    if (match) return match;
+
+    if (!body.page_info?.has_next_page) break;
+    after = body.page_info.end_cursor;
   }
 
-  if (bestSub) {
-    return {
-      found: true,
-      active: true,
-      type: "subscription",
-      subscriptionId: bestSub.id,
-      status: bestSub.status,
-      plan: PLAN_LABELS[bestSub.metadata?.plan] || (bestSub.items?.data?.[0]?.price?.recurring?.interval === "year" ? "Yearly" : "Monthly"),
-      cancelAtPeriodEnd: Boolean(bestSub.cancel_at_period_end),
-      currentPeriodEnd: bestSub.current_period_end || null,
-      trialEnd: bestSub.trial_end || null,
-    };
-  }
-
-  if (hasLifetime) {
-    return { found: true, active: true, type: "lifetime", plan: "Lifetime" };
-  }
-
-  return { found: false, active: false };
+  return null;
 }
 
-// Cancels the active subscription for an email at period end. Returns updated info.
-export async function cancelSubscriptionForEmail(email) {
-  const info = await getSubscriptionInfo(email);
-  if (!info.found || info.type !== "subscription") {
-    return { ok: false, reason: "no_subscription" };
-  }
-  if (info.cancelAtPeriodEnd) {
-    return { ok: true, alreadyScheduled: true, currentPeriodEnd: info.currentPeriodEnd, trialEnd: info.trialEnd };
-  }
-  const updated = await stripe.subscriptions.update(info.subscriptionId, { cancel_at_period_end: true });
-  return {
-    ok: true,
-    currentPeriodEnd: updated.current_period_end || info.currentPeriodEnd,
-    trialEnd: updated.trial_end || info.trialEnd,
-  };
-}
-
-export async function customerHasStripeAccess(email) {
+export async function customerHasWhopAccess(email) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return false;
 
-  // Grant access if a checkout/trial grant exists in Redis. This never deletes
-  // the grant, so a Stripe hiccup can't lock out paying customers.
+  // Fast path: the grant written by the Whop webhook at purchase. Never deleted
+  // here, so a Whop API hiccup can't lock out paying customers.
   if (await redisGetAccess(normalizedEmail)) return true;
 
-  if (!process.env.STRIPE_SECRET_KEY) return false;
-
   try {
-    const customers = await findStripeCustomers(normalizedEmail);
-
-    const ACCESS_STATUSES = new Set(["active", "trialing", "past_due"]);
-
-    for (const customer of customers) {
-      if (customer.deleted) continue;
-
-      const subscriptions = await stripe.subscriptions.list({
-        customer: customer.id,
-        status: "all",
-        limit: 20,
-      });
-      if (subscriptions.data.some((s) => ACCESS_STATUSES.has(s.status))) return true;
-
-      const charges = await stripe.charges.list({
-        customer: customer.id,
-        limit: 10,
-      });
-      if (charges.data.some((c) => c.paid && !c.refunded)) return true;
-    }
+    return Boolean(await findWhopMembership(normalizedEmail));
   } catch (error) {
-    console.error("Stripe customerHasStripeAccess error:", error);
+    console.error("Whop access check failed:", error);
+    return false;
+  }
+}
+
+// Returns the membership backing an email, for the "My subscription" page.
+export async function getMembershipInfo(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return { found: false, active: false };
+
+  let membership = null;
+  try {
+    membership = await findWhopMembership(normalizedEmail);
+  } catch (error) {
+    console.error("Whop membership lookup failed:", error);
   }
 
-  return false;
+  if (!membership) {
+    // Redis still knows about the purchase even if the API lookup failed.
+    if (await redisGetAccess(normalizedEmail)) {
+      return { found: true, active: true, type: "unknown", plan: "Movento", portalUrl: WHOP_PORTAL_URL };
+    }
+    return { found: false, active: false };
+  }
+
+  const isLifetime = membership.status === "completed" || !membership.renewal_period_end;
+  return {
+    found: true,
+    active: true,
+    type: isLifetime ? "lifetime" : "subscription",
+    status: membership.status,
+    plan: membership.product?.title || "Movento",
+    cancelAtPeriodEnd: Boolean(membership.cancel_at_period_end) || membership.status === "canceling",
+    renewalDate: membership.renewal_period_end || null,
+    portalUrl: WHOP_PORTAL_URL,
+  };
 }
 
 export function methodNotAllowed(res, allowed = "POST") {

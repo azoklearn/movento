@@ -1,4 +1,4 @@
-import { getSubscriptionInfo, methodNotAllowed, normalizeEmail } from "./_shared.js";
+import { getMembershipInfo, methodNotAllowed, normalizeEmail } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (!email) return res.status(400).json({ error: "Email requis." });
 
   try {
-    const info = await getSubscriptionInfo(email);
+    const info = await getMembershipInfo(email);
     return res.json(info);
   } catch (error) {
     console.error("subscription-status error:", error);

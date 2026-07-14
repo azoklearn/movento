@@ -297,7 +297,7 @@ function validatePlanId(planId) {
 
 function getCheckoutErrorMessage(error) {
   if (error?.name === "TypeError") {
-    return "Le serveur de paiement Stripe n'est pas joignable. En local, lance node server.js sur le port 4242. En production, vérifie les variables Stripe dans Vercel.";
+    return "Le service de paiement Whop n'est pas joignable. Vérifie les liens de checkout Whop dans les variables Vercel.";
   }
   return error?.message || "Impossible de lancer le paiement pour le moment.";
 }
@@ -396,7 +396,7 @@ export default function MoventoSite() {
     if (!sessionId) return;
 
     async function confirmCheckoutSession() {
-      setAccessStatus({ loading: true, message: "Confirmation du paiement Stripe...", error: "" });
+      setAccessStatus({ loading: true, message: "Confirmation du paiement Whop...", error: "" });
 
       try {
         const response = await fetch(`${API_BASE_URL}/api/checkout-session?session_id=${encodeURIComponent(sessionId)}`);
@@ -596,11 +596,11 @@ export default function MoventoSite() {
       }
 
       if (!response.ok) throw new Error(data.error || `Erreur serveur paiement (${response.status}).`);
-      if (!data.checkoutUrl || typeof data.checkoutUrl !== "string") throw new Error("Le backend n'a pas renvoyé de checkoutUrl Stripe.");
+      if (!data.checkoutUrl || typeof data.checkoutUrl !== "string") throw new Error("Le backend n'a pas renvoyé de lien de checkout Whop.");
 
       window.location.assign(data.checkoutUrl);
     } catch (error) {
-      console.error("Erreur paiement Stripe", error);
+      console.error("Erreur paiement Whop", error);
       setCheckoutStatus({ loading: "", error: getCheckoutErrorMessage(error) });
     }
   }
@@ -708,7 +708,7 @@ export default function MoventoSite() {
             </div>
             <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">{t("Payment confirmed", "Paiement confirmé")}</h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-white/60 md:text-base">
-              {accessStatus.loading ? t("Confirming your payment with Stripe.", "Confirmation de votre paiement avec Stripe.") : hasPremiumAccess ? t("Your Movento access is ready. Go back to the gallery and copy premium prompts.", "Votre accès Movento est prêt. Retournez à la galerie et copiez les prompts premium.") : t("Payment received. If your access does not activate automatically, enter your email below.", "Paiement reçu. Si votre accès ne s'active pas automatiquement, entrez votre email ci-dessous.")}
+              {accessStatus.loading ? t("Confirming your payment with Whop.", "Confirmation de votre paiement avec Whop.") : hasPremiumAccess ? t("Your Movento access is ready. Go back to the gallery and copy premium prompts.", "Votre accès Movento est prêt. Retournez à la galerie et copiez les prompts premium.") : t("Payment received. If your access does not activate automatically, enter your email below.", "Paiement reçu. Si votre accès ne s'active pas automatiquement, entrez votre email ci-dessous.")}
             </p>
             {accessStatus.message && <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-emerald-100">{accessStatus.message}</p>}
             {accessStatus.error && <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-red-100">{accessStatus.error}</p>}
@@ -733,7 +733,7 @@ export default function MoventoSite() {
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-8 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs text-white/45">
           <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("3 days free, cancel anytime", "3 jours gratuits, résiliable à tout moment")}</span>
-          <span className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-violet-300" /> {t("Secure payment via Stripe", "Paiement sécurisé via Stripe")}</span>
+          <span className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-violet-300" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
           <span className="flex items-center gap-2"><Icon name="zap" className="h-3.5 w-3.5 text-amber-300" /> {t("Instant access after checkout", "Accès immédiat après paiement")}</span>
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-3">
@@ -820,9 +820,9 @@ export default function MoventoSite() {
         </div>
 
         <div className="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-white/45">
-          <span className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-violet-300" /> {t("Payment secured by Stripe", "Paiement sécurisé par Stripe")}</span>
+          <span className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-violet-300" /> {t("Payment secured by Whop", "Paiement sécurisé par Whop")}</span>
           <span className="flex items-center gap-2"><Icon name="zap" className="h-3.5 w-3.5 text-amber-300" /> {t("Instant access", "Accès immédiat")}</span>
-          <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("Cancel in 2 clicks from My subscription", "Résiliation en 2 clics depuis Mon abonnement")}</span>
+          <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("Cancel anytime from your Whop account", "Résiliable à tout moment depuis votre compte Whop")}</span>
         </div>
       </section>
 
@@ -906,13 +906,13 @@ function MentionsLegales() {
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">4. Personal data</h2>
-            <p>Movento collects your email address to manage access to content. Payment data is processed by <span className="text-white/80">Stripe</span> and is not stored by Movento. Your data is never sold to third parties. You may request access, correction or deletion by contacting us.</p>
+            <p>Movento collects your email address to manage access to content. Payment data is processed by <span className="text-white/80">Whop</span> and is not stored by Movento. Your data is never sold to third parties. You may request access, correction or deletion by contacting us.</p>
           </div>
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">5. Payment</h2>
-            <p>Payments are securely processed by <span className="text-white/80">Stripe</span>. Monthly and annual subscriptions can be cancelled at any time. Lifetime access is a one-time purchase with no subscription.</p>
-            <p className="mt-3">To cancel a subscription, send an email to <span className="text-white/80">movento.dev@gmail.com</span> from or including the email address used at checkout, along with the reason for cancellation. Your subscription will then be terminated.</p>
+            <p>Payments are securely processed by <span className="text-white/80">Whop</span>. Monthly and annual subscriptions can be cancelled at any time from your Whop account. Lifetime access is a one-time purchase with no subscription.</p>
+            <p className="mt-3">You can cancel your subscription at any time from your Whop account, or by emailing <span className="text-white/80">movento.dev@gmail.com</span> from the address used at checkout.</p>
             <p className="mt-3">Movento reserves the right to modify subscription prices at any time.</p>
           </div>
 
@@ -1049,15 +1049,17 @@ function PricingPage() {
   );
 }
 
-function formatDate(unixSeconds) {
-  if (!unixSeconds) return "";
-  return new Date(unixSeconds * 1000).toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", { year: "numeric", month: "long", day: "numeric" });
+function formatDate(value) {
+  if (!value) return "";
+  // Whop sends ISO strings; older records may still be unix seconds.
+  const date = typeof value === "number" ? new Date(value * 1000) : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", { year: "numeric", month: "long", day: "numeric" });
 }
 
 function SubscriptionPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState({ loading: false, error: "", data: null, checked: false });
-  const [cancelState, setCancelState] = useState({ loading: false, error: "", done: false });
 
   const clean = (v) => String(v).replace(/[\s\u00AD\u200B-\u200D\u2060\uFEFF]/g, "").toLowerCase();
 
@@ -1066,7 +1068,6 @@ function SubscriptionPage() {
     const normalized = clean(email);
     if (!normalized) return;
     setStatus({ loading: true, error: "", data: null, checked: false });
-    setCancelState({ loading: false, error: "", done: false });
     try {
       const response = await fetch(`${API_BASE_URL}/api/subscription-status`, {
         method: "POST",
@@ -1081,31 +1082,13 @@ function SubscriptionPage() {
     }
   }
 
-  async function cancel() {
-    const normalized = clean(email);
-    if (!normalized || cancelState.loading) return;
-    if (!window.confirm(t("Cancel your subscription? You keep access until the end of the current period.", "Résilier votre abonnement ? Vous gardez l'accès jusqu'à la fin de la période en cours."))) return;
-    setCancelState({ loading: true, error: "", done: false });
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/cancel-subscription`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalized }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Error");
-      setCancelState({ loading: false, error: "", done: true, endDate: data.trialEnd || data.currentPeriodEnd });
-      await lookup();
-    } catch (error) {
-      setCancelState({ loading: false, error: t("Cancellation failed. Please contact movento.dev@gmail.com.", "Échec de la résiliation. Contactez movento.dev@gmail.com."), done: false });
-    }
-  }
-
   const data = status.data;
   const statusLabel = (s) => ({
     active: t("Active", "Actif"),
     trialing: t("Free trial", "Essai gratuit"),
     past_due: t("Payment overdue", "Paiement en retard"),
+    canceling: t("Cancelling", "En cours de résiliation"),
+    completed: t("Active", "Actif"),
   })[s] || s;
 
   return (
@@ -1153,11 +1136,11 @@ function SubscriptionPage() {
 
             {data.type === "subscription" && (
               <div className="mt-6 space-y-2 text-sm text-white/65">
-                {data.trialEnd && data.status === "trialing" && <p>{t("Free trial ends on", "Fin de l'essai gratuit le")} <span className="text-white">{formatDate(data.trialEnd)}</span>.</p>}
+                {data.status === "trialing" && data.renewalDate && <p>{t("Free trial ends on", "Fin de l'essai gratuit le")} <span className="text-white">{formatDate(data.renewalDate)}</span>.</p>}
                 {data.cancelAtPeriodEnd ? (
-                  <p className="text-amber-200">{t("Your subscription is cancelled and will end on", "Votre abonnement est résilié et se terminera le")} <span className="font-medium">{formatDate(data.currentPeriodEnd)}</span>.</p>
+                  <p className="text-amber-200">{t("Your subscription is cancelled and will end on", "Votre abonnement est résilié et se terminera le")} <span className="font-medium">{formatDate(data.renewalDate)}</span>.</p>
                 ) : (
-                  data.currentPeriodEnd && <p>{t("Next renewal on", "Prochain renouvellement le")} <span className="text-white">{formatDate(data.currentPeriodEnd)}</span>.</p>
+                  data.renewalDate && data.status !== "trialing" && <p>{t("Next renewal on", "Prochain renouvellement le")} <span className="text-white">{formatDate(data.renewalDate)}</span>.</p>
                 )}
               </div>
             )}
@@ -1166,15 +1149,14 @@ function SubscriptionPage() {
               <p className="mt-6 text-sm leading-6 text-white/65">{t("You have lifetime access — no subscription to manage.", "Vous avez un accès à vie — aucun abonnement à gérer.")}</p>
             )}
 
-            {data.type === "subscription" && !data.cancelAtPeriodEnd && (
+            {data.type !== "lifetime" && (
               <div className="mt-7 border-t border-white/10 pt-6">
-                <button onClick={cancel} disabled={cancelState.loading} className="rounded-2xl border border-red-400/30 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-100 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60">{cancelState.loading ? t("Cancelling...", "Résiliation...") : t("Cancel subscription", "Résilier l'abonnement")}</button>
-                <p className="mt-3 text-xs leading-5 text-white/40">{t("You keep access until the end of the current period. No further charge.", "Vous gardez l'accès jusqu'à la fin de la période en cours. Aucun prélèvement supplémentaire.")}</p>
+                <a href={data.portalUrl || "https://whop.com/orders/"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-black">
+                  {t("Manage or cancel on Whop", "Gérer ou résilier sur Whop")} <Icon name="arrow" className="h-4 w-4" />
+                </a>
+                <p className="mt-3 text-xs leading-5 text-white/40">{t("Your membership is managed on Whop. Cancelling keeps your access until the end of the current period.", "Votre abonnement est géré sur Whop. La résiliation conserve votre accès jusqu'à la fin de la période en cours.")}</p>
               </div>
             )}
-
-            {cancelState.error && <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{cancelState.error}</p></div>}
-            {cancelState.done && <div className="mt-4 flex items-start gap-3 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100"><Icon name="check" className="mt-1 h-4 w-4 flex-none" /><p>{t("Subscription cancelled. Access remains until", "Abonnement résilié. Accès conservé jusqu'au")} {formatDate(cancelState.endDate)}.</p></div>}
           </div>
         )}
       </section>
