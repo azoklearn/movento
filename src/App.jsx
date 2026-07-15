@@ -183,6 +183,9 @@ const plans = [
   },
   {
     id: "lifetime",
+    // Hidden until WHOP_LIFETIME_URL exists — without a checkout link the button
+    // would 400. Flip to false once the Whop plan is live.
+    hidden: true,
     name: t("Lifetime", "À vie"),
     price: "120€",
     period: t("forever", "à vie"),
@@ -193,6 +196,13 @@ const plans = [
     features: [t("Lifetime access", "Accès à vie"), t("All future updates", "Toutes les mises à jour futures"), t("No subscription", "Sans abonnement"), t("All previews included", "Tous les aperçus inclus"), t("Perfect for freelancers & agencies", "Parfait pour les freelances & agences")],
   },
 ];
+
+// Plans without a configured Whop checkout link are hidden rather than shown
+// with a button that would fail.
+const visiblePlans = plans.filter((plan) => !plan.hidden);
+// Tailwind only sees literal class names, so pick whole strings.
+const planGridMd = visiblePlans.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
+const planGridLg = visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
 
 function Icon({ name, className = "h-4 w-4" }) {
   const common = {
@@ -292,7 +302,7 @@ function extractPrompt(md) {
 }
 
 function validatePlanId(planId) {
-  return plans.some((plan) => plan.id === planId);
+  return visiblePlans.some((plan) => plan.id === planId);
 }
 
 function getCheckoutErrorMessage(error) {
@@ -641,8 +651,8 @@ export default function MoventoSite() {
                   <Icon name="alert" className="mt-0.5 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p>
                 </div>
               )}
-              <div className="mt-7 grid gap-4 md:grid-cols-3">
-                {plans.map((plan) => (
+              <div className={`mt-7 grid gap-4 ${planGridMd}`}>
+                {visiblePlans.map((plan) => (
                   <div key={plan.id} className={`relative overflow-hidden rounded-[24px] border p-3 backdrop-blur-2xl transition hover:-translate-y-1 ${plan.id === "monthly" ? "border-violet-400/40 bg-gradient-to-br from-violet-500/[0.22] via-fuchsia-500/[0.08] to-cyan-500/[0.12]" : plan.featured ? "border-violet-300/30 bg-gradient-to-br from-violet-500/[0.18] via-white/[0.06] to-cyan-500/[0.12]" : "border-white/10 bg-white/[0.035]"}`}>
                     {plan.id === "monthly" && <div className="pointer-events-none absolute -left-8 -top-8 h-40 w-40 rounded-full bg-fuchsia-500/25 blur-[60px]" />}
                     {plan.featured && <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-violet-500/30 blur-[70px]" />}
@@ -803,8 +813,8 @@ export default function MoventoSite() {
 
         {checkoutStatus.error && <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p></div>}
 
-        <div className="mx-auto mt-14 grid max-w-6xl gap-5 lg:grid-cols-3">
-          {plans.map((plan) => (
+        <div className={`mx-auto mt-14 grid max-w-6xl gap-5 ${planGridLg}`}>
+          {visiblePlans.map((plan) => (
             <div key={plan.id} className={`relative overflow-hidden rounded-[34px] border p-3 shadow-2xl backdrop-blur-2xl transition hover:-translate-y-1 ${plan.id === "monthly" ? "border-violet-400/40 bg-gradient-to-br from-violet-500/[0.22] via-fuchsia-500/[0.08] to-cyan-500/[0.12] shadow-violet-900/30" : plan.featured ? "border-violet-300/30 bg-gradient-to-br from-violet-500/[0.18] via-white/[0.06] to-cyan-500/[0.12] shadow-violet-900/25" : "border-white/10 bg-white/[0.035] shadow-black/40"}`}>
               {plan.id === "monthly" && <div className="pointer-events-none absolute -left-10 -top-10 h-56 w-56 rounded-full bg-fuchsia-500/25 blur-[80px]" />}
               {plan.featured && <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-500/30 blur-[100px]" />}
@@ -989,8 +999,8 @@ function PricingPage() {
           </div>
         )}
 
-        <div className="mx-auto mt-14 grid max-w-6xl gap-5 lg:grid-cols-3">
-          {plans.map((plan) => (
+        <div className={`mx-auto mt-14 grid max-w-6xl gap-5 ${planGridLg}`}>
+          {visiblePlans.map((plan) => (
             <div key={plan.id} className={`relative overflow-hidden rounded-[34px] border p-3 shadow-2xl backdrop-blur-2xl transition hover:-translate-y-1 ${plan.id === "monthly" ? "border-violet-400/40 bg-gradient-to-br from-violet-500/[0.22] via-fuchsia-500/[0.08] to-cyan-500/[0.12] shadow-violet-900/30" : plan.featured ? "border-violet-300/30 bg-gradient-to-br from-violet-500/[0.18] via-white/[0.06] to-cyan-500/[0.12] shadow-violet-900/25" : "border-white/10 bg-white/[0.035] shadow-black/40"}`}>
               {plan.id === "monthly" && <div className="pointer-events-none absolute -left-10 -top-10 h-56 w-56 rounded-full bg-fuchsia-500/25 blur-[80px]" />}
               {plan.featured && <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-500/30 blur-[100px]" />}
