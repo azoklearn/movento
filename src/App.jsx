@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { track } from "@vercel/analytics";
 
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
@@ -464,11 +465,15 @@ export default function MoventoSite() {
 
       if (data.hasAccess) {
         window.localStorage.setItem("movento_access_email", normalizedEmail);
+        // Only count a deliberate unlock, not the silent re-check on every load.
+        if (!options.silent) track("access_unlocked");
         if (!options.silent) setAccessStatus({ loading: false, message: "Premium access activated on this device.", error: "" });
         return true;
       }
 
       window.localStorage.removeItem("movento_access_email");
+      // A paying customer failing here is the outage signal worth watching.
+      if (!options.silent) track("unlock_failed");
       if (!options.silent) setAccessStatus({ loading: false, message: "", error: `No payment found for "${normalizedEmail}". Make sure it matches your checkout email exactly.` });
       return false;
     } catch (error) {
@@ -511,6 +516,7 @@ export default function MoventoSite() {
         await navigator.clipboard.write([
           new ClipboardItem({ "text/plain": textPromise.then((t) => new Blob([t], { type: "text/plain" })) }),
         ]);
+        track("prompt_copied", { prompt: item.title, category: item.category });
         setCopiedCard(item.title);
         setTimeout(() => setCopiedCard(""), 1600);
         return;
@@ -530,6 +536,7 @@ export default function MoventoSite() {
     try {
       const copied = await copyTextToClipboard(text);
       if (!copied) throw Object.assign(new Error("Copy denied by browser"), { name: "NotAllowedError" });
+      track("prompt_copied", { prompt: item.title, category: item.category });
       setCopiedCard(item.title);
       setTimeout(() => setCopiedCard(""), 1600);
     } catch (error) {
@@ -541,6 +548,7 @@ export default function MoventoSite() {
     const isFree = FREE_PROMPT_FILES.has(item.file);
 
     if (!isFree && !hasPremiumAccess) {
+      track("paywall_shown", { prompt: item.title, category: item.category });
       setShowPricingModal(true);
       return;
     }
@@ -587,6 +595,7 @@ export default function MoventoSite() {
   async function goToCheckout(planId) {
     if (checkoutStatus.loading) return;
 
+    track("checkout_started", { plan: planId });
     setCheckoutStatus({ loading: planId, error: "" });
 
     try {
@@ -929,6 +938,7 @@ function MentionsLegales() {
           <div>
             <h2 className="mb-3 text-base font-semibold text-white">6. Cookies</h2>
             <p>Movento only uses data stored locally on your device (localStorage) to remember your access and email. No third-party tracking cookies are used.</p>
+            <p className="mt-3">We measure audience with <span className="text-white/80">Vercel Web Analytics</span>, which is cookieless and does not track you across websites or build a personal profile. It records anonymous page views and product events (for example, opening the pricing modal) so we can improve the site.</p>
           </div>
 
           <div>
@@ -953,6 +963,7 @@ function PricingPage() {
 
   async function goToCheckout(planId) {
     if (checkoutStatus.loading) return;
+    track("checkout_started", { plan: planId });
     setCheckoutStatus({ loading: planId, error: "" });
     try {
       if (!validatePlanId(planId)) throw new Error("Invalid plan.");
