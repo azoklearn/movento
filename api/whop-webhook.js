@@ -15,15 +15,21 @@ async function getRawBody(req) {
 // Whop follows the Standard Webhooks spec: signed content is "{id}.{timestamp}.{body}",
 // HMAC-SHA256, signature compared base64.
 //
-// Whop hands out the secret as a RAW string and their SDK base64-encodes it
-// before handing it to the Standard Webhooks verifier, which decodes it again —
-// so the HMAC key is the raw secret. The spec's own "whsec_<base64>" form is
-// accepted too, since the docs don't pin the format down and a wrong guess here
-// would silently reject every event and lock out paying customers.
+// Whop hands out the secret as a RAW string ("ws_<hex>") and their SDK
+// base64-encodes it before handing it to the Standard Webhooks verifier, which
+// decodes it again — so the HMAC key is the raw secret, prefix included.
+//
+// The docs never pin the format down, and guessing wrong here would silently
+// reject every event and leave paying customers without access, so we also try
+// the plausible alternatives. Each candidate derives from the same secret, so an
+// attacker who lacks it still cannot forge any of them.
 function candidateKeys(secret) {
   const keys = [Buffer.from(secret, "utf8")];
-  if (/^whsec_/.test(secret)) {
-    keys.push(Buffer.from(secret.replace(/^whsec_/, ""), "base64"));
+  const body = secret.replace(/^(ws_|whsec_)/, "");
+  if (body !== secret) {
+    keys.push(Buffer.from(body, "utf8"));
+    if (/^[0-9a-f]+$/i.test(body) && body.length % 2 === 0) keys.push(Buffer.from(body, "hex"));
+    else keys.push(Buffer.from(body, "base64"));
   }
   return keys;
 }
