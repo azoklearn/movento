@@ -13,7 +13,21 @@ async function getRawBody(req) {
 }
 
 // Whop follows the Standard Webhooks spec: signed content is "{id}.{timestamp}.{body}",
-// signed with HMAC-SHA256 using the base64-decoded secret.
+// HMAC-SHA256, signature compared base64.
+//
+// Whop hands out the secret as a RAW string and their SDK base64-encodes it
+// before handing it to the Standard Webhooks verifier, which decodes it again —
+// so the HMAC key is the raw secret. The spec's own "whsec_<base64>" form is
+// accepted too, since the docs don't pin the format down and a wrong guess here
+// would silently reject every event and lock out paying customers.
+function candidateKeys(secret) {
+  const keys = [Buffer.from(secret, "utf8")];
+  if (/^whsec_/.test(secret)) {
+    keys.push(Buffer.from(secret.replace(/^whsec_/, ""), "base64"));
+  }
+  return keys;
+}
+
 function verifySignature(rawBody, headers, secret) {
   const id = headers["webhook-id"];
   const timestamp = headers["webhook-timestamp"];
@@ -24,17 +38,15 @@ function verifySignature(rawBody, headers, secret) {
   const age = Math.abs(Date.now() / 1000 - Number(timestamp));
   if (!Number.isFinite(age) || age > 300) return false;
 
-  const key = Buffer.from(secret.replace(/^whsec_/, ""), "base64");
-  const expected = crypto
-    .createHmac("sha256", key)
-    .update(`${id}.${timestamp}.${rawBody.toString("utf8")}`)
-    .digest("base64");
-
+  const signedContent = `${id}.${timestamp}.${rawBody.toString("utf8")}`;
   // The header can carry several space-separated "v1,<sig>" values.
-  return signatureHeader.split(" ").some((part) => {
-    const sig = part.split(",")[1];
-    if (!sig || sig.length !== expected.length) return false;
-    return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+  const sent = signatureHeader.split(" ").map((part) => part.split(",")[1]).filter(Boolean);
+
+  return candidateKeys(secret).some((key) => {
+    const expected = crypto.createHmac("sha256", key).update(signedContent).digest("base64");
+    return sent.some((sig) =>
+      sig.length === expected.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))
+    );
   });
 }
 
