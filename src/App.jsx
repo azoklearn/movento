@@ -197,10 +197,10 @@ const plans = [
     discountBadge: "-20%",
     period: t("forever", "à vie"),
     badge: t("One shot", "Une fois pour toutes"),
-    description: t("One-time payment. Yours forever.", "Paiement unique. À vous pour toujours."),
+    description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
     cta: t("Get lifetime access", "Obtenir l'accès à vie"),
     featured: true,
-    features: [t("Lifetime access", "Accès à vie"), t("All future updates", "Toutes les mises à jour futures"), t("No subscription", "Sans abonnement"), t("All previews included", "Tous les aperçus inclus"), t("Perfect for freelancers & agencies", "Parfait pour les freelances & agences")],
+    features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
   },
 ];
 
@@ -800,7 +800,7 @@ export default function MoventoSite() {
         <div className="mx-auto max-w-3xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/65 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> {t("Launch offer - Founder pricing", "Offre de lancement - Prix fondateurs")}</div>
           <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Save hours on every landing page. Copy a premium prompt, paste it into your AI tool, and turn an idea into a modern site in minutes.", "Économisez des heures sur chaque landing page. Copiez un prompt premium, collez-le dans votre outil IA, et transformez une idée en site moderne en quelques minutes.")}</p>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Unlock the full power of web creation without limits. Access a complete library of premium prompts built to generate professional websites — each one worth thousands of euros.", "Débloquez toute la puissance de la création web sans limites. Accédez à une bibliothèque complète de prompts premium spécialement conçus pour générer des sites internet professionnels, chacun représentant une valeur de plusieurs milliers d'euros.")}</p>
 
         </div>
 
@@ -984,7 +984,7 @@ function PricingPage() {
             <Icon name="sparkles" className="h-4 w-4 text-violet-300" /> {t("Launch offer - Founder pricing", "Offre de lancement - Prix fondateurs")}
           </div>
           <h1 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Save hours on every landing page. Copy a premium prompt, paste it into your AI tool, and turn an idea into a modern site in minutes.", "Économisez des heures sur chaque landing page. Copiez un prompt premium, collez-le dans votre outil IA, et transformez une idée en site moderne en quelques minutes.")}</p>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Unlock the full power of web creation without limits. Access a complete library of premium prompts built to generate professional websites — each one worth thousands of euros.", "Débloquez toute la puissance de la création web sans limites. Accédez à une bibliothèque complète de prompts premium spécialement conçus pour générer des sites internet professionnels, chacun représentant une valeur de plusieurs milliers d'euros.")}</p>
         </div>
 
         {checkoutStatus.error && (
@@ -1045,7 +1045,7 @@ function PricingPage() {
         </div>
 
         <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl">
-          <p className="text-sm leading-6 text-white/60">{t("One great prompt can save you hours of design, integration and client back-and-forth. Movento helps you go from idea to impressive site.", "Un bon prompt peut vous faire gagner des heures de design, d'intégration et d'échanges client. Movento vous aide à passer de l'idée au site impressionnant.")}</p>
+          <p className="text-sm leading-6 text-white/60">{t("Stop paying thousands of euros for every website. With Movento, build premium websites in a fraction of the usual time and cost — a one-time investment that keeps paying off, again and again.", "Arrêtez de payer des milliers d'euros pour chaque site. Avec Movento, créez des sites web premium en une fraction du temps et du coût habituel. Un investissement unique qui continue de vous apporter de la valeur, encore et encore.")}</p>
         </div>
       </section>
 
