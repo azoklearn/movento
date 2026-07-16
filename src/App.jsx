@@ -752,11 +752,7 @@ export default function MoventoSite() {
         </section>
       )}
 
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-16 pt-16 text-center lg:px-8 lg:pt-24">
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/70 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> {t("Premium web design prompt library", "Bibliothèque de prompts design web premium")}</motion.div>
-      </section>
-
-      <section id="prompts" className="relative z-10 mx-auto max-w-7xl px-6 py-24 lg:px-8">
+      <section id="prompts" className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-24 lg:px-8 lg:pt-24">
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.3em] text-white/35">{t("Gallery", "Galerie")}</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">{t("Premium prompts", "Prompts premium")}</h2>
