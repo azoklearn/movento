@@ -164,9 +164,9 @@ const plans = [
     name: t("Monthly", "Mensuel"),
     price: "14.99€",
     period: t("/ mo", "/ mois"),
-    badge: t("Try for free", "Essai gratuit"),
-    description: t("3 days free, then 14.99€/mo. Cancel anytime.", "3 jours gratuits, puis 14,99€/mois. Résiliez à tout moment."),
-    cta: t("Try free for 3 days →", "Essai gratuit 3 jours →"),
+    badge: t("Flexible", "Flexible"),
+    description: t("14.99€/mo. Cancel anytime.", "14,99€/mois. Résiliez à tout moment."),
+    cta: t("Get started →", "Commencer →"),
     featured: false,
     features: [t("Access to all prompts", "Accès à tous les prompts"), t("One-click prompt copy", "Copie en un clic"), t("Video & visual previews", "Aperçus vidéo & visuels"), t("New prompts included", "Nouveaux prompts inclus"), t("Cancel anytime", "Résiliez à tout moment")],
   },
@@ -716,7 +716,7 @@ export default function MoventoSite() {
           <a href="#how" className="hover:text-white">{t("Guide", "Guide")}</a>
           <a href="#faq" className="hover:text-white">FAQ</a>
         </nav>
-        <a href="/pricing" className="rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/45 hover:brightness-110">{t("Start free", "Essai gratuit")}</a>
+        <a href="/pricing" className="rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/45 hover:brightness-110">{t("Get started", "Commencer")}</a>
       </header>
 
       {isSuccessPage && (
@@ -751,7 +751,7 @@ export default function MoventoSite() {
           <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">{t("Explore prompts", "Voir les prompts")}</a>
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-8 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs text-white/45">
-          <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("3 days free, cancel anytime", "3 jours gratuits, résiliable à tout moment")}</span>
+          <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("Cancel anytime", "Résiliable à tout moment")}</span>
           <span className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-violet-300" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
           <span className="flex items-center gap-2"><Icon name="zap" className="h-3.5 w-3.5 text-amber-300" /> {t("Instant access after checkout", "Accès immédiat après paiement")}</span>
         </motion.div>
@@ -854,7 +854,7 @@ export default function MoventoSite() {
           {[
             { q: t("How does it work?", "Comment ça marche ?"), a: t("Pick a prompt in the gallery, copy it in one click, paste it into Lovable, v0, Bolt or Cursor. The AI generates the full site — you just customize the content.", "Choisissez un prompt dans la galerie, copiez-le en un clic, collez-le dans Lovable, v0, Bolt ou Cursor. L'IA génère le site complet — il ne vous reste qu'à personnaliser le contenu.") },
             { q: t("Which tools are supported?", "Quels outils sont compatibles ?"), a: t("Any AI tool that accepts a text prompt: Lovable, v0, Bolt, Cursor, Claude, ChatGPT... The prompts describe every detail (fonts, colors, animations) so the result stays faithful.", "Tous les outils IA qui acceptent un prompt texte : Lovable, v0, Bolt, Cursor, Claude, ChatGPT... Les prompts décrivent chaque détail (polices, couleurs, animations) pour un résultat fidèle.") },
-            { q: t("How does the free trial work?", "Comment fonctionne l'essai gratuit ?"), a: t("The monthly plan starts with 3 free days. You won't be charged if you cancel before the trial ends — cancellation takes 2 clicks from the My subscription page.", "L'offre mensuelle commence par 3 jours gratuits. Vous n'êtes pas débité si vous résiliez avant la fin de l'essai — la résiliation prend 2 clics depuis la page Mon abonnement.") },
+            { q: t("Can I cancel anytime?", "Puis-je résilier à tout moment ?"), a: t("Yes. Monthly and annual plans can be cancelled anytime from the My subscription page or directly on Whop — no minimum commitment.", "Oui. Les offres mensuelle et annuelle peuvent être résiliées à tout moment depuis la page Mon abonnement ou directement sur Whop — sans engagement minimum.") },
             { q: t("How do I access prompts after paying?", "Comment j'accède aux prompts après paiement ?"), a: t("The email you used at checkout is your access key. Enter it in the gallery on any device and every prompt unlocks instantly.", "L'email utilisé au paiement est votre clé d'accès. Entrez-le dans la galerie sur n'importe quel appareil et tous les prompts se débloquent instantanément.") },
             { q: t("Is the catalog updated?", "Le catalogue est-il mis à jour ?"), a: t("Yes — new premium prompts are added regularly, and they're all included in your plan at no extra cost.", "Oui — de nouveaux prompts premium sont ajoutés régulièrement, et ils sont tous inclus dans votre abonnement sans surcoût.") },
             { q: t("Can I use the sites commercially?", "Puis-je utiliser les sites commercialement ?"), a: t("Yes. The sites you generate from our prompts are yours — client projects, portfolios, product launches, anything.", "Oui. Les sites que vous générez à partir de nos prompts vous appartiennent — projets clients, portfolios, lancements de produits, tout est permis.") },
@@ -873,7 +873,7 @@ export default function MoventoSite() {
           <h2 className="relative mx-auto max-w-2xl text-3xl font-semibold tracking-tight text-white md:text-5xl">{t("Your next site is one prompt away.", "Votre prochain site est à un prompt près.")}</h2>
           <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-white/55 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-8 py-3.5 text-sm font-bold text-white shadow-2xl shadow-violet-500/40 transition hover:scale-[1.04] hover:shadow-violet-500/60">{t("Try free for 3 days", "Essayer gratuitement 3 jours")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
+            <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-8 py-3.5 text-sm font-bold text-white shadow-2xl shadow-violet-500/40 transition hover:scale-[1.04] hover:shadow-violet-500/60">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
             <span className="text-xs text-white/40">{t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment")}</span>
           </div>
         </div>
