@@ -226,6 +226,7 @@ function Icon({ name, className = "h-4 w-4" }) {
 
   let children = null;
 
+  if (name === "menu") children = <><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></>;
   if (name === "search") children = <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>;
   if (name === "copy") children = <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>;
   if (name === "check") children = <path d="M20 6 9 17l-5-5" />;
@@ -396,6 +397,7 @@ export default function MoventoSite() {
   const [pendingFreeItem, setPendingFreeItem] = useState(null);
   const [leadEmailInput, setLeadEmailInput] = useState("");
   const [leadSubmitting, setLeadSubmitting] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
@@ -721,7 +723,7 @@ export default function MoventoSite() {
         <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "34px 34px" }} />
       </div>
 
-      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+      <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <Logo />
         <nav className="hidden items-center gap-8 text-sm text-white/55 md:flex">
           <a href="#prompts" className="hover:text-white">Prompts</a>
@@ -730,7 +732,26 @@ export default function MoventoSite() {
           <a href="#how" className="hover:text-white">{t("Guide", "Guide")}</a>
           <a href="#faq" className="hover:text-white">FAQ</a>
         </nav>
-        <a href="/pricing" className="rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/45 hover:brightness-110">{t("Get started", "Commencer")}</a>
+        <a href="/pricing" className="hidden rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/45 hover:brightness-110 md:inline-block">{t("Get started", "Commencer")}</a>
+        <button onClick={() => setMobileMenuOpen((open) => !open)} aria-label={t("Menu", "Menu")} aria-expanded={mobileMenuOpen} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.05] text-white/80 backdrop-blur transition hover:bg-white/10 md:hidden">
+          <Icon name={mobileMenuOpen ? "close" : "menu"} className="h-5 w-5" />
+        </button>
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.nav initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }} className="absolute left-6 right-6 top-full z-30 flex flex-col gap-1 rounded-3xl border border-white/10 bg-[#0d0e18] p-3 shadow-2xl shadow-black/60 md:hidden">
+              {[
+                { href: "#prompts", label: "Prompts" },
+                { href: "/pricing", label: t("Pricing", "Tarifs") },
+                { href: "/subscription", label: t("My subscription", "Mon abonnement") },
+                { href: "#how", label: t("Guide", "Guide") },
+                { href: "#faq", label: "FAQ" },
+              ].map((link) => (
+                <a key={link.label} href={link.href} onClick={() => setMobileMenuOpen(false)} className="rounded-2xl px-4 py-3 text-sm text-white/70 transition hover:bg-white/[0.06] hover:text-white">{link.label}</a>
+              ))}
+              <a href="/pricing" onClick={() => setMobileMenuOpen(false)} className="mt-1 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-110">{t("Get started", "Commencer")}</a>
+            </motion.nav>
+          )}
+        </AnimatePresence>
       </header>
 
       {isSuccessPage && (
