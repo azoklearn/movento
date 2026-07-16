@@ -12,6 +12,9 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Love Bag Hero", category: "Landing Page", type: "Landing", file: "Love_Bag_Hero.md", preview: "https://admin.lafys.com/api/media/file/bags_EV1r0FBY.mp4", tags: ["E-commerce", "Scroll", "Video"], gradient: "from-amber-100 via-stone-300 to-neutral-900" },
+  { title: "Pallet Ross", category: "Landing Page", type: "Landing", file: "Pallet_Ross_Landing.md", preview: "https://admin.lafys.com/api/media/file/4d32e42469657663b66a3c08aeccd70e_1DkflpwZ.mp4", tags: ["Marketplace", "Scroll", "Video"], gradient: "from-teal-200 via-red-400 to-neutral-900" },
+  { title: "VALMAX Hero", category: "Portfolio", type: "Landing", file: "Valmax_Hero.md", preview: "https://admin.lafys.com/api/media/file/valmax_NCXFcrZo.mp4", tags: ["Photography", "Stars", "Video"], gradient: "from-lime-300 via-neutral-700 to-black" },
   { title: "Vibrant Wellness Hero", category: "Landing Page", type: "Hero", file: "Vibrant_Wellness_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/brainhealthArea.mp4", tags: ["Wellness", "Glass", "Video"], gradient: "from-emerald-200 via-teal-500 to-stone-900" },
   { title: "Axon Hero", category: "SaaS", type: "Hero", file: "Axon_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/naturezoompuirple.mp4", tags: ["AI", "Agents", "Video"], gradient: "from-violet-200 via-purple-500 to-[#1B133C]" },
   { title: "dot. Hero", category: "Landing Page", type: "Hero", file: "Dot_Hero.md", preview: "https://motionsites.ai/assets/dot-hero-Csf49OgS.gif", tags: ["Messaging", "Video", "Minimal"], gradient: "from-blue-200 via-sky-400 to-stone-800" },
@@ -113,6 +116,9 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Love_Bag_Hero.md",
+  "Pallet_Ross_Landing.md",
+  "Valmax_Hero.md",
   "Vibrant_Wellness_Hero.md",
   "Axon_Hero.md",
   "Dot_Hero.md",
@@ -159,6 +165,7 @@ const FREE_PROMPT_FILES = new Set([]);
 const plans = [
   {
     id: "monthly",
+    hidden: true,
     name: t("Monthly", "Mensuel"),
     price: "14.99€",
     period: t("/ mo", "/ mois"),
@@ -170,6 +177,7 @@ const plans = [
   },
   {
     id: "yearly",
+    hidden: true,
     name: t("Yearly", "Annuel"),
     price: "50€",
     period: t("/ yr", "/ an"),
@@ -182,16 +190,16 @@ const plans = [
   },
   {
     id: "lifetime",
-    // Hidden until WHOP_LIFETIME_URL exists — without a checkout link the button
-    // would 400. Flip to false once the Whop plan is live.
-    hidden: true,
+    hidden: false,
     name: t("Lifetime", "À vie"),
-    price: "120€",
+    price: "149€",
+    originalPrice: "186,25€",
+    discountBadge: "-20%",
     period: t("forever", "à vie"),
     badge: t("One shot", "Une fois pour toutes"),
     description: t("One-time payment. Yours forever.", "Paiement unique. À vous pour toujours."),
     cta: t("Get lifetime access", "Obtenir l'accès à vie"),
-    featured: false,
+    featured: true,
     features: [t("Lifetime access", "Accès à vie"), t("All future updates", "Toutes les mises à jour futures"), t("No subscription", "Sans abonnement"), t("All previews included", "Tous les aperçus inclus"), t("Perfect for freelancers & agencies", "Parfait pour les freelances & agences")],
   },
 ];
@@ -200,8 +208,8 @@ const plans = [
 // with a button that would fail.
 const visiblePlans = plans.filter((plan) => !plan.hidden);
 // Tailwind only sees literal class names, so pick whole strings.
-const planGridMd = visiblePlans.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
-const planGridLg = visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
+const planGridMd = visiblePlans.length === 1 ? "md:grid-cols-1" : visiblePlans.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
+const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
 
 function Icon({ name, className = "h-4 w-4" }) {
   const common = {
@@ -672,6 +680,12 @@ export default function MoventoSite() {
                         <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span>
                       </div>
                       <div className="mb-5">
+                        {plan.originalPrice && (
+                          <div className="mb-1 flex items-center gap-2">
+                            <span className="text-sm text-white/35 line-through">{plan.originalPrice}</span>
+                            {plan.discountBadge && <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">{plan.discountBadge}</span>}
+                          </div>
+                        )}
                         <div className="flex items-end gap-1.5">
                           <span className="text-4xl font-bold tracking-[-0.06em] text-white">{plan.price}</span>
                           <span className="pb-1 text-sm text-white/40">{plan.period}</span>
@@ -738,34 +752,6 @@ export default function MoventoSite() {
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-16 pt-16 text-center lg:px-8 lg:pt-24">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/70 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> {t("Premium web design prompt library", "Bibliothèque de prompts design web premium")}</motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mx-auto max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white md:text-7xl lg:text-8xl">
-          {lang === "fr" ? <>Créez des sites web <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text pr-1 italic text-transparent" style={{ fontFamily: '"Instrument Serif", serif', fontWeight: 400 }}>modernes</span> sans coder.</> : <>Build <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text pr-1 italic text-transparent" style={{ fontFamily: '"Instrument Serif", serif', fontWeight: 400 }}>modern</span> websites without coding.</>}
-        </motion.h1>
-        <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-white/60 md:text-xl">{t("Ready-to-use prompts to build beautiful landing pages in minutes. Copy, paste, launch.", "Des prompts prêts à l'emploi pour créer de superbes landing pages en quelques minutes. Copiez, collez, lancez.")}</motion.p>
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <a href="/pricing" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-8 py-3.5 text-sm font-bold text-white shadow-2xl shadow-violet-500/40 transition hover:scale-[1.04] hover:shadow-violet-500/60">
-            <span className="relative z-10 flex items-center gap-2">{t("Start for free", "Commencer gratuitement")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></span>
-          </a>
-          <a href="#prompts" className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur hover:bg-white/10">{t("Explore prompts", "Voir les prompts")}</a>
-        </motion.div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-8 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs text-white/45">
-          <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("Cancel anytime", "Résiliable à tout moment")}</span>
-          <span className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-violet-300" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
-          <span className="flex items-center gap-2"><Icon name="zap" className="h-3.5 w-3.5 text-amber-300" /> {t("Instant access after checkout", "Accès immédiat après paiement")}</span>
-        </motion.div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-3">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 backdrop-blur"><span className="text-xl font-bold text-white">{prompts.filter(isPromptAvailable).length}+</span><span className="ml-2 text-sm text-white/50">{t("premium prompts", "prompts premium")}</span></div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 backdrop-blur"><span className="text-sm text-white/50">{t("Works with", "Compatible")}</span><span className="ml-2 text-sm font-semibold text-white">Lovable · v0 · Bolt · Cursor</span></div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 backdrop-blur"><span className="text-sm text-white/50">{t("New prompts", "Nouveaux prompts")}</span><span className="ml-2 text-sm font-semibold text-white">{t("every week", "chaque semaine")}</span></div>
-        </motion.div>
-      </section>
-
-      <section className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid gap-4 rounded-[34px] border border-white/10 bg-white/[0.035] p-3 shadow-2xl shadow-black/50 backdrop-blur-2xl md:grid-cols-3">
-          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="zap" className="mb-5 h-6 w-6 text-violet-300" /><h3 className="text-lg font-semibold">{t("Copy & paste", "Copier-coller")}</h3><p className="mt-2 text-sm leading-6 text-white/55">{t("A clean prompt, ready for Lovable, v0, Bolt, Cursor or Claude.", "Un prompt propre, prêt pour Lovable, v0, Bolt, Cursor ou Claude.")}</p></div>
-          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="layers" className="mb-5 h-6 w-6 text-blue-300" /><h3 className="text-lg font-semibold">{t("Visual preview", "Aperçu visuel")}</h3><p className="mt-2 text-sm leading-6 text-white/55">{t("See the style before generating: dark UI, video, glass, portfolio, SaaS.", "Voyez le style avant de générer : dark UI, vidéo, glass, portfolio, SaaS.")}</p></div>
-          <div className="rounded-[26px] border border-white/10 bg-black/30 p-6"><Icon name="code" className="mb-5 h-6 w-6 text-cyan-300" /><h3 className="text-lg font-semibold">{t("No coding", "Sans code")}</h3><p className="mt-2 text-sm leading-6 text-white/55">{t("Built for marketing, communication and creative profiles.", "Conçu pour les profils marketing, communication et créatifs.")}</p></div>
-        </div>
       </section>
 
       <section id="prompts" className="relative z-10 mx-auto max-w-7xl px-6 py-24 lg:px-8">
@@ -827,7 +813,7 @@ export default function MoventoSite() {
               {plan.featured && <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-500/30 blur-[100px]" />}
               <div className="relative rounded-[28px] border border-white/10 bg-[#080910]/90 p-7">
                 <div className="mb-7 flex items-start justify-between gap-4"><div><h3 className="text-2xl font-semibold tracking-tight text-white">{plan.name}</h3><p className="mt-2 text-sm leading-6 text-white/45">{plan.description}</p></div><span className={`rounded-full border px-3 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span></div>
-                <div className="mb-7"><div className="flex items-end gap-2"><span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span><span className="pb-2 text-white/40">{plan.period}</span></div>{plan.subPrice && <p className="mt-2 text-xs font-medium text-emerald-300/90">{plan.subPrice}</p>}</div>
+                <div className="mb-7">{plan.originalPrice && <div className="mb-2 flex items-center gap-2"><span className="text-base text-white/35 line-through">{plan.originalPrice}</span>{plan.discountBadge && <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">{plan.discountBadge}</span>}</div>}<div className="flex items-end gap-2"><span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span><span className="pb-2 text-white/40">{plan.period}</span></div>{plan.subPrice && <p className="mt-2 text-xs font-medium text-emerald-300/90">{plan.subPrice}</p>}</div>
                 <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50" : plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>{checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}<Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></button>
                 <div className="my-7 h-px bg-white/10" />
                 <div className="space-y-3">{plan.features.map((item) => <div key={item} className="flex items-center gap-3 text-sm text-white/65"><div className="grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10"><Icon name="check" className="h-3.5 w-3.5 text-white" /></div>{item}</div>)}</div>
@@ -1022,6 +1008,12 @@ function PricingPage() {
                   <span className={`rounded-full border px-3 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span>
                 </div>
                 <div className="mb-7">
+                  {plan.originalPrice && (
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="text-base text-white/35 line-through">{plan.originalPrice}</span>
+                      {plan.discountBadge && <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">{plan.discountBadge}</span>}
+                    </div>
+                  )}
                   <div className="flex items-end gap-2">
                     <span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span>
                     <span className="pb-2 text-white/40">{plan.period}</span>
