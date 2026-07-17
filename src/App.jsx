@@ -441,12 +441,15 @@ export default function MoventoSite() {
   }, [isSuccessPage]);
 
   const filtered = useMemo(() => {
-    return prompts.filter((p) => {
-      if (!isPromptAvailable(p)) return false;
-      const matchCategory = category === "Tous" || p.category === category;
-      const matchQuery = `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase());
-      return matchCategory && matchQuery;
-    });
+    return prompts
+      .filter((p) => {
+        if (!isPromptAvailable(p)) return false;
+        const matchCategory = category === "Tous" || p.category === category;
+        const matchQuery = `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase());
+        return matchCategory && matchQuery;
+      })
+      // Free prompts float to the top; sort is stable so the rest keep their order.
+      .sort((a, b) => Number(FREE_PROMPT_FILES.has(b.file)) - Number(FREE_PROMPT_FILES.has(a.file)));
   }, [query, category]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
@@ -795,7 +798,7 @@ export default function MoventoSite() {
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-violet-300/20 bg-violet-500/10 p-4 text-sm leading-6 text-violet-50 backdrop-blur-xl"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
         {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
         <div className="mb-8 flex gap-2 overflow-x-auto pb-2">{categories.map((cat) => <button key={cat} onClick={() => setCategory(cat)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${category === cat ? "border-white/20 bg-white text-black" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/10"}`}>{cat}</button>)}</div>
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <AnimatePresence>
             {filtered.map((item) => {
               const unlocked = hasPremiumAccess || FREE_PROMPT_FILES.has(item.file);
