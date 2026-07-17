@@ -164,7 +164,7 @@ function isPromptAvailable(item) {
 }
 
 const categories = ["Tous", "AI / SaaS", "Landing Page", "Hero Section", "SaaS", "Agency", "Portfolio", "Web3", "Component", "Presentation", "Automotive", "Fintech"];
-const FREE_PROMPT_FILES = new Set([]);
+const FREE_PROMPT_FILES = new Set(["Axon_Hero.md", "Viktor_Portfolio.md", "Foldcraft_Hero.md"]);
 
 const plans = [
   {
