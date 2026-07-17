@@ -449,7 +449,7 @@ export default function MoventoSite() {
   const [leadEmailInput, setLeadEmailInput] = useState("");
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showUnlock, setShowUnlock] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
@@ -709,6 +709,9 @@ export default function MoventoSite() {
                 <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? t("Just a moment...", "Un instant...") : t("Copy free prompt →", "Copier le prompt gratuit →")}</button>
               </form>
               <p className="mt-4 text-center text-xs text-white/25">{t("Your data will never be shared.", "Vos données ne seront jamais partagées.")}</p>
+              <div className="mt-5 border-t border-white/10 pt-4 text-center">
+                <button onClick={() => { setShowLeadModal(false); setShowUnlockModal(true); }} className="text-xs text-white/40 transition hover:text-white/70">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -769,6 +772,28 @@ export default function MoventoSite() {
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-6 border-t border-white/10 pt-5 text-center">
+                <button onClick={() => { setShowPricingModal(false); setShowUnlockModal(true); }} className="text-sm text-white/45 transition hover:text-white/80">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+        {showUnlockModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowUnlockModal(false)}>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d0e18] p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowUnlockModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
+              <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl border border-violet-300/20 bg-violet-500/15"><Icon name="lock" className="h-5 w-5 text-violet-200" /></div>
+              <h2 className="text-2xl font-semibold tracking-tight text-white">{t("Unlock your access", "Déverrouille ton accès")}</h2>
+              <p className="mt-2 text-sm leading-6 text-white/50">{t("For customers who already purchased. Enter the email used at checkout.", "Réservé aux clients ayant déjà payé. Entre l'email utilisé lors de l'achat.")}</p>
+              <form onSubmit={async (e) => { e.preventDefault(); const ok = await verifyAccess(); if (ok) setShowUnlockModal(false); }} className="mt-6 flex flex-col gap-3">
+                <input autoFocus value={accessEmail} onChange={(e) => setAccessEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} required placeholder="email@example.com" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-violet-400/50" />
+                <button type="submit" disabled={accessStatus.loading} className="w-full rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{accessStatus.loading ? t("Verifying...", "Vérification...") : t("Unlock", "Déverrouiller")}</button>
+              </form>
+              {accessStatus.error && <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-red-200"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{accessStatus.error}</p>}
+              <div className="mt-5 border-t border-white/10 pt-4 text-center">
+                <button onClick={() => { setShowUnlockModal(false); setShowPricingModal(true); }} className="text-xs text-white/40 transition hover:text-white/70">{t("Not a customer yet? See the offer", "Pas encore client ? Voir l'offre")}</button>
               </div>
             </motion.div>
           </motion.div>
@@ -842,24 +867,16 @@ export default function MoventoSite() {
             <p className="text-white/80">{t("Premium access active", "Accès premium actif")} — <span className="text-white/50">{accessEmail}</span></p>
           </div>
         ) : (
-          <div className="mb-8">
-            {!showUnlock ? (
-              <button onClick={() => setShowUnlock(true)} className="inline-flex items-center gap-1.5 text-sm text-white/40 transition hover:text-white/70">
-                <Icon name="lock" className="h-3.5 w-3.5" /> {t("Already purchased? Unlock your access", "Déjà client ? Déverrouiller ton accès")}
-              </button>
-            ) : (
-              <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:gap-5">
-                <div>
-                  <p className="text-sm font-semibold text-white">{t("Unlock your access", "Déverrouille ton accès")}</p>
-                  <p className="mt-1 text-sm leading-6 text-white/50">{t("For customers who already purchased — enter the email used at checkout.", "Réservé aux clients ayant déjà payé — entre l'email utilisé lors de l'achat.")}</p>
-                </div>
-                <form className="mt-4 flex flex-col gap-3 sm:flex-row md:mt-0" onSubmit={(event) => { event.preventDefault(); verifyAccess(); }}>
-                  <input autoFocus value={accessEmail} onChange={(event) => setAccessEmail(event.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50 sm:w-72" />
-                  <button disabled={accessStatus.loading} className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{accessStatus.loading ? t("Verifying...", "Vérification...") : t("Unlock", "Déverrouiller")}</button>
-                </form>
-              </div>
-            )}
-          </div>
+          <button onClick={() => setShowUnlockModal(true)} className="mb-8 flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-left backdrop-blur-xl transition hover:border-violet-300/30 hover:bg-white/[0.07]">
+            <span className="flex items-center gap-3">
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-violet-500/15 text-violet-200"><Icon name="lock" className="h-4 w-4" /></span>
+              <span>
+                <span className="block text-sm font-semibold text-white">{t("Already purchased?", "Déjà client ?")}</span>
+                <span className="block text-xs text-white/45">{t("Unlock your access with your checkout email.", "Déverrouille ton accès avec ton email d'achat.")}</span>
+              </span>
+            </span>
+            <span className="flex flex-none items-center gap-1.5 rounded-full bg-white/[0.08] px-3.5 py-2 text-xs font-semibold text-white/80">{t("Unlock", "Déverrouiller")} <Icon name="arrow" className="h-3.5 w-3.5" /></span>
+          </button>
         )}
         {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 backdrop-blur-xl ${accessStatus.error ? "border-red-400/20 bg-red-500/10 text-red-100" : "border-emerald-300/20 bg-emerald-400/10 text-emerald-100"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-violet-300/20 bg-violet-500/10 p-4 text-sm leading-6 text-violet-50 backdrop-blur-xl"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
