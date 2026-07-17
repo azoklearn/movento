@@ -215,6 +215,55 @@ const visiblePlans = plans.filter((plan) => !plan.hidden);
 const planGridMd = visiblePlans.length === 1 ? "md:grid-cols-1" : visiblePlans.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
 const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
 
+// Launch-offer deadline. This drives the countdown shown on the pricing surfaces.
+// IMPORTANT: keep this HONEST — set it to a real date and actually raise the price
+// when it passes. An evergreen/auto-resetting countdown is a dark pattern and is
+// illegal in the EU (Omnibus directive). To extend the offer, just push this date.
+const OFFER_DEADLINE = new Date("2026-07-21T23:59:59");
+
+function useCountdown(deadline) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const diff = Math.max(0, deadline.getTime() - now);
+  const totalSec = Math.floor(diff / 1000);
+  return {
+    expired: diff <= 0,
+    days: Math.floor(totalSec / 86400),
+    hours: Math.floor((totalSec % 86400) / 3600),
+    minutes: Math.floor((totalSec % 3600) / 60),
+    seconds: totalSec % 60,
+  };
+}
+
+// Honest urgency: a live countdown to OFFER_DEADLINE. Renders nothing once expired.
+function OfferCountdown({ className = "" }) {
+  const { days, hours, minutes, seconds, expired } = useCountdown(OFFER_DEADLINE);
+  if (expired) return null;
+  const pad = (n) => String(n).padStart(2, "0");
+  const clock = days > 0 ? `${days}${t("d", "j")} ${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  return (
+    <div className={`inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-400/[0.08] px-3.5 py-1.5 text-xs font-medium text-amber-200 ${className}`}>
+      <Icon name="zap" className="h-3.5 w-3.5 text-amber-300" />
+      {t("Launch price ends in", "Prix de lancement — fin dans")}
+      <span className="font-mono tabular-nums tracking-tight text-amber-100">{clock}</span>
+    </div>
+  );
+}
+
+// Reassurance strip shown next to the buy buttons. Every claim here must stay true.
+function Reassurance({ className = "" }) {
+  return (
+    <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-white/45 ${className}`}>
+      <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-violet-300" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
+      <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-300" /> {t("Instant access", "Accès immédiat")}</span>
+      <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-300" /> {t("One-time payment, no subscription", "Paiement unique, sans abonnement")}</span>
+    </div>
+  );
+}
+
 function Icon({ name, className = "h-4 w-4" }) {
   const common = {
     className,
@@ -400,6 +449,7 @@ export default function MoventoSite() {
   const [leadEmailInput, setLeadEmailInput] = useState("");
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showUnlock, setShowUnlock] = useState(false);
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
@@ -670,6 +720,7 @@ export default function MoventoSite() {
               <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-white/65"><Icon name="sparkles" className="h-3.5 w-3.5 text-violet-300" /> {t("Founder pricing", "Prix fondateurs")}</div>
               <h2 className="mt-2 pr-10 text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">{t("Unlock all prompts", "Débloquer tous les prompts")}</h2>
               <p className="mt-2 text-sm text-white/50">{t("Choose a plan to access the full Movento catalog.", "Choisissez une offre pour accéder au catalogue complet Movento.")}</p>
+              <OfferCountdown className="mt-4" />
               {checkoutStatus.error && (
                 <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-100">
                   <Icon name="alert" className="mt-0.5 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p>
@@ -705,6 +756,7 @@ export default function MoventoSite() {
                         {checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}
                         <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
                       </button>
+                      <Reassurance className="mt-3" />
                       <div className="my-5 h-px bg-white/10" />
                       <div className="space-y-2.5">
                         {plan.features.map((feat) => (
@@ -784,16 +836,31 @@ export default function MoventoSite() {
           <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">{t("Premium prompts", "Prompts premium")}</h2>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : `${prompts.filter(isPromptAvailable).length}+ ${t("premium prompts. The full catalog unlocks with a Movento plan.", "prompts premium. Le catalogue complet se débloque avec un abonnement Movento.")}`}</p>
         </div>
-        <div className="mb-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:gap-5">
-          <div>
-            <p className="text-sm font-semibold text-white">{hasPremiumAccess ? t("Premium access active", "Accès premium actif") : t("Already a member?", "Déjà membre ?")}</p>
-            <p className="mt-1 text-sm leading-6 text-white/50">{hasPremiumAccess ? `${t("Signed in as", "Connecté en tant que")} ${accessEmail}.` : t("Enter the email used at checkout to unlock premium prompts on this device.", "Entrez l'email utilisé lors de l'achat pour accéder aux prompts premium.")}</p>
+        {hasPremiumAccess ? (
+          <div className="mb-8 flex items-center gap-3 rounded-[28px] border border-emerald-300/20 bg-emerald-400/[0.06] p-4 text-sm backdrop-blur-xl">
+            <div className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400/15 text-emerald-200"><Icon name="check" className="h-4 w-4" /></div>
+            <p className="text-white/80">{t("Premium access active", "Accès premium actif")} — <span className="text-white/50">{accessEmail}</span></p>
           </div>
-          <form className="mt-4 flex flex-col gap-3 sm:flex-row md:mt-0" onSubmit={(event) => { event.preventDefault(); verifyAccess(); }}>
-            <input value={accessEmail} onChange={(event) => setAccessEmail(event.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50 sm:w-72" />
-            <button disabled={accessStatus.loading} className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{accessStatus.loading ? t("Verifying...", "Vérification...") : hasPremiumAccess ? t("Re-verify", "Re-vérifier") : t("Unlock", "Déverrouiller")}</button>
-          </form>
-        </div>
+        ) : (
+          <div className="mb-8">
+            {!showUnlock ? (
+              <button onClick={() => setShowUnlock(true)} className="inline-flex items-center gap-1.5 text-sm text-white/40 transition hover:text-white/70">
+                <Icon name="lock" className="h-3.5 w-3.5" /> {t("Already purchased? Unlock your access", "Déjà client ? Déverrouiller ton accès")}
+              </button>
+            ) : (
+              <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:gap-5">
+                <div>
+                  <p className="text-sm font-semibold text-white">{t("Unlock your access", "Déverrouille ton accès")}</p>
+                  <p className="mt-1 text-sm leading-6 text-white/50">{t("For customers who already purchased — enter the email used at checkout.", "Réservé aux clients ayant déjà payé — entre l'email utilisé lors de l'achat.")}</p>
+                </div>
+                <form className="mt-4 flex flex-col gap-3 sm:flex-row md:mt-0" onSubmit={(event) => { event.preventDefault(); verifyAccess(); }}>
+                  <input autoFocus value={accessEmail} onChange={(event) => setAccessEmail(event.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50 sm:w-72" />
+                  <button disabled={accessStatus.loading} className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{accessStatus.loading ? t("Verifying...", "Vérification...") : t("Unlock", "Déverrouiller")}</button>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
         {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 backdrop-blur-xl ${accessStatus.error ? "border-red-400/20 bg-red-500/10 text-red-100" : "border-emerald-300/20 bg-emerald-400/10 text-emerald-100"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-violet-300/20 bg-violet-500/10 p-4 text-sm leading-6 text-violet-50 backdrop-blur-xl"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
         {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
@@ -826,6 +893,7 @@ export default function MoventoSite() {
           <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Unlock the full power of web creation without limits. Access a complete library of premium prompts built to generate professional websites — each one worth thousands of euros.", "Débloquez toute la puissance de la création web sans limites. Accédez à une bibliothèque complète de prompts premium spécialement conçus pour générer des sites internet professionnels, chacun représentant une valeur de plusieurs milliers d'euros.")}</p>
 
+          <OfferCountdown className="mt-8" />
         </div>
 
         {checkoutStatus.error && <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p></div>}
@@ -849,7 +917,7 @@ export default function MoventoSite() {
         <div className="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-white/45">
           <span className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-violet-300" /> {t("Payment secured by Whop", "Paiement sécurisé par Whop")}</span>
           <span className="flex items-center gap-2"><Icon name="zap" className="h-3.5 w-3.5 text-amber-300" /> {t("Instant access", "Accès immédiat")}</span>
-          <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("Cancel anytime from your Whop account", "Résiliable à tout moment depuis votre compte Whop")}</span>
+          <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("One-time payment, no subscription", "Paiement unique, sans abonnement")}</span>
         </div>
       </section>
 
@@ -1009,6 +1077,7 @@ function PricingPage() {
           </div>
           <h1 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Unlock the full power of web creation without limits. Access a complete library of premium prompts built to generate professional websites — each one worth thousands of euros.", "Débloquez toute la puissance de la création web sans limites. Accédez à une bibliothèque complète de prompts premium spécialement conçus pour générer des sites internet professionnels, chacun représentant une valeur de plusieurs milliers d'euros.")}</p>
+          <OfferCountdown className="mt-8" />
         </div>
 
         {checkoutStatus.error && (
@@ -1052,6 +1121,7 @@ function PricingPage() {
                   {checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}
                   <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
                 </button>
+                <Reassurance className="mt-4" />
                 <div className="my-7 h-px bg-white/10" />
                 <div className="space-y-3">
                   {plan.features.map((item) => (
