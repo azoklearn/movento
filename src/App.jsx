@@ -764,33 +764,34 @@ export default function MoventoSite() {
           </motion.div>
         )}
         {showPricingModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-3 py-6 sm:items-center sm:px-4 sm:py-8" onClick={() => setShowPricingModal(false)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-3 py-4 sm:px-4 sm:py-8" onClick={() => setShowPricingModal(false)}>
             <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative my-auto w-full max-w-5xl rounded-3xl border border-white/10 bg-[#0d0e18] p-5 shadow-2xl sm:rounded-[32px] sm:p-8" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setShowPricingModal(false)} className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition sm:right-5 sm:top-5"><Icon name="close" className="h-4 w-4" /></button>
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0d0e18] shadow-2xl sm:rounded-[32px]" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowPricingModal(false)} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/10 text-white/60 backdrop-blur hover:text-white transition sm:right-5 sm:top-5"><Icon name="close" className="h-4 w-4" /></button>
+              <div className="overflow-y-auto overscroll-contain p-4 sm:p-8">
               <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-white/65"><Icon name="sparkles" className="h-3.5 w-3.5 text-violet-300" /> {t("Founder pricing", "Prix fondateurs")}</div>
-              <h2 className="mt-2 pr-10 text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">{t("Unlock all prompts", "Débloquer tous les prompts")}</h2>
-              <p className="mt-2 text-sm text-white/50">{t("Choose a plan to access the full Movento catalog.", "Choisissez une offre pour accéder au catalogue complet Movento.")}</p>
-              <OfferCountdown className="mt-4" />
+              <h2 className="mt-2 pr-10 text-xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">{t("Unlock all prompts", "Débloquer tous les prompts")}</h2>
+              <p className="mt-1.5 text-sm text-white/50 sm:mt-2">{t("Choose a plan to access the full Movento catalog.", "Choisissez une offre pour accéder au catalogue complet Movento.")}</p>
+              <OfferCountdown className="mt-3 sm:mt-4" />
               {checkoutStatus.error && (
                 <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-100">
                   <Icon name="alert" className="mt-0.5 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p>
                 </div>
               )}
-              <div className={`mt-7 grid gap-4 ${planGridMd}`}>
+              <div className={`mt-5 grid gap-4 sm:mt-7 ${planGridMd}`}>
                 {visiblePlans.map((plan) => (
-                  <div key={plan.id} className={`relative overflow-hidden rounded-[24px] border p-3 backdrop-blur-2xl transition hover:-translate-y-1 ${plan.id === "monthly" ? "border-violet-400/40 bg-gradient-to-br from-violet-500/[0.22] via-fuchsia-500/[0.08] to-cyan-500/[0.12]" : plan.featured ? "border-violet-300/30 bg-gradient-to-br from-violet-500/[0.18] via-white/[0.06] to-cyan-500/[0.12]" : "border-white/10 bg-white/[0.035]"}`}>
+                  <div key={plan.id} className={`relative overflow-hidden rounded-[24px] border p-2.5 backdrop-blur-2xl transition hover:-translate-y-1 sm:p-3 ${plan.id === "monthly" ? "border-violet-400/40 bg-gradient-to-br from-violet-500/[0.22] via-fuchsia-500/[0.08] to-cyan-500/[0.12]" : plan.featured ? "border-violet-300/30 bg-gradient-to-br from-violet-500/[0.18] via-white/[0.06] to-cyan-500/[0.12]" : "border-white/10 bg-white/[0.035]"}`}>
                     {plan.id === "monthly" && <div className="pointer-events-none absolute -left-8 -top-8 h-40 w-40 rounded-full bg-fuchsia-500/25 blur-[60px]" />}
                     {plan.featured && <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-violet-500/30 blur-[70px]" />}
-                    <div className="relative rounded-[18px] border border-white/10 bg-[#080910]/90 p-5">
-                      <div className="mb-5 flex items-start justify-between gap-3">
+                    <div className="relative rounded-[18px] border border-white/10 bg-[#080910]/90 p-4 sm:p-5">
+                      <div className="mb-4 flex items-start justify-between gap-3 sm:mb-5">
                         <div>
                           <h3 className="text-lg font-semibold text-white">{plan.name}</h3>
                           <p className="mt-1 text-xs leading-5 text-white/45">{plan.description}</p>
                         </div>
                         <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span>
                       </div>
-                      <div className="mb-5">
+                      <div className="mb-4 sm:mb-5">
                         {plan.originalPrice && (
                           <div className="mb-1 flex items-center gap-2">
                             <span className="text-sm text-white/35 line-through">{plan.originalPrice}</span>
@@ -808,7 +809,7 @@ export default function MoventoSite() {
                         <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
                       </button>
                       <Reassurance className="mt-3" />
-                      <div className="my-5 h-px bg-white/10" />
+                      <div className="my-4 h-px bg-white/10 sm:my-5" />
                       <div className="space-y-2.5">
                         {plan.features.map((feat) => (
                           <div key={feat} className="flex items-center gap-2.5 text-xs text-white/65">
@@ -817,13 +818,14 @@ export default function MoventoSite() {
                           </div>
                         ))}
                       </div>
-                      <BonusCallout className="mt-5" />
+                      <BonusCallout className="mt-4 sm:mt-5" />
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-6 border-t border-white/10 pt-5 text-center">
+              <div className="mt-5 border-t border-white/10 pt-4 text-center sm:mt-6 sm:pt-5">
                 <button onClick={() => { setShowPricingModal(false); setShowUnlockModal(true); }} className="text-sm text-white/45 transition hover:text-white/80">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
+              </div>
               </div>
             </motion.div>
           </motion.div>
