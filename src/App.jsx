@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { track } from "@vercel/analytics";
 
@@ -318,9 +318,9 @@ function Logo() {
   );
 }
 
-function SmartVideo({ src, className, onError }) {
-  if (!src) return null;
-  return <video src={src} className={className} autoPlay loop muted playsInline preload="metadata" onError={onError} />;
+// Cheap, network-free placeholder shown until a card scrolls near the viewport.
+function PreviewSkeleton({ item }) {
+  return <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-20`} />;
 }
 
 function GeneratedPreview({ item }) {
@@ -345,13 +345,41 @@ function GeneratedPreview({ item }) {
 
 function PreviewCard({ item, badge, onClick }) {
   const [previewFailed, setPreviewFailed] = useState(false);
+  const [inView, setInView] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const containerRef = useRef(null);
+  const videoRef = useRef(null);
   const hasVideo = !previewFailed && item.preview && (item.preview.endsWith(".mp4") || item.preview.endsWith(".webm"));
   const hasImage = !previewFailed && item.preview && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => item.preview.endsWith(ext) || item.preview.includes(`${ext}?`));
 
+  // Mobile killer: 40 autoplaying previews loading at once. Only mount the heavy
+  // media once a card nears the viewport (inView, sticky), and track whether it is
+  // currently on screen (visible) — so the first paint loads just the few cards
+  // actually shown.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setInView(true); setVisible(true); return; }
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setInView(true);
+      setVisible(entry.isIntersecting);
+    }, { rootMargin: "300px 0px", threshold: 0.01 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Play only the previews on screen so mobile never decodes 40 videos at once.
+  // Runs after render, so videoRef is always mounted when this fires.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (visible) v.play?.().catch(() => {});
+    else v.pause?.();
+  }, [visible, inView]);
+
   return (
     <motion.div layout whileHover={{ y: -5 }} onClick={onClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] bg-white/[0.04] shadow-xl shadow-black/30 transition hover:bg-white/[0.07]">
-      <div className="relative aspect-[1.45] overflow-hidden bg-[#080913]">
-        {hasVideo ? <SmartVideo className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
+      <div ref={containerRef} className="relative aspect-[1.45] overflow-hidden bg-[#080913]">
+        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? <video ref={videoRef} src={item.preview} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
       <div className="flex items-center justify-between gap-3 px-4 py-3.5">
         <div className="min-w-0">
