@@ -322,6 +322,13 @@ function PreviewSkeleton({ item }) {
   return <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-20`} />;
 }
 
+// Local static poster (a frame grabbed at ~3s) for each video preview, generated
+// into /public/posters. On mobile we show only this — the video never loads.
+function posterFor(previewUrl) {
+  const base = decodeURIComponent(previewUrl.split("/").pop().split("?")[0]).replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
+  return `/posters/${base}.jpg`;
+}
+
 function GeneratedPreview({ item }) {
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -381,7 +388,7 @@ function PreviewCard({ item, badge, onClick }) {
   return (
     <motion.div layout whileHover={{ y: -5 }} onClick={onClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] bg-white/[0.04] shadow-xl shadow-black/30 transition hover:bg-white/[0.07]">
       <div ref={containerRef} className="relative aspect-[1.45] overflow-hidden bg-[#080913]">
-        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? <video ref={videoRef} src={isMobile ? `${item.preview}#t=0.1` : item.preview} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} autoPlay={!isMobile} loop={!isMobile} muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
+        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? <img className="h-full w-full object-cover" style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
       <div className="flex items-center justify-between gap-3 px-4 py-3.5">
         <div className="min-w-0">
