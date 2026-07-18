@@ -347,6 +347,9 @@ function PreviewCard({ item, badge, onClick }) {
   const [previewFailed, setPreviewFailed] = useState(false);
   const [inView, setInView] = useState(false);
   const [visible, setVisible] = useState(false);
+  // On mobile we never stream gallery videos — like motionsites, we show a frozen
+  // first frame instead. That's the single biggest mobile load win.
+  const [isMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const hasVideo = !previewFailed && item.preview && (item.preview.endsWith(".mp4") || item.preview.endsWith(".webm"));
@@ -372,14 +375,14 @@ function PreviewCard({ item, badge, onClick }) {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (visible) v.play?.().catch(() => {});
+    if (!isMobile && visible) v.play?.().catch(() => {});
     else v.pause?.();
-  }, [visible, inView]);
+  }, [visible, inView, isMobile]);
 
   return (
     <motion.div layout whileHover={{ y: -5 }} onClick={onClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] bg-white/[0.04] shadow-xl shadow-black/30 transition hover:bg-white/[0.07]">
       <div ref={containerRef} className="relative aspect-[1.45] overflow-hidden bg-[#080913]">
-        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? <video ref={videoRef} src={item.preview} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
+        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? <video ref={videoRef} src={isMobile ? `${item.preview}#t=0.1` : item.preview} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} autoPlay={!isMobile} loop={!isMobile} muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : hasImage ? <img className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
       <div className="flex items-center justify-between gap-3 px-4 py-3.5">
         <div className="min-w-0">
