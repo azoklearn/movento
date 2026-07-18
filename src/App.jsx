@@ -264,6 +264,22 @@ function Reassurance({ className = "" }) {
   );
 }
 
+// Highlighted free-ebook bonus shown on the pricing cards.
+function BonusCallout({ className = "" }) {
+  return (
+    <div className={`flex items-start gap-3 rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.10] to-amber-500/[0.03] p-4 ${className}`}>
+      <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-amber-400/15 text-amber-200"><Icon name="gift" className="h-4 w-4" /></span>
+      <div>
+        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
+          {t("Free bonus", "Bonus offert")}
+          <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200">{t("Included", "Inclus")}</span>
+        </p>
+        <p className="mt-1 text-xs leading-5 text-white/60">{t("The ebook “Land your first client & sell your first site” — the exact steps to turn Movento prompts into paid work.", "L'ebook « Trouve ton premier client & vends ton premier site » — les étapes concrètes pour transformer les prompts Movento en missions payantes.")}</p>
+      </div>
+    </div>
+  );
+}
+
 function Icon({ name, className = "h-4 w-4" }) {
   const common = {
     className,
@@ -291,6 +307,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   if (name === "close") children = <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>;
   if (name === "shield") children = <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></>;
   if (name === "lock") children = <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>;
+  if (name === "gift") children = <><path d="M20 12v10H4V12" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" /></>;
 
   return <svg {...common}>{children}</svg>;
 }
@@ -769,6 +786,7 @@ export default function MoventoSite() {
                           </div>
                         ))}
                       </div>
+                      <BonusCallout className="mt-5" />
                     </div>
                   </div>
                 ))}
@@ -926,6 +944,7 @@ export default function MoventoSite() {
                 <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50" : plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>{checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}<Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></button>
                 <div className="my-7 h-px bg-white/10" />
                 <div className="space-y-3">{plan.features.map((item) => <div key={item} className="flex items-center gap-3 text-sm text-white/65"><div className="grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10"><Icon name="check" className="h-3.5 w-3.5 text-white" /></div>{item}</div>)}</div>
+                <BonusCallout className="mt-5" />
               </div>
             </div>
           ))}
@@ -1150,6 +1169,7 @@ function PricingPage() {
                     </div>
                   ))}
                 </div>
+                <BonusCallout className="mt-5" />
               </div>
             </div>
           ))}
