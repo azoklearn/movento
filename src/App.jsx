@@ -349,7 +349,7 @@ function GeneratedPreview({ item }) {
   );
 }
 
-function PreviewCard({ item, badge, onClick }) {
+function PreviewCard({ item, badge, onClick, onPreview }) {
   const [previewFailed, setPreviewFailed] = useState(false);
   const [inView, setInView] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -385,8 +385,15 @@ function PreviewCard({ item, badge, onClick }) {
     else v.pause?.();
   }, [visible, inView, isMobile]);
 
+  // On mobile the gallery shows a frozen poster; tapping a video card opens a
+  // popup that actually plays it (like motionsites). Everything else copies.
+  const handleClick = () => {
+    if (isMobile && hasVideo && onPreview) onPreview(item);
+    else onClick?.();
+  };
+
   return (
-    <motion.div layout whileHover={{ y: -5 }} onClick={onClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] bg-white/[0.04] shadow-xl shadow-black/30 transition hover:bg-white/[0.07]">
+    <motion.div layout whileHover={{ y: -5 }} onClick={handleClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] bg-white/[0.04] shadow-xl shadow-black/30 transition hover:bg-white/[0.07]">
       <div ref={containerRef} className="relative aspect-[1.45] overflow-hidden bg-[#080913]">
         {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? <img className="h-full w-full object-cover" style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
@@ -505,6 +512,7 @@ export default function MoventoSite() {
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [previewItem, setPreviewItem] = useState(null); // mobile video preview popup
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
@@ -857,6 +865,24 @@ export default function MoventoSite() {
             </motion.div>
           </motion.div>
         )}
+        {previewItem && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6" onClick={() => setPreviewItem(null)}>
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d0e18] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setPreviewItem(null)} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-black/40 text-white/70 backdrop-blur hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
+              <video key={previewItem.file} src={previewItem.preview} poster={posterFor(previewItem.preview)} autoPlay loop muted playsInline className="w-full flex-none object-cover" style={{ aspectRatio: "1.45" }} />
+              <div className="flex items-center justify-between gap-3 p-5">
+                <div className="min-w-0">
+                  <h3 className="truncate text-base font-semibold text-white">{previewItem.title}</h3>
+                  <p className="mt-0.5 text-xs text-white/40">{previewItem.category}</p>
+                </div>
+                <button onClick={() => { const it = previewItem; setPreviewItem(null); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:scale-[1.02]">
+                  {(hasPremiumAccess || FREE_PROMPT_FILES.has(previewItem.file)) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]" />
@@ -959,7 +985,7 @@ export default function MoventoSite() {
               const unlocked = hasPremiumAccess || FREE_PROMPT_FILES.has(item.file);
               return (
                 <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
-                  <PreviewCard item={item} onClick={() => copyPrompt(item)} badge={
+                  <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={setPreviewItem} badge={
                     <span className={`flex flex-none items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${copiedCard === item.title ? "bg-emerald-400/15 text-emerald-200" : copiedCard === "Error" ? "bg-red-400/15 text-red-200" : "bg-white/[0.08] text-white/80 group-hover:bg-white group-hover:text-black"}`}>
                       {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> {t("Error", "Erreur")}</> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> Premium</> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> {t("Open", "Ouvrir")}</> : <><Icon name="copy" className="h-3.5 w-3.5" /> {t("Copy", "Copier")}</>}
                     </span>
