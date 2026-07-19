@@ -5,6 +5,8 @@ import { track } from "@vercel/analytics";
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
 const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_URL}/api/create-checkout-session`;
+// Free bonus ebook handed to buyers on the post-payment page.
+const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
 
 const lang = (() => { try { return (navigator.language || "").startsWith("fr") ? "fr" : "en"; } catch { return "en"; } })();
 function t(en, fr) { return lang === "fr" ? fr : en; }
@@ -307,6 +309,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   if (name === "shield") children = <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></>;
   if (name === "lock") children = <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>;
   if (name === "gift") children = <><path d="M20 12v10H4V12" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" /></>;
+  if (name === "download") children = <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></>;
 
   return <svg {...common}>{children}</svg>;
 }
@@ -756,6 +759,7 @@ export default function MoventoSite() {
   if (isMentionsPage) return <MentionsLegales />;
   if (isPricingPage) return <PricingPage />;
   if (isSubscriptionPage) return <SubscriptionPage />;
+  if (isSuccessPage) return <SuccessPage />;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#05060a] text-white">
@@ -921,25 +925,6 @@ export default function MoventoSite() {
         </AnimatePresence>
       </header>
 
-      {isSuccessPage && (
-        <section className="relative z-10 mx-auto max-w-4xl px-6 pb-10 pt-14 text-center lg:px-8">
-          <div className="rounded-[34px] border border-emerald-300/20 bg-emerald-400/[0.08] p-8 shadow-2xl shadow-emerald-950/30 backdrop-blur-2xl">
-            <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl border border-emerald-200/20 bg-emerald-300/10 text-emerald-100">
-              <Icon name="check" className="h-6 w-6" />
-            </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">{t("Payment confirmed", "Paiement confirmé")}</h1>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-white/60 md:text-base">
-              {accessStatus.loading ? t("Confirming your payment with Whop.", "Confirmation de votre paiement avec Whop.") : hasPremiumAccess ? t("Your Movento access is ready. Go back to the gallery and copy premium prompts.", "Votre accès Movento est prêt. Retournez à la galerie et copiez les prompts premium.") : t("Payment received. If your access does not activate automatically, enter your email below.", "Paiement reçu. Si votre accès ne s'active pas automatiquement, entrez votre email ci-dessous.")}
-            </p>
-            {accessStatus.message && <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-emerald-100">{accessStatus.message}</p>}
-            {accessStatus.error && <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-red-100">{accessStatus.error}</p>}
-            <a href="/#prompts" className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.02]">
-              {t("Back to prompts", "Retour aux prompts")} <Icon name="arrow" className="h-4 w-4" />
-            </a>
-          </div>
-        </section>
-      )}
-
       <section id="prompts" className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-24 lg:px-8 lg:pt-24">
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.3em] text-white/35">{t("Gallery", "Galerie")}</p>
@@ -1078,6 +1063,110 @@ export default function MoventoSite() {
             <a href="/subscription" className="text-sm text-white/30 hover:text-white transition">{t("My subscription", "Mon abonnement")}</a>
             <a href="/mentions-legales" className="text-sm text-white/30 hover:text-white transition">{t("Legal notice", "Mentions légales")}</a>
           </div>
+        </div>
+      </footer>
+    </main>
+  );
+}
+
+function SuccessPage() {
+  const [email, setEmail] = useState(getStoredAccessEmail);
+  const [status, setStatus] = useState({ loading: false, ok: false, error: "" });
+
+  // Prefill from ?email= if the checkout redirect carried it.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromUrl = new URLSearchParams(window.location.search).get("email");
+    if (fromUrl && !email) setEmail(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const clean = (v) => String(v).replace(/[\s\u00AD\u200B-\u200D\u2060\uFEFF]/g, "").toLowerCase();
+
+  async function unlock(e) {
+    if (e) e.preventDefault();
+    const normalized = clean(email);
+    if (!normalized) { setStatus({ loading: false, ok: false, error: t("Enter the email used at checkout.", "Entre l'email utilisé lors de l'achat.") }); return; }
+    setStatus({ loading: true, ok: false, error: "" });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/verify-access`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalized }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "error");
+      if (data.hasAccess) {
+        window.localStorage.setItem("movento_access_email", normalized);
+        setStatus({ loading: false, ok: true, error: "" });
+      } else {
+        setStatus({ loading: false, ok: false, error: t("No access found for this email yet. If you just paid, wait a minute and retry — activation can take a moment.", "Aucun accès trouvé pour cet email pour l'instant. Si tu viens de payer, patiente une minute et réessaie — l'activation peut prendre un instant.") });
+      }
+    } catch (_) {
+      setStatus({ loading: false, ok: false, error: t("Unable to verify right now. Please retry.", "Vérification impossible pour le moment. Réessaie.") });
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-[#05060a] text-white">
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-emerald-500/15 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-violet-600/10 blur-[120px]" />
+      </div>
+
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <a href="/"><Logo /></a>
+        <a href="/#prompts" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">{t("Go to the gallery", "Aller à la galerie")} →</a>
+      </header>
+
+      <section className="relative z-10 mx-auto max-w-2xl px-6 pb-24 pt-8 lg:px-8">
+        <div className="text-center">
+          <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl border border-emerald-200/20 bg-emerald-300/10 text-emerald-100"><Icon name="check" className="h-6 w-6" /></div>
+          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">{t("Payment confirmed 🎉", "Paiement confirmé 🎉")}</h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-white/55 md:text-base">{t("Thank you! Two quick steps and you're all set.", "Merci ! Deux étapes rapides et tu es prêt.")}</p>
+        </div>
+
+        {/* Step 1 — unlock access */}
+        <div className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl md:p-7">
+          <div className="flex items-center gap-3">
+            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-white/10 text-sm font-bold text-white">1</span>
+            <h2 className="text-lg font-semibold text-white">{t("Unlock your prompts", "Débloque tes prompts")}</h2>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-white/55">{t("Enter the email you used at checkout. It unlocks the full catalog on this device — and on any device, anytime.", "Entre l'email que tu as utilisé au paiement. Il débloque tout le catalogue sur cet appareil — et sur n'importe quel appareil, à tout moment.")}</p>
+          {status.ok ? (
+            <div className="mt-5 flex flex-col items-start gap-3 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100 sm:flex-row sm:items-center sm:justify-between">
+              <span className="flex items-center gap-2"><Icon name="check" className="h-4 w-4 flex-none" /> {t("Access unlocked on this device!", "Accès débloqué sur cet appareil !")}</span>
+              <a href="/#prompts" className="inline-flex flex-none items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:scale-[1.02]">{t("Copy prompts", "Copier les prompts")} <Icon name="arrow" className="h-4 w-4" /></a>
+            </div>
+          ) : (
+            <>
+              <form onSubmit={unlock} className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50" />
+                <button type="submit" disabled={status.loading} className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{status.loading ? t("Checking...", "Vérification...") : t("Unlock", "Débloquer")}</button>
+              </form>
+              {status.error && <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-amber-200"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{status.error}</p>}
+            </>
+          )}
+        </div>
+
+        {/* Step 2 — ebook bonus */}
+        <div className="mt-4 rounded-[28px] border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.10] to-amber-500/[0.03] p-6 backdrop-blur-xl md:p-7">
+          <div className="flex items-center gap-3">
+            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-amber-400/15 text-amber-200"><Icon name="gift" className="h-4 w-4" /></span>
+            <h2 className="text-lg font-semibold text-white">{t("Your free bonus ebook", "Ton ebook bonus offert")}</h2>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-white/60">{t("“Land your first client & sell your first site” — the exact steps to turn your prompts into paid work.", "« Trouve ton premier client & vends ton premier site » — les étapes concrètes pour transformer tes prompts en missions payantes.")}</p>
+          <a href={EBOOK_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-amber-300 px-6 py-3 text-sm font-semibold text-[#1a1400] transition hover:scale-[1.02]"><Icon name="download" className="h-4 w-4" /> {t("Download the ebook", "Télécharger l'ebook")}</a>
+        </div>
+
+        <p className="mt-6 text-center text-xs leading-5 text-white/35">{t("Keep this email address — it's your key to access Movento anytime.", "Garde bien cet email — c'est ta clé pour accéder à Movento à tout moment.")}</p>
+      </section>
+
+      <footer className="relative z-10 border-t border-white/[0.06] py-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
+          <Logo />
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <a href="/subscription" className="text-sm text-white/30 hover:text-white transition">{t("My subscription", "Mon abonnement")}</a>
         </div>
       </footer>
     </main>
