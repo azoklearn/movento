@@ -7,6 +7,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ?
 const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_URL}/api/create-checkout-session`;
 // Free bonus ebook handed to buyers on the post-payment page.
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
+// Exclusive promo code surfaced at the end of the welcome quiz (create it in Whop
+// for it to actually apply at checkout).
+const PROMO_CODE = "TIKTOK10";
 
 const lang = (() => { try { return (navigator.language || "").startsWith("fr") ? "fr" : "en"; } catch { return "en"; } })();
 function t(en, fr) { return lang === "fr" ? fr : en; }
@@ -498,6 +501,123 @@ if (typeof window !== "undefined" && !window.__MOVENTO_TESTS_RAN__) {
   runSelfTests();
 }
 
+// Welcome quiz — a short, tap-only, non-skippable onboarding shown once per device.
+// Goal is conviction, not lead capture: every answer reassures the visitor that
+// Movento fits their goal, then the final screen teases the bonus ebook + promo code.
+const QUIZ_GOALS = [
+  { key: "self", emoji: "🚀", label: t("Launch my own site / business", "Lancer mon propre site / business"), affirm: t("Your project deserves a site that turns heads. Premium result, without writing a line of code.", "Ton projet mérite un site qui envoie. Rendu premium, sans écrire une ligne de code.") },
+  { key: "clients", emoji: "💼", label: t("Build sites for clients", "Créer des sites pour des clients"), affirm: t("Deliver agency-grade sites in minutes. Your clients will love it.", "Livre des sites dignes d'une agence en quelques minutes. Tes clients vont adorer.") },
+  { key: "resell", emoji: "💰", label: t("Resell turnkey sites", "Revendre des sites clé en main"), affirm: t("Every prompt is a resellable site. Your margin is the time you save.", "Chaque prompt = un site revendable. Ta marge, c'est le temps que tu gagnes.") },
+  { key: "learn", emoji: "🎨", label: t("Learn / level up", "Apprendre / me perfectionner"), affirm: t("Start from an already-pro site and tweak it — the best way to progress.", "Pars d'un site déjà pro et bidouille-le — la meilleure façon de progresser.") },
+];
+
+const QUIZ_LEVELS = [
+  { key: "none", emoji: "🌱", label: t("Zero — I'm just starting", "Zéro, je débute"), affirm: t("Perfect: not a single line to write. Copy, paste, it's online.", "Parfait : zéro ligne à écrire. Tu copies, tu colles, c'est en ligne.") },
+  { key: "some", emoji: "⚡", label: t("I get by a little", "Je me débrouille un peu"), affirm: t("The heavy lifting is done — you just personalize and publish.", "Le gros du travail est déjà fait — tu personnalises et tu publies.") },
+  { key: "pro", emoji: "💻", label: t("I already code", "Je code déjà"), affirm: t("Save hours: no more blank page, start from a pro base.", "Gagne des heures : finie la page blanche, tu pars d'une base pro.") },
+];
+
+function WelcomeQuiz({ onDone }) {
+  const [step, setStep] = useState(0); // 0 = goal, 1 = level, 2 = final
+  const [goal, setGoal] = useState(null);
+  const [level, setLevel] = useState(null);
+
+  useEffect(() => { track("quiz_shown"); }, []);
+
+  function pickGoal(g) { setGoal(g); track("quiz_goal", { goal: g.key }); setStep(1); }
+  function pickLevel(l) { setLevel(l); track("quiz_level", { level: l.key }); setStep(2); }
+  function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "" }); onDone(); }
+
+  const optionClass = "group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-left transition hover:border-violet-400/40 hover:bg-white/[0.07]";
+
+  return (
+    <motion.div key="quiz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] overflow-y-auto bg-[#05060a] text-white">
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute left-1/2 top-[-15%] h-[440px] w-[440px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[130px]" />
+        <div className="absolute bottom-[-12%] right-[-8%] h-[380px] w-[380px] rounded-full bg-cyan-500/10 blur-[130px]" />
+      </div>
+
+      <div className="relative z-10 mx-auto flex min-h-full max-w-xl flex-col px-5 py-6 sm:px-6">
+        <div className="flex items-center justify-between">
+          <Logo />
+          {step < 2 && <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-300/20 bg-violet-500/10 px-3 py-1 text-[11px] font-medium text-violet-200"><Icon name="gift" className="h-3.5 w-3.5" /> {t("Free bonus at the end", "Bonus offert à la fin")}</span>}
+        </div>
+
+        <div className="flex flex-1 flex-col justify-center py-8">
+          <AnimatePresence mode="wait">
+            {step === 0 && (
+              <motion.div key="q1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                <p className="text-xs font-medium uppercase tracking-wide text-white/40">{t("Question 1 / 2", "Question 1 / 2")}</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">{t("What brings you to Movento?", "Qu'est-ce qui t'amène sur Movento ?")}</h2>
+                <p className="mt-2 text-sm leading-6 text-white/50">{t("Whatever your answer, you're in the right place.", "Peu importe ta réponse, tu es au bon endroit.")}</p>
+                <div className="mt-5 flex flex-col gap-3">
+                  {QUIZ_GOALS.map((g) => (
+                    <button key={g.key} onClick={() => pickGoal(g)} className={optionClass}>
+                      <span className="text-2xl">{g.emoji}</span>
+                      <span className="flex-1 text-sm font-medium text-white/90">{g.label}</span>
+                      <Icon name="arrow" className="h-4 w-4 flex-none text-white/30 transition group-hover:translate-x-0.5 group-hover:text-white/70" />
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {step === 1 && (
+              <motion.div key="q2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setStep(0)} className="text-xs text-white/40 transition hover:text-white/70">← {t("Back", "Retour")}</button>
+                  <p className="text-xs font-medium uppercase tracking-wide text-white/40">{t("Question 2 / 2", "Question 2 / 2")}</p>
+                </div>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">{t("Your level with code?", "Ton niveau en code ?")}</h2>
+                <p className="mt-2 text-sm leading-6 text-white/50">{t("No wrong answer — Movento adapts to every level.", "Aucune mauvaise réponse — Movento s'adapte à tous les niveaux.")}</p>
+                <div className="mt-5 flex flex-col gap-3">
+                  {QUIZ_LEVELS.map((l) => (
+                    <button key={l.key} onClick={() => pickLevel(l)} className={optionClass}>
+                      <span className="text-2xl">{l.emoji}</span>
+                      <span className="flex-1 text-sm font-medium text-white/90">{l.label}</span>
+                      <Icon name="arrow" className="h-4 w-4 flex-none text-white/30 transition group-hover:translate-x-0.5 group-hover:text-white/70" />
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div key="final" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-emerald-200/20 bg-emerald-300/10 text-emerald-100"><Icon name="check" className="h-6 w-6" /></div>
+                <h2 className="mt-4 text-center text-2xl font-semibold tracking-tight text-white md:text-3xl">{t("Whatever your goal, you're in the right place. 🎯", "Peu importe ton objectif, tu es au bon endroit. 🎯")}</h2>
+                {goal && <p className="mt-3 text-center text-sm leading-6 text-white/60">{goal.affirm}</p>}
+                {level && <p className="mt-1.5 text-center text-sm leading-6 text-white/40">{level.affirm}</p>}
+
+                <div className="mt-6 rounded-2xl border border-violet-300/20 bg-gradient-to-br from-violet-500/10 to-cyan-500/[0.06] p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-violet-500/20 text-violet-200"><Icon name="gift" className="h-5 w-5" /></span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{t("With your access: your free ebook", "Avec l'accès : ton ebook offert")}</p>
+                      <p className="mt-1 text-xs leading-5 text-white/55">{t("Learn to build your sites from A to Z and land your first clients. Everything you need to launch 100%.", "Apprends à créer tes sites de A à Z et à trouver tes premiers clients. De quoi te lancer à 100%.")}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-center">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">{t("Found us on TikTok? Your exclusive code", "Tu nous as trouvés sur TikTok ? Ton code exclusif")}</p>
+                  <div className="mt-2 flex items-center justify-center gap-2.5">
+                    <span className="rounded-lg border border-dashed border-violet-300/40 bg-violet-500/10 px-4 py-2 font-mono text-lg font-bold tracking-[0.2em] text-white">{PROMO_CODE}</span>
+                    <span className="text-sm font-semibold text-emerald-300">−10%</span>
+                  </div>
+                  <p className="mt-2 text-[11px] text-white/35">{t("Apply it at checkout — reserved, don't miss it.", "À appliquer au paiement — réservé, profites-en.")}</p>
+                </div>
+
+                <button onClick={finish} className="mt-5 w-full rounded-2xl bg-white py-3.5 text-sm font-semibold text-black transition hover:scale-[1.01]">{t("Discover the prompts", "Découvrir les prompts")} →</button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function MoventoSite() {
   const [query, setQuery] = useState("");
   const [access, setAccess] = useState("all"); // all | free | paid
@@ -518,6 +638,10 @@ export default function MoventoSite() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [previewItem, setPreviewItem] = useState(null); // mobile video preview popup
+  const [showQuiz, setShowQuiz] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try { return !window.localStorage.getItem("movento_quiz_done"); } catch { return false; }
+  });
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
@@ -766,6 +890,7 @@ export default function MoventoSite() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#05060a] text-white">
       <AnimatePresence>
+        {showQuiz && <WelcomeQuiz onDone={() => { try { window.localStorage.setItem("movento_quiz_done", "1"); } catch (_) {} setShowQuiz(false); }} />}
         {showLeadModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowLeadModal(false)}>
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -795,6 +920,13 @@ export default function MoventoSite() {
               <h2 className="mt-2 pr-10 text-xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">{t("Unlock all prompts", "Débloquer tous les prompts")}</h2>
               <p className="mt-1.5 text-sm text-white/50 sm:mt-2">{t("Choose a plan to access the full Movento catalog.", "Choisissez une offre pour accéder au catalogue complet Movento.")}</p>
               <OfferCountdown className="mt-3 sm:mt-4" />
+              <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-2xl border border-violet-300/20 bg-violet-500/[0.08] px-3.5 py-2.5 sm:mt-4">
+                <Icon name="gift" className="h-4 w-4 flex-none text-violet-200" />
+                <span className="text-sm text-white/70">{t("Your TikTok code", "Ton code TikTok")}</span>
+                <span className="rounded-md border border-dashed border-violet-300/40 bg-violet-500/10 px-2 py-0.5 font-mono text-sm font-bold tracking-widest text-white">{PROMO_CODE}</span>
+                <span className="text-sm font-semibold text-emerald-300">−10%</span>
+                <span className="text-xs text-white/40">{t("— apply it at checkout", "— à appliquer au paiement")}</span>
+              </div>
               {checkoutStatus.error && (
                 <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-100">
                   <Icon name="alert" className="mt-0.5 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p>
