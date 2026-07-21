@@ -1075,11 +1075,15 @@ function SuccessPage() {
   const [email, setEmail] = useState(getStoredAccessEmail);
   const [status, setStatus] = useState({ loading: false, ok: false, error: "" });
 
-  // Prefill from ?email= if the checkout redirect carried it.
+  // Prefill from ?email= if the checkout redirect carried it, and log a custom
+  // event (separate from the automatic /success pageview) so purchase landings
+  // are easy to isolate in Vercel Analytics.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const fromUrl = new URLSearchParams(window.location.search).get("email");
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("email");
     if (fromUrl && !email) setEmail(fromUrl);
+    track("success_page_viewed", { fromCheckout: params.get("checkout_status") === "success" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
