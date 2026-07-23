@@ -10,6 +10,13 @@ const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIv
 // Exclusive promo code surfaced at the end of the welcome quiz (create it in Whop
 // for it to actually apply at checkout).
 const PROMO_CODE = "TIKTOK10";
+// Real, owner-provided community numbers shown as social proof. Keep these HONEST
+// and defensible — false social proof is misleading advertising.
+// FOUNDER_CAP drives the founder-scarcity badge: it is only truthful if the price
+// actually goes up once that many members is reached. Bump FOUNDER_MEMBERS as you grow.
+const FOUNDER_CAP = 500;
+const FOUNDER_MEMBERS = 350;
+const STATS = { users: `${FOUNDER_MEMBERS}+`, sites: "1000+", revenue: "10 000€+" };
 
 const lang = (() => { try { return (navigator.language || "").startsWith("fr") ? "fr" : "en"; } catch { return "en"; } })();
 function t(en, fr) { return lang === "fr" ? fr : en; }
@@ -221,40 +228,23 @@ const visiblePlans = plans.filter((plan) => !plan.hidden);
 const planGridMd = visiblePlans.length === 1 ? "md:grid-cols-1" : visiblePlans.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
 const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
 
-// Launch-offer deadline. This drives the countdown shown on the pricing surfaces.
-// IMPORTANT: keep this HONEST — set it to a real date and actually raise the price
-// when it passes. An evergreen/auto-resetting countdown is a dark pattern and is
-// illegal in the EU (Omnibus directive). To extend the offer, just push this date.
-const OFFER_DEADLINE = new Date("2026-07-21T23:59:59");
-
-function useCountdown(deadline) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  const diff = Math.max(0, deadline.getTime() - now);
-  const totalSec = Math.floor(diff / 1000);
-  return {
-    expired: diff <= 0,
-    days: Math.floor(totalSec / 86400),
-    hours: Math.floor((totalSec % 86400) / 3600),
-    minutes: Math.floor((totalSec % 3600) / 60),
-    seconds: totalSec % 60,
-  };
-}
-
-// Honest urgency: a live countdown to OFFER_DEADLINE. Renders nothing once expired.
-function OfferCountdown({ className = "" }) {
-  const { days, hours, minutes, seconds, expired } = useCountdown(OFFER_DEADLINE);
-  if (expired) return null;
-  const pad = (n) => String(n).padStart(2, "0");
-  const clock = days > 0 ? `${days}${t("d", "j")} ${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+// Honest urgency: real founder scarcity instead of a countdown clock. There is no
+// fake deadline here — the offer ends when FOUNDER_CAP members is reached, which is
+// verifiable and under your control. (An evergreen/auto-resetting countdown would be
+// a dark pattern and is illegal in the EU under the Omnibus directive.)
+function FounderScarcity({ className = "" }) {
+  const left = Math.max(0, FOUNDER_CAP - FOUNDER_MEMBERS);
+  const pct = Math.min(100, Math.round((FOUNDER_MEMBERS / FOUNDER_CAP) * 100));
   return (
-    <div className={`inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-400/[0.08] px-3.5 py-1.5 text-xs font-medium text-amber-200 ${className}`}>
-      <Icon name="zap" className="h-3.5 w-3.5 text-amber-300" />
-      {t("Launch price ends in", "Prix de lancement — fin dans")}
-      <span className="font-mono tabular-nums tracking-tight text-amber-100">{clock}</span>
+    <div className={`rounded-2xl border border-amber-300/25 bg-amber-400/[0.07] px-3.5 py-3 text-left ${className}`}>
+      <p className="flex items-center gap-2 text-xs font-medium text-amber-200">
+        <Icon name="zap" className="h-3.5 w-3.5 flex-none text-amber-300" />
+        {t(`Founder price — first ${FOUNDER_CAP} members`, `Tarif fondateur — les ${FOUNDER_CAP} premiers membres`)}
+      </p>
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-gradient-to-r from-amber-300 to-amber-500" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-1.5 text-[11px] text-white/50">{t(`${FOUNDER_MEMBERS} already joined — ${left} spots left at this price`, `${FOUNDER_MEMBERS} déjà inscrits — ${left} places restantes à ce prix`)}</p>
     </div>
   );
 }
@@ -282,6 +272,25 @@ function BonusCallout({ className = "" }) {
         </p>
         <p className="mt-1 text-xs leading-5 text-white/60">{t("The ebook “Land your first client & sell your first site” — the exact steps to turn Movento prompts into paid work.", "L'ebook « Trouve ton premier client & vends ton premier site » — les étapes concrètes pour transformer les prompts Movento en missions payantes.")}</p>
       </div>
+    </div>
+  );
+}
+
+// Community social proof — owner-provided real numbers. Builds trust for cold traffic.
+function SocialProof({ className = "" }) {
+  const items = [
+    { value: STATS.sites, label: t("sites built with Movento", "sites créés avec Movento") },
+    { value: STATS.users, label: t("members", "membres") },
+    { value: STATS.revenue, label: t("earned by our members", "générés par nos membres") },
+  ];
+  return (
+    <div className={`grid grid-cols-3 divide-x divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] ${className}`}>
+      {items.map((it) => (
+        <div key={it.label} className="px-2 py-3 text-center sm:px-3">
+          <p className="text-base font-bold tracking-tight text-white sm:text-lg">{it.value}</p>
+          <p className="mt-0.5 text-[10px] leading-tight text-white/45 sm:text-[11px]">{it.label}</p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -638,6 +647,7 @@ export default function MoventoSite() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [previewItem, setPreviewItem] = useState(null); // mobile video preview popup
+  const [paywallItem, setPaywallItem] = useState(null); // the paid prompt that triggered the paywall
   const [showQuiz, setShowQuiz] = useState(() => {
     if (typeof window === "undefined") return false;
     try { return !window.localStorage.getItem("movento_quiz_done"); } catch { return false; }
@@ -807,6 +817,7 @@ export default function MoventoSite() {
 
     if (!isFree && !hasPremiumAccess) {
       track("paywall_shown", { prompt: item.title, category: item.category });
+      setPaywallItem(item);
       setShowPricingModal(true);
       return;
     }
@@ -917,9 +928,11 @@ export default function MoventoSite() {
               <button onClick={() => setShowPricingModal(false)} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/10 text-white/60 backdrop-blur hover:text-white transition sm:right-5 sm:top-5"><Icon name="close" className="h-4 w-4" /></button>
               <div className="overflow-y-auto overscroll-contain p-4 sm:p-8">
               <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-white/65"><Icon name="sparkles" className="h-3.5 w-3.5 text-violet-300" /> {t("Founder pricing", "Prix fondateurs")}</div>
-              <h2 className="mt-2 pr-10 text-xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">{t("Unlock all prompts", "Débloquer tous les prompts")}</h2>
+              <h2 className="mt-2 pr-10 text-xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">{paywallItem ? t(`Unlock “${paywallItem.title}” + the whole catalog`, `Débloque « ${paywallItem.title} » + tout le catalogue`) : t("Unlock all prompts", "Débloquer tous les prompts")}</h2>
               <p className="mt-1.5 text-sm text-white/50 sm:mt-2">{t("Choose a plan to access the full Movento catalog.", "Choisissez une offre pour accéder au catalogue complet Movento.")}</p>
-              <OfferCountdown className="mt-3 sm:mt-4" />
+              <p className="mt-2 text-sm leading-6 text-white/75">{t("One site from a freelancer costs 300–800€. Here: unlimited sites for 27,90€.", "1 site chez un freelance = 300–800€. Ici : des sites illimités pour 27,90€.")}</p>
+              <SocialProof className="mt-4" />
+              <FounderScarcity className="mt-3 sm:mt-4" />
               <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-2xl border border-violet-300/20 bg-violet-500/[0.08] px-3.5 py-2.5 sm:mt-4">
                 <Icon name="gift" className="h-4 w-4 flex-none text-violet-200" />
                 <span className="text-sm text-white/70">{t("Your TikTok code", "Ton code TikTok")}</span>
@@ -998,7 +1011,7 @@ export default function MoventoSite() {
               </form>
               {accessStatus.error && <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-red-200"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{accessStatus.error}</p>}
               <div className="mt-5 border-t border-white/10 pt-4 text-center">
-                <button onClick={() => { setShowUnlockModal(false); setShowPricingModal(true); }} className="text-xs text-white/40 transition hover:text-white/70">{t("Not a customer yet? See the offer", "Pas encore client ? Voir l'offre")}</button>
+                <button onClick={() => { setShowUnlockModal(false); setPaywallItem(null); setShowPricingModal(true); }} className="text-xs text-white/40 transition hover:text-white/70">{t("Not a customer yet? See the offer", "Pas encore client ? Voir l'offre")}</button>
               </div>
             </motion.div>
           </motion.div>
@@ -1126,7 +1139,7 @@ export default function MoventoSite() {
           <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Unlock the full power of web creation without limits. Access a complete library of premium prompts built to generate professional websites — each one worth thousands of euros.", "Débloquez toute la puissance de la création web sans limites. Accédez à une bibliothèque complète de prompts premium spécialement conçus pour générer des sites internet professionnels, chacun représentant une valeur de plusieurs milliers d'euros.")}</p>
 
-          <OfferCountdown className="mt-8" />
+          <FounderScarcity className="mt-8 mx-auto max-w-sm" />
         </div>
 
         {checkoutStatus.error && <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p></div>}
@@ -1419,7 +1432,7 @@ function PricingPage() {
           </div>
           <h1 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Unlock the full power of web creation without limits. Access a complete library of premium prompts built to generate professional websites — each one worth thousands of euros.", "Débloquez toute la puissance de la création web sans limites. Accédez à une bibliothèque complète de prompts premium spécialement conçus pour générer des sites internet professionnels, chacun représentant une valeur de plusieurs milliers d'euros.")}</p>
-          <OfferCountdown className="mt-8" />
+          <FounderScarcity className="mt-8 mx-auto max-w-sm" />
         </div>
 
         {checkoutStatus.error && (
