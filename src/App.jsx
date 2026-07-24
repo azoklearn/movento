@@ -230,29 +230,30 @@ const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.l
 // a few essential bullets — nothing else.
 function PlanCard({ plan, onBuy, loading, featured }) {
   return (
-    <div className={`relative flex flex-col rounded-[28px] border p-6 transition sm:p-7 ${featured ? "border-violet-400/30 bg-white/[0.04]" : "border-white/10 bg-white/[0.02]"}`}>
+    <div className={`relative flex flex-col rounded-[28px] p-6 transition sm:p-7 ${featured ? "border-2 border-blue-600 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_60px_-24px_rgba(37,99,235,0.4)]" : "border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_40px_-28px_rgba(15,23,42,0.25)]"}`}>
+      {featured && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-blue-600/30">{t("Best value", "Meilleur choix")}</span>}
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-white">{plan.name}</h3>
-        {plan.discountBadge && <span className="rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">{plan.discountBadge}</span>}
+        <h3 className="text-base font-semibold text-slate-900">{plan.name}</h3>
+        {plan.discountBadge && <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">{plan.discountBadge}</span>}
       </div>
       <div className="mt-4 flex items-end gap-2">
-        <span className="text-5xl font-bold tracking-[-0.06em] text-white">{plan.price}</span>
-        <span className="pb-1.5 text-sm text-white/40">{plan.period}</span>
+        <span className="text-5xl font-bold tracking-[-0.06em] text-slate-900">{plan.price}</span>
+        <span className="pb-1.5 text-sm text-slate-400">{plan.period}</span>
       </div>
-      {plan.originalPrice && <p className="mt-1.5 text-sm text-white/35"><span className="line-through">{plan.originalPrice}</span></p>}
-      {plan.subPrice && <p className="mt-1.5 text-xs font-medium text-emerald-300/90">{plan.subPrice}</p>}
+      {plan.originalPrice && <p className="mt-1.5 text-sm text-slate-400"><span className="line-through">{plan.originalPrice}</span></p>}
+      {plan.subPrice && <p className="mt-1.5 text-xs font-medium text-emerald-600">{plan.subPrice}</p>}
       <button
         onClick={() => onBuy(plan)}
         disabled={loading}
-        className={`group mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${featured ? "bg-white text-black hover:bg-white/90" : "border border-white/15 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}
+        className={`group mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${featured ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700" : "border border-slate-200 bg-white text-slate-900 hover:border-blue-300 hover:bg-blue-50"}`}
       >
         {loading ? t("Loading…", "Chargement…") : plan.cta}
         <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
       </button>
       <ul className="mt-6 space-y-2.5">
         {plan.features.slice(0, 4).map((feat) => (
-          <li key={feat} className="flex items-center gap-2.5 text-sm text-white/60">
-            <Icon name="check" className="h-4 w-4 flex-none text-violet-300" /> {feat}
+          <li key={feat} className="flex items-center gap-2.5 text-sm text-slate-600">
+            <span className="grid h-4 w-4 flex-none place-items-center rounded-full bg-blue-100 text-blue-600"><Icon name="check" className="h-3 w-3" /></span> {feat}
           </li>
         ))}
       </ul>
@@ -288,12 +289,12 @@ function WhopCheckoutEmbed({ planId, prefillEmail, onComplete }) {
     <div
       key={planId}
       data-whop-checkout-plan-id={planId}
-      data-whop-checkout-theme="dark"
-      data-whop-checkout-theme-accent-color="purple"
+      data-whop-checkout-theme="light"
+      data-whop-checkout-theme-accent-color="blue"
       data-whop-checkout-skip-redirect="true"
       data-whop-checkout-on-complete={cbName}
       {...(prefillEmail ? { "data-whop-checkout-prefill-email": prefillEmail } : {})}
-      className="min-h-[540px] w-full overflow-hidden rounded-2xl bg-black/20"
+      className="min-h-[540px] w-full overflow-hidden rounded-2xl bg-slate-50"
     />
   );
 }
@@ -327,14 +328,14 @@ function CheckoutSuccess({ prefillEmail, onUnlocked }) {
 
   return (
     <div className="py-4 text-center">
-      <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl border border-emerald-200/20 bg-emerald-300/10 text-emerald-100"><Icon name="check" className="h-6 w-6" /></div>
-      <h3 className="text-xl font-semibold tracking-tight text-white">{t("Payment confirmed 🎉", "Paiement confirmé 🎉")}</h3>
-      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">{t("Confirm the email you paid with to unlock the full catalog on this device.", "Confirme l'email utilisé au paiement pour débloquer tout le catalogue sur cet appareil.")}</p>
+      <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-500 text-white"><Icon name="check" className="h-6 w-6" /></div>
+      <h3 className="text-xl font-semibold tracking-tight text-slate-900">{t("Payment confirmed 🎉", "Paiement confirmé 🎉")}</h3>
+      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{t("Confirm the email you paid with to unlock the full catalog on this device.", "Confirme l'email utilisé au paiement pour débloquer tout le catalogue sur cet appareil.")}</p>
       <form onSubmit={submit} className="mx-auto mt-5 flex max-w-sm flex-col gap-3 sm:flex-row">
-        <input autoFocus value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50" />
-        <button type="submit" disabled={st.loading} className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{st.loading ? t("Checking…", "Vérification…") : t("Unlock", "Débloquer")}</button>
+        <input autoFocus value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
+        <button type="submit" disabled={st.loading} className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.01] disabled:opacity-60">{st.loading ? t("Checking…", "Vérification…") : t("Unlock", "Débloquer")}</button>
       </form>
-      {st.error && <p className="mx-auto mt-3 flex max-w-sm items-start gap-2 text-left text-xs leading-5 text-amber-200"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{st.error}</p>}
+      {st.error && <p className="mx-auto mt-3 flex max-w-sm items-start gap-2 text-left text-xs leading-5 text-amber-600"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{st.error}</p>}
     </div>
   );
 }
@@ -372,35 +373,35 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-center justify-center px-3 py-4 sm:px-4 sm:py-8" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
-      <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 16 }} transition={{ type: "spring", stiffness: 300, damping: 26 }} className="relative flex max-h-[94dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0d0e18] shadow-2xl sm:rounded-[32px]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4 sm:px-6">
+      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" />
+      <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 16 }} transition={{ type: "spring", stiffness: 300, damping: 26 }} className="relative flex max-h-[94dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:rounded-[32px]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
           <div>
-            <p className="text-sm font-semibold text-white">{plan.name}</p>
-            <p className="text-xs text-white/45">{plan.price} <span className="text-white/30">{plan.period}</span></p>
+            <p className="text-sm font-semibold text-slate-900">{plan.name}</p>
+            <p className="text-xs text-slate-500">{plan.price} <span className="text-slate-400">{plan.period}</span></p>
           </div>
-          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/10 text-white/60 transition hover:text-white"><Icon name="close" className="h-4 w-4" /></button>
+          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-900"><Icon name="close" className="h-4 w-4" /></button>
         </div>
         <div className="overflow-y-auto overscroll-contain p-4 sm:p-6">
           {done ? (
             <CheckoutSuccess prefillEmail={prefillEmail} onUnlocked={onUnlocked} />
           ) : load.loading ? (
             <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
-              <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-white/70" />
-              <p className="text-sm text-white/50">{t("Loading secure checkout…", "Chargement du paiement sécurisé…")}</p>
+              <span className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+              <p className="text-sm text-slate-500">{t("Loading secure checkout…", "Chargement du paiement sécurisé…")}</p>
             </div>
           ) : load.error ? (
             <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 px-4 text-center">
-              <div className="grid h-11 w-11 place-items-center rounded-full border border-red-400/20 bg-red-500/10 text-red-200"><Icon name="alert" className="h-5 w-5" /></div>
-              <p className="max-w-sm text-sm leading-6 text-red-100">{load.error}</p>
-              <button onClick={() => setLoad((s) => ({ ...s }))} className="rounded-full border border-white/15 bg-white/[0.06] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white hover:text-black">{t("Retry", "Réessayer")}</button>
+              <div className="grid h-11 w-11 place-items-center rounded-full border border-red-200 bg-red-50 text-red-500"><Icon name="alert" className="h-5 w-5" /></div>
+              <p className="max-w-sm text-sm leading-6 text-red-600">{load.error}</p>
+              <button onClick={() => setLoad((s) => ({ ...s }))} className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">{t("Retry", "Réessayer")}</button>
             </div>
           ) : (
             <WhopCheckoutEmbed planId={load.planId} prefillEmail={prefillEmail} onComplete={() => { track("checkout_completed", { plan: plan.id }); setDone(true); }} />
           )}
         </div>
-        <div className="flex items-center justify-center gap-1.5 border-t border-white/[0.06] px-5 py-3 text-[11px] text-white/40">
-          <Icon name="shield" className="h-3 w-3 text-violet-300" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}
+        <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 px-5 py-3 text-[11px] text-slate-400">
+          <Icon name="shield" className="h-3 w-3 text-blue-500" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}
         </div>
       </motion.div>
     </motion.div>
@@ -410,10 +411,10 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
 // Reassurance strip shown next to the buy buttons. Every claim here must stay true.
 function Reassurance({ className = "" }) {
   return (
-    <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-white/45 ${className}`}>
-      <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-violet-300" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
-      <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-300" /> {t("Instant access", "Accès immédiat")}</span>
-      <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-300" /> {t("One-time payment, no subscription", "Paiement unique, sans abonnement")}</span>
+    <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-slate-400 ${className}`}>
+      <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-blue-500" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
+      <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-500" /> {t("Instant access", "Accès immédiat")}</span>
+      <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-500" /> {t("One-time payment, no subscription", "Paiement unique, sans abonnement")}</span>
     </div>
   );
 }
@@ -453,7 +454,12 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 function Logo() {
   return (
-    <img src="/logo.png" alt="Movento" className="h-12 w-auto" />
+    <span className="flex items-center gap-2.5 select-none">
+      <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-600/25">
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 18V6l8 9 8-9v12" /></svg>
+      </span>
+      <span className="text-[22px] font-bold tracking-[-0.03em] text-slate-900">Movento</span>
+    </span>
   );
 }
 
@@ -474,14 +480,14 @@ function GeneratedPreview({ item }) {
     <div className="absolute inset-0 overflow-hidden">
       <div className={`absolute -left-10 -top-10 h-56 w-56 rounded-full bg-gradient-to-br ${item.gradient} opacity-45 blur-3xl`} />
       <div className={`absolute -bottom-16 right-0 h-72 w-72 rounded-full bg-gradient-to-br ${item.gradient} opacity-35 blur-3xl`} />
-      <div className="absolute inset-5 rounded-[22px] border border-white/10 bg-black/30 p-4 backdrop-blur-xl">
-        <div className="mb-4 flex items-center justify-between"><div className="h-3 w-20 rounded-full bg-white/25" /><div className="flex gap-1.5"><div className="h-2 w-2 rounded-full bg-white/25" /><div className="h-2 w-2 rounded-full bg-white/20" /><div className="h-2 w-2 rounded-full bg-white/15" /></div></div>
+      <div className="absolute inset-5 rounded-[22px] border border-white/70 bg-white/70 p-4 backdrop-blur-xl shadow-sm">
+        <div className="mb-4 flex items-center justify-between"><div className="h-3 w-20 rounded-full bg-slate-900/15" /><div className="flex gap-1.5"><div className="h-2 w-2 rounded-full bg-slate-900/15" /><div className="h-2 w-2 rounded-full bg-slate-900/10" /><div className="h-2 w-2 rounded-full bg-slate-900/[0.07]" /></div></div>
         <div className="grid h-[78%] grid-cols-[0.9fr_1.1fr] gap-3">
-          <div className="space-y-3"><div className="h-5 w-24 rounded-full bg-white/25" /><div className="h-16 rounded-2xl bg-white/10" /><div className="h-3 w-28 rounded-full bg-white/15" /><div className="h-3 w-20 rounded-full bg-white/10" /><div className="mt-4 h-9 w-24 rounded-full bg-white/80" /></div>
-          <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="relative rounded-[24px] border border-white/10 bg-white/10 p-3 shadow-2xl shadow-black/30">
-            <div className="mb-3 h-4 w-24 rounded-full bg-white/20" />
-            <div className="space-y-2">{[72, 48, 88, 58].map((w, i) => <div key={i} className="flex items-center gap-2"><div className="h-7 w-7 rounded-xl bg-white/10" /><div className="h-2 rounded-full bg-white/20" style={{ width: `${w}%` }} /></div>)}</div>
-            <div className="absolute bottom-3 right-3 rounded-2xl border border-white/10 bg-black/30 px-3 py-2 text-[10px] text-white/60 backdrop-blur">Preview</div>
+          <div className="space-y-3"><div className="h-5 w-24 rounded-full bg-slate-900/15" /><div className="h-16 rounded-2xl bg-slate-900/[0.06]" /><div className="h-3 w-28 rounded-full bg-slate-900/10" /><div className="h-3 w-20 rounded-full bg-slate-900/[0.06]" /><div className="mt-4 h-9 w-24 rounded-full bg-blue-600" /></div>
+          <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="relative rounded-[24px] border border-white/70 bg-white/80 p-3 shadow-lg shadow-slate-900/10">
+            <div className="mb-3 h-4 w-24 rounded-full bg-slate-900/15" />
+            <div className="space-y-2">{[72, 48, 88, 58].map((w, i) => <div key={i} className="flex items-center gap-2"><div className="h-7 w-7 rounded-xl bg-slate-900/[0.07]" /><div className="h-2 rounded-full bg-slate-900/12" style={{ width: `${w}%` }} /></div>)}</div>
+            <div className="absolute bottom-3 right-3 rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-[10px] text-slate-500 backdrop-blur">Preview</div>
           </motion.div>
         </div>
       </div>
@@ -533,14 +539,14 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
   };
 
   return (
-    <motion.div layout whileHover={{ y: -5 }} onClick={handleClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] bg-white/[0.04] shadow-xl shadow-black/30 transition hover:bg-white/[0.07]">
-      <div ref={containerRef} className="relative aspect-[1.45] overflow-hidden bg-[#080913]">
+    <motion.div layout whileHover={{ y: -6 }} onClick={handleClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.15)] transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_22px_44px_-18px_rgba(37,99,235,0.35)]">
+      <div ref={containerRef} className="relative aspect-[1.45] overflow-hidden bg-slate-100">
         {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? <img className="h-full w-full object-cover" style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
       <div className="flex items-center justify-between gap-3 px-4 py-3.5">
         <div className="min-w-0">
-          <h3 className="truncate text-[15px] font-semibold tracking-tight text-white">{item.title}</h3>
-          <p className="mt-0.5 text-xs text-white/40">{item.category}</p>
+          <h3 className="truncate text-[15px] font-semibold tracking-tight text-slate-900">{item.title}</h3>
+          <p className="mt-0.5 text-xs text-slate-400">{item.category}</p>
         </div>
         {badge}
       </div>
@@ -660,34 +666,34 @@ function WelcomeQuiz({ onDone }) {
   function pickLevel(l) { setLevel(l); track("quiz_level", { level: l.key }); setStep(2); }
   function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "" }); onDone(); }
 
-  const optionClass = "group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-left transition hover:border-violet-400/40 hover:bg-white/[0.07]";
+  const optionClass = "group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-left shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:shadow-md";
 
   return (
-    <motion.div key="quiz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] overflow-y-auto bg-[#05060a] text-white">
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-[-15%] h-[440px] w-[440px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[130px]" />
-        <div className="absolute bottom-[-12%] right-[-8%] h-[380px] w-[380px] rounded-full bg-cyan-500/10 blur-[130px]" />
+    <motion.div key="quiz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] overflow-y-auto bg-white text-slate-900">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="mv-aurora absolute left-1/2 top-[-15%] h-[440px] w-[560px] -translate-x-1/2 rounded-full bg-blue-400/20 blur-[130px]" />
+        <div className="absolute bottom-[-12%] right-[-8%] h-[380px] w-[380px] rounded-full bg-indigo-300/20 blur-[130px]" />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-full max-w-xl flex-col px-5 py-6 sm:px-6">
         <div className="flex items-center justify-between">
           <Logo />
-          {step < 2 && <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-300/20 bg-violet-500/10 px-3 py-1 text-[11px] font-medium text-violet-200"><Icon name="gift" className="h-3.5 w-3.5" /> {t("Free bonus at the end", "Bonus offert à la fin")}</span>}
+          {step < 2 && <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-700"><Icon name="gift" className="h-3.5 w-3.5" /> {t("Free bonus at the end", "Bonus offert à la fin")}</span>}
         </div>
 
         <div className="flex flex-1 flex-col justify-center py-8">
           <AnimatePresence mode="wait">
             {step === 0 && (
               <motion.div key="q1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                <p className="text-xs font-medium uppercase tracking-wide text-white/40">{t("Question 1 / 2", "Question 1 / 2")}</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">{t("What brings you to Movento?", "Qu'est-ce qui t'amène sur Movento ?")}</h2>
-                <p className="mt-2 text-sm leading-6 text-white/50">{t("Whatever your answer, you're in the right place.", "Peu importe ta réponse, tu es au bon endroit.")}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{t("Question 1 / 2", "Question 1 / 2")}</p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{t("What brings you to Movento?", "Qu'est-ce qui t'amène sur Movento ?")}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{t("Whatever your answer, you're in the right place.", "Peu importe ta réponse, tu es au bon endroit.")}</p>
                 <div className="mt-5 flex flex-col gap-3">
                   {QUIZ_GOALS.map((g) => (
                     <button key={g.key} onClick={() => pickGoal(g)} className={optionClass}>
                       <span className="text-2xl">{g.emoji}</span>
-                      <span className="flex-1 text-sm font-medium text-white/90">{g.label}</span>
-                      <Icon name="arrow" className="h-4 w-4 flex-none text-white/30 transition group-hover:translate-x-0.5 group-hover:text-white/70" />
+                      <span className="flex-1 text-sm font-medium text-slate-800">{g.label}</span>
+                      <Icon name="arrow" className="h-4 w-4 flex-none text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-500" />
                     </button>
                   ))}
                 </div>
@@ -697,17 +703,17 @@ function WelcomeQuiz({ onDone }) {
             {step === 1 && (
               <motion.div key="q2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setStep(0)} className="text-xs text-white/40 transition hover:text-white/70">← {t("Back", "Retour")}</button>
-                  <p className="text-xs font-medium uppercase tracking-wide text-white/40">{t("Question 2 / 2", "Question 2 / 2")}</p>
+                  <button onClick={() => setStep(0)} className="text-xs text-slate-400 transition hover:text-slate-700">← {t("Back", "Retour")}</button>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{t("Question 2 / 2", "Question 2 / 2")}</p>
                 </div>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">{t("Your level with code?", "Ton niveau en code ?")}</h2>
-                <p className="mt-2 text-sm leading-6 text-white/50">{t("No wrong answer — Movento adapts to every level.", "Aucune mauvaise réponse — Movento s'adapte à tous les niveaux.")}</p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{t("Your level with code?", "Ton niveau en code ?")}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{t("No wrong answer — Movento adapts to every level.", "Aucune mauvaise réponse — Movento s'adapte à tous les niveaux.")}</p>
                 <div className="mt-5 flex flex-col gap-3">
                   {QUIZ_LEVELS.map((l) => (
                     <button key={l.key} onClick={() => pickLevel(l)} className={optionClass}>
                       <span className="text-2xl">{l.emoji}</span>
-                      <span className="flex-1 text-sm font-medium text-white/90">{l.label}</span>
-                      <Icon name="arrow" className="h-4 w-4 flex-none text-white/30 transition group-hover:translate-x-0.5 group-hover:text-white/70" />
+                      <span className="flex-1 text-sm font-medium text-slate-800">{l.label}</span>
+                      <Icon name="arrow" className="h-4 w-4 flex-none text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-500" />
                     </button>
                   ))}
                 </div>
@@ -716,31 +722,31 @@ function WelcomeQuiz({ onDone }) {
 
             {step === 2 && (
               <motion.div key="final" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-                <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-emerald-200/20 bg-emerald-300/10 text-emerald-100"><Icon name="check" className="h-6 w-6" /></div>
-                <h2 className="mt-4 text-center text-2xl font-semibold tracking-tight text-white md:text-3xl">{t("Whatever your goal, you're in the right place. 🎯", "Peu importe ton objectif, tu es au bon endroit. 🎯")}</h2>
-                {goal && <p className="mt-3 text-center text-sm leading-6 text-white/60">{goal.affirm}</p>}
-                {level && <p className="mt-1.5 text-center text-sm leading-6 text-white/40">{level.affirm}</p>}
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"><Icon name="check" className="h-6 w-6" /></div>
+                <h2 className="mt-4 text-center text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">{t("Whatever your goal, you're in the right place. 🎯", "Peu importe ton objectif, tu es au bon endroit. 🎯")}</h2>
+                {goal && <p className="mt-3 text-center text-sm leading-6 text-slate-600">{goal.affirm}</p>}
+                {level && <p className="mt-1.5 text-center text-sm leading-6 text-slate-400">{level.affirm}</p>}
 
-                <div className="mt-6 rounded-2xl border border-violet-300/20 bg-gradient-to-br from-violet-500/10 to-cyan-500/[0.06] p-4">
+                <div className="mt-6 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
                   <div className="flex items-start gap-3">
-                    <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-violet-500/20 text-violet-200"><Icon name="gift" className="h-5 w-5" /></span>
+                    <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/25"><Icon name="gift" className="h-5 w-5" /></span>
                     <div>
-                      <p className="text-sm font-semibold text-white">{t("With your access: your free ebook", "Avec l'accès : ton ebook offert")}</p>
-                      <p className="mt-1 text-xs leading-5 text-white/55">{t("Learn to build your sites from A to Z and land your first clients. Everything you need to launch 100%.", "Apprends à créer tes sites de A à Z et à trouver tes premiers clients. De quoi te lancer à 100%.")}</p>
+                      <p className="text-sm font-semibold text-slate-900">{t("With your access: your free ebook", "Avec l'accès : ton ebook offert")}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">{t("Learn to build your sites from A to Z and land your first clients. Everything you need to launch 100%.", "Apprends à créer tes sites de A à Z et à trouver tes premiers clients. De quoi te lancer à 100%.")}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-center">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">{t("Found us on TikTok? Your exclusive code", "Tu nous as trouvés sur TikTok ? Ton code exclusif")}</p>
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t("Found us on TikTok? Your exclusive code", "Tu nous as trouvés sur TikTok ? Ton code exclusif")}</p>
                   <div className="mt-2 flex items-center justify-center gap-2.5">
-                    <span className="rounded-lg border border-dashed border-violet-300/40 bg-violet-500/10 px-4 py-2 font-mono text-lg font-bold tracking-[0.2em] text-white">{PROMO_CODE}</span>
-                    <span className="text-sm font-semibold text-emerald-300">−10%</span>
+                    <span className="rounded-lg border border-dashed border-blue-300 bg-blue-50 px-4 py-2 font-mono text-lg font-bold tracking-[0.2em] text-blue-700">{PROMO_CODE}</span>
+                    <span className="text-sm font-semibold text-emerald-600">−10%</span>
                   </div>
-                  <p className="mt-2 text-[11px] text-white/35">{t("Apply it at checkout — reserved, don't miss it.", "À appliquer au paiement — réservé, profites-en.")}</p>
+                  <p className="mt-2 text-[11px] text-slate-400">{t("Apply it at checkout — reserved, don't miss it.", "À appliquer au paiement — réservé, profites-en.")}</p>
                 </div>
 
-                <button onClick={finish} className="mt-5 w-full rounded-2xl bg-white py-3.5 text-sm font-semibold text-black transition hover:scale-[1.01]">{t("Discover the prompts", "Découvrir les prompts")} →</button>
+                <button onClick={finish} className="mt-5 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{t("Discover the prompts", "Découvrir les prompts")} →</button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1011,46 +1017,46 @@ export default function MoventoSite() {
   if (isSuccessPage) return <SuccessPage />;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#05060a] text-white">
+    <main className="min-h-screen overflow-hidden bg-white text-slate-900">
       <AnimatePresence>
         {showQuiz && <WelcomeQuiz onDone={() => { try { window.localStorage.setItem("movento_quiz_done", "1"); } catch (_) {} setShowQuiz(false); }} />}
         {showLeadModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowLeadModal(false)}>
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d0e18] p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setShowLeadModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
-              <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-500/30 to-cyan-500/20 border border-violet-300/20"><Icon name="sparkles" className="h-5 w-5 text-violet-300" /></div>
-              <h2 className="text-2xl font-semibold tracking-tight text-white">{t("Access free prompts", "Accéder aux prompts gratuits")}</h2>
-              <p className="mt-2 text-sm leading-6 text-white/50">{t("Enter your email to copy free prompts. No spam, ever.", "Entrez votre email pour copier les prompts gratuits. Jamais de spam.")}</p>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-md rounded-[28px] border border-slate-200 bg-white p-8 shadow-2xl shadow-slate-900/20" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowLeadModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white text-slate-400 transition hover:text-slate-900"><Icon name="close" className="h-4 w-4" /></button>
+              <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-600/25"><Icon name="sparkles" className="h-5 w-5" /></div>
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900">{t("Access free prompts", "Accéder aux prompts gratuits")}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{t("Enter your email to copy free prompts. No spam, ever.", "Entrez votre email pour copier les prompts gratuits. Jamais de spam.")}</p>
               <form onSubmit={submitLeadEmail} className="mt-6 flex flex-col gap-3">
-                <input autoFocus value={leadEmailInput} onChange={(e) => setLeadEmailInput(e.target.value)} type="email" required placeholder="you@example.com" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-violet-400/50" />
-                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? t("Just a moment...", "Un instant...") : t("Copy free prompt →", "Copier le prompt gratuit →")}</button>
+                <input autoFocus value={leadEmailInput} onChange={(e) => setLeadEmailInput(e.target.value)} type="email" required placeholder="you@example.com" className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
+                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? t("Just a moment...", "Un instant...") : t("Copy free prompt →", "Copier le prompt gratuit →")}</button>
               </form>
-              <p className="mt-4 text-center text-xs text-white/25">{t("Your data will never be shared.", "Vos données ne seront jamais partagées.")}</p>
-              <div className="mt-5 border-t border-white/10 pt-4 text-center">
-                <button onClick={() => { setShowLeadModal(false); setShowUnlockModal(true); }} className="text-xs text-white/40 transition hover:text-white/70">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
+              <p className="mt-4 text-center text-xs text-slate-400">{t("Your data will never be shared.", "Vos données ne seront jamais partagées.")}</p>
+              <div className="mt-5 border-t border-slate-100 pt-4 text-center">
+                <button onClick={() => { setShowLeadModal(false); setShowUnlockModal(true); }} className="text-xs text-slate-400 transition hover:text-slate-700">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
               </div>
             </motion.div>
           </motion.div>
         )}
         {showPricingModal && !checkoutPlan && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-3 py-4 sm:px-4 sm:py-8" onClick={() => setShowPricingModal(false)}>
-            <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 16 }} transition={{ type: "spring", stiffness: 300, damping: 26 }} className={`relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0d0e18] shadow-2xl sm:rounded-[32px] ${visiblePlans.length === 1 ? "max-w-md" : "max-w-3xl"}`} onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setShowPricingModal(false)} className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/10 text-white/60 backdrop-blur hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
-              <div className="overflow-y-auto overscroll-contain p-6 sm:p-8">
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 16 }} transition={{ type: "spring", stiffness: 300, damping: 26 }} className={`relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:rounded-[32px] ${visiblePlans.length === 1 ? "max-w-md" : "max-w-3xl"}`} onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowPricingModal(false)} className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:text-slate-900"><Icon name="close" className="h-4 w-4" /></button>
+              <div className="overflow-y-auto overscroll-contain p-6 pt-8 sm:p-8">
                 <div className="pr-8 text-center">
-                  <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">{paywallItem ? t(`Unlock “${paywallItem.title}”`, `Débloque « ${paywallItem.title} »`) : t("Unlock all prompts", "Débloque tous les prompts")}</h2>
-                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/50">{t("One payment. Access the entire Movento catalog.", "Un seul paiement. Accès à tout le catalogue Movento.")}</p>
+                  <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{paywallItem ? t(`Unlock “${paywallItem.title}”`, `Débloque « ${paywallItem.title} »`) : t("Unlock all prompts", "Débloque tous les prompts")}</h2>
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{t("One payment. Access the entire Movento catalog.", "Un seul paiement. Accès à tout le catalogue Movento.")}</p>
                 </div>
-                <div className={`mx-auto mt-6 grid gap-4 ${planGridMd}`}>
+                <div className={`mx-auto mt-8 grid gap-4 ${planGridMd}`}>
                   {visiblePlans.map((plan) => (
                     <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={startCheckout} />
                   ))}
                 </div>
                 <Reassurance className="mt-6" />
                 <div className="mt-6 text-center">
-                  <button onClick={() => { setShowPricingModal(false); setShowUnlockModal(true); }} className="text-sm text-white/45 transition hover:text-white/80">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
+                  <button onClick={() => { setShowPricingModal(false); setShowUnlockModal(true); }} className="text-sm text-slate-400 transition hover:text-slate-700">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
                 </div>
               </div>
             </motion.div>
@@ -1066,35 +1072,35 @@ export default function MoventoSite() {
         )}
         {showUnlockModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowUnlockModal(false)}>
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-[#0d0e18] p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setShowUnlockModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50 hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
-              <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl border border-violet-300/20 bg-violet-500/15"><Icon name="lock" className="h-5 w-5 text-violet-200" /></div>
-              <h2 className="text-2xl font-semibold tracking-tight text-white">{t("Unlock your access", "Déverrouille ton accès")}</h2>
-              <p className="mt-2 text-sm leading-6 text-white/50">{t("For customers who already purchased. Enter the email used at checkout.", "Réservé aux clients ayant déjà payé. Entre l'email utilisé lors de l'achat.")}</p>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-md rounded-[28px] border border-slate-200 bg-white p-8 shadow-2xl shadow-slate-900/20" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowUnlockModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white text-slate-400 transition hover:text-slate-900"><Icon name="close" className="h-4 w-4" /></button>
+              <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-600"><Icon name="lock" className="h-5 w-5" /></div>
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900">{t("Unlock your access", "Déverrouille ton accès")}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{t("For customers who already purchased. Enter the email used at checkout.", "Réservé aux clients ayant déjà payé. Entre l'email utilisé lors de l'achat.")}</p>
               <form onSubmit={async (e) => { e.preventDefault(); const ok = await verifyAccess(); if (ok) setShowUnlockModal(false); }} className="mt-6 flex flex-col gap-3">
-                <input autoFocus value={accessEmail} onChange={(e) => setAccessEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} required placeholder="email@example.com" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-violet-400/50" />
-                <button type="submit" disabled={accessStatus.loading} className="w-full rounded-2xl bg-white py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{accessStatus.loading ? t("Verifying...", "Vérification...") : t("Unlock", "Déverrouiller")}</button>
+                <input autoFocus value={accessEmail} onChange={(e) => setAccessEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} required placeholder="email@example.com" className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
+                <button type="submit" disabled={accessStatus.loading} className="w-full rounded-2xl bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.01] disabled:opacity-60">{accessStatus.loading ? t("Verifying...", "Vérification...") : t("Unlock", "Déverrouiller")}</button>
               </form>
-              {accessStatus.error && <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-red-200"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{accessStatus.error}</p>}
-              <div className="mt-5 border-t border-white/10 pt-4 text-center">
-                <button onClick={() => { setShowUnlockModal(false); setPaywallItem(null); setShowPricingModal(true); }} className="text-xs text-white/40 transition hover:text-white/70">{t("Not a customer yet? See the offer", "Pas encore client ? Voir l'offre")}</button>
+              {accessStatus.error && <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-red-600"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{accessStatus.error}</p>}
+              <div className="mt-5 border-t border-slate-100 pt-4 text-center">
+                <button onClick={() => { setShowUnlockModal(false); setPaywallItem(null); setShowPricingModal(true); }} className="text-xs text-slate-400 transition hover:text-slate-700">{t("Not a customer yet? See the offer", "Pas encore client ? Voir l'offre")}</button>
               </div>
             </motion.div>
           </motion.div>
         )}
         {previewItem && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6" onClick={() => setPreviewItem(null)}>
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d0e18] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setPreviewItem(null)} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-black/40 text-white/70 backdrop-blur hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/25" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setPreviewItem(null)} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-slate-900/40 text-white backdrop-blur transition hover:bg-slate-900/60"><Icon name="close" className="h-4 w-4" /></button>
               <video key={previewItem.file} src={previewItem.preview} poster={posterFor(previewItem.preview)} autoPlay loop muted playsInline className="w-full flex-none object-cover" style={{ aspectRatio: "1.45" }} />
               <div className="flex items-center justify-between gap-3 p-5">
                 <div className="min-w-0">
-                  <h3 className="truncate text-base font-semibold text-white">{previewItem.title}</h3>
-                  <p className="mt-0.5 text-xs text-white/40">{previewItem.category}</p>
+                  <h3 className="truncate text-base font-semibold text-slate-900">{previewItem.title}</h3>
+                  <p className="mt-0.5 text-xs text-slate-400">{previewItem.category}</p>
                 </div>
-                <button onClick={() => { const it = previewItem; setPreviewItem(null); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:scale-[1.02]">
+                <button onClick={() => { const it = previewItem; setPreviewItem(null); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.02]">
                   {(hasPremiumAccess || FREE_PROMPT_FILES.has(previewItem.file)) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
                 </button>
               </div>
@@ -1102,28 +1108,29 @@ export default function MoventoSite() {
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-blue-500/20 blur-[140px]" />
-        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "34px 34px" }} />
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="mv-aurora absolute left-1/2 top-[-24%] h-[560px] w-[820px] -translate-x-1/2 rounded-full bg-blue-400/25 blur-[130px]" />
+        <div className="mv-aurora absolute bottom-[-24%] right-[-12%] h-[560px] w-[560px] rounded-full bg-indigo-300/25 blur-[150px]" style={{ animationDelay: "-6s" }} />
+        <div className="absolute left-[-10%] top-[30%] h-[380px] w-[380px] rounded-full bg-cyan-200/25 blur-[130px]" />
+        <div className="absolute inset-0 opacity-[0.5]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(15,23,42,0.05) 1px, transparent 0)", backgroundSize: "36px 36px", maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%)" }} />
       </div>
 
-      <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+      <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
         <Logo />
-        <nav className="hidden items-center gap-8 text-sm text-white/55 md:flex">
-          <a href="#prompts" className="hover:text-white">Prompts</a>
-          <a href="/pricing" className="hover:text-white">{t("Pricing", "Tarifs")}</a>
-          <a href="/subscription" className="hover:text-white">{t("My subscription", "Mon abonnement")}</a>
-          <a href="#how" className="hover:text-white">{t("Guide", "Guide")}</a>
-          <a href="#faq" className="hover:text-white">FAQ</a>
+        <nav className="hidden items-center gap-8 text-sm font-medium text-slate-500 md:flex">
+          <a href="#prompts" className="transition hover:text-slate-900">Prompts</a>
+          <a href="/pricing" className="transition hover:text-slate-900">{t("Pricing", "Tarifs")}</a>
+          <a href="/subscription" className="transition hover:text-slate-900">{t("My subscription", "Mon abonnement")}</a>
+          <a href="#how" className="transition hover:text-slate-900">{t("Guide", "Guide")}</a>
+          <a href="#faq" className="transition hover:text-slate-900">FAQ</a>
         </nav>
-        <a href="/pricing" className="hidden rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/45 hover:brightness-110 md:inline-block">{t("Get started", "Commencer")}</a>
-        <button onClick={() => setMobileMenuOpen((open) => !open)} aria-label={t("Menu", "Menu")} aria-expanded={mobileMenuOpen} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.05] text-white/80 backdrop-blur transition hover:bg-white/10 md:hidden">
+        <a href="/pricing" className="hidden rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:shadow-blue-600/40 md:inline-block">{t("Get started", "Commencer")}</a>
+        <button onClick={() => setMobileMenuOpen((open) => !open)} aria-label={t("Menu", "Menu")} aria-expanded={mobileMenuOpen} className="grid h-10 w-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 md:hidden">
           <Icon name={mobileMenuOpen ? "close" : "menu"} className="h-5 w-5" />
         </button>
         <AnimatePresence>
           {mobileMenuOpen && (
-            <motion.nav initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }} className="absolute left-6 right-6 top-full z-30 flex flex-col gap-1 rounded-3xl border border-white/10 bg-[#0d0e18] p-3 shadow-2xl shadow-black/60 md:hidden">
+            <motion.nav initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }} className="absolute left-6 right-6 top-full z-30 flex flex-col gap-1 rounded-3xl border border-slate-200 bg-white p-3 shadow-xl shadow-slate-900/10 md:hidden">
               {[
                 { href: "#prompts", label: "Prompts" },
                 { href: "/pricing", label: t("Pricing", "Tarifs") },
@@ -1131,50 +1138,69 @@ export default function MoventoSite() {
                 { href: "#how", label: t("Guide", "Guide") },
                 { href: "#faq", label: "FAQ" },
               ].map((link) => (
-                <a key={link.label} href={link.href} onClick={() => setMobileMenuOpen(false)} className="rounded-2xl px-4 py-3 text-sm text-white/70 transition hover:bg-white/[0.06] hover:text-white">{link.label}</a>
+                <a key={link.label} href={link.href} onClick={() => setMobileMenuOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">{link.label}</a>
               ))}
-              <a href="/pricing" onClick={() => setMobileMenuOpen(false)} className="mt-1 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-110">{t("Get started", "Commencer")}</a>
+              <a href="/pricing" onClick={() => setMobileMenuOpen(false)} className="mt-1 rounded-2xl bg-blue-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700">{t("Get started", "Commencer")}</a>
             </motion.nav>
           )}
         </AnimatePresence>
       </header>
 
-      <section id="prompts" className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-24 lg:px-8 lg:pt-24">
-        <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.3em] text-white/35">{t("Gallery", "Galerie")}</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">{t("Premium prompts", "Prompts premium")}</h2>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-white/50">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : `${prompts.filter(isPromptAvailable).length}+ ${t("premium prompts. The full catalog unlocks with a Movento plan.", "prompts premium. Le catalogue complet se débloque avec un abonnement Movento.")}`}</p>
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-12 pb-4 text-center lg:px-8 lg:pt-20">
+        <motion.a href="#pricing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mx-auto inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-100">
+          <span className="grid h-4 w-4 place-items-center rounded-full bg-blue-600 text-white"><Icon name="sparkles" className="h-2.5 w-2.5" /></span>
+          {t("New prompts added every week", "De nouveaux prompts chaque semaine")}
+        </motion.a>
+        <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-slate-900 md:text-6xl">
+          {t("Premium websites,", "Des sites premium,")} <span className="font-display italic font-normal text-blue-600">{t("one prompt away", "en un seul prompt")}</span>
+        </motion.h1>
+        <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-slate-500 md:text-lg">
+          {t("Copy a prompt, paste it into Lovable, v0, Bolt or Cursor, and ship a modern site in minutes. No code.", "Copie un prompt, colle-le dans Lovable, v0, Bolt ou Cursor, et obtiens un site moderne en quelques minutes. Sans coder.")}
+        </motion.p>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.19 }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:shadow-blue-600/40">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
+          <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900">{t("See pricing", "Voir les tarifs")}</a>
+        </motion.div>
+      </section>
+
+      <section id="prompts" className="relative z-10 mx-auto max-w-7xl px-6 pt-10 pb-24 lg:px-8 lg:pt-14">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-600">{t("Gallery", "Galerie")}</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 md:text-4xl">{t("Premium prompts", "Prompts premium")}</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : `${prompts.filter(isPromptAvailable).length}+ ${t("premium prompts. The full catalog unlocks with a Movento plan.", "prompts premium. Le catalogue complet se débloque avec un abonnement Movento.")}`}</p>
+          </div>
         </div>
         {hasPremiumAccess ? (
-          <div className="mb-8 flex items-center gap-3 rounded-[28px] border border-emerald-300/20 bg-emerald-400/[0.06] p-4 text-sm backdrop-blur-xl">
-            <div className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400/15 text-emerald-200"><Icon name="check" className="h-4 w-4" /></div>
-            <p className="text-white/80">{t("Premium access active", "Accès premium actif")} — <span className="text-white/50">{accessEmail}</span></p>
+          <div className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
+            <div className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-500 text-white"><Icon name="check" className="h-4 w-4" /></div>
+            <p className="text-slate-700">{t("Premium access active", "Accès premium actif")} — <span className="text-slate-400">{accessEmail}</span></p>
           </div>
         ) : (
-          <button onClick={() => setShowUnlockModal(true)} className="mb-8 flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-left backdrop-blur-xl transition hover:border-violet-300/30 hover:bg-white/[0.07]">
+          <button onClick={() => setShowUnlockModal(true)} className="mb-8 flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-left shadow-sm transition hover:border-blue-300 hover:shadow-md">
             <span className="flex items-center gap-3">
-              <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-violet-500/15 text-violet-200"><Icon name="lock" className="h-4 w-4" /></span>
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-blue-50 text-blue-600"><Icon name="lock" className="h-4 w-4" /></span>
               <span>
-                <span className="block text-sm font-semibold text-white">{t("Already purchased?", "Déjà client ?")}</span>
-                <span className="block text-xs text-white/45">{t("Unlock your access with your checkout email.", "Déverrouille ton accès avec ton email d'achat.")}</span>
+                <span className="block text-sm font-semibold text-slate-900">{t("Already purchased?", "Déjà client ?")}</span>
+                <span className="block text-xs text-slate-500">{t("Unlock your access with your checkout email.", "Déverrouille ton accès avec ton email d'achat.")}</span>
               </span>
             </span>
-            <span className="flex flex-none items-center gap-1.5 rounded-full bg-white/[0.08] px-3.5 py-2 text-xs font-semibold text-white/80">{t("Unlock", "Déverrouiller")} <Icon name="arrow" className="h-3.5 w-3.5" /></span>
+            <span className="flex flex-none items-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-2 text-xs font-semibold text-blue-700">{t("Unlock", "Déverrouiller")} <Icon name="arrow" className="h-3.5 w-3.5" /></span>
           </button>
         )}
-        {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 backdrop-blur-xl ${accessStatus.error ? "border-red-400/20 bg-red-500/10 text-red-100" : "border-emerald-300/20 bg-emerald-400/10 text-emerald-100"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
-        {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-violet-300/20 bg-violet-500/10 p-4 text-sm leading-6 text-violet-50 backdrop-blur-xl"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
-        {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
+        {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 ${accessStatus.error ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
+        {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-700"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
+        {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
         <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-3">
           <div className="flex gap-2">
             {[["all", t("All", "Tous")], ["free", t("Free", "Gratuits")], ["paid", t("Paid", "Payants")]].map(([val, label]) => (
-              <button key={val} onClick={() => setAccess(val)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${access === val ? "border-white/20 bg-white text-black" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/10"}`}>{label}</button>
+              <button key={val} onClick={() => setAccess(val)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${access === val ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/20" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}>{label}</button>
             ))}
           </div>
-          <div className="hidden h-6 w-px bg-white/10 sm:block" />
+          <div className="hidden h-6 w-px bg-slate-200 sm:block" />
           <div className="flex gap-2">
             {[["recent", t("Newest", "Plus récents")], ["old", t("Oldest", "Plus anciens")]].map(([val, label]) => (
-              <button key={val} onClick={() => setSortOrder(val)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${sortOrder === val ? "border-white/20 bg-white text-black" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/10"}`}>{label}</button>
+              <button key={val} onClick={() => setSortOrder(val)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${sortOrder === val ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/20" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}>{label}</button>
             ))}
           </div>
         </div>
@@ -1185,7 +1211,7 @@ export default function MoventoSite() {
               return (
                 <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
                   <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={setPreviewItem} badge={
-                    <span className={`flex flex-none items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${copiedCard === item.title ? "bg-emerald-400/15 text-emerald-200" : copiedCard === "Error" ? "bg-red-400/15 text-red-200" : "bg-white/[0.08] text-white/80 group-hover:bg-white group-hover:text-black"}`}>
+                    <span className={`flex flex-none items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${copiedCard === item.title ? "bg-emerald-100 text-emerald-700" : copiedCard === "Error" ? "bg-red-100 text-red-700" : !unlocked ? "bg-slate-100 text-slate-500 group-hover:bg-blue-600 group-hover:text-white" : "bg-blue-50 text-blue-700 group-hover:bg-blue-600 group-hover:text-white"}`}>
                       {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> {t("Error", "Erreur")}</> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> Premium</> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> {t("Open", "Ouvrir")}</> : <><Icon name="copy" className="h-3.5 w-3.5" /> {t("Copy", "Copier")}</>}
                     </span>
                   } />
@@ -1197,13 +1223,13 @@ export default function MoventoSite() {
       </section>
 
       <section id="how" className="relative z-10 mx-auto max-w-7xl px-6 pb-24 lg:px-8">
-        <div className="rounded-[40px] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-8 backdrop-blur-xl md:p-12"><div className="grid gap-10 md:grid-cols-3">{[t("Choose a style", "Choisir un style"), t("Copy the prompt", "Copier le prompt"), t("Generate your site", "Générer votre site")].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/[0.06] text-sm font-bold text-white/70">0{i + 1}</div><h3 className="text-xl font-semibold">{step}</h3><p className="mt-3 text-sm leading-6 text-white/55">{i === 0 ? t("Browse previews and find a design direction that suits your offer.", "Parcourez les aperçus et trouvez une direction design adaptée à votre offre.") : i === 1 ? t("The prompt is loaded directly from the source to stay intact.", "Le prompt est chargé directement depuis la source pour rester intact.") : t("Paste it into your favorite AI tool and customize the result.", "Collez-le dans votre outil IA préféré et personnalisez le résultat.")}</p></div>)}</div></div>
+        <div className="overflow-hidden rounded-[36px] border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-8 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_50px_-30px_rgba(37,99,235,0.3)] md:p-12"><div className="grid gap-10 md:grid-cols-3">{[t("Choose a style", "Choisir un style"), t("Copy the prompt", "Copier le prompt"), t("Generate your site", "Générer votre site")].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-600/25">0{i + 1}</div><h3 className="text-xl font-semibold text-slate-900">{step}</h3><p className="mt-3 text-sm leading-6 text-slate-500">{i === 0 ? t("Browse previews and find a design direction that suits your offer.", "Parcourez les aperçus et trouvez une direction design adaptée à votre offre.") : i === 1 ? t("The prompt is loaded directly from the source to stay intact.", "Le prompt est chargé directement depuis la source pour rester intact.") : t("Paste it into your favorite AI tool and customize the result.", "Collez-le dans votre outil IA préféré et personnalisez le résultat.")}</p></div>)}</div></div>
       </section>
 
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-4xl font-semibold tracking-[-0.05em] text-white md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/50">{t("One payment. Unlimited premium websites, forever.", "Un seul paiement. Des sites premium en illimité, à vie.")}</p>
+          <h2 className="text-4xl font-bold tracking-[-0.04em] text-slate-900 md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("One payment. Unlimited premium websites, forever.", "Un seul paiement. Des sites premium en illimité, à vie.")}</p>
         </div>
 
         <div className={`mx-auto mt-12 grid gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
@@ -1217,8 +1243,8 @@ export default function MoventoSite() {
 
       <section id="faq" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 lg:px-8">
         <div className="mb-14 max-w-2xl">
-          <p className="text-sm uppercase tracking-[0.3em] text-white/35">FAQ</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">{t("Questions, answered", "Vos questions, nos réponses")}</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-600">FAQ</p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">{t("Questions, answered", "Vos questions, nos réponses")}</h2>
         </div>
         <div className="grid gap-x-12 gap-y-10 md:grid-cols-2">
           {[
@@ -1229,33 +1255,34 @@ export default function MoventoSite() {
             { q: t("Is the catalog updated?", "Le catalogue est-il mis à jour ?"), a: t("Yes — new premium prompts are added regularly, and they're all included in your plan at no extra cost.", "Oui — de nouveaux prompts premium sont ajoutés régulièrement, et ils sont tous inclus dans votre abonnement sans surcoût.") },
             { q: t("Can I use the sites commercially?", "Puis-je utiliser les sites commercialement ?"), a: t("Yes. The sites you generate from our prompts are yours — client projects, portfolios, product launches, anything.", "Oui. Les sites que vous générez à partir de nos prompts vous appartiennent — projets clients, portfolios, lancements de produits, tout est permis.") },
           ].map((item) => (
-            <div key={item.q} className="border-t border-white/10 pt-6">
-              <h3 className="text-base font-semibold text-white">{item.q}</h3>
-              <p className="mt-3 max-w-lg text-sm leading-7 text-white/55">{item.a}</p>
+            <div key={item.q} className="border-t border-slate-200 pt-6">
+              <h3 className="text-base font-semibold text-slate-900">{item.q}</h3>
+              <p className="mt-3 max-w-lg text-sm leading-7 text-slate-500">{item.a}</p>
             </div>
           ))}
         </div>
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-28 lg:px-8">
-        <div className="relative overflow-hidden rounded-[40px] border border-violet-400/25 bg-gradient-to-br from-violet-600/[0.16] via-[#0a0b14] to-fuchsia-600/[0.12] px-8 py-16 text-center shadow-2xl shadow-violet-950/40 md:py-20">
-          <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-500/25 blur-[100px]" />
-          <h2 className="relative mx-auto max-w-2xl text-3xl font-semibold tracking-tight text-white md:text-5xl">{t("Your next site is one prompt away.", "Votre prochain site est à un prompt près.")}</h2>
-          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-white/55 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
+        <div className="relative overflow-hidden rounded-[40px] bg-gradient-to-br from-blue-600 to-indigo-600 px-8 py-16 text-center shadow-2xl shadow-blue-600/30 md:py-20">
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-white/20 blur-[100px]" />
+          <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "28px 28px" }} />
+          <h2 className="relative mx-auto max-w-2xl text-3xl font-bold tracking-tight text-white md:text-5xl">{t("Your next site is one prompt away.", "Votre prochain site est à un prompt près.")}</h2>
+          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-blue-100 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-8 py-3.5 text-sm font-bold text-white shadow-2xl shadow-violet-500/40 transition hover:scale-[1.04] hover:shadow-violet-500/60">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-            <span className="text-xs text-white/40">{t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment")}</span>
+            <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-blue-700 shadow-xl shadow-blue-950/20 transition hover:scale-[1.04]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
+            <span className="text-xs text-blue-100/80">{t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment")}</span>
           </div>
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-white/[0.06] py-10">
+      <footer className="relative z-10 border-t border-slate-200 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <p className="text-sm text-slate-400">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
           <div className="flex items-center gap-5">
-            <a href="/subscription" className="text-sm text-white/30 hover:text-white transition">{t("My subscription", "Mon abonnement")}</a>
-            <a href="/mentions-legales" className="text-sm text-white/30 hover:text-white transition">{t("Legal notice", "Mentions légales")}</a>
+            <a href="/subscription" className="text-sm text-slate-400 transition hover:text-slate-900">{t("My subscription", "Mon abonnement")}</a>
+            <a href="/mentions-legales" className="text-sm text-slate-400 transition hover:text-slate-900">{t("Legal notice", "Mentions légales")}</a>
           </div>
         </div>
       </footer>
@@ -1306,65 +1333,65 @@ function SuccessPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#05060a] text-white">
+    <main className="min-h-screen bg-white text-slate-900">
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-emerald-500/15 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-violet-600/10 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-blue-300/15 blur-[120px]" />
       </div>
 
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <a href="/"><Logo /></a>
-        <a href="/#prompts" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">{t("Go to the gallery", "Aller à la galerie")} →</a>
+        <a href="/#prompts" className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900">{t("Go to the gallery", "Aller à la galerie")} →</a>
       </header>
 
       <section className="relative z-10 mx-auto max-w-2xl px-6 pb-24 pt-8 lg:px-8">
         <div className="text-center">
-          <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl border border-emerald-200/20 bg-emerald-300/10 text-emerald-100"><Icon name="check" className="h-6 w-6" /></div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">{t("Payment confirmed 🎉", "Paiement confirmé 🎉")}</h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-white/55 md:text-base">{t("Thank you! Two quick steps and you're all set.", "Merci ! Deux étapes rapides et tu es prêt.")}</p>
+          <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"><Icon name="check" className="h-6 w-6" /></div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">{t("Payment confirmed 🎉", "Paiement confirmé 🎉")}</h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500 md:text-base">{t("Thank you! Two quick steps and you're all set.", "Merci ! Deux étapes rapides et tu es prêt.")}</p>
         </div>
 
         {/* Step 1 — unlock access */}
-        <div className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl md:p-7">
+        <div className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_40px_-28px_rgba(15,23,42,0.25)] md:p-7">
           <div className="flex items-center gap-3">
-            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-white/10 text-sm font-bold text-white">1</span>
-            <h2 className="text-lg font-semibold text-white">{t("Unlock your prompts", "Débloque tes prompts")}</h2>
+            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-blue-600 text-sm font-bold text-white">1</span>
+            <h2 className="text-lg font-semibold text-slate-900">{t("Unlock your prompts", "Débloque tes prompts")}</h2>
           </div>
-          <p className="mt-3 text-sm leading-6 text-white/55">{t("Enter the email you used at checkout. It unlocks the full catalog on this device — and on any device, anytime.", "Entre l'email que tu as utilisé au paiement. Il débloque tout le catalogue sur cet appareil — et sur n'importe quel appareil, à tout moment.")}</p>
+          <p className="mt-3 text-sm leading-6 text-slate-500">{t("Enter the email you used at checkout. It unlocks the full catalog on this device — and on any device, anytime.", "Entre l'email que tu as utilisé au paiement. Il débloque tout le catalogue sur cet appareil — et sur n'importe quel appareil, à tout moment.")}</p>
           {status.ok ? (
-            <div className="mt-5 flex flex-col items-start gap-3 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-5 flex flex-col items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-700 sm:flex-row sm:items-center sm:justify-between">
               <span className="flex items-center gap-2"><Icon name="check" className="h-4 w-4 flex-none" /> {t("Access unlocked on this device!", "Accès débloqué sur cet appareil !")}</span>
-              <a href="/#prompts" className="inline-flex flex-none items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:scale-[1.02]">{t("Copy prompts", "Copier les prompts")} <Icon name="arrow" className="h-4 w-4" /></a>
+              <a href="/#prompts" className="inline-flex flex-none items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.02]">{t("Copy prompts", "Copier les prompts")} <Icon name="arrow" className="h-4 w-4" /></a>
             </div>
           ) : (
             <>
               <form onSubmit={unlock} className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50" />
-                <button type="submit" disabled={status.loading} className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{status.loading ? t("Checking...", "Vérification...") : t("Unlock", "Débloquer")}</button>
+                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
+                <button type="submit" disabled={status.loading} className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{status.loading ? t("Checking...", "Vérification...") : t("Unlock", "Débloquer")}</button>
               </form>
-              {status.error && <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-amber-200"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{status.error}</p>}
+              {status.error && <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-amber-600"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{status.error}</p>}
             </>
           )}
         </div>
 
         {/* Step 2 — ebook bonus */}
-        <div className="mt-4 rounded-[28px] border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.10] to-amber-500/[0.03] p-6 backdrop-blur-xl md:p-7">
+        <div className="mt-4 rounded-[28px] border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_40px_-28px_rgba(217,119,6,0.25)] md:p-7">
           <div className="flex items-center gap-3">
-            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-amber-400/15 text-amber-200"><Icon name="gift" className="h-4 w-4" /></span>
-            <h2 className="text-lg font-semibold text-white">{t("Your free bonus ebook", "Ton ebook bonus offert")}</h2>
+            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-amber-400 text-white"><Icon name="gift" className="h-4 w-4" /></span>
+            <h2 className="text-lg font-semibold text-slate-900">{t("Your free bonus ebook", "Ton ebook bonus offert")}</h2>
           </div>
-          <p className="mt-3 text-sm leading-6 text-white/60">{t("“Land your first client & sell your first site” — the exact steps to turn your prompts into paid work.", "« Trouve ton premier client & vends ton premier site » — les étapes concrètes pour transformer tes prompts en missions payantes.")}</p>
-          <a href={EBOOK_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-amber-300 px-6 py-3 text-sm font-semibold text-[#1a1400] transition hover:scale-[1.02]"><Icon name="download" className="h-4 w-4" /> {t("Download the ebook", "Télécharger l'ebook")}</a>
+          <p className="mt-3 text-sm leading-6 text-slate-600">{t("“Land your first client & sell your first site” — the exact steps to turn your prompts into paid work.", "« Trouve ton premier client & vends ton premier site » — les étapes concrètes pour transformer tes prompts en missions payantes.")}</p>
+          <a href={EBOOK_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-6 py-3 text-sm font-semibold text-[#1a1400] transition hover:bg-amber-300 hover:scale-[1.02]"><Icon name="download" className="h-4 w-4" /> {t("Download the ebook", "Télécharger l'ebook")}</a>
         </div>
 
-        <p className="mt-6 text-center text-xs leading-5 text-white/35">{t("Keep this email address — it's your key to access Movento anytime.", "Garde bien cet email — c'est ta clé pour accéder à Movento à tout moment.")}</p>
+        <p className="mt-6 text-center text-xs leading-5 text-slate-400">{t("Keep this email address — it's your key to access Movento anytime.", "Garde bien cet email — c'est ta clé pour accéder à Movento à tout moment.")}</p>
       </section>
 
-      <footer className="relative z-10 border-t border-white/[0.06] py-10">
+      <footer className="relative z-10 border-t border-slate-200 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
-          <a href="/subscription" className="text-sm text-white/30 hover:text-white transition">{t("My subscription", "Mon abonnement")}</a>
+          <p className="text-sm text-slate-400">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <a href="/subscription" className="text-sm text-slate-400 transition hover:text-slate-900">{t("My subscription", "Mon abonnement")}</a>
         </div>
       </footer>
     </main>
@@ -1373,63 +1400,63 @@ function SuccessPage() {
 
 function MentionsLegales() {
   return (
-    <main className="min-h-screen bg-[#05060a] text-white">
+    <main className="min-h-screen bg-white text-slate-900">
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
+        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-blue-400/20 blur-[120px]" />
       </div>
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <a href="/"><Logo /></a>
-        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← {t("Back", "Retour")}</a>
+        <a href="/" className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900">← {t("Back", "Retour")}</a>
       </header>
       <section className="relative z-10 mx-auto max-w-3xl px-6 pb-24 pt-12 lg:px-8">
-        <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">{t("Legal notice", "Mentions légales")}</h1>
-        <p className="mt-3 text-sm text-white/40">Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+        <h1 className="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{t("Legal notice", "Mentions légales")}</h1>
+        <p className="mt-3 text-sm text-slate-400">Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
 
-        <div className="mt-12 space-y-10 text-sm leading-7 text-white/65">
+        <div className="mt-12 space-y-10 text-sm leading-7 text-slate-600">
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">1. Website publisher</h2>
-            <p>This website <strong className="text-white/80">movento.dev</strong> is published by <span className="text-white/80">Movento</span>.</p>
+            <h2 className="mb-3 text-base font-semibold text-slate-900">1. Website publisher</h2>
+            <p>This website <strong className="text-slate-700">movento.dev</strong> is published by <span className="text-slate-700">Movento</span>.</p>
           </div>
 
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">2. Hosting</h2>
-            <p>This website is hosted by <span className="text-white/80">Vercel Inc.</span> — 340 S Lemon Ave #4133, Walnut, CA 91789, United States — vercel.com</p>
+            <h2 className="mb-3 text-base font-semibold text-slate-900">2. Hosting</h2>
+            <p>This website is hosted by <span className="text-slate-700">Vercel Inc.</span> — 340 S Lemon Ave #4133, Walnut, CA 91789, United States — vercel.com</p>
           </div>
 
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">3. Intellectual property</h2>
+            <h2 className="mb-3 text-base font-semibold text-slate-900">3. Intellectual property</h2>
             <p>All content on Movento (text, prompts, visuals, structure) is the exclusive property of the publisher and is protected by applicable intellectual property laws. Any reproduction, even partial, is strictly prohibited without prior authorization.</p>
           </div>
 
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">4. Personal data</h2>
-            <p>Movento collects your email address to manage access to content. Payment data is processed by <span className="text-white/80">Whop</span> and is not stored by Movento. Your data is never sold to third parties. You may request access, correction or deletion by contacting us.</p>
+            <h2 className="mb-3 text-base font-semibold text-slate-900">4. Personal data</h2>
+            <p>Movento collects your email address to manage access to content. Payment data is processed by <span className="text-slate-700">Whop</span> and is not stored by Movento. Your data is never sold to third parties. You may request access, correction or deletion by contacting us.</p>
           </div>
 
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">5. Payment</h2>
-            <p>Payments are securely processed by <span className="text-white/80">Whop</span>. Monthly and annual subscriptions can be cancelled at any time from your Whop account. Lifetime access is a one-time purchase with no subscription.</p>
-            <p className="mt-3">You can cancel your subscription at any time from your Whop account, or by emailing <span className="text-white/80">movento.dev@gmail.com</span> from the address used at checkout.</p>
+            <h2 className="mb-3 text-base font-semibold text-slate-900">5. Payment</h2>
+            <p>Payments are securely processed by <span className="text-slate-700">Whop</span>. Monthly and annual subscriptions can be cancelled at any time from your Whop account. Lifetime access is a one-time purchase with no subscription.</p>
+            <p className="mt-3">You can cancel your subscription at any time from your Whop account, or by emailing <span className="text-slate-700">movento.dev@gmail.com</span> from the address used at checkout.</p>
             <p className="mt-3">Movento reserves the right to modify subscription prices at any time.</p>
           </div>
 
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">6. Cookies</h2>
+            <h2 className="mb-3 text-base font-semibold text-slate-900">6. Cookies</h2>
             <p>Movento only uses data stored locally on your device (localStorage) to remember your access and email. No third-party tracking cookies are used.</p>
-            <p className="mt-3">We measure audience with <span className="text-white/80">Vercel Web Analytics</span>, which is cookieless and does not track you across websites or build a personal profile. It records anonymous page views and product events (for example, opening the pricing modal) so we can improve the site.</p>
+            <p className="mt-3">We measure audience with <span className="text-slate-700">Vercel Web Analytics</span>, which is cookieless and does not track you across websites or build a personal profile. It records anonymous page views and product events (for example, opening the pricing modal) so we can improve the site.</p>
           </div>
 
           <div>
-            <h2 className="mb-3 text-base font-semibold text-white">7. Contact</h2>
-            <p>For any questions: <span className="text-white/80">movento.dev@gmail.com</span></p>
+            <h2 className="mb-3 text-base font-semibold text-slate-900">7. Contact</h2>
+            <p>For any questions: <span className="text-slate-700">movento.dev@gmail.com</span></p>
           </div>
         </div>
       </section>
-      <footer className="relative z-10 border-t border-white/[0.06] py-10">
+      <footer className="relative z-10 border-t border-slate-200 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
-          <a href="/" className="text-sm text-white/30 hover:text-white transition">{t("Back to home", "Retour à l'accueil")}</a>
+          <p className="text-sm text-slate-400">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <a href="/" className="text-sm text-slate-400 transition hover:text-slate-900">{t("Back to home", "Retour à l'accueil")}</a>
         </div>
       </footer>
     </main>
@@ -1446,7 +1473,7 @@ function PricingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#05060a] text-white">
+    <main className="min-h-screen bg-white text-slate-900">
       <AnimatePresence>
         {checkoutPlan && (
           <CheckoutOverlay
@@ -1458,19 +1485,19 @@ function PricingPage() {
         )}
       </AnimatePresence>
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-fuchsia-600/10 blur-[120px]" />
+        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-blue-400/20 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-indigo-300/20 blur-[120px]" />
       </div>
 
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <a href="/"><Logo /></a>
-        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← {t("Back", "Retour")}</a>
+        <a href="/" className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900">← {t("Back", "Retour")}</a>
       </header>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <h1 className="text-4xl font-semibold tracking-[-0.05em] text-white md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/50">{t("One payment. Unlimited premium websites, forever.", "Un seul paiement. Des sites premium en illimité, à vie.")}</p>
+          <h1 className="text-4xl font-bold tracking-[-0.04em] text-slate-900 md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("One payment. Unlimited premium websites, forever.", "Un seul paiement. Des sites premium en illimité, à vie.")}</p>
         </div>
 
         <div className={`mx-auto mt-12 grid gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
@@ -1482,11 +1509,11 @@ function PricingPage() {
         <Reassurance className="mt-8" />
       </section>
 
-      <footer className="relative z-10 border-t border-white/[0.06] py-10">
+      <footer className="relative z-10 border-t border-slate-200 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
-          <a href="/" className="text-sm text-white/30 hover:text-white transition">{t("Back to home", "Retour à l'accueil")}</a>
+          <p className="text-sm text-slate-400">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <a href="/" className="text-sm text-slate-400 transition hover:text-slate-900">{t("Back to home", "Retour à l'accueil")}</a>
         </div>
       </footer>
     </main>
@@ -1536,80 +1563,80 @@ function SubscriptionPage() {
   })[s] || s;
 
   return (
-    <main className="min-h-screen bg-[#05060a] text-white">
+    <main className="min-h-screen bg-white text-slate-900">
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
+        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-blue-400/20 blur-[120px]" />
       </div>
 
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <a href="/"><Logo /></a>
-        <a href="/" className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur transition hover:bg-white hover:text-black">← {t("Back", "Retour")}</a>
+        <a href="/" className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900">← {t("Back", "Retour")}</a>
       </header>
 
       <section className="relative z-10 mx-auto max-w-2xl px-6 pb-24 pt-8 lg:px-8">
-        <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">{t("My subscription", "Mon abonnement")}</h1>
-        <p className="mt-3 text-sm leading-6 text-white/50">{t("Enter the email you used at checkout to view and manage your subscription.", "Entrez l'email utilisé lors de l'achat pour voir et gérer votre abonnement.")}</p>
+        <h1 className="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{t("My subscription", "Mon abonnement")}</h1>
+        <p className="mt-3 text-sm leading-6 text-slate-500">{t("Enter the email you used at checkout to view and manage your subscription.", "Entrez l'email utilisé lors de l'achat pour voir et gérer votre abonnement.")}</p>
 
         <form onSubmit={lookup} className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50" />
-          <button type="submit" disabled={status.loading} className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{status.loading ? t("Checking...", "Vérification...") : t("View", "Voir")}</button>
+          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
+          <button type="submit" disabled={status.loading} className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60">{status.loading ? t("Checking...", "Vérification...") : t("View", "Voir")}</button>
         </form>
 
-        {status.error && <div className="mt-6 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{status.error}</p></div>}
+        {status.error && <div className="mt-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{status.error}</p></div>}
 
         {status.checked && !status.error && data && !data.found && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-            <p className="text-sm leading-6 text-white/70">{t("No active subscription found for this email.", "Aucun abonnement actif trouvé pour cet email.")}</p>
-            <a href="/pricing" className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-6 py-3 text-sm font-bold text-white transition hover:scale-[1.03]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4" /></a>
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm leading-6 text-slate-600">{t("No active subscription found for this email.", "Aucun abonnement actif trouvé pour cet email.")}</p>
+            <a href="/pricing" className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.03]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4" /></a>
           </div>
         )}
 
         {status.checked && data && data.found && (
-          <div className="mt-6 rounded-[28px] border border-white/10 bg-white/[0.04] p-7 backdrop-blur-xl">
+          <div className="mt-6 rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_40px_-28px_rgba(15,23,42,0.25)]">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-white/40">{t("Plan", "Offre")}</p>
-                <h2 className="mt-1 text-2xl font-semibold text-white">{data.plan}</h2>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("Plan", "Offre")}</p>
+                <h2 className="mt-1 text-2xl font-semibold text-slate-900">{data.plan}</h2>
               </div>
               {data.type === "subscription" ? (
-                <span className={`rounded-full border px-3 py-1 text-xs font-medium ${data.status === "past_due" ? "border-red-400/30 bg-red-500/15 text-red-100" : "border-emerald-300/25 bg-emerald-400/15 text-emerald-100"}`}>{statusLabel(data.status)}</span>
+                <span className={`rounded-full border px-3 py-1 text-xs font-medium ${data.status === "past_due" ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>{statusLabel(data.status)}</span>
               ) : (
-                <span className="rounded-full border border-violet-300/25 bg-violet-500/15 px-3 py-1 text-xs font-medium text-violet-100">{t("Lifetime access", "Accès à vie")}</span>
+                <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">{t("Lifetime access", "Accès à vie")}</span>
               )}
             </div>
 
             {data.type === "subscription" && (
-              <div className="mt-6 space-y-2 text-sm text-white/65">
-                {data.status === "trialing" && data.renewalDate && <p>{t("Free trial ends on", "Fin de l'essai gratuit le")} <span className="text-white">{formatDate(data.renewalDate)}</span>.</p>}
+              <div className="mt-6 space-y-2 text-sm text-slate-600">
+                {data.status === "trialing" && data.renewalDate && <p>{t("Free trial ends on", "Fin de l'essai gratuit le")} <span className="font-medium text-slate-900">{formatDate(data.renewalDate)}</span>.</p>}
                 {data.cancelAtPeriodEnd ? (
-                  <p className="text-amber-200">{t("Your subscription is cancelled and will end on", "Votre abonnement est résilié et se terminera le")} <span className="font-medium">{formatDate(data.renewalDate)}</span>.</p>
+                  <p className="text-amber-600">{t("Your subscription is cancelled and will end on", "Votre abonnement est résilié et se terminera le")} <span className="font-medium">{formatDate(data.renewalDate)}</span>.</p>
                 ) : (
-                  data.renewalDate && data.status !== "trialing" && <p>{t("Next renewal on", "Prochain renouvellement le")} <span className="text-white">{formatDate(data.renewalDate)}</span>.</p>
+                  data.renewalDate && data.status !== "trialing" && <p>{t("Next renewal on", "Prochain renouvellement le")} <span className="font-medium text-slate-900">{formatDate(data.renewalDate)}</span>.</p>
                 )}
               </div>
             )}
 
             {data.type === "lifetime" && (
-              <p className="mt-6 text-sm leading-6 text-white/65">{t("You have lifetime access — no subscription to manage.", "Vous avez un accès à vie — aucun abonnement à gérer.")}</p>
+              <p className="mt-6 text-sm leading-6 text-slate-600">{t("You have lifetime access — no subscription to manage.", "Vous avez un accès à vie — aucun abonnement à gérer.")}</p>
             )}
 
             {data.type !== "lifetime" && (
-              <div className="mt-7 border-t border-white/10 pt-6">
-                <a href={data.portalUrl || "https://whop.com/orders/"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-black">
+              <div className="mt-7 border-t border-slate-100 pt-6">
+                <a href={data.portalUrl || "https://whop.com/orders/"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-blue-300 hover:bg-blue-50">
                   {t("Manage or cancel on Whop", "Gérer ou résilier sur Whop")} <Icon name="arrow" className="h-4 w-4" />
                 </a>
-                <p className="mt-3 text-xs leading-5 text-white/40">{t("Your membership is managed on Whop. Cancelling keeps your access until the end of the current period.", "Votre abonnement est géré sur Whop. La résiliation conserve votre accès jusqu'à la fin de la période en cours.")}</p>
+                <p className="mt-3 text-xs leading-5 text-slate-400">{t("Your membership is managed on Whop. Cancelling keeps your access until the end of the current period.", "Votre abonnement est géré sur Whop. La résiliation conserve votre accès jusqu'à la fin de la période en cours.")}</p>
               </div>
             )}
           </div>
         )}
       </section>
 
-      <footer className="relative z-10 border-t border-white/[0.06] py-10">
+      <footer className="relative z-10 border-t border-slate-200 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
-          <p className="text-sm text-white/30">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
-          <a href="/" className="text-sm text-white/30 hover:text-white transition">{t("Back to home", "Retour à l'accueil")}</a>
+          <p className="text-sm text-slate-400">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <a href="/" className="text-sm text-slate-400 transition hover:text-slate-900">{t("Back to home", "Retour à l'accueil")}</a>
         </div>
       </footer>
     </main>

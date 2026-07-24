@@ -2,6 +2,7 @@
 
 @theme {
   --font-sans: "Outfit", Inter, system-ui, sans-serif;
+  --font-display: "Instrument Serif", Georgia, serif;
 }
 
 * {
@@ -14,15 +15,23 @@ html {
 
 body {
   margin: 0;
-  background: #05060a;
+  background: #ffffff;
+  color: #0f172a;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Editorial serif accent — used for a highlighted word inside display headings. */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
 ::selection {
-  background: rgba(167, 139, 250, 0.35);
-  color: #fff;
+  background: rgba(37, 99, 235, 0.18);
+  color: #1e3a8a;
 }
 
 h1,
@@ -36,7 +45,7 @@ p {
 }
 
 :focus-visible {
-  outline: 2px solid rgba(167, 139, 250, 0.7);
+  outline: 2px solid rgba(37, 99, 235, 0.7);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -44,4 +53,16 @@ p {
 button:active:not(:disabled),
 a[href]:active {
   transform: scale(0.98);
+}
+
+/* Soft drifting aurora used behind the light hero/sections. */
+@keyframes mv-aurora {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(4%, -3%, 0) scale(1.08); }
+}
+.mv-aurora { animation: mv-aurora 16s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mv-aurora { animation: none; }
+  html { scroll-behavior: auto; }
 }
