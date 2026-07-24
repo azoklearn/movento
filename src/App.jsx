@@ -744,7 +744,7 @@ function WelcomeQuiz({ onDone }) {
                   <div className="flex items-start gap-3">
                     <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/25"><Icon name="gift" className="h-5 w-5" /></span>
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">{t("With your access: your free ebook", "Avec l'accès : ton ebook offert")}</p>
+                      <p className="text-sm font-semibold text-slate-900">{t("With the lifetime plan: your free ebook", "Avec l'offre à vie : ton ebook offert")}</p>
                       <p className="mt-1 text-xs leading-5 text-slate-600">{t("Learn to build your site, sell it, land clients and manage everything — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.")}</p>
                     </div>
                   </div>
@@ -1308,6 +1308,9 @@ export default function MoventoSite() {
 function SuccessPage() {
   const [email, setEmail] = useState(getStoredAccessEmail);
   const [status, setStatus] = useState({ loading: false, ok: false, error: "" });
+  // The bonus ebook ships with lifetime only, so we reveal it only once we've
+  // confirmed the membership backing this email is a lifetime purchase.
+  const [isLifetime, setIsLifetime] = useState(false);
 
   // Prefill from ?email= if the checkout redirect carried it, and log a custom
   // event (separate from the automatic /success pageview) so purchase landings
@@ -1339,6 +1342,16 @@ function SuccessPage() {
       if (data.hasAccess) {
         window.localStorage.setItem("movento_access_email", normalized);
         setStatus({ loading: false, ok: true, error: "" });
+        // Reveal the ebook only for confirmed lifetime members (not monthly).
+        try {
+          const sub = await fetch(`${API_BASE_URL}/api/subscription-status`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: normalized }),
+          });
+          const subData = await sub.json().catch(() => ({}));
+          setIsLifetime(sub.ok && subData.type === "lifetime");
+        } catch { setIsLifetime(false); }
       } else {
         setStatus({ loading: false, ok: false, error: t("No access found for this email yet. If you just paid, wait a minute and retry — activation can take a moment.", "Aucun accès trouvé pour cet email pour l'instant. Si tu viens de payer, patiente une minute et réessaie — l'activation peut prendre un instant.") });
       }
@@ -1363,7 +1376,7 @@ function SuccessPage() {
         <div className="text-center">
           <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"><Icon name="check" className="h-6 w-6" /></div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">{t("Payment confirmed 🎉", "Paiement confirmé 🎉")}</h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500 md:text-base">{t("Thank you! Two quick steps and you're all set.", "Merci ! Deux étapes rapides et tu es prêt.")}</p>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500 md:text-base">{t("Thank you for your purchase! Unlock your access below.", "Merci pour ton achat ! Débloque ton accès ci-dessous.")}</p>
         </div>
 
         {/* Step 1 — unlock access */}
@@ -1389,15 +1402,17 @@ function SuccessPage() {
           )}
         </div>
 
-        {/* Step 2 — ebook bonus */}
-        <div className="mt-4 rounded-[28px] border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_40px_-28px_rgba(217,119,6,0.25)] md:p-7">
-          <div className="flex items-center gap-3">
-            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-amber-400 text-white"><Icon name="gift" className="h-4 w-4" /></span>
-            <h2 className="text-lg font-semibold text-slate-900">{t("Your free bonus ebook", "Ton ebook bonus offert")}</h2>
+        {/* Bonus ebook — lifetime members only */}
+        {status.ok && isLifetime && (
+          <div className="mt-4 rounded-[28px] border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_40px_-28px_rgba(217,119,6,0.25)] md:p-7">
+            <div className="flex items-center gap-3">
+              <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-amber-400 text-white"><Icon name="gift" className="h-4 w-4" /></span>
+              <h2 className="text-lg font-semibold text-slate-900">{t("Your free bonus ebook", "Ton ebook bonus offert")}</h2>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600">{t("The full playbook: build your site, sell it, find clients and manage everything — from A to Z.", "Le guide complet : créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.")}</p>
+            <a href={EBOOK_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-6 py-3 text-sm font-semibold text-[#1a1400] transition hover:bg-amber-300 hover:scale-[1.02]"><Icon name="download" className="h-4 w-4" /> {t("Download the ebook", "Télécharger l'ebook")}</a>
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-600">{t("The full playbook: build your site, sell it, find clients and manage everything — from A to Z.", "Le guide complet : créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.")}</p>
-          <a href={EBOOK_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-6 py-3 text-sm font-semibold text-[#1a1400] transition hover:bg-amber-300 hover:scale-[1.02]"><Icon name="download" className="h-4 w-4" /> {t("Download the ebook", "Télécharger l'ebook")}</a>
-        </div>
+        )}
 
         <p className="mt-6 text-center text-xs leading-5 text-slate-400">{t("Keep this email address — it's your key to access Movento anytime.", "Garde bien cet email — c'est ta clé pour accéder à Movento à tout moment.")}</p>
       </section>
