@@ -181,13 +181,13 @@ const FREE_PROMPT_FILES = new Set(["Axon_Hero.md", "Viktor_Portfolio.md", "Foldc
 const plans = [
   {
     id: "monthly",
-    hidden: true,
+    hidden: false,
     name: t("Monthly", "Mensuel"),
-    price: "14.99€",
+    price: "12.99€",
     period: t("/ mo", "/ mois"),
     badge: t("Flexible", "Flexible"),
-    description: t("14.99€/mo. Cancel anytime.", "14,99€/mois. Résiliez à tout moment."),
-    cta: t("Get started →", "Commencer →"),
+    description: t("12.99€/mo. Cancel anytime.", "12,99€/mois. Résiliez à tout moment."),
+    cta: t("Get started", "Commencer"),
     featured: false,
     features: [t("Access to all prompts", "Accès à tous les prompts"), t("One-click prompt copy", "Copie en un clic"), t("Video & visual previews", "Aperçus vidéo & visuels"), t("New prompts included", "Nouveaux prompts inclus"), t("Cancel anytime", "Résiliez à tout moment")],
   },
@@ -1051,7 +1051,7 @@ export default function MoventoSite() {
               <div className="overflow-y-auto overscroll-contain p-6 pt-8 sm:p-8">
                 <div className="pr-8 text-center">
                   <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{paywallItem ? t(`Unlock “${paywallItem.title}”`, `Débloque « ${paywallItem.title} »`) : t("Unlock all prompts", "Débloque tous les prompts")}</h2>
-                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{t("One payment. Access the entire Movento catalog.", "Un seul paiement. Accès à tout le catalogue Movento.")}</p>
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{t("Choose a plan to unlock the whole Movento catalog.", "Choisis une offre pour débloquer tout le catalogue Movento.")}</p>
                 </div>
                 <div className={`mx-auto mt-8 grid gap-4 ${planGridMd}`}>
                   {visiblePlans.map((plan) => (
@@ -1233,7 +1233,7 @@ export default function MoventoSite() {
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-[-0.04em] text-slate-900 md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("One payment. Unlimited premium websites, forever.", "Un seul paiement. Des sites premium en illimité, à vie.")}</p>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
         </div>
 
         <div className={`mx-auto mt-12 grid gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
@@ -1275,7 +1275,7 @@ export default function MoventoSite() {
           <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-blue-100 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-blue-700 shadow-xl shadow-blue-950/20 transition hover:scale-[1.04]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-            <span className="text-xs text-blue-100/80">{t("One-time payment — lifetime access", "Paiement unique — accès à vie")}</span>
+            <span className="text-xs text-blue-100/80">{t("Monthly or lifetime — your call", "Au mois ou à vie — tu choisis")}</span>
           </div>
         </div>
       </section>
@@ -1501,7 +1501,7 @@ function PricingPage() {
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h1 className="text-4xl font-bold tracking-[-0.04em] text-slate-900 md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("One payment. Unlimited premium websites, forever.", "Un seul paiement. Des sites premium en illimité, à vie.")}</p>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
         </div>
 
         <div className={`mx-auto mt-12 grid gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
