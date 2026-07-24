@@ -1550,13 +1550,31 @@ function formatDate(value) {
 function SubscriptionPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState({ loading: false, error: "", data: null, checked: false });
+  const [cancel, setCancel] = useState({ confirming: false, loading: false, done: false, error: "", renewalDate: null });
 
   const clean = (v) => String(v).replace(/[\s\u00AD\u200B-\u200D\u2060\uFEFF]/g, "").toLowerCase();
+
+  async function doCancel() {
+    setCancel((c) => ({ ...c, loading: true, error: "" }));
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/cancel-subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: clean(email) }),
+      });
+      const d = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(d.error || t("Cancellation failed. Please retry.", "La r\u00E9siliation a \u00E9chou\u00E9. R\u00E9essaie."));
+      setCancel({ confirming: false, loading: false, done: true, error: "", renewalDate: d.renewalDate || null });
+    } catch (error) {
+      setCancel((c) => ({ ...c, loading: false, error: error.message }));
+    }
+  }
 
   async function lookup(e) {
     if (e) e.preventDefault();
     const normalized = clean(email);
     if (!normalized) return;
+    setCancel({ confirming: false, loading: false, done: false, error: "", renewalDate: null });
     setStatus({ loading: true, error: "", data: null, checked: false });
     try {
       const response = await fetch(`${API_BASE_URL}/api/subscription-status`, {
@@ -1641,10 +1659,29 @@ function SubscriptionPage() {
 
             {data.type !== "lifetime" && (
               <div className="mt-7 border-t border-slate-100 pt-6">
-                <a href={data.portalUrl || "https://whop.com/orders/"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-blue-300 hover:bg-blue-50">
-                  {t("Manage or cancel on Whop", "Gérer ou résilier sur Whop")} <Icon name="arrow" className="h-4 w-4" />
-                </a>
-                <p className="mt-3 text-xs leading-5 text-slate-400">{t("Your membership is managed on Whop. Cancelling keeps your access until the end of the current period.", "Votre abonnement est géré sur Whop. La résiliation conserve votre accès jusqu'à la fin de la période en cours.")}</p>
+                {(cancel.done || data.cancelAtPeriodEnd || data.status === "canceling") ? (
+                  <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-700">
+                    <Icon name="check" className="mt-0.5 h-4 w-4 flex-none" />
+                    <p>{t("Subscription cancelled — you keep access until", "Abonnement résilié — tu gardes l'accès jusqu'au")} <span className="font-medium">{formatDate(cancel.renewalDate || data.renewalDate)}</span>.</p>
+                  </div>
+                ) : cancel.confirming ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm font-semibold text-slate-900">{t("Cancel your subscription?", "Résilier ton abonnement ?")}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">{t("You'll keep access until the end of the current period. You can resubscribe anytime.", "Tu gardes l'accès jusqu'à la fin de la période en cours. Tu peux te réabonner quand tu veux.")}</p>
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                      <button onClick={doCancel} disabled={cancel.loading} className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">{cancel.loading ? t("Cancelling…", "Résiliation…") : t("Yes, cancel", "Oui, résilier")}</button>
+                      <button onClick={() => setCancel((c) => ({ ...c, confirming: false, error: "" }))} disabled={cancel.loading} className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 disabled:opacity-60">{t("Keep my subscription", "Garder mon abonnement")}</button>
+                    </div>
+                    {cancel.error && <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-red-600"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{cancel.error}</p>}
+                  </div>
+                ) : (
+                  <>
+                    <button onClick={() => setCancel({ confirming: true, loading: false, done: false, error: "", renewalDate: null })} className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50">
+                      {t("Cancel my subscription", "Résilier mon abonnement")}
+                    </button>
+                    <p className="mt-3 text-xs leading-5 text-slate-400">{t("Cancelling keeps your access until the end of the current period.", "La résiliation conserve ton accès jusqu'à la fin de la période en cours.")}</p>
+                  </>
+                )}
               </div>
             )}
           </div>

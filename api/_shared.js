@@ -184,6 +184,51 @@ export async function getMembershipInfo(email) {
   };
 }
 
+// Cancels the subscription behind an email at the end of the current period
+// (Whop's default). Lifetime purchases have nothing to cancel. Returns a small
+// result object the API route maps to an HTTP response.
+export async function cancelWhopMembership(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return { ok: false, reason: "no_email" };
+  if (!whopConfigured()) return { ok: false, reason: "not_configured" };
+
+  let membership;
+  try {
+    membership = await findWhopMembership(normalizedEmail);
+  } catch (error) {
+    console.error("Whop membership lookup failed (cancel):", error);
+    return { ok: false, reason: "lookup_failed" };
+  }
+  if (!membership) return { ok: false, reason: "not_found" };
+
+  const isLifetime = membership.status === "completed" || !membership.renewal_period_end;
+  if (isLifetime) return { ok: false, reason: "lifetime" };
+
+  const renewalDate = membership.renewal_period_end || null;
+  if (membership.cancel_at_period_end || membership.status === "canceling") {
+    return { ok: true, alreadyCanceled: true, renewalDate };
+  }
+
+  try {
+    const response = await fetch(`${WHOP_API}/memberships/${membership.id}/cancel`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.WHOP_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      console.error(`Whop cancel failed ${response.status}: ${await response.text()}`);
+      return { ok: false, reason: "cancel_failed" };
+    }
+  } catch (error) {
+    console.error("Whop cancel request error:", error);
+    return { ok: false, reason: "cancel_failed" };
+  }
+
+  return { ok: true, renewalDate };
+}
+
 export function methodNotAllowed(res, allowed = "POST") {
   res.setHeader("Allow", allowed);
   return res.status(405).json({ error: "Méthode non autorisée." });
