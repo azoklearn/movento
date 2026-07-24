@@ -10,13 +10,6 @@ const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIv
 // Exclusive promo code surfaced at the end of the welcome quiz (create it in Whop
 // for it to actually apply at checkout).
 const PROMO_CODE = "TIKTOK10";
-// Real, owner-provided community numbers shown as social proof. Keep these HONEST
-// and defensible — false social proof is misleading advertising.
-// FOUNDER_CAP drives the founder-scarcity badge: it is only truthful if the price
-// actually goes up once that many members is reached. Bump FOUNDER_MEMBERS as you grow.
-const FOUNDER_CAP = 500;
-const FOUNDER_MEMBERS = 350;
-const STATS = { users: `${FOUNDER_MEMBERS}+`, sites: "1000+", revenue: "10 000€+" };
 
 const lang = (() => { try { return (navigator.language || "").startsWith("fr") ? "fr" : "en"; } catch { return "en"; } })();
 function t(en, fr) { return lang === "fr" ? fr : en; }
@@ -24,6 +17,8 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Pizza Restaurant", category: "Landing Page", type: "Landing", file: "Pizza.md", preview: "https://i.imgur.com/79tTQ9Y.jpeg", tags: ["Restaurant", "Food", "Framer"], gradient: "from-red-300 via-orange-600 to-[#1A0D08]" },
+  { title: "Wandor Travel Hero", category: "Landing Page", type: "Hero", file: "Wandor_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/where%20willArea.mp4", tags: ["Travel", "Glass", "Video"], gradient: "from-amber-200 via-orange-600 to-[#2A1810]" },
   { title: "Beanro Coffee Shop", category: "Landing Page", type: "Landing", file: "Beanro_Coffee_Shop.md", preview: "https://i.postimg.cc/7LKy8X3y/Capture-d-e-cran-2026-07-19-a-16-34-59.png", tags: ["Coffee Shop", "E-commerce", "Warm"], gradient: "from-amber-200 via-orange-700 to-[#2A1810]" },
   { title: "Aethera Lending Hero", category: "Fintech", type: "Hero", file: "Aethera_Lending_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/handstouchgodArea.mp4", tags: ["Fintech", "Editorial", "Video"], gradient: "from-neutral-100 via-stone-400 to-neutral-900" },
   { title: "NHM Hero", category: "Landing Page", type: "Landing", file: "NHM_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(75).webp", tags: ["Museum", "Editorial", "Scroll"], gradient: "from-neutral-300 via-stone-600 to-[#0a0a0a]" },
@@ -131,6 +126,8 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Pizza.md",
+  "Wandor_Hero.md",
   "Beanro_Coffee_Shop.md",
   "Aethera_Lending_Hero.md",
   "NHM_Hero.md",
@@ -228,24 +225,185 @@ const visiblePlans = plans.filter((plan) => !plan.hidden);
 const planGridMd = visiblePlans.length === 1 ? "md:grid-cols-1" : visiblePlans.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
 const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
 
-// Honest urgency: real founder scarcity instead of a countdown clock. There is no
-// fake deadline here — the offer ends when FOUNDER_CAP members is reached, which is
-// verifiable and under your control. (An evergreen/auto-resetting countdown would be
-// a dark pattern and is illegal in the EU under the Omnibus directive.)
-function FounderScarcity({ className = "" }) {
-  const left = Math.max(0, FOUNDER_CAP - FOUNDER_MEMBERS);
-  const pct = Math.min(100, Math.round((FOUNDER_MEMBERS / FOUNDER_CAP) * 100));
+// Clean, single-focus pricing card used across every purchase surface (paywall
+// modal, pricing section, /pricing page). Intentionally minimal: price, one CTA,
+// a few essential bullets — nothing else.
+function PlanCard({ plan, onBuy, loading, featured }) {
   return (
-    <div className={`rounded-2xl border border-amber-300/25 bg-amber-400/[0.07] px-3.5 py-3 text-left ${className}`}>
-      <p className="flex items-center gap-2 text-xs font-medium text-amber-200">
-        <Icon name="zap" className="h-3.5 w-3.5 flex-none text-amber-300" />
-        {t(`Founder price — first ${FOUNDER_CAP} members`, `Tarif fondateur — les ${FOUNDER_CAP} premiers membres`)}
-      </p>
-      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-        <div className="h-full rounded-full bg-gradient-to-r from-amber-300 to-amber-500" style={{ width: `${pct}%` }} />
+    <div className={`relative flex flex-col rounded-[28px] border p-6 transition sm:p-7 ${featured ? "border-violet-400/30 bg-white/[0.04]" : "border-white/10 bg-white/[0.02]"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-base font-semibold text-white">{plan.name}</h3>
+        {plan.discountBadge && <span className="rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">{plan.discountBadge}</span>}
       </div>
-      <p className="mt-1.5 text-[11px] text-white/50">{t(`${FOUNDER_MEMBERS} already joined — ${left} spots left at this price`, `${FOUNDER_MEMBERS} déjà inscrits — ${left} places restantes à ce prix`)}</p>
+      <div className="mt-4 flex items-end gap-2">
+        <span className="text-5xl font-bold tracking-[-0.06em] text-white">{plan.price}</span>
+        <span className="pb-1.5 text-sm text-white/40">{plan.period}</span>
+      </div>
+      {plan.originalPrice && <p className="mt-1.5 text-sm text-white/35"><span className="line-through">{plan.originalPrice}</span></p>}
+      {plan.subPrice && <p className="mt-1.5 text-xs font-medium text-emerald-300/90">{plan.subPrice}</p>}
+      <button
+        onClick={() => onBuy(plan)}
+        disabled={loading}
+        className={`group mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${featured ? "bg-white text-black hover:bg-white/90" : "border border-white/15 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}
+      >
+        {loading ? t("Loading…", "Chargement…") : plan.cta}
+        <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
+      </button>
+      <ul className="mt-6 space-y-2.5">
+        {plan.features.slice(0, 4).map((feat) => (
+          <li key={feat} className="flex items-center gap-2.5 text-sm text-white/60">
+            <Icon name="check" className="h-4 w-4 flex-none text-violet-300" /> {feat}
+          </li>
+        ))}
+      </ul>
     </div>
+  );
+}
+
+// Mounts Whop's embedded checkout INLINE (no redirect). Whop's loader.js scans the
+// DOM (and observes mutations) for [data-whop-checkout-plan-id] and renders the
+// checkout in an iframe inside this div. skip-redirect + on-complete keep the user
+// on our page and let us react when payment succeeds.
+const WHOP_LOADER_SRC = "https://js.whop.com/static/checkout/loader.js";
+let whopCbSeq = 0;
+
+function WhopCheckoutEmbed({ planId, prefillEmail, onComplete }) {
+  const cbName = useMemo(() => `moventoWhopComplete_${++whopCbSeq}`, []);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    window[cbName] = (pid, receiptId) => onCompleteRef.current?.(pid, receiptId);
+    if (!document.querySelector(`script[src="${WHOP_LOADER_SRC}"]`)) {
+      const s = document.createElement("script");
+      s.src = WHOP_LOADER_SRC;
+      s.async = true;
+      s.defer = true;
+      document.head.appendChild(s);
+    }
+    return () => { try { delete window[cbName]; } catch { window[cbName] = undefined; } };
+  }, [cbName]);
+
+  return (
+    <div
+      key={planId}
+      data-whop-checkout-plan-id={planId}
+      data-whop-checkout-theme="dark"
+      data-whop-checkout-theme-accent-color="purple"
+      data-whop-checkout-skip-redirect="true"
+      data-whop-checkout-on-complete={cbName}
+      {...(prefillEmail ? { "data-whop-checkout-prefill-email": prefillEmail } : {})}
+      className="min-h-[540px] w-full overflow-hidden rounded-2xl bg-black/20"
+    />
+  );
+}
+
+const cleanEmail = (v) => String(v).replace(/[\s­​-‍⁠﻿]/g, "").toLowerCase();
+
+// Shown right after the embedded payment completes: the buyer's checkout email is
+// their access key, so we confirm access on this device with a single field.
+function CheckoutSuccess({ prefillEmail, onUnlocked }) {
+  const [email, setEmail] = useState(prefillEmail || "");
+  const [st, setSt] = useState({ loading: false, error: "" });
+
+  async function submit(e) {
+    e.preventDefault();
+    const norm = cleanEmail(email);
+    if (!norm) { setSt({ loading: false, error: t("Enter the email used at checkout.", "Entre l'email utilisé au paiement.") }); return; }
+    setSt({ loading: true, error: "" });
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/verify-access`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: norm }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.hasAccess) { onUnlocked(norm); return; }
+      setSt({ loading: false, error: t("Access is activating — this can take a moment. Retry in a few seconds.", "L'accès s'active — cela peut prendre un instant. Réessaie dans quelques secondes.") });
+    } catch {
+      setSt({ loading: false, error: t("Unable to verify right now. Please retry.", "Vérification impossible pour le moment. Réessaie.") });
+    }
+  }
+
+  return (
+    <div className="py-4 text-center">
+      <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl border border-emerald-200/20 bg-emerald-300/10 text-emerald-100"><Icon name="check" className="h-6 w-6" /></div>
+      <h3 className="text-xl font-semibold tracking-tight text-white">{t("Payment confirmed 🎉", "Paiement confirmé 🎉")}</h3>
+      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">{t("Confirm the email you paid with to unlock the full catalog on this device.", "Confirme l'email utilisé au paiement pour débloquer tout le catalogue sur cet appareil.")}</p>
+      <form onSubmit={submit} className="mx-auto mt-5 flex max-w-sm flex-col gap-3 sm:flex-row">
+        <input autoFocus value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-violet-400/50" />
+        <button type="submit" disabled={st.loading} className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-60">{st.loading ? t("Checking…", "Vérification…") : t("Unlock", "Débloquer")}</button>
+      </form>
+      {st.error && <p className="mx-auto mt-3 flex max-w-sm items-start gap-2 text-left text-xs leading-5 text-amber-200"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{st.error}</p>}
+    </div>
+  );
+}
+
+// Full-screen overlay that runs the whole purchase ON-SITE: fetch the plan id,
+// mount the embedded Whop checkout, then confirm access — never leaving the page.
+// Falls back to the hosted redirect only when no plan_xxx id is configured.
+function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
+  const [load, setLoad] = useState({ loading: true, planId: "", error: "" });
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setLoad({ loading: true, planId: "", error: "" });
+    (async () => {
+      try {
+        const r = await fetch(CHECKOUT_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: plan.id }),
+        });
+        let d = {};
+        try { d = await r.json(); } catch { d = {}; }
+        if (!r.ok) throw new Error(d.error || `Erreur serveur paiement (${r.status}).`);
+        if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, error: "" }); return; }
+        // No embeddable plan id configured — gracefully use the hosted page.
+        if (d.checkoutUrl) { window.location.assign(d.checkoutUrl); return; }
+        throw new Error("Checkout indisponible pour cette offre.");
+      } catch (e) {
+        if (alive) setLoad({ loading: false, planId: "", error: getCheckoutErrorMessage(e) });
+      }
+    })();
+    return () => { alive = false; };
+  }, [plan.id]);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-center justify-center px-3 py-4 sm:px-4 sm:py-8" onClick={onClose}>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+      <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 16 }} transition={{ type: "spring", stiffness: 300, damping: 26 }} className="relative flex max-h-[94dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0d0e18] shadow-2xl sm:rounded-[32px]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4 sm:px-6">
+          <div>
+            <p className="text-sm font-semibold text-white">{plan.name}</p>
+            <p className="text-xs text-white/45">{plan.price} <span className="text-white/30">{plan.period}</span></p>
+          </div>
+          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/10 text-white/60 transition hover:text-white"><Icon name="close" className="h-4 w-4" /></button>
+        </div>
+        <div className="overflow-y-auto overscroll-contain p-4 sm:p-6">
+          {done ? (
+            <CheckoutSuccess prefillEmail={prefillEmail} onUnlocked={onUnlocked} />
+          ) : load.loading ? (
+            <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
+              <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-white/70" />
+              <p className="text-sm text-white/50">{t("Loading secure checkout…", "Chargement du paiement sécurisé…")}</p>
+            </div>
+          ) : load.error ? (
+            <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 px-4 text-center">
+              <div className="grid h-11 w-11 place-items-center rounded-full border border-red-400/20 bg-red-500/10 text-red-200"><Icon name="alert" className="h-5 w-5" /></div>
+              <p className="max-w-sm text-sm leading-6 text-red-100">{load.error}</p>
+              <button onClick={() => setLoad((s) => ({ ...s }))} className="rounded-full border border-white/15 bg-white/[0.06] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white hover:text-black">{t("Retry", "Réessayer")}</button>
+            </div>
+          ) : (
+            <WhopCheckoutEmbed planId={load.planId} prefillEmail={prefillEmail} onComplete={() => { track("checkout_completed", { plan: plan.id }); setDone(true); }} />
+          )}
+        </div>
+        <div className="flex items-center justify-center gap-1.5 border-t border-white/[0.06] px-5 py-3 text-[11px] text-white/40">
+          <Icon name="shield" className="h-3 w-3 text-violet-300" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -256,41 +414,6 @@ function Reassurance({ className = "" }) {
       <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-violet-300" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
       <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-300" /> {t("Instant access", "Accès immédiat")}</span>
       <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-300" /> {t("One-time payment, no subscription", "Paiement unique, sans abonnement")}</span>
-    </div>
-  );
-}
-
-// Highlighted free-ebook bonus shown on the pricing cards.
-function BonusCallout({ className = "" }) {
-  return (
-    <div className={`flex items-start gap-3 rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.10] to-amber-500/[0.03] p-4 ${className}`}>
-      <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-amber-400/15 text-amber-200"><Icon name="gift" className="h-4 w-4" /></span>
-      <div>
-        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
-          {t("Free bonus", "Bonus offert")}
-          <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200">{t("Included", "Inclus")}</span>
-        </p>
-        <p className="mt-1 text-xs leading-5 text-white/60">{t("The ebook “Land your first client & sell your first site” — the exact steps to turn Movento prompts into paid work.", "L'ebook « Trouve ton premier client & vends ton premier site » — les étapes concrètes pour transformer les prompts Movento en missions payantes.")}</p>
-      </div>
-    </div>
-  );
-}
-
-// Community social proof — owner-provided real numbers. Builds trust for cold traffic.
-function SocialProof({ className = "" }) {
-  const items = [
-    { value: STATS.sites, label: t("sites built with Movento", "sites créés avec Movento") },
-    { value: STATS.users, label: t("members", "membres") },
-    { value: STATS.revenue, label: t("earned by our members", "générés par nos membres") },
-  ];
-  return (
-    <div className={`grid grid-cols-3 divide-x divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] ${className}`}>
-      {items.map((it) => (
-        <div key={it.label} className="px-2 py-3 text-center sm:px-3">
-          <p className="text-base font-bold tracking-tight text-white sm:text-lg">{it.value}</p>
-          <p className="mt-0.5 text-[10px] leading-tight text-white/45 sm:text-[11px]">{it.label}</p>
-        </div>
-      ))}
     </div>
   );
 }
@@ -637,7 +760,7 @@ export default function MoventoSite() {
   const [accessEmail, setAccessEmail] = useState(getStoredAccessEmail);
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
   const [accessStatus, setAccessStatus] = useState({ loading: false, message: "", error: "" });
-  const [checkoutStatus, setCheckoutStatus] = useState({ loading: "", error: "" });
+  const [checkoutPlan, setCheckoutPlan] = useState(null); // plan being purchased in the embedded overlay
   const [leadEmail, setLeadEmail] = useState(getStoredLeadEmail);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
@@ -702,7 +825,10 @@ export default function MoventoSite() {
       const matchQuery = `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase());
       return matchAccess && matchQuery;
     });
-    return sortOrder === "old" ? list.reverse() : list;
+    const ordered = sortOrder === "old" ? list.reverse() : list;
+    // Free prompts always surface first (stable sort keeps recency order within
+    // each group), so visitors can try the quality before hitting the paywall.
+    return [...ordered].sort((a, b) => (FREE_PROMPT_FILES.has(a.file) ? 0 : 1) - (FREE_PROMPT_FILES.has(b.file) ? 0 : 1));
   }, [query, access, sortOrder]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
@@ -861,36 +987,22 @@ export default function MoventoSite() {
     }
   }
 
-  async function goToCheckout(planId) {
-    if (checkoutStatus.loading) return;
+  // Opens the on-site embedded checkout overlay (no redirect). The overlay itself
+  // fetches the plan id and mounts the Whop checkout inline.
+  function startCheckout(plan) {
+    track("checkout_started", { plan: plan.id });
+    setShowPricingModal(false);
+    setCheckoutPlan(plan);
+  }
 
-    track("checkout_started", { plan: planId });
-    setCheckoutStatus({ loading: planId, error: "" });
-
-    try {
-      if (!validatePlanId(planId)) throw new Error("Invalid plan.");
-
-      const response = await fetch(CHECKOUT_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planId }),
-      });
-
-      let data = {};
-      try {
-        data = await response.json();
-      } catch {
-        data = {};
-      }
-
-      if (!response.ok) throw new Error(data.error || `Erreur serveur paiement (${response.status}).`);
-      if (!data.checkoutUrl || typeof data.checkoutUrl !== "string") throw new Error("Le backend n'a pas renvoyé de lien de checkout Whop.");
-
-      window.location.assign(data.checkoutUrl);
-    } catch (error) {
-      console.error("Erreur paiement Whop", error);
-      setCheckoutStatus({ loading: "", error: getCheckoutErrorMessage(error) });
-    }
+  // Called once the buyer confirms their access email after paying inline.
+  function handleUnlocked(email) {
+    window.localStorage.setItem("movento_access_email", email);
+    setAccessEmail(email);
+    setHasPremiumAccess(true);
+    setCheckoutPlan(null);
+    setPaywallItem(null);
+    track("access_unlocked");
   }
 
   if (isMentionsPage) return <MentionsLegales />;
@@ -921,81 +1033,36 @@ export default function MoventoSite() {
             </motion.div>
           </motion.div>
         )}
-        {showPricingModal && (
+        {showPricingModal && !checkoutPlan && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-3 py-4 sm:px-4 sm:py-8" onClick={() => setShowPricingModal(false)}>
             <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0d0e18] shadow-2xl sm:rounded-[32px]" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setShowPricingModal(false)} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/10 text-white/60 backdrop-blur hover:text-white transition sm:right-5 sm:top-5"><Icon name="close" className="h-4 w-4" /></button>
-              <div className="overflow-y-auto overscroll-contain p-4 sm:p-8">
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-white/65"><Icon name="sparkles" className="h-3.5 w-3.5 text-violet-300" /> {t("Founder pricing", "Prix fondateurs")}</div>
-              <h2 className="mt-2 pr-10 text-xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">{paywallItem ? t(`Unlock “${paywallItem.title}” + the whole catalog`, `Débloque « ${paywallItem.title} » + tout le catalogue`) : t("Unlock all prompts", "Débloquer tous les prompts")}</h2>
-              <p className="mt-1.5 text-sm text-white/50 sm:mt-2">{t("Choose a plan to access the full Movento catalog.", "Choisissez une offre pour accéder au catalogue complet Movento.")}</p>
-              <p className="mt-2 text-sm leading-6 text-white/75">{t("One site from a freelancer costs 300–800€. Here: unlimited sites for 27,90€.", "1 site chez un freelance = 300–800€. Ici : des sites illimités pour 27,90€.")}</p>
-              <SocialProof className="mt-4" />
-              <FounderScarcity className="mt-3 sm:mt-4" />
-              <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-2xl border border-violet-300/20 bg-violet-500/[0.08] px-3.5 py-2.5 sm:mt-4">
-                <Icon name="gift" className="h-4 w-4 flex-none text-violet-200" />
-                <span className="text-sm text-white/70">{t("Your TikTok code", "Ton code TikTok")}</span>
-                <span className="rounded-md border border-dashed border-violet-300/40 bg-violet-500/10 px-2 py-0.5 font-mono text-sm font-bold tracking-widest text-white">{PROMO_CODE}</span>
-                <span className="text-sm font-semibold text-emerald-300">−10%</span>
-                <span className="text-xs text-white/40">{t("— apply it at checkout", "— à appliquer au paiement")}</span>
-              </div>
-              {checkoutStatus.error && (
-                <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-100">
-                  <Icon name="alert" className="mt-0.5 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p>
+            <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 16 }} transition={{ type: "spring", stiffness: 300, damping: 26 }} className={`relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0d0e18] shadow-2xl sm:rounded-[32px] ${visiblePlans.length === 1 ? "max-w-md" : "max-w-3xl"}`} onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowPricingModal(false)} className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/10 text-white/60 backdrop-blur hover:text-white transition"><Icon name="close" className="h-4 w-4" /></button>
+              <div className="overflow-y-auto overscroll-contain p-6 sm:p-8">
+                <div className="pr-8 text-center">
+                  <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">{paywallItem ? t(`Unlock “${paywallItem.title}”`, `Débloque « ${paywallItem.title} »`) : t("Unlock all prompts", "Débloque tous les prompts")}</h2>
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/50">{t("One payment. Access the entire Movento catalog.", "Un seul paiement. Accès à tout le catalogue Movento.")}</p>
                 </div>
-              )}
-              <div className={`mt-5 grid gap-4 sm:mt-7 ${planGridMd}`}>
-                {visiblePlans.map((plan) => (
-                  <div key={plan.id} className={`relative overflow-hidden rounded-[24px] border p-2.5 backdrop-blur-2xl transition hover:-translate-y-1 sm:p-3 ${plan.id === "monthly" ? "border-violet-400/40 bg-gradient-to-br from-violet-500/[0.22] via-fuchsia-500/[0.08] to-cyan-500/[0.12]" : plan.featured ? "border-violet-300/30 bg-gradient-to-br from-violet-500/[0.18] via-white/[0.06] to-cyan-500/[0.12]" : "border-white/10 bg-white/[0.035]"}`}>
-                    {plan.id === "monthly" && <div className="pointer-events-none absolute -left-8 -top-8 h-40 w-40 rounded-full bg-fuchsia-500/25 blur-[60px]" />}
-                    {plan.featured && <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-violet-500/30 blur-[70px]" />}
-                    <div className="relative rounded-[18px] border border-white/10 bg-[#080910]/90 p-4 sm:p-5">
-                      <div className="mb-4 flex items-start justify-between gap-3 sm:mb-5">
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">{plan.name}</h3>
-                          <p className="mt-1 text-xs leading-5 text-white/45">{plan.description}</p>
-                        </div>
-                        <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span>
-                      </div>
-                      <div className="mb-4 sm:mb-5">
-                        {plan.originalPrice && (
-                          <div className="mb-1 flex items-center gap-2">
-                            <span className="text-sm text-white/35 line-through">{plan.originalPrice}</span>
-                            {plan.discountBadge && <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">{plan.discountBadge}</span>}
-                          </div>
-                        )}
-                        <div className="flex items-end gap-1.5">
-                          <span className="text-4xl font-bold tracking-[-0.06em] text-white">{plan.price}</span>
-                          <span className="pb-1 text-sm text-white/40">{plan.period}</span>
-                        </div>
-                        {plan.subPrice && <p className="mt-1.5 text-[11px] font-medium text-emerald-300/90">{plan.subPrice}</p>}
-                      </div>
-                      <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30" : plan.featured ? "bg-white text-black hover:bg-white/90" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>
-                        {checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}
-                        <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
-                      </button>
-                      <Reassurance className="mt-3" />
-                      <div className="my-4 h-px bg-white/10 sm:my-5" />
-                      <div className="space-y-2.5">
-                        {plan.features.map((feat) => (
-                          <div key={feat} className="flex items-center gap-2.5 text-xs text-white/65">
-                            <div className="grid h-4 w-4 flex-none place-items-center rounded-full bg-white/10"><Icon name="check" className="h-3 w-3 text-white" /></div>
-                            {feat}
-                          </div>
-                        ))}
-                      </div>
-                      <BonusCallout className="mt-4 sm:mt-5" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 border-t border-white/10 pt-4 text-center sm:mt-6 sm:pt-5">
-                <button onClick={() => { setShowPricingModal(false); setShowUnlockModal(true); }} className="text-sm text-white/45 transition hover:text-white/80">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
-              </div>
+                <div className={`mx-auto mt-6 grid gap-4 ${planGridMd}`}>
+                  {visiblePlans.map((plan) => (
+                    <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={startCheckout} />
+                  ))}
+                </div>
+                <Reassurance className="mt-6" />
+                <div className="mt-6 text-center">
+                  <button onClick={() => { setShowPricingModal(false); setShowUnlockModal(true); }} className="text-sm text-white/45 transition hover:text-white/80">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
+        )}
+        {checkoutPlan && (
+          <CheckoutOverlay
+            plan={checkoutPlan}
+            prefillEmail={leadEmail || accessEmail}
+            onClose={() => setCheckoutPlan(null)}
+            onUnlocked={handleUnlocked}
+          />
         )}
         {showUnlockModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowUnlockModal(false)}>
@@ -1134,38 +1201,18 @@ export default function MoventoSite() {
       </section>
 
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/65 backdrop-blur-xl"><Icon name="sparkles" className="h-4 w-4 text-violet-300" /> {t("Launch offer - Founder pricing", "Offre de lancement - Prix fondateurs")}</div>
-          <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Unlock the full power of web creation without limits. Access a complete library of premium prompts built to generate professional websites — each one worth thousands of euros.", "Débloquez toute la puissance de la création web sans limites. Accédez à une bibliothèque complète de prompts premium spécialement conçus pour générer des sites internet professionnels, chacun représentant une valeur de plusieurs milliers d'euros.")}</p>
-
-          <FounderScarcity className="mt-8 mx-auto max-w-sm" />
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-4xl font-semibold tracking-[-0.05em] text-white md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/50">{t("One payment. Unlimited premium websites, forever.", "Un seul paiement. Des sites premium en illimité, à vie.")}</p>
         </div>
 
-        {checkoutStatus.error && <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{checkoutStatus.error}</p></div>}
-
-        <div className={`mx-auto mt-14 grid max-w-6xl gap-5 ${planGridLg}`}>
+        <div className={`mx-auto mt-12 grid gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
           {visiblePlans.map((plan) => (
-            <div key={plan.id} className={`relative overflow-hidden rounded-[34px] border p-3 shadow-2xl backdrop-blur-2xl transition hover:-translate-y-1 ${plan.id === "monthly" ? "border-violet-400/40 bg-gradient-to-br from-violet-500/[0.22] via-fuchsia-500/[0.08] to-cyan-500/[0.12] shadow-violet-900/30" : plan.featured ? "border-violet-300/30 bg-gradient-to-br from-violet-500/[0.18] via-white/[0.06] to-cyan-500/[0.12] shadow-violet-900/25" : "border-white/10 bg-white/[0.035] shadow-black/40"}`}>
-              {plan.id === "monthly" && <div className="pointer-events-none absolute -left-10 -top-10 h-56 w-56 rounded-full bg-fuchsia-500/25 blur-[80px]" />}
-              {plan.featured && <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-500/30 blur-[100px]" />}
-              <div className="relative rounded-[28px] border border-white/10 bg-[#080910]/90 p-7">
-                <div className="mb-7 flex items-start justify-between gap-4"><div><h3 className="text-2xl font-semibold tracking-tight text-white">{plan.name}</h3><p className="mt-2 text-sm leading-6 text-white/45">{plan.description}</p></div><span className={`rounded-full border px-3 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span></div>
-                <div className="mb-7">{plan.originalPrice && <div className="mb-2 flex items-center gap-2"><span className="text-base text-white/35 line-through">{plan.originalPrice}</span>{plan.discountBadge && <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">{plan.discountBadge}</span>}</div>}<div className="flex items-end gap-2"><span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span><span className="pb-2 text-white/40">{plan.period}</span></div>{plan.subPrice && <p className="mt-2 text-xs font-medium text-emerald-300/90">{plan.subPrice}</p>}</div>
-                <button disabled={Boolean(checkoutStatus.loading)} onClick={() => goToCheckout(plan.id)} className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50" : plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}>{checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}<Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></button>
-                <div className="my-7 h-px bg-white/10" />
-                <div className="space-y-3">{plan.features.map((item) => <div key={item} className="flex items-center gap-3 text-sm text-white/65"><div className="grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10"><Icon name="check" className="h-3.5 w-3.5 text-white" /></div>{item}</div>)}</div>
-                <BonusCallout className="mt-5" />
-              </div>
-            </div>
+            <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={startCheckout} />
           ))}
         </div>
 
-        <div className="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-white/45">
-          <span className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-violet-300" /> {t("Payment secured by Whop", "Paiement sécurisé par Whop")}</span>
-          <span className="flex items-center gap-2"><Icon name="zap" className="h-3.5 w-3.5 text-amber-300" /> {t("Instant access", "Accès immédiat")}</span>
-          <span className="flex items-center gap-2"><Icon name="check" className="h-3.5 w-3.5 text-emerald-300" /> {t("One-time payment, no subscription", "Paiement unique, sans abonnement")}</span>
-        </div>
+        <Reassurance className="mt-8" />
       </section>
 
       <section id="faq" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 lg:px-8">
@@ -1390,31 +1437,26 @@ function MentionsLegales() {
 }
 
 function PricingPage() {
-  const [checkoutStatus, setCheckoutStatus] = useState({ loading: "", error: "" });
+  const [checkoutPlan, setCheckoutPlan] = useState(null);
 
-  async function goToCheckout(planId) {
-    if (checkoutStatus.loading) return;
-    track("checkout_started", { plan: planId });
-    setCheckoutStatus({ loading: planId, error: "" });
-    try {
-      if (!validatePlanId(planId)) throw new Error("Invalid plan.");
-      const response = await fetch(CHECKOUT_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planId }),
-      });
-      let data = {};
-      try { data = await response.json(); } catch { data = {}; }
-      if (!response.ok) throw new Error(data.error || `Server error (${response.status}).`);
-      if (!data.checkoutUrl) throw new Error("No checkout URL returned.");
-      window.location.assign(data.checkoutUrl);
-    } catch (error) {
-      setCheckoutStatus({ loading: "", error: getCheckoutErrorMessage(error) });
-    }
+  function onUnlocked(email) {
+    window.localStorage.setItem("movento_access_email", email);
+    track("access_unlocked");
+    window.location.assign("/#prompts");
   }
 
   return (
     <main className="min-h-screen bg-[#05060a] text-white">
+      <AnimatePresence>
+        {checkoutPlan && (
+          <CheckoutOverlay
+            plan={checkoutPlan}
+            prefillEmail={getStoredLeadEmail() || getStoredAccessEmail()}
+            onClose={() => setCheckoutPlan(null)}
+            onUnlocked={onUnlocked}
+          />
+        )}
+      </AnimatePresence>
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-fuchsia-600/10 blur-[120px]" />
@@ -1426,77 +1468,18 @@ function PricingPage() {
       </header>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white/65 backdrop-blur-xl">
-            <Icon name="sparkles" className="h-4 w-4 text-violet-300" /> {t("Launch offer - Founder pricing", "Offre de lancement - Prix fondateurs")}
-          </div>
-          <h1 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-7xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/55">{t("Unlock the full power of web creation without limits. Access a complete library of premium prompts built to generate professional websites — each one worth thousands of euros.", "Débloquez toute la puissance de la création web sans limites. Accédez à une bibliothèque complète de prompts premium spécialement conçus pour générer des sites internet professionnels, chacun représentant une valeur de plusieurs milliers d'euros.")}</p>
-          <FounderScarcity className="mt-8 mx-auto max-w-sm" />
+        <div className="mx-auto max-w-2xl text-center">
+          <h1 className="text-4xl font-semibold tracking-[-0.05em] text-white md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/50">{t("One payment. Unlimited premium websites, forever.", "Un seul paiement. Des sites premium en illimité, à vie.")}</p>
         </div>
 
-        {checkoutStatus.error && (
-          <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100 backdrop-blur-xl">
-            <Icon name="alert" className="mt-1 h-4 w-4 flex-none" />
-            <p>{checkoutStatus.error}</p>
-          </div>
-        )}
-
-        <div className={`mx-auto mt-14 grid max-w-6xl gap-5 ${planGridLg}`}>
+        <div className={`mx-auto mt-12 grid gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
           {visiblePlans.map((plan) => (
-            <div key={plan.id} className={`relative overflow-hidden rounded-[34px] border p-3 shadow-2xl backdrop-blur-2xl transition hover:-translate-y-1 ${plan.id === "monthly" ? "border-violet-400/40 bg-gradient-to-br from-violet-500/[0.22] via-fuchsia-500/[0.08] to-cyan-500/[0.12] shadow-violet-900/30" : plan.featured ? "border-violet-300/30 bg-gradient-to-br from-violet-500/[0.18] via-white/[0.06] to-cyan-500/[0.12] shadow-violet-900/25" : "border-white/10 bg-white/[0.035] shadow-black/40"}`}>
-              {plan.id === "monthly" && <div className="pointer-events-none absolute -left-10 -top-10 h-56 w-56 rounded-full bg-fuchsia-500/25 blur-[80px]" />}
-              {plan.featured && <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-500/30 blur-[100px]" />}
-              <div className="relative rounded-[28px] border border-white/10 bg-[#080910]/90 p-7">
-                <div className="mb-7 flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-2xl font-semibold tracking-tight text-white">{plan.name}</h3>
-                    <p className="mt-2 text-sm leading-6 text-white/45">{plan.description}</p>
-                  </div>
-                  <span className={`rounded-full border px-3 py-1 text-xs font-medium ${plan.id === "monthly" ? "border-fuchsia-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 text-fuchsia-200" : plan.featured ? "border-violet-300/25 bg-violet-500/15 text-violet-100" : "border-white/10 bg-white/[0.05] text-white/55"}`}>{plan.badge}</span>
-                </div>
-                <div className="mb-7">
-                  {plan.originalPrice && (
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="text-base text-white/35 line-through">{plan.originalPrice}</span>
-                      {plan.discountBadge && <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">{plan.discountBadge}</span>}
-                    </div>
-                  )}
-                  <div className="flex items-end gap-2">
-                    <span className="text-6xl font-bold tracking-[-0.07em] text-white">{plan.price}</span>
-                    <span className="pb-2 text-white/40">{plan.period}</span>
-                  </div>
-                  {plan.subPrice && <p className="mt-2 text-xs font-medium text-emerald-300/90">{plan.subPrice}</p>}
-                </div>
-                <button
-                  disabled={Boolean(checkoutStatus.loading)}
-                  onClick={() => goToCheckout(plan.id)}
-                  className={`group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${plan.id === "monthly" ? "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50" : plan.featured ? "bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/10" : "border border-white/10 bg-white/[0.06] text-white hover:bg-white hover:text-black"}`}
-                >
-                  {checkoutStatus.loading === plan.id ? t("Redirecting...", "Redirection...") : plan.cta}
-                  <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
-                </button>
-                <Reassurance className="mt-4" />
-                <div className="my-7 h-px bg-white/10" />
-                <div className="space-y-3">
-                  {plan.features.map((item) => (
-                    <div key={item} className="flex items-center gap-3 text-sm text-white/65">
-                      <div className="grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10">
-                        <Icon name="check" className="h-3.5 w-3.5 text-white" />
-                      </div>
-                      {item}
-                    </div>
-                  ))}
-                </div>
-                <BonusCallout className="mt-5" />
-              </div>
-            </div>
+            <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => { track("checkout_started", { plan: p.id }); setCheckoutPlan(p); }} />
           ))}
         </div>
 
-        <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur-xl">
-          <p className="text-sm leading-6 text-white/60">{t("Stop paying thousands of euros for every website. With Movento, build premium websites in a fraction of the usual time and cost — a one-time investment that keeps paying off, again and again.", "Arrêtez de payer des milliers d'euros pour chaque site. Avec Movento, créez des sites web premium en une fraction du temps et du coût habituel. Un investissement unique qui continue de vous apporter de la valeur, encore et encore.")}</p>
-        </div>
+        <Reassurance className="mt-8" />
       </section>
 
       <footer className="relative z-10 border-t border-white/[0.06] py-10">

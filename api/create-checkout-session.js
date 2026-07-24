@@ -1,4 +1,4 @@
-import { checkoutUrls, methodNotAllowed } from "./_shared.js";
+import { checkoutUrls, methodNotAllowed, resolvePlanId } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -13,7 +13,8 @@ export default async function handler(req, res) {
     });
   }
 
-  // Whop hosts checkout, so there is no session to create — just hand back the
-  // plan's hosted link and let the client redirect.
-  return res.json({ checkoutUrl });
+  // planId (plan_xxx) drives the on-site EMBEDDED checkout — the client mounts the
+  // Whop checkout inline, no redirect. When only a product-page link is configured
+  // it stays null and the client falls back to redirecting to checkoutUrl.
+  return res.json({ checkoutUrl, planId: resolvePlanId(plan) });
 }

@@ -13,6 +13,26 @@ export const checkoutUrls = {
   lifetime: process.env.WHOP_LIFETIME_URL,
 };
 
+// Whop plan IDs (plan_xxx), one per plan — required for the on-site EMBEDDED
+// checkout (no redirect). Set these in Vercel env, or leave them empty and use a
+// checkout-link of the form https://whop.com/checkout/plan_xxx as the *_URL above
+// (we extract the id from it below). If neither is available, the client falls
+// back to the hosted redirect flow.
+const planIdEnv = {
+  monthly: process.env.WHOP_MONTHLY_PLAN_ID,
+  yearly: process.env.WHOP_YEARLY_PLAN_ID,
+  lifetime: process.env.WHOP_LIFETIME_PLAN_ID,
+};
+
+// Returns the plan_xxx id for embedded checkout, or null when only a product-page
+// link is configured (in which case the caller redirects to the hosted page).
+export function resolvePlanId(plan) {
+  const explicit = planIdEnv[plan];
+  if (explicit && /^plan_[A-Za-z0-9]+$/.test(explicit.trim())) return explicit.trim();
+  const match = String(checkoutUrls[plan] || "").match(/plan_[A-Za-z0-9]+/);
+  return match ? match[0] : null;
+}
+
 // Where customers manage/cancel their membership.
 export const WHOP_PORTAL_URL = process.env.WHOP_PORTAL_URL || "https://whop.com/orders/";
 
