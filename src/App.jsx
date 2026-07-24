@@ -17,7 +17,7 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
-  { title: "Pizza Restaurant", category: "Landing Page", type: "Landing", file: "Pizza.md", preview: "https://i.imgur.com/79tTQ9Y.jpeg", tags: ["Restaurant", "Food", "Framer"], gradient: "from-red-300 via-orange-600 to-[#1A0D08]" },
+  { title: "Pizza Restaurant", category: "Landing Page", type: "Landing", file: "Pizza.md", preview: "https://i.imgur.com/79tTQ9Y.jpeg", tags: ["Restaurant", "Food", "Framer"], gradient: "from-red-300 via-orange-600 to-[#1A0D08]", pinned: true },
   { title: "Wandor Travel Hero", category: "Landing Page", type: "Hero", file: "Wandor_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/where%20willArea.mp4", tags: ["Travel", "Glass", "Video"], gradient: "from-amber-200 via-orange-600 to-[#2A1810]" },
   { title: "Beanro Coffee Shop", category: "Landing Page", type: "Landing", file: "Beanro_Coffee_Shop.md", preview: "https://i.postimg.cc/7LKy8X3y/Capture-d-e-cran-2026-07-19-a-16-34-59.png", tags: ["Coffee Shop", "E-commerce", "Warm"], gradient: "from-amber-200 via-orange-700 to-[#2A1810]" },
   { title: "Aethera Lending Hero", category: "Fintech", type: "Hero", file: "Aethera_Lending_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/handstouchgodArea.mp4", tags: ["Fintech", "Editorial", "Video"], gradient: "from-neutral-100 via-stone-400 to-neutral-900" },
@@ -832,9 +832,11 @@ export default function MoventoSite() {
       return matchAccess && matchQuery;
     });
     const ordered = sortOrder === "old" ? list.reverse() : list;
-    // Free prompts always surface first (stable sort keeps recency order within
-    // each group), so visitors can try the quality before hitting the paywall.
-    return [...ordered].sort((a, b) => (FREE_PROMPT_FILES.has(a.file) ? 0 : 1) - (FREE_PROMPT_FILES.has(b.file) ? 0 : 1));
+    // Ordering priority (stable sort keeps recency order within each group):
+    // pinned showcase prompt → free prompts → the rest. Free prompts surface early
+    // so visitors can try the quality before hitting the paywall.
+    const rank = (p) => (p.pinned ? 0 : FREE_PROMPT_FILES.has(p.file) ? 1 : 2);
+    return [...ordered].sort((a, b) => rank(a) - rank(b));
   }, [query, access, sortOrder]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
@@ -1168,7 +1170,7 @@ export default function MoventoSite() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-600">{t("Gallery", "Galerie")}</p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 md:text-4xl">{t("Premium prompts", "Prompts premium")}</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : `${prompts.filter(isPromptAvailable).length}+ ${t("premium prompts. The full catalog unlocks with a Movento plan.", "prompts premium. Le catalogue complet se débloque avec un abonnement Movento.")}`}</p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : `${prompts.filter(isPromptAvailable).length}+ ${t("premium prompts. Unlock the full catalog with one-time lifetime access.", "prompts premium. Débloque tout le catalogue avec l'accès à vie, en un seul paiement.")}`}</p>
           </div>
         </div>
         {hasPremiumAccess ? (
@@ -1271,7 +1273,7 @@ export default function MoventoSite() {
           <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-blue-100 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-blue-700 shadow-xl shadow-blue-950/20 transition hover:scale-[1.04]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-            <span className="text-xs text-blue-100/80">{t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment")}</span>
+            <span className="text-xs text-blue-100/80">{t("One-time payment — lifetime access", "Paiement unique — accès à vie")}</span>
           </div>
         </div>
       </section>
