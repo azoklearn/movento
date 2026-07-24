@@ -176,7 +176,9 @@ function isPromptAvailable(item) {
   return Boolean(item.link) || AVAILABLE_FILES.has(item.file);
 }
 
-const FREE_PROMPT_FILES = new Set(["Axon_Hero.md", "Viktor_Portfolio.md", "Foldcraft_Hero.md"]);
+// No free prompts anymore — the whole catalog is premium (the monthly plan's
+// 1-day free trial is how visitors try before paying).
+const FREE_PROMPT_FILES = new Set();
 
 const plans = [
   {
@@ -773,7 +775,6 @@ function WelcomeQuiz({ onDone }) {
 
 export default function MoventoSite() {
   const [query, setQuery] = useState("");
-  const [access, setAccess] = useState("all"); // all | free | paid
   const [sortOrder, setSortOrder] = useState("recent"); // recent | old
   const [copiedCard, setCopiedCard] = useState("");
   const [copyError, setCopyError] = useState("");
@@ -841,18 +842,12 @@ export default function MoventoSite() {
     // order is the recency order; "old" just reverses it.
     const list = prompts.filter((p) => {
       if (!isPromptAvailable(p)) return false;
-      const isFree = FREE_PROMPT_FILES.has(p.file);
-      const matchAccess = access === "all" || (access === "free" ? isFree : !isFree);
-      const matchQuery = `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase());
-      return matchAccess && matchQuery;
+      return `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase());
     });
     const ordered = sortOrder === "old" ? list.reverse() : list;
-    // Ordering priority (stable sort keeps recency order within each group):
-    // pinned showcase prompt → free prompts → the rest. Free prompts surface early
-    // so visitors can try the quality before hitting the paywall.
-    const rank = (p) => (p.pinned ? 0 : FREE_PROMPT_FILES.has(p.file) ? 1 : 2);
-    return [...ordered].sort((a, b) => rank(a) - rank(b));
-  }, [query, access, sortOrder]);
+    // The pinned showcase prompt stays first; everything else keeps recency order.
+    return [...ordered].sort((a, b) => (a.pinned ? 0 : 1) - (b.pinned ? 0 : 1));
+  }, [query, sortOrder]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
     // Emails never contain whitespace, so strip every whitespace/zero-width char
@@ -1208,18 +1203,10 @@ export default function MoventoSite() {
         {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 ${accessStatus.error ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-700"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
         {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
-        <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-          <div className="flex gap-2">
-            {[["all", t("All", "Tous")], ["free", t("Free", "Gratuits")], ["paid", t("Paid", "Payants")]].map(([val, label]) => (
-              <button key={val} onClick={() => setAccess(val)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${access === val ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/20" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}>{label}</button>
-            ))}
-          </div>
-          <div className="hidden h-6 w-px bg-slate-200 sm:block" />
-          <div className="flex gap-2">
-            {[["recent", t("Newest", "Plus récents")], ["old", t("Oldest", "Plus anciens")]].map(([val, label]) => (
-              <button key={val} onClick={() => setSortOrder(val)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${sortOrder === val ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/20" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}>{label}</button>
-            ))}
-          </div>
+        <div className="mb-8 flex flex-wrap items-center gap-2">
+          {[["recent", t("Newest", "Plus récents")], ["old", t("Oldest", "Plus anciens")]].map(([val, label]) => (
+            <button key={val} onClick={() => setSortOrder(val)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${sortOrder === val ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/20" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}>{label}</button>
+          ))}
         </div>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <AnimatePresence>

@@ -2,7 +2,8 @@ import { Redis } from "@upstash/redis";
 
 export const PROMPTS_REPO = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/prompts/";
 export const CUSTOM_PROMPTS_REPO = "https://raw.githubusercontent.com/azoklearn/movento/main/prompts/";
-export const FREE_PROMPT_FILES = new Set(["Axon_Hero.md", "Viktor_Portfolio.md", "Foldcraft_Hero.md"]);
+// No free prompts anymore — every prompt requires premium access.
+export const FREE_PROMPT_FILES = new Set();
 
 const WHOP_API = "https://api.whop.com/api/v1";
 
