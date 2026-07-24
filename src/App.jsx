@@ -216,6 +216,8 @@ const plans = [
     description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
     cta: t("Get lifetime access", "Obtenir l'accès à vie"),
     featured: true,
+    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
+    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
     features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
   },
 ];
@@ -259,6 +261,15 @@ function PlanCard({ plan, onBuy, loading, featured }) {
           </li>
         ))}
       </ul>
+      {plan.bonus && (
+        <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+          <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-amber-400 text-white"><Icon name="gift" className="h-3 w-3" /></span>
+          <div>
+            <p className="text-sm font-semibold text-amber-700">{plan.bonus}</p>
+            {plan.bonusDesc && <p className="mt-0.5 text-xs leading-5 text-amber-700/80">{plan.bonusDesc}</p>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -416,7 +427,7 @@ function Reassurance({ className = "" }) {
     <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-slate-400 ${className}`}>
       <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-blue-500" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
       <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-500" /> {t("Instant access", "Accès immédiat")}</span>
-      <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-500" /> {t("One-time payment, no subscription", "Paiement unique, sans abonnement")}</span>
+      <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-500" /> {t("New prompts included", "Nouveaux prompts inclus")}</span>
     </div>
   );
 }
@@ -734,7 +745,7 @@ function WelcomeQuiz({ onDone }) {
                     <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/25"><Icon name="gift" className="h-5 w-5" /></span>
                     <div>
                       <p className="text-sm font-semibold text-slate-900">{t("With your access: your free ebook", "Avec l'accès : ton ebook offert")}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-600">{t("Learn to build your sites from A to Z and land your first clients. Everything you need to launch 100%.", "Apprends à créer tes sites de A à Z et à trouver tes premiers clients. De quoi te lancer à 100%.")}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">{t("Learn to build your site, sell it, land clients and manage everything — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.")}</p>
                     </div>
                   </div>
                 </div>
@@ -1384,7 +1395,7 @@ function SuccessPage() {
             <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-amber-400 text-white"><Icon name="gift" className="h-4 w-4" /></span>
             <h2 className="text-lg font-semibold text-slate-900">{t("Your free bonus ebook", "Ton ebook bonus offert")}</h2>
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-600">{t("“Land your first client & sell your first site” — the exact steps to turn your prompts into paid work.", "« Trouve ton premier client & vends ton premier site » — les étapes concrètes pour transformer tes prompts en missions payantes.")}</p>
+          <p className="mt-3 text-sm leading-6 text-slate-600">{t("The full playbook: build your site, sell it, find clients and manage everything — from A to Z.", "Le guide complet : créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.")}</p>
           <a href={EBOOK_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-6 py-3 text-sm font-semibold text-[#1a1400] transition hover:bg-amber-300 hover:scale-[1.02]"><Icon name="download" className="h-4 w-4" /> {t("Download the ebook", "Télécharger l'ebook")}</a>
         </div>
 
