@@ -8,8 +8,13 @@ export const FREE_PROMPT_FILES = new Set();
 const WHOP_API = "https://api.whop.com/api/v1";
 
 // Hosted Whop checkout links, one per plan (set in Vercel env).
+// The monthly fallback is a product-page link, so it only powers the REDIRECT
+// flow — replace it (or set WHOP_MONTHLY_PLAN_ID) with the plan's checkout link
+// https://whop.com/checkout/plan_xxx to get the on-site embedded checkout back.
+const MONTHLY_FALLBACK_URL = "https://whop.com/movento/abonnement-mensuel-movento/";
+
 export const checkoutUrls = {
-  monthly: process.env.WHOP_MONTHLY_URL,
+  monthly: process.env.WHOP_MONTHLY_URL || MONTHLY_FALLBACK_URL,
   yearly: process.env.WHOP_YEARLY_URL,
   lifetime: process.env.WHOP_LIFETIME_URL,
 };
