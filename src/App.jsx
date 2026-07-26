@@ -176,8 +176,7 @@ function isPromptAvailable(item) {
   return Boolean(item.link) || AVAILABLE_FILES.has(item.file);
 }
 
-// No free prompts anymore — the whole catalog is premium (the monthly plan's
-// 1-day free trial is how visitors try before paying).
+// No free prompts anymore — the whole catalog is premium.
 const FREE_PROMPT_FILES = new Set();
 
 const plans = [
@@ -185,15 +184,14 @@ const plans = [
     id: "monthly",
     hidden: false,
     name: t("Monthly", "Mensuel"),
-    price: "17.99€",
+    price: "21.99€",
     period: t("/ mo", "/ mois"),
-    discountBadge: t("1 day free", "1 jour gratuit"),
-    subPrice: t("1-day free trial, then 17.99€/mo", "1 jour d'essai gratuit, puis 17,99€/mois"),
+    subPrice: t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment"),
     badge: t("Flexible", "Flexible"),
-    description: t("1-day free trial, then 17.99€/mo. Cancel anytime.", "1 jour d'essai gratuit, puis 17,99€/mois. Résiliez à tout moment."),
-    cta: t("Start for free", "Commencer gratuitement"),
+    description: t("Full access to the catalog, billed monthly. Cancel anytime.", "Accès complet au catalogue, facturé chaque mois. Résiliez à tout moment."),
+    cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
     featured: false,
-    features: [t("1-day free trial", "1 jour d'essai gratuit"), t("Access to all prompts", "Accès à tous les prompts"), t("One-click prompt copy", "Copie en un clic"), t("Cancel anytime", "Résiliez à tout moment")],
+    features: [t("Access to all prompts", "Accès à tous les prompts"), t("New prompts added regularly", "Nouveaux prompts ajoutés régulièrement"), t("One-click prompt copy", "Copie en un clic"), t("Cancel anytime", "Résiliez à tout moment")],
   },
   {
     id: "yearly",
@@ -212,9 +210,9 @@ const plans = [
     id: "lifetime",
     hidden: false,
     name: t("Lifetime", "À vie"),
-    price: "49.99€",
+    price: "130.99€",
     originalPrice: "250€",
-    discountBadge: "-80%",
+    discountBadge: "-48%",
     period: t("forever", "à vie"),
     badge: t("One shot", "Une fois pour toutes"),
     description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
