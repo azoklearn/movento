@@ -204,7 +204,7 @@ const plans = [
     description: t("Build premium AI websites regularly.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
     featured: true,
-    features: [t("Full Movento catalog", "Catalogue Movento complet"), t("Year-round updates", "Mises à jour toute l'année"), t("New premium categories", "Nouvelles catégories premium"), t("Optimized for Lovable / v0 / Bolt", "Optimisé pour Lovable / v0 / Bolt"), t("Save over 45%", "Économisez plus de 45%")],
+    features: [t("Full Movento catalog", "Catalogue Movento complet"), t("Year-round updates", "Mises à jour toute l'année"), t("New premium categories", "Nouvelles catégories premium"), t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"), t("Save over 45%", "Économisez plus de 45%")],
   },
   {
     id: "lifetime",
@@ -1165,7 +1165,7 @@ export default function MoventoSite() {
           {t("Premium websites,", "Des sites premium,")} <span className="font-display italic font-normal text-blue-600">{t("one prompt away", "en un seul prompt")}</span>
         </motion.h1>
         <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-slate-500 md:text-lg">
-          {t("Copy a prompt, paste it into Lovable, v0, Bolt or Cursor, and ship a modern site in minutes. No code.", "Copie un prompt, colle-le dans Lovable, v0, Bolt ou Cursor, et obtiens un site moderne en quelques minutes. Sans coder.")}
+          {t("Copy a prompt, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify, and ship a modern site in minutes. No code.", "Copie un prompt, colle-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify, et obtiens un site moderne en quelques minutes. Sans coder.")}
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.19 }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:shadow-blue-600/40">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
@@ -1250,8 +1250,8 @@ export default function MoventoSite() {
         </div>
         <div className="grid gap-x-12 gap-y-10 md:grid-cols-2">
           {[
-            { q: t("How does it work?", "Comment ça marche ?"), a: t("Pick a prompt in the gallery, copy it in one click, paste it into Lovable, v0, Bolt or Cursor. The AI generates the full site — you just customize the content.", "Choisissez un prompt dans la galerie, copiez-le en un clic, collez-le dans Lovable, v0, Bolt ou Cursor. L'IA génère le site complet — il ne vous reste qu'à personnaliser le contenu.") },
-            { q: t("Which tools are supported?", "Quels outils sont compatibles ?"), a: t("Any AI tool that accepts a text prompt: Lovable, v0, Bolt, Cursor, Claude, ChatGPT... The prompts describe every detail (fonts, colors, animations) so the result stays faithful.", "Tous les outils IA qui acceptent un prompt texte : Lovable, v0, Bolt, Cursor, Claude, ChatGPT... Les prompts décrivent chaque détail (polices, couleurs, animations) pour un résultat fidèle.") },
+            { q: t("How does it work?", "Comment ça marche ?"), a: t("Pick a prompt in the gallery, copy it in one click, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify. The AI generates the full site — you just customize the content.", "Choisissez un prompt dans la galerie, copiez-le en un clic, collez-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify. L'IA génère le site complet — il ne vous reste qu'à personnaliser le contenu.") },
+            { q: t("Which tools are supported?", "Quels outils sont compatibles ?"), a: t("Any AI tool that accepts a text prompt: Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... The prompts describe every detail (fonts, colors, animations) so the result stays faithful.", "Tous les outils IA qui acceptent un prompt texte : Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... Les prompts décrivent chaque détail (polices, couleurs, animations) pour un résultat fidèle.") },
             { q: t("Can I cancel anytime?", "Puis-je résilier à tout moment ?"), a: t("Yes. Monthly and annual plans can be cancelled anytime from the My subscription page or directly on Whop — no minimum commitment.", "Oui. Les offres mensuelle et annuelle peuvent être résiliées à tout moment depuis la page Mon abonnement ou directement sur Whop — sans engagement minimum.") },
             { q: t("How do I access prompts after paying?", "Comment j'accède aux prompts après paiement ?"), a: t("The email you used at checkout is your access key. Enter it in the gallery on any device and every prompt unlocks instantly.", "L'email utilisé au paiement est votre clé d'accès. Entrez-le dans la galerie sur n'importe quel appareil et tous les prompts se débloquent instantanément.") },
             { q: t("Is the catalog updated?", "Le catalogue est-il mis à jour ?"), a: t("Yes — new premium prompts are added regularly, and they're all included in your plan at no extra cost.", "Oui — de nouveaux prompts premium sont ajoutés régulièrement, et ils sont tous inclus dans votre abonnement sans surcoût.") },
