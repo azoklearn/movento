@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { normalizeEmail, redisClearAccess, redisSetAccess } from "./_shared.js";
+import { normalizeEmail, planKindFromPlanId, redisClearAccess, redisGetAccessRecord, redisSetAccess } from "./_shared.js";
 
 export const config = { api: { bodyParser: false } };
 
@@ -56,6 +56,17 @@ function verifySignature(rawBody, headers, secret) {
   });
 }
 
+// "lifetime" | "subscription" | "unknown" for a webhook payload. The plan id is
+// authoritative; the renewal date is the fallback, since payment.succeeded
+// payloads carry a payment rather than a membership.
+function membershipTypeFrom(data) {
+  const kind = planKindFromPlanId(data.plan?.id || data.plan_id);
+  if (kind) return kind === "lifetime" ? "lifetime" : "subscription";
+  if (data.renewal_period_end) return "subscription";
+  if (data.status === "completed") return "lifetime";
+  return "unknown";
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -88,8 +99,14 @@ export default async function handler(req, res) {
 
   try {
     if (action === "membership.activated" || action === "payment.succeeded") {
+      const previous = await redisGetAccessRecord(email);
+      const type = membershipTypeFrom(data);
       await redisSetAccess(email, {
         plan: data.plan?.id || data.product?.title || "unknown",
+        // Never downgrade a known type: membership.activated identifies the plan,
+        // the payment.succeeded that follows it usually cannot, and losing the
+        // type here would cost a lifetime buyer their bonus ebook.
+        type: type === "unknown" ? previous?.type || "unknown" : type,
         status: data.status || "active",
         membershipId: data.id || null,
         grantedAt: new Date().toISOString(),

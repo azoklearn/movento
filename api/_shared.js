@@ -39,6 +39,15 @@ export function resolvePlanId(plan) {
   return match ? match[0] : null;
 }
 
+// Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
+// "lifetime"), or null when it matches none. This is the reliable way to tell a
+// lifetime purchase from a subscription — the bonus ebook depends on it.
+export function planKindFromPlanId(planId) {
+  const id = String(planId || "").trim();
+  if (!id) return null;
+  return ["monthly", "yearly", "lifetime"].find((kind) => resolvePlanId(kind) === id) || null;
+}
+
 // Where customers manage/cancel their membership.
 export const WHOP_PORTAL_URL = process.env.WHOP_PORTAL_URL || "https://whop.com/orders/";
 
@@ -81,13 +90,24 @@ export function extractPrompt(md) {
     .trimEnd();
 }
 
-async function redisGetAccess(normalizedEmail) {
+// The grant written by the webhook at purchase. Upstash deserializes JSON on the
+// way out, but a record stored as a raw string still comes back as one.
+export async function redisGetAccessRecord(normalizedEmail) {
   try {
     const redis = Redis.fromEnv();
-    return Boolean(await redis.get(`access:${normalizedEmail}`));
+    const record = await redis.get(`access:${normalizedEmail}`);
+    if (!record) return null;
+    if (typeof record === "string") {
+      try { return JSON.parse(record); } catch { return {}; }
+    }
+    return record;
   } catch {
-    return false;
+    return null;
   }
+}
+
+async function redisGetAccess(normalizedEmail) {
+  return Boolean(await redisGetAccessRecord(normalizedEmail));
 }
 
 export async function redisSetAccess(normalizedEmail, record) {
@@ -169,9 +189,12 @@ export async function getMembershipInfo(email) {
   }
 
   if (!membership) {
-    // Redis still knows about the purchase even if the API lookup failed.
-    if (await redisGetAccess(normalizedEmail)) {
-      return { found: true, active: true, type: "unknown", plan: "Movento", portalUrl: WHOP_PORTAL_URL };
+    // Redis still knows about the purchase even if the API lookup failed. The
+    // webhook records the plan type at purchase, so a lifetime buyer keeps their
+    // bonus ebook here instead of falling through as "unknown".
+    const record = await redisGetAccessRecord(normalizedEmail);
+    if (record) {
+      return { found: true, active: true, type: record.type || "unknown", plan: "Movento", portalUrl: WHOP_PORTAL_URL, source: "redis" };
     }
     return { found: false, active: false };
   }
@@ -186,6 +209,7 @@ export async function getMembershipInfo(email) {
     cancelAtPeriodEnd: Boolean(membership.cancel_at_period_end) || membership.status === "canceling",
     renewalDate: membership.renewal_period_end || null,
     portalUrl: WHOP_PORTAL_URL,
+    source: "whop",
   };
 }
 
