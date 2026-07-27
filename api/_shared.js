@@ -48,6 +48,20 @@ export function planKindFromPlanId(planId) {
   return ["monthly", "yearly", "lifetime"].find((kind) => resolvePlanId(kind) === id) || null;
 }
 
+// Whop credits an affiliate through the "a" query parameter. Carrying it onto the
+// hosted checkout preserves the commission whenever we redirect rather than embed.
+export function appendAffiliate(url, ref) {
+  const code = String(ref || "").trim().slice(0, 64).replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!url || !code) return url;
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("a", code);
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 // Where customers manage/cancel their membership.
 export const WHOP_PORTAL_URL = process.env.WHOP_PORTAL_URL || "https://whop.com/orders/";
 

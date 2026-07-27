@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { track } from "@vercel/analytics";
+import { getRef, refProps } from "./affiliate.js";
 
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
@@ -370,7 +371,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         const r = await fetch(CHECKOUT_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: plan.id }),
+          body: JSON.stringify({ plan: plan.id, ref: getRef() }),
         });
         let d = {};
         try { d = await r.json(); } catch { d = {}; }
@@ -412,7 +413,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
               <button onClick={() => setLoad((s) => ({ ...s }))} className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">{t("Retry", "Réessayer")}</button>
             </div>
           ) : (
-            <WhopCheckoutEmbed planId={load.planId} prefillEmail={prefillEmail} onComplete={() => { track("checkout_completed", { plan: plan.id }); setDone(true); }} />
+            <WhopCheckoutEmbed planId={load.planId} prefillEmail={prefillEmail} onComplete={() => { track("checkout_completed", { plan: plan.id, ...refProps() }); setDone(true); }} />
           )}
         </div>
         <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 px-5 py-3 text-[11px] text-slate-400">
@@ -961,7 +962,7 @@ export default function MoventoSite() {
     const isFree = FREE_PROMPT_FILES.has(item.file);
 
     if (!isFree && !hasPremiumAccess) {
-      track("paywall_shown", { prompt: item.title, category: item.category });
+      track("paywall_shown", { prompt: item.title, category: item.category, ...refProps() });
       setPaywallItem(item);
       setShowPricingModal(true);
       return;
@@ -1009,7 +1010,7 @@ export default function MoventoSite() {
   // Opens the on-site embedded checkout overlay (no redirect). The overlay itself
   // fetches the plan id and mounts the Whop checkout inline.
   function startCheckout(plan) {
-    track("checkout_started", { plan: plan.id });
+    track("checkout_started", { plan: plan.id, ...refProps() });
     setShowPricingModal(false);
     setCheckoutPlan(plan);
   }
@@ -1522,7 +1523,7 @@ function PricingPage() {
 
         <div className={`mx-auto mt-12 grid gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
           {visiblePlans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => { track("checkout_started", { plan: p.id }); setCheckoutPlan(p); }} />
+            <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => { track("checkout_started", { plan: p.id, ...refProps() }); setCheckoutPlan(p); }} />
           ))}
         </div>
 
