@@ -1,12 +1,11 @@
 import {
   customerHasWhopAccess,
-  CUSTOM_PROMPTS_REPO,
   extractPrompt,
+  fetchPromptMarkdown,
   FREE_PROMPT_FILES,
   isSafePromptFile,
   methodNotAllowed,
   normalizeEmail,
-  PROMPTS_REPO,
 } from "./_shared.js";
 
 export default async function handler(req, res) {
@@ -25,14 +24,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Try custom (movento) repo first, then fall back to motionsites.ai repo
-    let response = await fetch(CUSTOM_PROMPTS_REPO + encodeURIComponent(file));
-    if (!response.ok) {
-      response = await fetch(PROMPTS_REPO + encodeURIComponent(file));
-    }
-    if (!response.ok) return res.status(404).json({ error: "Prompt not found." });
+    const md = await fetchPromptMarkdown(file);
+    if (md === null) return res.status(404).json({ error: "Prompt not found." });
 
-    const md = await response.text();
     return res.json({ prompt: extractPrompt(md) });
   } catch (error) {
     console.error("Prompt fetch failed:", error);

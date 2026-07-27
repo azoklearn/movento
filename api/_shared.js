@@ -5,6 +5,48 @@ export const CUSTOM_PROMPTS_REPO = "https://raw.githubusercontent.com/azoklearn/
 // No free prompts anymore — every prompt requires premium access.
 export const FREE_PROMPT_FILES = new Set();
 
+// The prompts live in this repo. While it is public, anyone can download the
+// whole catalogue straight from raw.githubusercontent.com and the paywall counts
+// for nothing — so the repo is meant to be private, and the API reads it with a
+// server-side token that never reaches the browser.
+const PROMPTS_GITHUB_REPO = process.env.PROMPTS_GITHUB_REPO || "azoklearn/movento";
+const PROMPTS_GITHUB_REF = process.env.PROMPTS_GITHUB_REF || "main";
+
+// Fetches a prompt's markdown: the private repo through the authenticated GitHub
+// API when a token is configured, then the public raw URLs. Returns null when no
+// source has the file. Keeping the public paths as a fallback means adding the
+// token and flipping the repo to private can happen in either order without
+// locking paying customers out.
+export async function fetchPromptMarkdown(file) {
+  const token = process.env.GITHUB_TOKEN;
+  const sources = [];
+
+  if (token) {
+    sources.push({
+      url: `https://api.github.com/repos/${PROMPTS_GITHUB_REPO}/contents/prompts/${encodeURIComponent(file)}?ref=${encodeURIComponent(PROMPTS_GITHUB_REF)}`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github.raw",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "movento",
+      },
+    });
+  }
+  sources.push({ url: CUSTOM_PROMPTS_REPO + encodeURIComponent(file) });
+  sources.push({ url: PROMPTS_REPO + encodeURIComponent(file) });
+
+  for (const source of sources) {
+    try {
+      const response = await fetch(source.url, { headers: source.headers });
+      if (response.ok) return await response.text();
+    } catch (error) {
+      console.error("Prompt source failed:", source.url.split("?")[0], error);
+    }
+  }
+
+  return null;
+}
+
 const WHOP_API = "https://api.whop.com/api/v1";
 
 // Hosted Whop checkout links, one per plan (set in Vercel env).
