@@ -6,6 +6,9 @@ import { getRef, refProps } from "./affiliate.js";
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
 const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_URL}/api/create-checkout-session`;
+// Walkthrough video shown under the three steps. TikTok's iframe embed is used
+// rather than their embed.js so the page pulls no third-party script.
+const TIKTOK_VIDEO_ID = "7662839288530210080";
 // Free bonus ebook handed to buyers on the post-payment page.
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
 // Exclusive promo code surfaced at the end of the welcome quiz (create it in Whop
@@ -1241,6 +1244,21 @@ export default function MoventoSite() {
 
       <section id="how" className="relative z-10 mx-auto max-w-7xl px-6 pb-24 lg:px-8">
         <div className="overflow-hidden rounded-[36px] border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-8 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_50px_-30px_rgba(37,99,235,0.3)] md:p-12"><div className="grid gap-10 md:grid-cols-3">{[t("Choose a style", "Choisir un style"), t("Copy the prompt", "Copier le prompt"), t("Generate your site", "Générer votre site")].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-600/25">0{i + 1}</div><h3 className="text-xl font-semibold text-slate-900">{step}</h3><p className="mt-3 text-sm leading-6 text-slate-500">{i === 0 ? t("Browse previews and find a design direction that suits your offer.", "Parcourez les aperçus et trouvez une direction design adaptée à votre offre.") : i === 1 ? t("The prompt is loaded directly from the source to stay intact.", "Le prompt est chargé directement depuis la source pour rester intact.") : t("Paste it into your favorite AI tool and customize the result.", "Collez-le dans votre outil IA préféré et personnalisez le résultat.")}</p></div>)}</div></div>
+
+        <div className="mt-16 text-center">
+          <h2 className="text-4xl font-bold tracking-[-0.04em] text-slate-900 md:text-5xl">{t("What is Movento?", "Movento, c'est quoi ?")}</h2>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("A minute to see how it works, from the prompt to the finished site.", "Une minute pour voir comment ça marche, du prompt au site fini.")}</p>
+          <div className="mx-auto mt-8 w-full max-w-[325px] overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_50px_-30px_rgba(15,23,42,0.35)]">
+            <iframe
+              src={`https://www.tiktok.com/embed/v2/${TIKTOK_VIDEO_ID}`}
+              title={t("How Movento works", "Comment fonctionne Movento")}
+              className="block h-[740px] w-full border-0"
+              loading="lazy"
+              allow="encrypted-media; picture-in-picture; fullscreen"
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
+          </div>
+        </div>
       </section>
 
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
