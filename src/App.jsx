@@ -9,8 +9,10 @@ const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_UR
 // Free bonus ebook handed to buyers on the post-payment page.
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
 // Exclusive promo code surfaced at the end of the welcome quiz (create it in Whop
-// for it to actually apply at checkout).
+// for it to actually apply at checkout). Visitors arriving through an affiliate
+// link get their own code, so redemptions can be told apart from TikTok traffic.
 const PROMO_CODE = "TIKTOK10";
+const AFFILIATE_PROMO_CODE = "MOVENTO10";
 
 const lang = (() => { try { return (navigator.language || "").startsWith("fr") ? "fr" : "en"; } catch { return "en"; } })();
 function t(en, fr) { return lang === "fr" ? fr : en; }
@@ -376,6 +378,10 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         let d = {};
         try { d = await r.json(); } catch { d = {}; }
         if (!r.ok) throw new Error(d.error || `Erreur serveur paiement (${r.status}).`);
+        // Referred visitors go to Whop's hosted checkout even when the embed is
+        // available: the affiliate code rides on the URL (a=...), which is the
+        // only path that credits the commission for certain.
+        if (d.checkoutUrl && getRef()) { track("checkout_redirected", { plan: plan.id, ...refProps() }); window.location.assign(d.checkoutUrl); return; }
         if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, error: "" }); return; }
         // No embeddable plan id configured — gracefully use the hosted page.
         if (d.checkoutUrl) { window.location.assign(d.checkoutUrl); return; }
@@ -678,12 +684,15 @@ function WelcomeQuiz({ onDone }) {
   const [step, setStep] = useState(0); // 0 = goal, 1 = level, 2 = final
   const [goal, setGoal] = useState(null);
   const [level, setLevel] = useState(null);
+  // Read once on mount: the code shown must not change under the visitor's eyes.
+  const [referred] = useState(() => Boolean(getRef()));
+  const promoCode = referred ? AFFILIATE_PROMO_CODE : PROMO_CODE;
 
   useEffect(() => { track("quiz_shown"); }, []);
 
   function pickGoal(g) { setGoal(g); track("quiz_goal", { goal: g.key }); setStep(1); }
   function pickLevel(l) { setLevel(l); track("quiz_level", { level: l.key }); setStep(2); }
-  function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "" }); onDone(); }
+  function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "", ...refProps(), promo: promoCode }); onDone(); }
 
   const optionClass = "group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-left shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:shadow-md";
 
@@ -757,9 +766,9 @@ function WelcomeQuiz({ onDone }) {
                 </div>
 
                 <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t("Found us on TikTok? Your exclusive code", "Tu nous as trouvés sur TikTok ? Ton code exclusif")}</p>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{referred ? t("Your exclusive code", "Ton code exclusif") : t("Found us on TikTok? Your exclusive code", "Tu nous as trouvés sur TikTok ? Ton code exclusif")}</p>
                   <div className="mt-2 flex items-center justify-center gap-2.5">
-                    <span className="rounded-lg border border-dashed border-blue-300 bg-blue-50 px-4 py-2 font-mono text-lg font-bold tracking-[0.2em] text-blue-700">{PROMO_CODE}</span>
+                    <span className="rounded-lg border border-dashed border-blue-300 bg-blue-50 px-4 py-2 font-mono text-lg font-bold tracking-[0.2em] text-blue-700">{promoCode}</span>
                     <span className="text-sm font-semibold text-emerald-600">−10%</span>
                   </div>
                   <p className="mt-2 text-[11px] text-slate-400">{t("Apply it at checkout — reserved, don't miss it.", "À appliquer au paiement — réservé, profites-en.")}</p>
