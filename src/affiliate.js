@@ -4,9 +4,10 @@
 // to every analytics event.
 const STORAGE_KEY = "movento_ref";
 const SESSION_KEY = "movento_ref_seen";
-// "a" is the parameter Whop itself uses, accepted here so the same code works
-// whether the affiliate links to movento.dev or to a Whop page.
-const REF_PARAMS = ["ref", "a", "via"];
+// Whop's "external links" feature sends affiliates straight to movento.dev and
+// appends the code itself, so we accept its spellings alongside our own "ref".
+// First match wins.
+const REF_PARAMS = ["ref", "a", "via", "aff", "affiliate", "aff_id", "affiliate_code"];
 const WINDOW_DAYS = 60;
 
 function sanitize(code) {
