@@ -218,7 +218,7 @@ const plans = [
     id: "lifetime",
     hidden: false,
     name: t("Lifetime", "À vie"),
-    price: "130.99€",
+    price: "130€",
     originalPrice: "250€",
     discountBadge: "-48%",
     period: t("forever", "à vie"),
