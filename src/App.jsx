@@ -17,7 +17,26 @@ const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIv
 const PROMO_CODE = "TIKTOK10";
 const AFFILIATE_PROMO_CODE = "MOVENTO10";
 
-const lang = (() => { try { return (navigator.language || "").startsWith("fr") ? "fr" : "en"; } catch { return "en"; } })();
+// French is the default for everyone, English an explicit opt-in via ?lang=en
+// (remembered afterwards). Browser detection used to decide this, but crawlers
+// browse in en-US: Google was reading an English page that declared lang="fr",
+// which no amount of French keywords could rank.
+const lang = (() => {
+  try {
+    const requested = new URLSearchParams(window.location.search).get("lang");
+    if (requested === "en" || requested === "fr") {
+      window.localStorage.setItem("movento_lang", requested);
+      return requested;
+    }
+    const stored = window.localStorage.getItem("movento_lang");
+    if (stored === "en" || stored === "fr") return stored;
+  } catch {
+    // No storage (private mode) — fall through to the default.
+  }
+  return "fr";
+})();
+// Keep the declared language in step with what is actually rendered.
+try { document.documentElement.lang = lang; } catch { /* no DOM (SSR/tests) */ }
 function t(en, fr) { return lang === "fr" ? fr : en; }
 
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
@@ -1324,6 +1343,8 @@ export default function MoventoSite() {
           <div className="flex items-center gap-5">
             <a href="/subscription" className="text-sm text-slate-400 transition hover:text-slate-900">{t("My subscription", "Mon abonnement")}</a>
             <a href="/mentions-legales" className="text-sm text-slate-400 transition hover:text-slate-900">{t("Legal notice", "Mentions légales")}</a>
+            {/* Full reload on purpose: `lang` is resolved once at module load. */}
+            <a href={`?lang=${lang === "fr" ? "en" : "fr"}`} className="text-sm font-medium text-slate-400 transition hover:text-slate-900" hrefLang={lang === "fr" ? "en" : "fr"}>{lang === "fr" ? "English" : "Français"}</a>
           </div>
         </div>
       </footer>
