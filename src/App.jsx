@@ -42,6 +42,15 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Synergeus Fintech", category: "Fintech", type: "Landing", file: "Synergeus_Fintech_Landing.md", preview: "https://admin.lafys.com/api/media/file/synergeus_JaaqgDoA.mp4", tags: ["Fintech", "AI", "Serif"], gradient: "from-lime-200 via-emerald-600 to-black" },
+  { title: "Pelmatech Health", category: "Landing Page", type: "Landing", file: "Pelmatech_Health_Landing.md", preview: "https://admin.lafys.com/api/media/file/Pelmatech1.mp4", tags: ["Health", "Editorial", "Carousel"], gradient: "from-stone-200 via-neutral-400 to-neutral-900" },
+  { title: "Picway Gallery", category: "Landing Page", type: "Hero", file: "Picway_Gallery_Hero.md", preview: "https://cdn.5sdesign.art/projects/picway.mp4", tags: ["WebGL", "Editorial", "Gallery"], gradient: "from-orange-100 via-amber-200 to-neutral-800" },
+  { title: "Azaka Creative Director", category: "Portfolio", type: "Hero", file: "Azaka_Creative_Director.md", preview: "https://cdn.5sdesign.art/projects/azaka.mp4", tags: ["Cinematic", "Cursor", "Dark"], gradient: "from-neutral-200 via-neutral-600 to-[#050505]" },
+  { title: "Metery Web3", category: "Web3", type: "Hero", file: "Metery_Web3_Hero.md", preview: "https://cdn.5sdesign.art/projects/metery.mp4", tags: ["Web3", "Nature", "Video"], gradient: "from-amber-200 via-lime-600 to-[#0d130f]" },
+  { title: "Farcy AI Agents", category: "AI / SaaS", type: "Hero", file: "Farcy_AI_Agents_Hero.md", preview: "https://cdn.5sdesign.art/projects/farcy.mp4", tags: ["AI", "Glass", "Dark"], gradient: "from-lime-300 via-emerald-700 to-[#0b0d0b]" },
+  { title: "Mapple Headphones", category: "Landing Page", type: "Landing", file: "Mapple_Headphone_Store.md", preview: "https://cdn.5sdesign.art/projects/mapple.mp4", tags: ["E-commerce", "Product", "Glass"], gradient: "from-amber-200 via-stone-500 to-[#0e0d0b]" },
+  { title: "Zpeed Motorsport", category: "Landing Page", type: "Hero", file: "Zpeed_Motorsport_Hero.md", preview: "https://cdn.5sdesign.art/projects/zpeed.mp4", tags: ["Sport", "Editorial", "Video"], gradient: "from-red-300 via-red-700 to-[#181818]" },
+  { title: "Chipmuk Studio", category: "Agency", type: "Hero", file: "Chipmuk_Hero.md", preview: "https://cdn.5sdesign.art/projects/chipmuk.mp4", tags: ["Studio", "Scrub", "Cinematic"], gradient: "from-sky-200 via-blue-700 to-[#010828]" },
   { title: "ihouse Smart Home", category: "SaaS", type: "Hero", file: "Ihouse_Smart_Home_Hero.md", preview: "https://cdn.5sdesign.art/projects/ihouse.mp4", tags: ["Smart Home", "Glass", "3D"], gradient: "from-sky-200 via-blue-500 to-[#3f7dd6]" },
   { title: "Norm Architects Studio", category: "Agency", type: "Landing", file: "Norm_Architects_Studio.md", preview: "https://cdn.shipper.now/video/users/cmm7biunr0006k1040dpvere0/1785141891816-6fxw1qs5bfb-Video_Project_10_-_Trim.mp4", tags: ["Studio", "Minimal", "Video"], gradient: "from-stone-200 via-neutral-400 to-neutral-900" },
   { title: "Boomerang", category: "Fintech", type: "Landing", file: "Boomerang_Landing.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/trustflowginArea.mp4", tags: ["Fintech", "AI", "Serif"], gradient: "from-stone-100 via-neutral-400 to-[#191919]" },
@@ -203,6 +212,15 @@ const AVAILABLE_FILES = new Set([
   "Boomerang_Landing.md",
   "Norm_Architects_Studio.md",
   "Ihouse_Smart_Home_Hero.md",
+  "Chipmuk_Hero.md",
+  "Zpeed_Motorsport_Hero.md",
+  "Mapple_Headphone_Store.md",
+  "Farcy_AI_Agents_Hero.md",
+  "Metery_Web3_Hero.md",
+  "Azaka_Creative_Director.md",
+  "Picway_Gallery_Hero.md",
+  "Pelmatech_Health_Landing.md",
+  "Synergeus_Fintech_Landing.md",
 ]);
 
 function isPromptAvailable(item) {
