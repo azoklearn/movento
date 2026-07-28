@@ -23,6 +23,7 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Boomerang", category: "Fintech", type: "Landing", file: "Boomerang_Landing.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/trustflowginArea.mp4", tags: ["Fintech", "AI", "Serif"], gradient: "from-stone-100 via-neutral-400 to-[#191919]" },
   { title: "Adam Roberts Portfolio", category: "Portfolio", type: "Landing", file: "Adam_Roberts_Portfolio.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/digitaldirector.mp4", tags: ["Portfolio", "Pixel", "Video"], gradient: "from-neutral-200 via-neutral-600 to-black" },
   { title: "Jack — 3D Creator", category: "Portfolio", type: "Landing", file: "Jack_3D_Creator.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/uploaded/jackportofplio.mp4", tags: ["3D", "Portfolio", "Video"], gradient: "from-fuchsia-400 via-purple-600 to-[#0C0C0C]" },
   { title: "Pizza Restaurant", category: "Landing Page", type: "Landing", file: "Pizza.md", preview: "https://i.imgur.com/79tTQ9Y.jpeg", tags: ["Restaurant", "Food", "Framer"], gradient: "from-red-300 via-orange-600 to-[#1A0D08]", pinned: true },
@@ -178,6 +179,7 @@ const AVAILABLE_FILES = new Set([
   "Lumora_Hero.md",
   "PureFlow_Air_Hero.md",
   "Adam_Roberts_Portfolio.md",
+  "Boomerang_Landing.md",
 ]);
 
 function isPromptAvailable(item) {
