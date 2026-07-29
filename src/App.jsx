@@ -743,12 +743,20 @@ function WelcomeQuiz({ onDone }) {
   // Read once on mount: the code shown must not change under the visitor's eyes.
   const [referred] = useState(() => Boolean(getRef()));
   const promoCode = referred ? AFFILIATE_PROMO_CODE : PROMO_CODE;
+  const lifetimePlan = plans.find((p) => p.id === "lifetime");
 
   useEffect(() => { track("quiz_shown"); }, []);
 
   function pickGoal(g) { setGoal(g); track("quiz_goal", { goal: g.key }); setStep(1); }
   function pickLevel(l) { setLevel(l); track("quiz_level", { level: l.key }); setStep(2); }
   function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "", ...refProps(), promo: promoCode }); onDone(); }
+  // Same completion event, then straight to pricing — so the quiz's own
+  // conversion can be told apart from a visitor who browsed there on their own.
+  function goLifetime() {
+    track("quiz_lifetime_cta", { goal: goal?.key || "", level: level?.key || "", ...refProps() });
+    finish();
+    window.location.assign("/pricing");
+  }
 
   const optionClass = "group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-left shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:shadow-md";
 
@@ -811,13 +819,37 @@ function WelcomeQuiz({ onDone }) {
                 {goal && <p className="mt-3 text-center text-sm leading-6 text-slate-600">{goal.affirm}</p>}
                 {level && <p className="mt-1.5 text-center text-sm leading-6 text-slate-400">{level.affirm}</p>}
 
-                <div className="mt-6 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
-                  <div className="flex items-start gap-3">
-                    <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/25"><Icon name="gift" className="h-5 w-5" /></span>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{t("With the lifetime plan: your free ebook", "Avec l'offre à vie : ton ebook offert")}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-600">{t("Learn to build your site, sell it, land clients and manage everything — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.")}</p>
+                {/* Lifetime is recommended to every visitor, whatever they answered —
+                    the quiz qualifies interest, not which plan suits them. Price is
+                    read from the plans array so it can never drift from the pricing
+                    section. */}
+                <div className="mt-6 overflow-hidden rounded-2xl border-2 border-blue-600 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_44px_-24px_rgba(37,99,235,0.45)]">
+                  <div className="flex items-center justify-between gap-3 bg-blue-600 px-4 py-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-white">{t("Recommended for you", "Recommandé pour toi")}</span>
+                    <span className="text-[11px] font-medium text-blue-100">{lifetimePlan.name}</span>
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-end gap-2">
+                      <span className="text-3xl font-bold tracking-[-0.05em] text-slate-900">{lifetimePlan.price}</span>
+                      {lifetimePlan.originalPrice && <span className="pb-1 text-sm text-slate-400 line-through">{lifetimePlan.originalPrice}</span>}
+                      <span className="pb-1 text-xs font-semibold text-emerald-600">{t("once, yours forever", "une fois, à toi pour toujours")}</span>
                     </div>
+                    <ul className="mt-4 space-y-3">
+                      {[
+                        { icon: "gift", title: t("The complete ebook, included", "L'ebook complet, offert"), body: t("Everything to get started: build your site, sell it, find clients and run the whole thing — A to Z.", "Tout pour te lancer : créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.") },
+                        { icon: "shield", title: t("24/7 support, with a human", "Support 24h/24 et 7j/7, avec un humain"), body: t("Talk to a real person whenever you need — ask your questions, get advice, go over your project together.", "Échange directement avec une vraie personne quand tu veux — pose tes questions, demande conseil, fais le point sur ton projet.") },
+                        { icon: "check", title: t("Every prompt, forever", "Tous les prompts, à vie"), body: t("The full catalogue plus everything added later, with nothing more to pay.", "Le catalogue complet et tout ce qui sera ajouté ensuite, sans jamais rien repayer.") },
+                      ].map((f) => (
+                        <li key={f.title} className="flex items-start gap-3">
+                          <span className="mt-0.5 grid h-7 w-7 flex-none place-items-center rounded-lg bg-blue-50 text-blue-600"><Icon name={f.icon} className="h-4 w-4" /></span>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">{f.title}</p>
+                            <p className="mt-0.5 text-xs leading-5 text-slate-600">{f.body}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <button onClick={goLifetime} className="mt-5 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{lifetimePlan.cta} →</button>
                   </div>
                 </div>
 
@@ -830,7 +862,7 @@ function WelcomeQuiz({ onDone }) {
                   <p className="mt-2 text-[11px] text-slate-400">{t("Apply it at checkout — reserved, don't miss it.", "À appliquer au paiement — réservé, profites-en.")}</p>
                 </div>
 
-                <button onClick={finish} className="mt-5 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{t("Discover the prompts", "Découvrir les prompts")} →</button>
+                <button onClick={finish} className="mt-4 w-full rounded-2xl border border-slate-200 bg-white py-3 text-sm font-medium text-slate-500 transition hover:border-slate-300 hover:text-slate-900">{t("Browse the prompts first", "Voir d'abord les prompts")}</button>
               </motion.div>
             )}
           </AnimatePresence>
