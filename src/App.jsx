@@ -837,7 +837,7 @@ function WelcomeQuiz({ onDone }) {
                     <ul className="mt-4 space-y-3">
                       {[
                         { icon: "gift", title: t("The complete ebook, included", "L'ebook complet, offert"), body: t("Everything to get started: build your site, sell it, find clients and run the whole thing — A to Z.", "Tout pour te lancer : créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.") },
-                        { icon: "shield", title: t("24/7 support, with a human", "Support 24h/24 et 7j/7, avec un humain"), body: t("Talk to a real person whenever you need — ask your questions, get advice, go over your project together.", "Échange directement avec une vraie personne quand tu veux — pose tes questions, demande conseil, fais le point sur ton projet.") },
+                        { icon: "shield", title: t("Direct access, answered within 24h", "Un accès direct, réponse sous 24h"), body: t("Write whenever you need — questions, advice, a second look at your project. A real person answers, never a bot.", "Écris quand tu veux — questions, conseils, un avis sur ton projet. Une vraie personne te répond, jamais un bot.") },
                         { icon: "check", title: t("Every prompt, forever", "Tous les prompts, à vie"), body: t("The full catalogue plus everything added later, with nothing more to pay.", "Le catalogue complet et tout ce qui sera ajouté ensuite, sans jamais rien repayer.") },
                       ].map((f) => (
                         <li key={f.title} className="flex items-start gap-3">
