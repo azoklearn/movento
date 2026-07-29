@@ -510,6 +510,7 @@ function Icon({ name, className = "h-4 w-4" }) {
 
   // Filled star: ratings read as solid marks, so it overrides the outline preset.
   if (name === "star") return <svg {...common} fill="currentColor" stroke="none"><path d="M12 2.6l2.9 5.88 6.5.95-4.7 4.58 1.11 6.47L12 17.43l-5.81 3.05 1.11-6.47-4.7-4.58 6.5-.95z" /></svg>;
+  if (name === "link") children = <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>;
   if (name === "menu") children = <><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></>;
   if (name === "search") children = <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>;
   if (name === "copy") children = <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>;
@@ -551,6 +552,17 @@ function PreviewSkeleton({ item }) {
 // into /public/posters. On mobile we show only this — the video never loads.
 // Shared by the card and the popup so the two can never disagree on what a
 // given preview is.
+// Stable, readable identifier for a prompt's shareable URL. Accents are stripped
+// so "Jack — 3D Creator" becomes "jack-3d-creator".
+const slugify = (value) =>
+  String(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+const promptPath = (item) => `/prompt/${slugify(item.title)}`;
+
 const isVideoPreview = (url) => Boolean(url) && (url.endsWith(".mp4") || url.endsWith(".webm"));
 const isImagePreview = (url) => Boolean(url) && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => url.endsWith(ext) || url.includes(`${ext}?`));
 
@@ -911,7 +923,47 @@ export default function MoventoSite() {
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
-  const [previewItem, setPreviewItem] = useState(null); // mobile video preview popup
+  const [previewItem, setPreviewItem] = useState(null); // prompt preview popup
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  // Each prompt is reachable at /prompt/<slug>, so a single one can be shared.
+  // Opening the popup pushes that URL, closing it puts the gallery back — which
+  // also makes the browser's back button close the popup rather than leave.
+  const openPreview = (item) => {
+    setPreviewItem(item);
+    setLinkCopied(false);
+    if (item && typeof window !== "undefined") window.history.pushState({}, "", promptPath(item));
+  };
+  const closePreview = () => {
+    setPreviewItem(null);
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/prompt/")) {
+      window.history.pushState({}, "", "/");
+    }
+  };
+
+  useEffect(() => {
+    const syncFromUrl = () => {
+      const slug = (window.location.pathname.match(/^\/prompt\/([^/?#]+)/) || [])[1];
+      setPreviewItem(slug ? prompts.find((p) => slugify(p.title) === decodeURIComponent(slug).toLowerCase()) || null : null);
+    };
+    syncFromUrl();
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
+  }, []);
+
+  async function copyPromptLink(item) {
+    const url = `${window.location.origin}${promptPath(item)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Clipboard refused (insecure context, permissions) — fall back to a prompt
+      // so the visitor can still copy the link by hand.
+      window.prompt(t("Copy this link:", "Copie ce lien :"), url);
+    }
+    setLinkCopied(true);
+    track("prompt_link_copied", { prompt: item.title, ...refProps() });
+    setTimeout(() => setLinkCopied(false), 2000);
+  }
   const [paywallItem, setPaywallItem] = useState(null); // the paid prompt that triggered the paywall
   const [showQuiz, setShowQuiz] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -1222,10 +1274,10 @@ export default function MoventoSite() {
           </motion.div>
         )}
         {previewItem && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6" onClick={() => setPreviewItem(null)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6" onClick={closePreview}>
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/25" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setPreviewItem(null)} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-slate-900/40 text-white backdrop-blur transition hover:bg-slate-900/60"><Icon name="close" className="h-4 w-4" /></button>
+              <button onClick={closePreview} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-slate-900/40 text-white backdrop-blur transition hover:bg-slate-900/60"><Icon name="close" className="h-4 w-4" /></button>
               {/* The popup now opens for every card, so it has to render whatever
                   the preview happens to be — clip, animated image, or nothing. */}
               {isVideoPreview(previewItem.preview) ? (
@@ -1240,7 +1292,10 @@ export default function MoventoSite() {
                   <h3 className="truncate text-base font-semibold text-slate-900">{previewItem.title}</h3>
                   <p className="mt-0.5 text-xs text-slate-400">{previewItem.category}</p>
                 </div>
-                <button onClick={() => { const it = previewItem; setPreviewItem(null); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.02]">
+                <button onClick={() => copyPromptLink(previewItem)} title={t("Copy the link to this prompt", "Copier le lien de ce prompt")} className={`flex flex-none items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-sm font-semibold transition ${linkCopied ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}>
+                  {linkCopied ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : <><Icon name="link" className="h-4 w-4" /> {t("Link", "Lien")}</>}
+                </button>
+                <button onClick={() => { const it = previewItem; closePreview(); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.02]">
                   {(hasPremiumAccess || FREE_PROMPT_FILES.has(previewItem.file)) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
                 </button>
               </div>
@@ -1361,7 +1416,7 @@ export default function MoventoSite() {
               const unlocked = hasPremiumAccess || FREE_PROMPT_FILES.has(item.file);
               return (
                 <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
-                  <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={setPreviewItem} badge={
+                  <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={openPreview} badge={
                     <span className={`flex flex-none items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${copiedCard === item.title ? "bg-emerald-100 text-emerald-700" : copiedCard === "Error" ? "bg-red-100 text-red-700" : !unlocked ? "bg-slate-100 text-slate-500 group-hover:bg-blue-600 group-hover:text-white" : "bg-blue-50 text-blue-700 group-hover:bg-blue-600 group-hover:text-white"}`}>
                       {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> {t("Error", "Erreur")}</> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> Premium</> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> {t("Open", "Ouvrir")}</> : <><Icon name="copy" className="h-3.5 w-3.5" /> {t("Copy", "Copier")}</>}
                     </span>
