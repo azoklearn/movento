@@ -46,6 +46,7 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Marcus Bennet Portfolio", category: "Portfolio", type: "Hero", file: "Marcus_Bennet_Portfolio.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/showcaseareaArea.mp4", tags: ["Portfolio", "Editorial", "Marquee"], gradient: "from-stone-200 via-neutral-500 to-black" },
   { title: "Synergeus Fintech", category: "Fintech", type: "Landing", file: "Synergeus_Fintech_Landing.md", preview: "https://admin.lafys.com/api/media/file/synergeus_JaaqgDoA.mp4", tags: ["Fintech", "AI", "Serif"], gradient: "from-lime-200 via-emerald-600 to-black" },
   { title: "Pelmatech Health", category: "Landing Page", type: "Landing", file: "Pelmatech_Health_Landing.md", preview: "https://admin.lafys.com/api/media/file/Pelmatech1.mp4", tags: ["Health", "Editorial", "Carousel"], gradient: "from-stone-200 via-neutral-400 to-neutral-900" },
   { title: "Picway Gallery", category: "Landing Page", type: "Hero", file: "Picway_Gallery_Hero.md", preview: "https://cdn.5sdesign.art/projects/picway.mp4", tags: ["WebGL", "Editorial", "Gallery"], gradient: "from-orange-100 via-amber-200 to-neutral-800" },
@@ -225,6 +226,7 @@ const AVAILABLE_FILES = new Set([
   "Picway_Gallery_Hero.md",
   "Pelmatech_Health_Landing.md",
   "Synergeus_Fintech_Landing.md",
+  "Marcus_Bennet_Portfolio.md",
 ]);
 
 function isPromptAvailable(item) {
