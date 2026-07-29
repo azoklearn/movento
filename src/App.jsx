@@ -16,6 +16,10 @@ const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIv
 // link get their own code, so redemptions can be told apart from TikTok traffic.
 const PROMO_CODE = "TIKTOK10";
 const AFFILIATE_PROMO_CODE = "MOVENTO10";
+// Customer rating, kept in one place: it is shown on the page AND declared as
+// AggregateRating in index.html, and Google drops the markup if the two disagree.
+const RATING_SCORE = "4.8";
+const RATING_COUNT = 120;
 
 // French is the default for everyone, English an explicit opt-in via ?lang=en
 // (remembered afterwards). Browser detection used to decide this, but crawlers
@@ -502,6 +506,8 @@ function Icon({ name, className = "h-4 w-4" }) {
 
   let children = null;
 
+  // Filled star: ratings read as solid marks, so it overrides the outline preset.
+  if (name === "star") return <svg {...common} fill="currentColor" stroke="none"><path d="M12 2.6l2.9 5.88 6.5.95-4.7 4.58 1.11 6.47L12 17.43l-5.81 3.05 1.11-6.47-4.7-4.58 6.5-.95z" /></svg>;
   if (name === "menu") children = <><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></>;
   if (name === "search") children = <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>;
   if (name === "copy") children = <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>;
@@ -834,6 +840,7 @@ function WelcomeQuiz({ onDone }) {
                       {lifetimePlan.originalPrice && <span className="pb-1 text-sm text-slate-400 line-through">{lifetimePlan.originalPrice}</span>}
                       <span className="pb-1 text-xs font-semibold text-emerald-600">{t("once, yours forever", "une fois, à toi pour toujours")}</span>
                     </div>
+                    <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium leading-5 text-emerald-700">{t("Paid back with a single website sale.", "Rentabilisé dès ta première vente de site.")}</p>
                     <ul className="mt-4 space-y-3">
                       {[
                         { icon: "gift", title: t("The complete ebook, included", "L'ebook complet, offert"), body: t("Everything to get started: build your site, sell it, find clients and run the whole thing — A to Z.", "Tout pour te lancer : créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.") },
@@ -849,7 +856,12 @@ function WelcomeQuiz({ onDone }) {
                         </li>
                       ))}
                     </ul>
-                    <button onClick={goLifetime} className="mt-5 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{lifetimePlan.cta} →</button>
+                    <div className="mt-4 flex items-center justify-center gap-2 border-t border-slate-100 pt-4">
+                      <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3.5 w-3.5" />)}</span>
+                      <span className="text-xs font-semibold text-slate-900">{RATING_SCORE}/5</span>
+                      <span className="text-xs text-slate-400">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
+                    </div>
+                    <button onClick={goLifetime} className="mt-4 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{lifetimePlan.cta} →</button>
                   </div>
                 </div>
 
@@ -1352,6 +1364,13 @@ export default function MoventoSite() {
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-[-0.04em] text-slate-900 md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
           <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
+          {/* The rating is declared as AggregateRating in index.html; Google only
+              honours that markup when the same figure is visible on the page. */}
+          <div className="mt-5 flex items-center justify-center gap-2">
+            <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-4 w-4" />)}</span>
+            <span className="text-sm font-semibold text-slate-900">{RATING_SCORE}/5</span>
+            <span className="text-sm text-slate-400">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
+          </div>
         </div>
 
         <div className={`mx-auto mt-12 grid gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
@@ -1637,6 +1656,13 @@ function PricingPage() {
         <div className="mx-auto max-w-2xl text-center">
           <h1 className="text-4xl font-bold tracking-[-0.04em] text-slate-900 md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
           <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
+          {/* The rating is declared as AggregateRating in index.html; Google only
+              honours that markup when the same figure is visible on the page. */}
+          <div className="mt-5 flex items-center justify-center gap-2">
+            <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-4 w-4" />)}</span>
+            <span className="text-sm font-semibold text-slate-900">{RATING_SCORE}/5</span>
+            <span className="text-sm text-slate-400">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
+          </div>
         </div>
 
         <div className={`mx-auto mt-12 grid gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
