@@ -13,8 +13,8 @@ const TIKTOK_VIDEO_ID = "7662839288530210080";
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
 // Exclusive promo code surfaced at the end of the welcome quiz (create it in Whop
 // for it to actually apply at checkout). Visitors arriving through an affiliate
-// link get their own code, so redemptions can be told apart from TikTok traffic.
-const PROMO_CODE = "TIKTOK10";
+// link get their own code, so their redemptions can be told apart.
+const PROMO_CODE = "HERO10";
 const AFFILIATE_PROMO_CODE = "MOVENTO10";
 // Customer rating, kept in one place: it is shown on the page AND declared as
 // AggregateRating in index.html, and Google drops the markup if the two disagree.
@@ -866,7 +866,7 @@ function WelcomeQuiz({ onDone }) {
                 </div>
 
                 <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{referred ? t("Your exclusive code", "Ton code exclusif") : t("Found us on TikTok? Your exclusive code", "Tu nous as trouvés sur TikTok ? Ton code exclusif")}</p>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t("Your exclusive code", "Ton code exclusif")}</p>
                   <div className="mt-2 flex items-center justify-center gap-2.5">
                     <span className="rounded-lg border border-dashed border-blue-300 bg-blue-50 px-4 py-2 font-mono text-lg font-bold tracking-[0.2em] text-blue-700">{promoCode}</span>
                     <span className="text-sm font-semibold text-emerald-600">−10%</span>
