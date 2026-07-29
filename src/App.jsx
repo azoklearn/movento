@@ -819,7 +819,10 @@ function WelcomeQuiz({ onDone }) {
                     <span className="rounded-lg border border-dashed border-blue-300 bg-blue-50 px-4 py-2 font-mono text-lg font-bold tracking-[0.2em] text-blue-700">{promoCode}</span>
                     <span className="text-sm font-semibold text-emerald-600">−10%</span>
                   </div>
-                  <p className="mt-2 text-[11px] text-slate-400">{t("Apply it at checkout — reserved, don't miss it.", "À appliquer au paiement — réservé, profites-en.")}</p>
+                  {/* The promotion is restricted to the monthly plan in Whop: say so
+                      here, or a lifetime buyer types it, checkout rejects it, and the
+                      sale is lost to avoidable friction. */}
+                  <p className="mt-2 text-[11px] text-slate-400">{t("Apply it at checkout on the monthly plan.", "À appliquer au paiement sur l'offre mensuelle.")}</p>
                 </div>
 
                 <button onClick={finish} className="mt-5 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{t("Discover the prompts", "Découvrir les prompts")} →</button>
