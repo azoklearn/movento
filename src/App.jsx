@@ -579,6 +579,9 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
   const videoRef = useRef(null);
   const hasVideo = !previewFailed && item.preview && (item.preview.endsWith(".mp4") || item.preview.endsWith(".webm"));
   const hasImage = !previewFailed && item.preview && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => item.preview.endsWith(ext) || item.preview.includes(`${ext}?`));
+  // "contain" shows the whole frame (letterboxed on bg-slate-100) for previews
+  // whose ratio is far from the card's.
+  const fitClass = item.previewFit === "contain" ? "object-contain" : "object-cover";
 
   // Mobile killer: 40 autoplaying previews loading at once. Only mount the heavy
   // media once a card nears the viewport (inView, sticky), and track whether it is
@@ -613,8 +616,13 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
 
   return (
     <motion.div layout whileHover={{ y: -6 }} onClick={handleClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.15)] transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_22px_44px_-18px_rgba(37,99,235,0.35)]">
-      <div ref={containerRef} className="relative aspect-[1.45] overflow-hidden bg-slate-100">
-        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? (posterFailed ? <video src={`${item.preview}#t=0.1`} className="h-full w-full object-cover" style={{ objectPosition: item.previewPosition || "center" }} muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : <img className="h-full w-full object-cover" style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPosterFailed(true)} />) : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
+      {/* 1.35 is the measured ratio of the preview clips (11 of 12 land between
+          1.333 and 1.379). The card used to be 1.45, so object-cover blew the
+          media up to fill the width and shaved ~7% off the top and bottom —
+          exactly the navbar and footer of every design on show. An item can set
+          previewFit: "contain" to opt out of cropping entirely. */}
+      <div ref={containerRef} className="relative aspect-[1.35] overflow-hidden bg-slate-100">
+        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? (posterFailed ? <video src={`${item.preview}#t=0.1`} className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : <img className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPosterFailed(true)} />) : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500 group-hover:scale-[1.04]`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className={`h-full w-full ${fitClass} transition duration-500 group-hover:scale-[1.04]`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
       <div className="flex items-center justify-between gap-3 px-4 py-3.5">
         <div className="min-w-0">
@@ -1165,7 +1173,7 @@ export default function MoventoSite() {
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/25" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setPreviewItem(null)} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-slate-900/40 text-white backdrop-blur transition hover:bg-slate-900/60"><Icon name="close" className="h-4 w-4" /></button>
-              <video key={previewItem.file} src={previewItem.preview} poster={posterFor(previewItem.preview)} autoPlay loop muted playsInline className="w-full flex-none object-cover" style={{ aspectRatio: "1.45" }} />
+              <video key={previewItem.file} src={previewItem.preview} poster={posterFor(previewItem.preview)} autoPlay loop muted playsInline className="w-full flex-none object-cover" style={{ aspectRatio: "1.35" }} />
               <div className="flex items-center justify-between gap-3 p-5">
                 <div className="min-w-0">
                   <h3 className="truncate text-base font-semibold text-slate-900">{previewItem.title}</h3>
