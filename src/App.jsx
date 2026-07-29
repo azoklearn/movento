@@ -530,12 +530,13 @@ function Icon({ name, className = "h-4 w-4" }) {
   return <svg {...common}>{children}</svg>;
 }
 
+// Used in the navbar, the mobile menu, every page header and the footer — one
+// change here swaps the mark everywhere. The file is /public/logo.png, shared
+// with the favicon, and versioned so a swap is not served from cache.
 function Logo() {
   return (
     <span className="flex items-center gap-2.5 select-none">
-      <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-600/25">
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 18V6l8 9 8-9v12" /></svg>
-      </span>
+      <img src="/logo.png?v=2" alt="" aria-hidden="true" width="36" height="36" className="h-9 w-9 flex-none object-contain" />
       <span className="text-[22px] font-bold tracking-[-0.03em] text-slate-900">Movento</span>
     </span>
   );
