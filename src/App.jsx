@@ -546,6 +546,11 @@ function PreviewSkeleton({ item }) {
 
 // Local static poster (a frame grabbed at ~3s) for each video preview, generated
 // into /public/posters. On mobile we show only this — the video never loads.
+// Shared by the card and the popup so the two can never disagree on what a
+// given preview is.
+const isVideoPreview = (url) => Boolean(url) && (url.endsWith(".mp4") || url.endsWith(".webm"));
+const isImagePreview = (url) => Boolean(url) && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => url.endsWith(ext) || url.includes(`${ext}?`));
+
 function posterFor(previewUrl) {
   const base = decodeURIComponent(previewUrl.split("/").pop().split("?")[0]).replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
   return `/posters/${base}.jpg`;
@@ -583,8 +588,8 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
   const [isMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
   const containerRef = useRef(null);
   const videoRef = useRef(null);
-  const hasVideo = !previewFailed && item.preview && (item.preview.endsWith(".mp4") || item.preview.endsWith(".webm"));
-  const hasImage = !previewFailed && item.preview && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => item.preview.endsWith(ext) || item.preview.includes(`${ext}?`));
+  const hasVideo = !previewFailed && isVideoPreview(item.preview);
+  const hasImage = !previewFailed && isImagePreview(item.preview);
   // "contain" shows the whole frame (letterboxed on bg-slate-100) for previews
   // whose ratio is far from the card's.
   const fitClass = item.previewFit === "contain" ? "object-contain" : "object-cover";
@@ -613,10 +618,11 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
     else v.pause?.();
   }, [visible, inView, isMobile]);
 
-  // On mobile the gallery shows a frozen poster; tapping a video card opens a
-  // popup that actually plays it (like motionsites). Everything else copies.
+  // Every card opens the preview popup — the visitor sees the design play at a
+  // usable size before deciding, and copies from there. Copying straight from
+  // the grid gave no way to actually look at what you were taking.
   const handleClick = () => {
-    if (isMobile && hasVideo && onPreview) onPreview(item);
+    if (onPreview) onPreview(item);
     else onClick?.();
   };
 
@@ -1217,7 +1223,15 @@ export default function MoventoSite() {
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/25" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setPreviewItem(null)} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-slate-900/40 text-white backdrop-blur transition hover:bg-slate-900/60"><Icon name="close" className="h-4 w-4" /></button>
-              <video key={previewItem.file} src={previewItem.preview} poster={posterFor(previewItem.preview)} autoPlay loop muted playsInline className="w-full flex-none object-cover" style={{ aspectRatio: "1.35" }} />
+              {/* The popup now opens for every card, so it has to render whatever
+                  the preview happens to be — clip, animated image, or nothing. */}
+              {isVideoPreview(previewItem.preview) ? (
+                <video key={previewItem.file} src={previewItem.preview} poster={posterFor(previewItem.preview)} autoPlay loop muted playsInline className="w-full flex-none object-cover" style={{ aspectRatio: "1.35", objectPosition: previewItem.previewPosition || "center" }} />
+              ) : isImagePreview(previewItem.preview) ? (
+                <img key={previewItem.file} src={previewItem.preview} alt={`${previewItem.title} preview`} className="w-full flex-none object-cover" style={{ aspectRatio: "1.35", objectPosition: previewItem.previewPosition || "center" }} />
+              ) : (
+                <div className="relative w-full flex-none overflow-hidden bg-slate-100" style={{ aspectRatio: "1.35" }}><GeneratedPreview item={previewItem} /></div>
+              )}
               <div className="flex items-center justify-between gap-3 p-5">
                 <div className="min-w-0">
                   <h3 className="truncate text-base font-semibold text-slate-900">{previewItem.title}</h3>
