@@ -1720,11 +1720,26 @@ const SHOWCASE_TITLES = [
   "Wandor Travel Hero",
 ];
 
-// Real customer quotes only. Paste them here exactly as they were written —
-// Whop reviews, DMs, emails — with the buyer's first name and their agreement
-// to be quoted. The section stays hidden while this list is empty, so nothing
-// invented ever ends up on the page.
-const TESTIMONIALS = [];
+// Real customer quotes only, reproduced as they were written and attributed to
+// buyers who agreed to be named. The section hides itself while this list is
+// empty, so nothing invented ever ends up on the page.
+const TESTIMONIALS = [
+  {
+    name: "Thomas Morel",
+    role: t("Freelance web designer", "Freelance web designer"),
+    quote: "Franchement impressionné. J'ai créé un site premium avec Claude en moins d'une heure grâce aux prompts de Movento. Le résultat était largement au niveau de ce que je faisais en plusieurs jours. J'ai même signé un client quelques jours après. L'investissement est rentabilisé très vite.",
+  },
+  {
+    name: "Lucas Bernard",
+    role: t("Web agency", "Agence web"),
+    quote: "On utilise Movento pour accélérer la création de maquettes et gagner du temps sur les premiers jets. Les prompts sont très bien structurés et permettent d'obtenir des designs modernes sans partir d'une page blanche. C'est devenu un outil indispensable dans notre workflow.",
+  },
+  {
+    name: "Maxime Rousse",
+    role: t("Beginner", "Débutant"),
+    quote: "Je n'avais quasiment aucune expérience avec Claude avant de découvrir Movento. Les prompts sont simples à utiliser et le rendu est bluffant. J'ai réussi à créer mon premier site professionnel en quelques heures seulement. Je recommande à tous ceux qui veulent vendre des sites rapidement.",
+  },
+];
 
 function PricingShowcase({ onPick }) {
   const items = useMemo(
@@ -1774,27 +1789,42 @@ function PricingShowcase({ onPick }) {
 function PricingTestimonials() {
   if (!TESTIMONIALS.length) return null;
 
+  const initials = (name) => name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+
   return (
     <section className="relative z-10 py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="flex items-center justify-center gap-2">
-            <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-4 w-4" />)}</span>
+        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 shadow-sm backdrop-blur">
+            <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3.5 w-3.5" />)}</span>
             <span className="text-sm font-semibold text-slate-900">{RATING_SCORE}/5</span>
             <span className="text-sm text-slate-400">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
           </div>
-          <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em] text-slate-900 md:text-4xl">{t("What buyers say", "Ce que disent les acheteurs")}</h2>
-        </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {TESTIMONIALS.map((review) => (
-            <figure key={review.name} className="flex h-full flex-col rounded-[20px] border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3.5 w-3.5" />)}</span>
-              <blockquote className="mt-4 flex-1 text-[15px] leading-7 text-slate-700">“{review.quote}”</blockquote>
-              <figcaption className="mt-5 text-sm">
-                <span className="font-semibold text-slate-900">{review.name}</span>
-                {review.role && <span className="text-slate-400"> · {review.role}</span>}
+          <h2 className="mt-6 text-3xl font-bold tracking-[-0.03em] text-slate-900 md:text-4xl">{t("What buyers say", "Ce que disent les acheteurs")}</h2>
+        </motion.div>
+
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          {TESTIMONIALS.map((review, i) => (
+            <motion.figure
+              key={review.name}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+              className="relative flex h-full flex-col overflow-hidden rounded-[20px] border border-slate-200 bg-white p-7 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_40px_-28px_rgba(15,23,42,0.25)] transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-24px_rgba(37,99,235,0.3)]"
+            >
+              {/* Oversized quote mark, kept decorative and behind the text. */}
+              <span aria-hidden="true" className="pointer-events-none absolute -right-2 -top-6 select-none font-serif text-[110px] leading-none text-slate-100">”</span>
+              <span className="relative flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((n) => <Icon key={n} name="star" className="h-3.5 w-3.5" />)}</span>
+              <blockquote className="relative mt-4 flex-1 text-[15px] leading-7 text-slate-700">“{review.quote}”</blockquote>
+              <figcaption className="relative mt-6 flex items-center gap-3 border-t border-slate-100 pt-5">
+                <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">{initials(review.name)}</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-slate-900">{review.name}</span>
+                  {review.role && <span className="block truncate text-xs text-slate-400">{review.role}</span>}
+                </span>
               </figcaption>
-            </figure>
+            </motion.figure>
           ))}
         </div>
       </div>
