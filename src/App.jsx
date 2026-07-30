@@ -617,9 +617,11 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
   const videoRef = useRef(null);
   const hasVideo = !previewFailed && isVideoPreview(item.preview);
   const hasImage = !previewFailed && isImagePreview(item.preview);
-  // "contain" shows the whole frame (letterboxed on bg-slate-100) for previews
-  // whose ratio is far from the card's.
-  const fitClass = item.previewFit === "contain" ? "object-contain" : "object-cover";
+  // Every preview is shown whole. "cover" crops whatever does not match the
+  // card's ratio, and what it crops is always the navbar and the footer of the
+  // design — the two parts a buyer looks at first. An item can still ask for
+  // previewFit: "cover" if its clip really is 1.35 and edge-to-edge.
+  const fitClass = item.previewFit === "cover" ? "object-cover" : "object-contain";
 
   // Mobile killer: 40 autoplaying previews loading at once. Only mount the heavy
   // media once a card nears the viewport (inView, sticky), and track whether it is
@@ -656,12 +658,11 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
   return (
     <motion.div layout whileHover={{ y: -6 }} onClick={handleClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-14px_rgba(15,23,42,0.15)] transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_22px_44px_-18px_rgba(37,99,235,0.35)]">
       {/* 1.35 is the measured ratio of the preview clips (11 of 12 land between
-          1.333 and 1.379). The card used to be 1.45, so object-cover blew the
-          media up to fill the width and shaved ~7% off the top and bottom —
-          exactly the navbar and footer of every design on show. An item can set
-          previewFit: "contain" to opt out of cropping entirely. */}
+          1.333 and 1.379), so with object-contain the letterbox is under 2% on
+          almost every card — and the odd 16:9 or portrait clip is shown whole
+          instead of being cropped. The bars pick up the card's own surface. */}
       <div ref={containerRef} className="relative aspect-[1.35] overflow-hidden bg-slate-100">
-        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? (posterFailed ? <video src={`${item.preview}#t=0.1`} className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : <img className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPosterFailed(true)} />) : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500 group-hover:scale-[1.04]`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className={`h-full w-full ${fitClass} transition duration-500 group-hover:scale-[1.04]`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
+        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? (posterFailed ? <video src={`${item.preview}#t=0.1`} className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : <img className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPosterFailed(true)} />) : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
       <div className="flex items-center justify-between gap-3 px-4 py-3.5">
         <div className="min-w-0">
@@ -1293,9 +1294,9 @@ export default function MoventoSite() {
               {/* The popup now opens for every card, so it has to render whatever
                   the preview happens to be — clip, animated image, or nothing. */}
               {isVideoPreview(previewItem.preview) ? (
-                <video key={previewItem.file} src={previewItem.preview} poster={posterFor(previewItem.preview)} autoPlay loop muted playsInline className="w-full flex-none object-cover" style={{ aspectRatio: "1.35", objectPosition: previewItem.previewPosition || "center" }} />
+                <video key={previewItem.file} src={previewItem.preview} poster={posterFor(previewItem.preview)} autoPlay loop muted playsInline className="w-full flex-none bg-slate-100 object-contain" style={{ aspectRatio: "1.35", objectPosition: previewItem.previewPosition || "center" }} />
               ) : isImagePreview(previewItem.preview) ? (
-                <img key={previewItem.file} src={previewItem.preview} alt={`${previewItem.title} preview`} className="w-full flex-none object-cover" style={{ aspectRatio: "1.35", objectPosition: previewItem.previewPosition || "center" }} />
+                <img key={previewItem.file} src={previewItem.preview} alt={`${previewItem.title} preview`} className="w-full flex-none bg-slate-100 object-contain" style={{ aspectRatio: "1.35", objectPosition: previewItem.previewPosition || "center" }} />
               ) : (
                 <div className="relative w-full flex-none overflow-hidden bg-slate-100" style={{ aspectRatio: "1.35" }}><GeneratedPreview item={previewItem} /></div>
               )}
