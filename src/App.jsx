@@ -46,6 +46,8 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Amée Paris Couture", category: "Landing Page", type: "Landing", file: "Amee_Paris_Couture.md", preview: "https://cdn.5sdesign.art/projects/Amee/amee-hero.mp4", tags: ["Fashion", "Editorial", "Marquee"], gradient: "from-stone-200 via-neutral-400 to-[#0E0E0E]" },
+  { title: "Porgas Step Into Wonder", category: "Landing Page", type: "Landing", file: "Porgas_Step_Into_Wonder.md", preview: "https://cdn.5sdesign.art/projects/Porgas/portal-bg.png", tags: ["Parallax", "Scroll", "Serif"], gradient: "from-amber-200 via-orange-800 to-[#0a0608]" },
   { title: "Serene Wellness", category: "Landing Page", type: "Landing", file: "Serene_Wellness_Landing.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/uploaded/planetscrollArea.mp4", tags: ["Wellness", "Parallax", "Glass"], gradient: "from-sky-200 via-cyan-700 to-[#010A17]" },
   { title: "Marcus Bennet Portfolio", category: "Portfolio", type: "Hero", file: "Marcus_Bennet_Portfolio.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/showcaseareaArea.mp4", tags: ["Portfolio", "Editorial", "Marquee"], gradient: "from-stone-200 via-neutral-500 to-black" },
   { title: "Synergeus Fintech", category: "Fintech", type: "Landing", file: "Synergeus_Fintech_Landing.md", preview: "https://admin.lafys.com/api/media/file/synergeus_JaaqgDoA.mp4", tags: ["Fintech", "AI", "Serif"], gradient: "from-lime-200 via-emerald-600 to-black" },
@@ -229,6 +231,8 @@ const AVAILABLE_FILES = new Set([
   "Synergeus_Fintech_Landing.md",
   "Marcus_Bennet_Portfolio.md",
   "Serene_Wellness_Landing.md",
+  "Porgas_Step_Into_Wonder.md",
+  "Amee_Paris_Couture.md",
 ]);
 
 function isPromptAvailable(item) {
