@@ -46,6 +46,7 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Cinematic Scroll Kit", category: "Landing Page", type: "Landing", file: "Cinematic_Scroll_Kit.md", preview: "https://video.twimg.com/amplify_video/2078215813241176064/vid/avc1/1922x1080/LbrBM5v3LxR4aX5C.mp4?tag=29", tags: ["Scroll", "Cinematic", "2.5D"], gradient: "from-sky-200 via-slate-500 to-black" },
   { title: "Marcus Bennet Portfolio", category: "Portfolio", type: "Hero", file: "Marcus_Bennet_Portfolio.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/showcaseareaArea.mp4", tags: ["Portfolio", "Editorial", "Marquee"], gradient: "from-stone-200 via-neutral-500 to-black" },
   { title: "Synergeus Fintech", category: "Fintech", type: "Landing", file: "Synergeus_Fintech_Landing.md", preview: "https://admin.lafys.com/api/media/file/synergeus_JaaqgDoA.mp4", tags: ["Fintech", "AI", "Serif"], gradient: "from-lime-200 via-emerald-600 to-black" },
   { title: "Pelmatech Health", category: "Landing Page", type: "Landing", file: "Pelmatech_Health_Landing.md", preview: "https://admin.lafys.com/api/media/file/Pelmatech1.mp4", tags: ["Health", "Editorial", "Carousel"], gradient: "from-stone-200 via-neutral-400 to-neutral-900" },
@@ -227,6 +228,7 @@ const AVAILABLE_FILES = new Set([
   "Pelmatech_Health_Landing.md",
   "Synergeus_Fintech_Landing.md",
   "Marcus_Bennet_Portfolio.md",
+  "Cinematic_Scroll_Kit.md",
 ]);
 
 function isPromptAvailable(item) {
@@ -563,7 +565,9 @@ const slugify = (value) =>
     .replace(/^-+|-+$/g, "");
 const promptPath = (item) => `/prompt/${slugify(item.title)}`;
 
-const isVideoPreview = (url) => Boolean(url) && (url.endsWith(".mp4") || url.endsWith(".webm"));
+// Query strings are matched too: CDNs hand out URLs like ".../clip.mp4?tag=29",
+// which an endsWith check alone would misread as "not a video".
+const isVideoPreview = (url) => Boolean(url) && [".mp4", ".webm"].some((ext) => url.endsWith(ext) || url.includes(`${ext}?`));
 const isImagePreview = (url) => Boolean(url) && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => url.endsWith(ext) || url.includes(`${ext}?`));
 
 function posterFor(previewUrl) {
