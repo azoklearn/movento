@@ -1734,10 +1734,10 @@ function PricingShowcase({ onPick }) {
   if (!items.length) return null;
 
   return (
-    <section className="relative z-10 border-t border-slate-200/70 bg-slate-50/60 py-20">
+    <section className="relative z-10 border-y border-slate-200/70 bg-slate-50/70 py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-blue-700">
+        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-white px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700 shadow-sm">
             <Icon name="layers" className="h-3 w-3" /> {t("Included in every plan", "Inclus dans chaque offre")}
           </span>
           <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em] text-slate-900 md:text-4xl">
@@ -1749,153 +1749,22 @@ function PricingShowcase({ onPick }) {
               `${prompts.length} prompts premium, chacun décrivant un site complet — polices, couleurs, animations, section par section.`,
             )}
           </p>
-        </div>
+        </motion.div>
 
-        <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {items.map((item) => (
-            <PreviewCard key={item.file} item={item} onClick={onPick} />
+        {/* Staggered so the row assembles itself instead of snapping in — the
+            previews are the argument on this page, they deserve the beat. */}
+        <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {items.map((item, i) => (
+            <motion.div key={item.file} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.45, delay: Math.min(i, 4) * 0.06, ease: [0.22, 1, 0.36, 1] }}>
+              <PreviewCard item={item} onClick={onPick} />
+            </motion.div>
           ))}
         </div>
 
-        <div className="mt-8 text-center">
-          <a href="/#prompts" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900">
-            {t("Browse the full catalog", "Voir tout le catalogue")} <Icon name="arrow" className="h-4 w-4" />
+        <div className="mt-10 text-center">
+          <a href="/#prompts" className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900">
+            {t("Browse the full catalog", "Voir tout le catalogue")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
           </a>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// The "paid back in one sale" argument, made with the visitor's own number
-// instead of an invented customer. Nothing here claims what anyone earned.
-function RoiCalculator({ price, onCta }) {
-  const [amount, setAmount] = useState(600);
-  const numericPrice = Number(String(price).replace(/[^\d.]/g, "")) || 0;
-  const margin = Math.max(0, amount - numericPrice);
-  const covered = amount >= numericPrice;
-
-  return (
-    <section className="relative z-10 py-20">
-      <div className="mx-auto max-w-5xl px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_60px_-32px_rgba(15,23,42,0.25)]">
-          <div className="grid gap-0 md:grid-cols-2">
-            <div className="p-8 md:p-10">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
-                <Icon name="zap" className="h-3 w-3" /> {t("Return on investment", "Rentabilité")}
-              </span>
-              <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em] text-slate-900 md:text-4xl">
-                {t("Paid back in a single sale.", "Rentabilisé en une seule vente.")}
-              </h2>
-              <p className="mt-4 text-base leading-7 text-slate-500">
-                {t(
-                  "Lifetime access costs less than one site. Set what you charge for a site and see what is left after the very first one.",
-                  "L'accès à vie coûte moins cher qu'un seul site. Indique ce que tu factures un site et regarde ce qu'il te reste dès le premier.",
-                )}
-              </p>
-              <ul className="mt-6 space-y-2.5 text-sm text-slate-600">
-                {[
-                  t("No per-project fee, ever", "Aucun frais par projet, jamais"),
-                  t("Every future prompt included", "Tous les prompts à venir inclus"),
-                  t("Sites you generate are yours to sell", "Les sites générés t'appartiennent et sont revendables"),
-                ].map((line) => (
-                  <li key={line} className="flex items-start gap-2.5">
-                    <Icon name="check" className="mt-0.5 h-4 w-4 flex-none text-emerald-500" /> {line}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="border-t border-slate-200 bg-slate-50/70 p-8 md:border-l md:border-t-0 md:p-10">
-              <label htmlFor="roi-amount" className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
-                {t("You charge a site", "Tu factures un site")}
-              </label>
-              <output htmlFor="roi-amount" className="mt-2 block text-4xl font-bold tracking-[-0.04em] text-slate-900">
-                {amount}€
-              </output>
-              <input
-                id="roi-amount"
-                type="range"
-                min="150"
-                max="3000"
-                step="50"
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-                className="mt-5 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-blue-600"
-              />
-              <div className="mt-1.5 flex justify-between text-[11px] text-slate-400"><span>150€</span><span>3000€</span></div>
-
-              <div className="mt-7 space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="flex items-center justify-between text-sm text-slate-500">
-                  <span>{t("Lifetime access", "Accès à vie")}</span>
-                  <span className="font-semibold text-slate-900">−{numericPrice}€</span>
-                </div>
-                <div className="h-px bg-slate-100" />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-600">{t("Left after sale #1", "Il te reste après la 1re vente")}</span>
-                  <span className={`text-2xl font-bold tracking-tight ${covered ? "text-emerald-600" : "text-slate-400"}`}>
-                    {covered ? `+${margin}€` : `−${numericPrice - amount}€`}
-                  </span>
-                </div>
-                <p className="text-xs leading-5 text-slate-400">
-                  {covered
-                    ? t("The access is already covered — every site after this one is pure margin.", "L'accès est déjà remboursé — chaque site suivant est de la marge nette.")
-                    : t("Below this amount it takes two sales to cover the access.", "En dessous de ce montant, il faut deux ventes pour rembourser l'accès.")}
-                </p>
-              </div>
-
-              <button onClick={onCta} className="mt-5 w-full rounded-full bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:shadow-blue-600/40">
-                {t("Get lifetime access", "Obtenir l'accès à vie")}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PricingAudience() {
-  const cards = [
-    {
-      icon: "code",
-      title: t("Solo freelancers", "Freelances solo"),
-      body: t("Deliver a client site in an afternoon instead of a fortnight, without subcontracting the design.", "Livre un site client en une après-midi au lieu de quinze jours, sans sous-traiter le design."),
-    },
-    {
-      icon: "sparkles",
-      title: t("Founders", "Fondateurs"),
-      body: t("Ship the landing page for your product yourself, the same week you had the idea.", "Sors la landing page de ton produit toi-même, la semaine où tu as eu l'idée."),
-    },
-    {
-      icon: "layers",
-      title: t("Small agencies", "Petites agences"),
-      body: t("Present three credible directions at the first meeting instead of a moodboard.", "Présente trois directions crédibles dès le premier rendez-vous au lieu d'un moodboard."),
-    },
-    {
-      icon: "gift",
-      title: t("Creators & e-commerce", "Créateurs & e-commerce"),
-      body: t("A shop or portfolio that looks designed, without hiring anyone.", "Une boutique ou un portfolio qui a l'air designé, sans embaucher personne."),
-    },
-  ];
-
-  return (
-    <section className="relative z-10 border-t border-slate-200/70 bg-slate-50/60 py-20">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-[-0.03em] text-slate-900 md:text-4xl">{t("Who it is built for", "Pour qui c'est fait")}</h2>
-          <p className="mx-auto mt-3 max-w-lg text-base leading-7 text-slate-500">
-            {t("One person, a browser, and an AI tool. No design team required.", "Une personne, un navigateur, un outil IA. Aucune équipe design nécessaire.")}
-          </p>
-        </div>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {cards.map((card) => (
-            <div key={card.title} className="rounded-[20px] border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_18px_36px_-20px_rgba(37,99,235,0.35)]">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600"><Icon name={card.icon} className="h-5 w-5" /></span>
-              <h3 className="mt-4 text-base font-semibold text-slate-900">{card.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">{card.body}</p>
-            </div>
-          ))}
         </div>
       </div>
     </section>
@@ -1906,7 +1775,7 @@ function PricingTestimonials() {
   if (!TESTIMONIALS.length) return null;
 
   return (
-    <section className="relative z-10 py-20">
+    <section className="relative z-10 py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <div className="flex items-center justify-center gap-2">
@@ -1947,9 +1816,6 @@ function PricingPage() {
     setCheckoutPlan(plan);
   }
 
-  // Every secondary CTA on the page points at the lifetime plan; the plan cards
-  // stay the only place both offers are shown side by side.
-  const lifetimePlan = visiblePlans.find((p) => p.id === "lifetime") || visiblePlans[0];
   const scrollToPlans = () => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
@@ -1964,64 +1830,58 @@ function PricingPage() {
           />
         )}
       </AnimatePresence>
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-blue-400/20 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-indigo-300/20 blur-[120px]" />
+
+      {/* Backdrop: two colour washes plus a faint dot grid that fades out before
+          the plan cards, so the cards read as paper on a surface instead of
+          floating on flat white. */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-[70vh] bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:22px_22px] opacity-[0.045] [mask-image:linear-gradient(to_bottom,#000,transparent)]" />
+        <div className="absolute left-1/2 top-[-22%] h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-blue-400/25 blur-[130px]" />
+        <div className="absolute right-[-8%] top-[18%] h-[420px] w-[420px] rounded-full bg-indigo-300/20 blur-[120px]" />
+        <div className="absolute bottom-[-12%] left-[-6%] h-[420px] w-[420px] rounded-full bg-sky-200/25 blur-[120px]" />
       </div>
 
-      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
-        <a href="/"><Logo /></a>
-        <a href="/" className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900">← {t("Back", "Retour")}</a>
+      <header className="sticky top-0 z-30 border-b border-slate-200/60 bg-white/70 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+          <a href="/" className="transition hover:opacity-80"><Logo /></a>
+          <div className="flex items-center gap-2">
+            <a href="/#prompts" className="hidden rounded-full px-4 py-2.5 text-sm font-medium text-slate-500 transition hover:text-slate-900 sm:inline-block">{t("Catalog", "Catalogue")}</a>
+            <a href="/" className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900">← {t("Back", "Retour")}</a>
+          </div>
+        </div>
       </header>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h1 className="text-4xl font-bold tracking-[-0.04em] text-slate-900 md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h1>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-16 lg:px-8">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/80 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700 backdrop-blur">
+            <Icon name="sparkles" className="h-3 w-3" /> {t(`${prompts.length} premium prompts`, `${prompts.length} prompts premium`)}
+          </span>
+          <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-slate-900 md:text-6xl">
+            {t("Choose your", "Choisissez votre")}{" "}
+            <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 bg-clip-text text-transparent">{t("plan", "offre")}</span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-500">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
-          <div className="mt-5 flex items-center justify-center gap-2">
-            <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-4 w-4" />)}</span>
+          <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 shadow-sm backdrop-blur">
+            <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3.5 w-3.5" />)}</span>
             <span className="text-sm font-semibold text-slate-900">{RATING_SCORE}/5</span>
             <span className="text-sm text-slate-400">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
           </div>
-        </div>
+        </motion.div>
 
-        <div id="plans" className={`mx-auto mt-12 grid scroll-mt-24 gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto mt-14 grid scroll-mt-24 gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
           {visiblePlans.map((plan) => (
             <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
           ))}
-        </div>
+        </motion.div>
 
-        <Reassurance className="mt-8" />
+        <Reassurance className="mt-9" />
       </section>
-
-      {lifetimePlan && <RoiCalculator price={lifetimePlan.price} onCta={() => startCheckout(lifetimePlan, "roi")} />}
 
       <PricingShowcase onPick={scrollToPlans} />
 
       <PricingTestimonials />
-
-      <PricingAudience />
-
-      <section className="relative z-10 px-6 py-20 lg:px-8">
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-[28px] bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 px-8 py-14 text-center shadow-2xl shadow-blue-950/25">
-          <h2 className="text-3xl font-bold tracking-[-0.03em] text-white md:text-4xl">
-            {t("Your next site is one copy-paste away.", "Ton prochain site est à un copier-coller.")}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-base leading-7 text-blue-100">
-            {t("Pick a plan, unlock the catalog, and ship today.", "Choisis ton offre, débloque le catalogue, et livre aujourd'hui.")}
-          </p>
-          <button onClick={scrollToPlans} className="group mt-7 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-blue-700 shadow-xl shadow-blue-950/20 transition hover:scale-[1.04]">
-            {t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
-          </button>
-          <div className="mt-6 flex items-center justify-center gap-2">
-            <span className="flex items-center gap-0.5 text-amber-300">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3.5 w-3.5" />)}</span>
-            <span className="text-sm font-semibold text-white">{RATING_SCORE}/5</span>
-            <span className="text-sm text-blue-200">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
-          </div>
-        </div>
-      </section>
 
       <footer className="relative z-10 border-t border-slate-200 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
