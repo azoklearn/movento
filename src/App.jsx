@@ -1445,6 +1445,8 @@ export default function MoventoSite() {
         <div className="overflow-hidden rounded-[36px] border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-8 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_50px_-30px_rgba(37,99,235,0.3)] md:p-12"><div className="grid gap-10 md:grid-cols-3">{[t("Choose a style", "Choisir un style"), t("Copy the prompt", "Copier le prompt"), t("Generate your site", "Générer votre site")].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-600/25">0{i + 1}</div><h3 className="text-xl font-semibold text-slate-900">{step}</h3><p className="mt-3 text-sm leading-6 text-slate-500">{i === 0 ? t("Browse previews and find a design direction that suits your offer.", "Parcourez les aperçus et trouvez une direction design adaptée à votre offre.") : i === 1 ? t("The prompt is loaded directly from the source to stay intact.", "Le prompt est chargé directement depuis la source pour rester intact.") : t("Paste it into your favorite AI tool and customize the result.", "Collez-le dans votre outil IA préféré et personnalisez le résultat.")}</p></div>)}</div></div>
       </section>
 
+      <Testimonials />
+
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-[-0.04em] text-slate-900 md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
@@ -1786,7 +1788,7 @@ function PricingShowcase({ onPick }) {
   );
 }
 
-function PricingTestimonials() {
+function Testimonials() {
   if (!TESTIMONIALS.length) return null;
 
   const initials = (name) => name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
@@ -1911,7 +1913,7 @@ function PricingPage() {
 
       <PricingShowcase onPick={scrollToPlans} />
 
-      <PricingTestimonials />
+      <Testimonials />
 
       <footer className="relative z-10 border-t border-slate-200 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
