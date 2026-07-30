@@ -1706,6 +1706,233 @@ function MentionsLegales() {
   );
 }
 
+// Eight designs pulled straight from the catalogue so the pricing page shows
+// the actual product rather than a description of it. Titles, not indexes: the
+// prompts array gets reordered every time a new prompt ships.
+const SHOWCASE_TITLES = [
+  "Jack — 3D Creator",
+  "Adam Roberts Portfolio",
+  "Serene Wellness",
+  "Synergeus Fintech",
+  "Marcus Bennet Portfolio",
+  "Boomerang",
+  "VALMAX Hero",
+  "Wandor Travel Hero",
+];
+
+// Real customer quotes only. Paste them here exactly as they were written —
+// Whop reviews, DMs, emails — with the buyer's first name and their agreement
+// to be quoted. The section stays hidden while this list is empty, so nothing
+// invented ever ends up on the page.
+const TESTIMONIALS = [];
+
+function PricingShowcase({ onPick }) {
+  const items = useMemo(
+    () => SHOWCASE_TITLES.map((title) => prompts.find((p) => p.title === title)).filter(Boolean),
+    [],
+  );
+  if (!items.length) return null;
+
+  return (
+    <section className="relative z-10 border-t border-slate-200/70 bg-slate-50/60 py-20">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-blue-700">
+            <Icon name="layers" className="h-3 w-3" /> {t("Included in every plan", "Inclus dans chaque offre")}
+          </span>
+          <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em] text-slate-900 md:text-4xl">
+            {t("The designs you unlock", "Les designs que tu débloques")}
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-base leading-7 text-slate-500">
+            {t(
+              `${prompts.length} premium prompts, each one describing a complete site — fonts, colors, animations, section by section.`,
+              `${prompts.length} prompts premium, chacun décrivant un site complet — polices, couleurs, animations, section par section.`,
+            )}
+          </p>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {items.map((item) => (
+            <PreviewCard key={item.file} item={item} onClick={onPick} />
+          ))}
+        </div>
+
+        <div className="mt-8 text-center">
+          <a href="/#prompts" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900">
+            {t("Browse the full catalog", "Voir tout le catalogue")} <Icon name="arrow" className="h-4 w-4" />
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// The "paid back in one sale" argument, made with the visitor's own number
+// instead of an invented customer. Nothing here claims what anyone earned.
+function RoiCalculator({ price, onCta }) {
+  const [amount, setAmount] = useState(600);
+  const numericPrice = Number(String(price).replace(/[^\d.]/g, "")) || 0;
+  const margin = Math.max(0, amount - numericPrice);
+  const covered = amount >= numericPrice;
+
+  return (
+    <section className="relative z-10 py-20">
+      <div className="mx-auto max-w-5xl px-6 lg:px-8">
+        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_60px_-32px_rgba(15,23,42,0.25)]">
+          <div className="grid gap-0 md:grid-cols-2">
+            <div className="p-8 md:p-10">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+                <Icon name="zap" className="h-3 w-3" /> {t("Return on investment", "Rentabilité")}
+              </span>
+              <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em] text-slate-900 md:text-4xl">
+                {t("Paid back in a single sale.", "Rentabilisé en une seule vente.")}
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-500">
+                {t(
+                  "Lifetime access costs less than one site. Set what you charge for a site and see what is left after the very first one.",
+                  "L'accès à vie coûte moins cher qu'un seul site. Indique ce que tu factures un site et regarde ce qu'il te reste dès le premier.",
+                )}
+              </p>
+              <ul className="mt-6 space-y-2.5 text-sm text-slate-600">
+                {[
+                  t("No per-project fee, ever", "Aucun frais par projet, jamais"),
+                  t("Every future prompt included", "Tous les prompts à venir inclus"),
+                  t("Sites you generate are yours to sell", "Les sites générés t'appartiennent et sont revendables"),
+                ].map((line) => (
+                  <li key={line} className="flex items-start gap-2.5">
+                    <Icon name="check" className="mt-0.5 h-4 w-4 flex-none text-emerald-500" /> {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="border-t border-slate-200 bg-slate-50/70 p-8 md:border-l md:border-t-0 md:p-10">
+              <label htmlFor="roi-amount" className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                {t("You charge a site", "Tu factures un site")}
+              </label>
+              <output htmlFor="roi-amount" className="mt-2 block text-4xl font-bold tracking-[-0.04em] text-slate-900">
+                {amount}€
+              </output>
+              <input
+                id="roi-amount"
+                type="range"
+                min="150"
+                max="3000"
+                step="50"
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                className="mt-5 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-blue-600"
+              />
+              <div className="mt-1.5 flex justify-between text-[11px] text-slate-400"><span>150€</span><span>3000€</span></div>
+
+              <div className="mt-7 space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="flex items-center justify-between text-sm text-slate-500">
+                  <span>{t("Lifetime access", "Accès à vie")}</span>
+                  <span className="font-semibold text-slate-900">−{numericPrice}€</span>
+                </div>
+                <div className="h-px bg-slate-100" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-600">{t("Left after sale #1", "Il te reste après la 1re vente")}</span>
+                  <span className={`text-2xl font-bold tracking-tight ${covered ? "text-emerald-600" : "text-slate-400"}`}>
+                    {covered ? `+${margin}€` : `−${numericPrice - amount}€`}
+                  </span>
+                </div>
+                <p className="text-xs leading-5 text-slate-400">
+                  {covered
+                    ? t("The access is already covered — every site after this one is pure margin.", "L'accès est déjà remboursé — chaque site suivant est de la marge nette.")
+                    : t("Below this amount it takes two sales to cover the access.", "En dessous de ce montant, il faut deux ventes pour rembourser l'accès.")}
+                </p>
+              </div>
+
+              <button onClick={onCta} className="mt-5 w-full rounded-full bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:shadow-blue-600/40">
+                {t("Get lifetime access", "Obtenir l'accès à vie")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PricingAudience() {
+  const cards = [
+    {
+      icon: "code",
+      title: t("Solo freelancers", "Freelances solo"),
+      body: t("Deliver a client site in an afternoon instead of a fortnight, without subcontracting the design.", "Livre un site client en une après-midi au lieu de quinze jours, sans sous-traiter le design."),
+    },
+    {
+      icon: "sparkles",
+      title: t("Founders", "Fondateurs"),
+      body: t("Ship the landing page for your product yourself, the same week you had the idea.", "Sors la landing page de ton produit toi-même, la semaine où tu as eu l'idée."),
+    },
+    {
+      icon: "layers",
+      title: t("Small agencies", "Petites agences"),
+      body: t("Present three credible directions at the first meeting instead of a moodboard.", "Présente trois directions crédibles dès le premier rendez-vous au lieu d'un moodboard."),
+    },
+    {
+      icon: "gift",
+      title: t("Creators & e-commerce", "Créateurs & e-commerce"),
+      body: t("A shop or portfolio that looks designed, without hiring anyone.", "Une boutique ou un portfolio qui a l'air designé, sans embaucher personne."),
+    },
+  ];
+
+  return (
+    <section className="relative z-10 border-t border-slate-200/70 bg-slate-50/60 py-20">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-bold tracking-[-0.03em] text-slate-900 md:text-4xl">{t("Who it is built for", "Pour qui c'est fait")}</h2>
+          <p className="mx-auto mt-3 max-w-lg text-base leading-7 text-slate-500">
+            {t("One person, a browser, and an AI tool. No design team required.", "Une personne, un navigateur, un outil IA. Aucune équipe design nécessaire.")}
+          </p>
+        </div>
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {cards.map((card) => (
+            <div key={card.title} className="rounded-[20px] border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_18px_36px_-20px_rgba(37,99,235,0.35)]">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600"><Icon name={card.icon} className="h-5 w-5" /></span>
+              <h3 className="mt-4 text-base font-semibold text-slate-900">{card.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{card.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PricingTestimonials() {
+  if (!TESTIMONIALS.length) return null;
+
+  return (
+    <section className="relative z-10 py-20">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <div className="flex items-center justify-center gap-2">
+            <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-4 w-4" />)}</span>
+            <span className="text-sm font-semibold text-slate-900">{RATING_SCORE}/5</span>
+            <span className="text-sm text-slate-400">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
+          </div>
+          <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em] text-slate-900 md:text-4xl">{t("What buyers say", "Ce que disent les acheteurs")}</h2>
+        </div>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {TESTIMONIALS.map((review) => (
+            <figure key={review.name} className="flex h-full flex-col rounded-[20px] border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3.5 w-3.5" />)}</span>
+              <blockquote className="mt-4 flex-1 text-[15px] leading-7 text-slate-700">“{review.quote}”</blockquote>
+              <figcaption className="mt-5 text-sm">
+                <span className="font-semibold text-slate-900">{review.name}</span>
+                {review.role && <span className="text-slate-400"> · {review.role}</span>}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function PricingPage() {
   const [checkoutPlan, setCheckoutPlan] = useState(null);
 
@@ -1714,6 +1941,16 @@ function PricingPage() {
     track("access_unlocked");
     window.location.assign("/#prompts");
   }
+
+  function startCheckout(plan, source) {
+    track("checkout_started", { plan: plan.id, source, ...refProps() });
+    setCheckoutPlan(plan);
+  }
+
+  // Every secondary CTA on the page points at the lifetime plan; the plan cards
+  // stay the only place both offers are shown side by side.
+  const lifetimePlan = visiblePlans.find((p) => p.id === "lifetime") || visiblePlans[0];
+  const scrollToPlans = () => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
@@ -1750,13 +1987,40 @@ function PricingPage() {
           </div>
         </div>
 
-        <div className={`mx-auto mt-12 grid gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
+        <div id="plans" className={`mx-auto mt-12 grid scroll-mt-24 gap-5 ${visiblePlans.length === 1 ? "max-w-sm" : `max-w-5xl ${planGridLg}`}`}>
           {visiblePlans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => { track("checkout_started", { plan: p.id, ...refProps() }); setCheckoutPlan(p); }} />
+            <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
           ))}
         </div>
 
         <Reassurance className="mt-8" />
+      </section>
+
+      {lifetimePlan && <RoiCalculator price={lifetimePlan.price} onCta={() => startCheckout(lifetimePlan, "roi")} />}
+
+      <PricingShowcase onPick={scrollToPlans} />
+
+      <PricingTestimonials />
+
+      <PricingAudience />
+
+      <section className="relative z-10 px-6 py-20 lg:px-8">
+        <div className="mx-auto max-w-4xl overflow-hidden rounded-[28px] bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 px-8 py-14 text-center shadow-2xl shadow-blue-950/25">
+          <h2 className="text-3xl font-bold tracking-[-0.03em] text-white md:text-4xl">
+            {t("Your next site is one copy-paste away.", "Ton prochain site est à un copier-coller.")}
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-base leading-7 text-blue-100">
+            {t("Pick a plan, unlock the catalog, and ship today.", "Choisis ton offre, débloque le catalogue, et livre aujourd'hui.")}
+          </p>
+          <button onClick={scrollToPlans} className="group mt-7 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-blue-700 shadow-xl shadow-blue-950/20 transition hover:scale-[1.04]">
+            {t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
+          </button>
+          <div className="mt-6 flex items-center justify-center gap-2">
+            <span className="flex items-center gap-0.5 text-amber-300">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3.5 w-3.5" />)}</span>
+            <span className="text-sm font-semibold text-white">{RATING_SCORE}/5</span>
+            <span className="text-sm text-blue-200">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
+          </div>
+        </div>
       </section>
 
       <footer className="relative z-10 border-t border-slate-200 py-10">
