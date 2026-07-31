@@ -789,6 +789,9 @@ function WelcomeQuiz({ onDone }) {
   function pickGoal(g) { setGoal(g); track("quiz_goal", { goal: g.key }); setStep(1); }
   function pickLevel(l) { setLevel(l); track("quiz_level", { level: l.key }); setStep(2); }
   function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "", ...refProps(), promo: promoCode }); onDone(); }
+  // Escape hatch on both questions: a visitor who only wants the gallery should
+  // never have to answer to reach it.
+  function skipQuiz() { track("quiz_skipped", { step, ...refProps() }); onDone(); }
   const optionClass = "group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-left shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:shadow-md";
 
   return (
@@ -820,6 +823,7 @@ function WelcomeQuiz({ onDone }) {
                     </button>
                   ))}
                 </div>
+                <button onClick={skipQuiz} className="mt-4 w-full rounded-2xl px-4 py-3 text-center text-sm font-medium text-slate-400 transition hover:bg-slate-50 hover:text-slate-700">{t("I just want to see the prompts", "Je veux juste voir les prompts")} →</button>
               </motion.div>
             )}
 
@@ -840,6 +844,7 @@ function WelcomeQuiz({ onDone }) {
                     </button>
                   ))}
                 </div>
+                <button onClick={skipQuiz} className="mt-4 w-full rounded-2xl px-4 py-3 text-center text-sm font-medium text-slate-400 transition hover:bg-slate-50 hover:text-slate-700">{t("I just want to see the prompts", "Je veux juste voir les prompts")} →</button>
               </motion.div>
             )}
 
