@@ -46,6 +46,7 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Mostar Cinematic Scroll", category: "Landing Page", type: "Landing", file: "Mostar_Cinematic_Scroll.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/CleanShot%202026-07-31%20at%2007.43.14.mp4", tags: ["Cinematic", "Scroll", "Parallax"], gradient: "from-sky-200 via-cyan-600 to-[#0b1110]" },
   { title: "1Brain Studio", category: "Agency", type: "Hero", file: "1Brain_Cinematic_Video_Hero.md", preview: "https://cdn.5sdesign.art/projects/1brain.mp4", tags: ["Cinematic", "Scroll Video", "Glass"], gradient: "from-neutral-300 via-neutral-600 to-black" },
   { title: "Moss Sea Moss Store", category: "Landing Page", type: "Landing", file: "Moss_Botanical_Commerce.md", preview: "https://cdn.5sdesign.art/projects/moss.mp4", tags: ["E-commerce", "Dark", "Wellness"], gradient: "from-stone-300 via-emerald-900 to-[#060606]" },
   { title: "Amée Paris Couture", category: "Landing Page", type: "Landing", file: "Amee_Paris_Couture.md", preview: "https://cdn.5sdesign.art/projects/amee-paris.mp4", tags: ["Fashion", "Editorial", "Marquee"], gradient: "from-stone-200 via-neutral-400 to-[#0E0E0E]" },
@@ -237,6 +238,7 @@ const AVAILABLE_FILES = new Set([
   "Amee_Paris_Couture.md",
   "Moss_Botanical_Commerce.md",
   "1Brain_Cinematic_Video_Hero.md",
+  "Mostar_Cinematic_Scroll.md",
 ]);
 
 function isPromptAvailable(item) {
