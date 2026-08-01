@@ -69,7 +69,7 @@ const prompts = [
   { title: "Boomerang", category: "Fintech", type: "Landing", file: "Boomerang_Landing.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/trustflowginArea.mp4", tags: ["Fintech", "AI", "Serif"], gradient: "from-stone-100 via-neutral-400 to-[#191919]" },
   { title: "Adam Roberts Portfolio", category: "Portfolio", type: "Landing", file: "Adam_Roberts_Portfolio.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/digitaldirector.mp4", tags: ["Portfolio", "Pixel", "Video"], gradient: "from-neutral-200 via-neutral-600 to-black" },
   { title: "Jack — 3D Creator", category: "Portfolio", type: "Landing", file: "Jack_3D_Creator.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/uploaded/jackportofplio.mp4", tags: ["3D", "Portfolio", "Video"], gradient: "from-fuchsia-400 via-purple-600 to-[#0C0C0C]" },
-  { title: "Pizza Restaurant", category: "Landing Page", type: "Landing", file: "Pizza.md", preview: "https://i.imgur.com/79tTQ9Y.jpeg", tags: ["Restaurant", "Food", "Framer"], gradient: "from-red-300 via-orange-600 to-[#1A0D08]", pinned: true },
+  { title: "Pizza Restaurant", category: "Landing Page", type: "Landing", file: "Pizza.md", preview: "https://i.imgur.com/79tTQ9Y.jpeg", tags: ["Restaurant", "Food", "Framer"], gradient: "from-red-300 via-orange-600 to-[#1A0D08]" },
   { title: "Wandor Travel Hero", category: "Landing Page", type: "Hero", file: "Wandor_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/where%20willArea.mp4", tags: ["Travel", "Glass", "Video"], gradient: "from-amber-200 via-orange-600 to-[#2A1810]" },
   { title: "Beanro Coffee Shop", category: "Landing Page", type: "Landing", file: "Beanro_Coffee_Shop.md", preview: "https://i.postimg.cc/7LKy8X3y/Capture-d-e-cran-2026-07-19-a-16-34-59.png", tags: ["Coffee Shop", "E-commerce", "Warm"], gradient: "from-amber-200 via-orange-700 to-[#2A1810]" },
   { title: "Aethera Lending Hero", category: "Fintech", type: "Hero", file: "Aethera_Lending_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/handstouchgodArea.mp4", tags: ["Fintech", "Editorial", "Video"], gradient: "from-neutral-100 via-stone-400 to-neutral-900" },
@@ -991,9 +991,8 @@ export default function MoventoSite() {
       if (!isPromptAvailable(p)) return false;
       return `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase());
     });
-    const ordered = sortOrder === "old" ? list.reverse() : list;
-    // The pinned showcase prompt stays first; everything else keeps recency order.
-    return [...ordered].sort((a, b) => (a.pinned ? 0 : 1) - (b.pinned ? 0 : 1));
+    // Nothing is pinned: the newest prompt leads the gallery.
+    return sortOrder === "old" ? list.reverse() : list;
   }, [query, sortOrder]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
