@@ -249,8 +249,15 @@ function isPromptAvailable(item) {
   return Boolean(item.link) || AVAILABLE_FILES.has(item.file);
 }
 
-// No free prompts anymore — the whole catalog is premium.
-const FREE_PROMPT_FILES = new Set();
+// Three prompts are given away: they show what the catalogue is worth without
+// asking for a card. Copying one still costs an email (the lead modal), so a
+// free prompt is a lead, not an anonymous download. Must stay in sync with the
+// same list in api/_shared.js — the server is what actually enforces access.
+const FREE_PROMPT_FILES = new Set([
+  "Picway_Gallery_Hero.md",
+  "Boomerang_Landing.md",
+  "Mapple_Headphone_Store.md",
+]);
 
 const plans = [
   {
@@ -1270,7 +1277,7 @@ export default function MoventoSite() {
                   {linkCopied ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : <><Icon name="link" className="h-4 w-4" /> {t("Link", "Lien")}</>}
                 </button>
                 <button onClick={() => { const it = previewItem; closePreview(); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.02]">
-                  {(hasPremiumAccess || FREE_PROMPT_FILES.has(previewItem.file)) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
+                  {hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
                 </button>
               </div>
             </motion.div>
@@ -1387,12 +1394,13 @@ export default function MoventoSite() {
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <AnimatePresence>
             {filtered.map((item) => {
-              const unlocked = hasPremiumAccess || FREE_PROMPT_FILES.has(item.file);
+              const isFree = FREE_PROMPT_FILES.has(item.file);
+              const unlocked = hasPremiumAccess || isFree;
               return (
                 <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
                   <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={openPreview} badge={
-                    <span className={`flex flex-none items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${copiedCard === item.title ? "bg-emerald-100 text-emerald-700" : copiedCard === "Error" ? "bg-red-100 text-red-700" : !unlocked ? "bg-slate-100 text-slate-500 group-hover:bg-blue-600 group-hover:text-white" : "bg-blue-50 text-blue-700 group-hover:bg-blue-600 group-hover:text-white"}`}>
-                      {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> {t("Error", "Erreur")}</> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> Premium</> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> {t("Open", "Ouvrir")}</> : <><Icon name="copy" className="h-3.5 w-3.5" /> {t("Copy", "Copier")}</>}
+                    <span className={`flex flex-none items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${copiedCard === item.title ? "bg-emerald-100 text-emerald-700" : copiedCard === "Error" ? "bg-red-100 text-red-700" : !unlocked ? "bg-slate-100 text-slate-500 group-hover:bg-blue-600 group-hover:text-white" : isFree && !hasPremiumAccess ? "bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white" : "bg-blue-50 text-blue-700 group-hover:bg-blue-600 group-hover:text-white"}`}>
+                      {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> {t("Error", "Erreur")}</> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> Premium</> : isFree && !hasPremiumAccess ? <><Icon name="gift" className="h-3.5 w-3.5" /> {t("Free", "Gratuit")}</> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> {t("Open", "Ouvrir")}</> : <><Icon name="copy" className="h-3.5 w-3.5" /> {t("Copy", "Copier")}</>}
                     </span>
                   } />
                 </motion.div>
