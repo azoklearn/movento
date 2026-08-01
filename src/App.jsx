@@ -46,6 +46,14 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Dreamy Journal Hero", category: "AI / SaaS", type: "Hero", file: "Dreamy_Journal_Hero.md", preview: "https://cdn.5sdesign.art/projects/dreamy.mp4", tags: ["Wellness", "Glass", "Soft"], gradient: "from-sky-100 via-indigo-200 to-slate-400" },
+  { title: "Shelter Secure Files", category: "SaaS", type: "Hero", file: "Shelter_Secure_File_Hero.md", preview: "https://cdn.5sdesign.art/projects/shelter.mp4", tags: ["Typography", "Dark", "GSAP"], gradient: "from-neutral-200 via-neutral-600 to-black" },
+  { title: "Bingchiling AI Images", category: "AI / SaaS", type: "Hero", file: "Bingchiling_AI_Hero.md", preview: "https://cdn.5sdesign.art/projects/bingchiling.mp4", tags: ["AI", "Cinematic", "Glass"], gradient: "from-amber-200 via-amber-700 to-[#14100a]" },
+  { title: "OMMOD RWA Oracle", category: "Web3", type: "Landing", file: "Ommod_RWA_Oracle.md", preview: "https://cdn.5sdesign.art/projects/ommod.mp4", tags: ["Web3", "3D", "Hairline"], gradient: "from-lime-200 via-slate-600 to-[#08090a]" },
+  { title: "Seathe Dive Hero", category: "Landing Page", type: "Hero", file: "Seathe_Underwater_Hero.md", preview: "https://cdn.5sdesign.art/projects/seathe.mp4", tags: ["Underwater", "Serif", "Wearable"], gradient: "from-cyan-200 via-teal-800 to-[#050607]" },
+  { title: "CloudB Sneakers", category: "Landing Page", type: "Hero", file: "CloudB_Sneaker_Hero.md", preview: "https://cdn.5sdesign.art/projects/cloudb.mp4", tags: ["Sportswear", "GSAP", "Editorial"], gradient: "from-white via-emerald-300 to-[#0a0a0a]" },
+  { title: "Labs ISP Hero", category: "Hero Section", type: "Hero", file: "Labs_ISP_Hero.md", preview: "https://cdn.5sdesign.art/projects/labs.mp4", tags: ["Telecom", "Neon", "Dark"], gradient: "from-lime-200 via-lime-600 to-black" },
+  { title: "Muse Art Gallery", category: "Landing Page", type: "Landing", file: "Muse_Editorial_Gallery.md", preview: "https://cdn.5sdesign.art/projects/muse.mp4", tags: ["Editorial", "Museum", "Archive"], gradient: "from-orange-100 via-stone-400 to-[#161413]" },
   { title: "NovaAI Scroll Video", category: "AI / SaaS", type: "Landing", file: "NovaAI_Scroll_Video_Landing.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/preview.mp4", tags: ["AI", "Scroll Video", "Glass"], gradient: "from-amber-200 via-slate-500 to-[#0a0a0a]" },
   { title: "Skybridge 404 Screen", category: "Component", type: "Component", file: "Skybridge_404_Screen.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/Skybridge%20404Area.mp4", tags: ["404", "Video", "Mono"], gradient: "from-slate-200 via-slate-600 to-black" },
   { title: "Mostar Cinematic Scroll", category: "Landing Page", type: "Landing", file: "Mostar_Cinematic_Scroll.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/CleanShot%202026-07-31%20at%2007.43.14.mp4", tags: ["Cinematic", "Scroll", "Parallax"], gradient: "from-sky-200 via-cyan-600 to-[#0b1110]" },
@@ -243,6 +251,14 @@ const AVAILABLE_FILES = new Set([
   "Mostar_Cinematic_Scroll.md",
   "Skybridge_404_Screen.md",
   "NovaAI_Scroll_Video_Landing.md",
+  "Dreamy_Journal_Hero.md",
+  "Shelter_Secure_File_Hero.md",
+  "Bingchiling_AI_Hero.md",
+  "Ommod_RWA_Oracle.md",
+  "Seathe_Underwater_Hero.md",
+  "CloudB_Sneaker_Hero.md",
+  "Labs_ISP_Hero.md",
+  "Muse_Editorial_Gallery.md",
 ]);
 
 function isPromptAvailable(item) {
