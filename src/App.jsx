@@ -549,7 +549,6 @@ function Icon({ name, className = "h-4 w-4" }) {
 
   // Filled star: ratings read as solid marks, so it overrides the outline preset.
   if (name === "star") return <svg {...common} fill="currentColor" stroke="none"><path d="M12 2.6l2.9 5.88 6.5.95-4.7 4.58 1.11 6.47L12 17.43l-5.81 3.05 1.11-6.47-4.7-4.58 6.5-.95z" /></svg>;
-  if (name === "link") children = <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>;
   if (name === "menu") children = <><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></>;
   if (name === "search") children = <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>;
   if (name === "copy") children = <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>;
@@ -922,14 +921,13 @@ export default function MoventoSite() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [previewItem, setPreviewItem] = useState(null); // prompt preview popup
-  const [linkCopied, setLinkCopied] = useState(false);
 
-  // Each prompt is reachable at /prompt/<slug>, so a single one can be shared.
-  // Opening the popup pushes that URL, closing it puts the gallery back — which
-  // also makes the browser's back button close the popup rather than leave.
+  // Each prompt still has its own /prompt/<slug> address, so the URL bar can be
+  // shared even without a copy button. Opening the popup pushes that URL and
+  // closing it puts the gallery back, so the back button closes the popup
+  // rather than leaving the site.
   const openPreview = (item) => {
     setPreviewItem(item);
-    setLinkCopied(false);
     if (item && typeof window !== "undefined") window.history.pushState({}, "", promptPath(item));
   };
   const closePreview = () => {
@@ -949,19 +947,6 @@ export default function MoventoSite() {
     return () => window.removeEventListener("popstate", syncFromUrl);
   }, []);
 
-  async function copyPromptLink(item) {
-    const url = `${window.location.origin}${promptPath(item)}`;
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      // Clipboard refused (insecure context, permissions) — fall back to a prompt
-      // so the visitor can still copy the link by hand.
-      window.prompt(t("Copy this link:", "Copie ce lien :"), url);
-    }
-    setLinkCopied(true);
-    track("prompt_link_copied", { prompt: item.title, ...refProps() });
-    setTimeout(() => setLinkCopied(false), 2000);
-  }
   const [paywallItem, setPaywallItem] = useState(null); // the paid prompt that triggered the paywall
   const [showQuiz, setShowQuiz] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -1289,9 +1274,6 @@ export default function MoventoSite() {
                   <h3 className="truncate text-base font-semibold text-slate-900">{previewItem.title}</h3>
                   <p className="mt-0.5 text-xs text-slate-400">{previewItem.category}</p>
                 </div>
-                <button onClick={() => copyPromptLink(previewItem)} title={t("Copy the link to this prompt", "Copier le lien de ce prompt")} className={`flex flex-none items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-sm font-semibold transition ${linkCopied ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}>
-                  {linkCopied ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : <><Icon name="link" className="h-4 w-4" /> {t("Link", "Lien")}</>}
-                </button>
                 <button onClick={() => { const it = previewItem; closePreview(); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.02]">
                   {hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
                 </button>
