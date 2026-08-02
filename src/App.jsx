@@ -1967,6 +1967,37 @@ function Testimonials({ items = TESTIMONIALS }) {
   );
 }
 
+// The quiz hands out a −10% code, then the visitor lands here a few clicks
+// later with nothing to remind them of it. Same rule as the quiz: an affiliate
+// visitor gets the affiliate code so redemptions stay tellable apart.
+function PromoReminder() {
+  const [copied, setCopied] = useState(false);
+  const code = getRef() ? AFFILIATE_PROMO_CODE : PROMO_CODE;
+
+  async function copy() {
+    const ok = await copyTextToClipboard(code);
+    if (!ok) return;
+    track("promo_code_copied", { code, ...refProps() });
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="mx-auto mb-5 flex w-fit max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl border border-dashed border-blue-300 bg-blue-50/70 px-4 py-3 text-center backdrop-blur">
+      <span className="text-sm font-medium text-blue-900">{t("Your −10% code", "Ton code −10%")}</span>
+      <button
+        onClick={copy}
+        className="group inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-3 py-1.5 font-mono text-sm font-bold tracking-[0.18em] text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
+        title={t("Copy the code", "Copier le code")}
+      >
+        {code}
+        <Icon name={copied ? "check" : "copy"} className={`h-3.5 w-3.5 ${copied ? "text-emerald-600" : "text-blue-400 group-hover:text-blue-600"}`} />
+      </button>
+      <span className="text-xs text-blue-900/60">{copied ? t("Copied", "Copié") : t("to apply at checkout", "à appliquer au paiement")}</span>
+    </div>
+  );
+}
+
 function PricingPage() {
   const [checkoutPlan, setCheckoutPlan] = useState(null);
 
@@ -2041,6 +2072,7 @@ function PricingPage() {
             them — the cards are what the page is for. */}
         <div className="mt-14 grid items-start gap-8 xl:grid-cols-[minmax(0,720px)_minmax(0,340px)] xl:justify-center">
           <div>
+            <PromoReminder />
             <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 gap-5 ${planGridWidth} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
               {visiblePlans.map((plan) => (
                 <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
