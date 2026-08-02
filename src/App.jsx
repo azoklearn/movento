@@ -1076,13 +1076,15 @@ export default function MoventoSite() {
 
   const filtered = useMemo(() => {
     // prompts is kept newest-first (new entries are added at the top), so the
-    // array order is already the order the gallery shows. "free" narrows the
-    // list rather than reordering it.
-    return prompts.filter((p) => {
+    // array order is already the order the gallery shows.
+    const list = prompts.filter((p) => {
       if (!isPromptAvailable(p)) return false;
-      if (sortOrder === "free" && !FREE_PROMPT_FILES.has(p.file)) return false;
       return `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase());
     });
+    // "free" floats the free prompts to the top rather than hiding the rest —
+    // a visitor who came for the free ones still sees what they are missing.
+    if (sortOrder !== "free") return list;
+    return [...list].sort((a, b) => Number(FREE_PROMPT_FILES.has(b.file)) - Number(FREE_PROMPT_FILES.has(a.file)));
   }, [query, sortOrder]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
@@ -1467,7 +1469,7 @@ export default function MoventoSite() {
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-700"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
         {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
         <div className="mb-8 flex flex-wrap items-center gap-2">
-          {[["recent", t("Newest", "Plus récents")], ["free", t("Free", "Gratuits")]].map(([val, label]) => (
+          {[["recent", t("Newest", "Plus récents")], ["free", t("Free first", "Gratuits d'abord")]].map(([val, label]) => (
             <button key={val} onClick={() => setSortOrder(val)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${sortOrder === val ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/20" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}>{label}</button>
           ))}
         </div>
