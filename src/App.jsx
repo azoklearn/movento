@@ -50,6 +50,7 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Wallet Finance Header", category: "Web3", type: "Hero", file: "Wallet_Finance_Scroll_Header.md", preview: "https://cdn.jiro.build/Wallet/Astro.mp4", tags: ["Web3", "Scroll Video", "Space"], gradient: "from-indigo-200 via-indigo-800 to-[#05060a]" },
   { title: "Verto Agency Scroll", category: "Agency", type: "Landing", file: "Verto_Scroll_Video_Landing.md", preview: "https://cdn.sceneai.art/landing-pages/f3f4ce4a-8688-4dfc-a147-1ea906ec5a59.mp4", tags: ["Agency", "Scroll Video", "Dark"], gradient: "from-orange-300 via-orange-700 to-[#150a08]" },
   { title: "Dreamy Journal Hero", category: "AI / SaaS", type: "Hero", file: "Dreamy_Journal_Hero.md", preview: "https://cdn.5sdesign.art/projects/dreamy.mp4", tags: ["Wellness", "Glass", "Soft"], gradient: "from-sky-100 via-indigo-200 to-slate-400" },
   { title: "Shelter Secure Files", category: "SaaS", type: "Hero", file: "Shelter_Secure_File_Hero.md", preview: "https://cdn.5sdesign.art/projects/shelter.mp4", tags: ["Typography", "Dark", "GSAP"], gradient: "from-neutral-200 via-neutral-600 to-black" },
