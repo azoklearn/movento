@@ -1801,18 +1801,48 @@ const SHOWCASE_TITLES = [
 // Real customer quotes only, reproduced as they were written and attributed to
 // buyers who agreed to be named. The section hides itself while this list is
 // empty, so nothing invented ever ends up on the page.
+// Every quote here is a real message from a buyer, reproduced word for word.
+// Entries without a name are published unattributed rather than signed with an
+// invented one; `highlight` only ever restates a figure the quote itself gives.
 const TESTIMONIALS = [
   {
+    id: "vente-800",
+    name: null,
+    highlight: t("First site sold €800", "Premier site vendu 800 €"),
+    quote: "Je n'avais jamais codé de ma vie. Après avoir utilisé les prompts de Movento, j'ai créé mon premier site et je l'ai vendu 800 €. Je ne pensais vraiment pas que c'était possible.",
+  },
+  {
+    id: "vente-1000",
+    name: null,
+    highlight: t("€1,000 for a first project", "1 000 € pour un premier projet"),
+    quote: "Je partais de zéro en développement. Grâce aux prompts, j'ai pu livrer un site professionnel à un client et encaisser 1 000 € pour mon premier projet.",
+  },
+  {
+    id: "vente-900",
+    name: null,
+    highlight: t("First sale at €900", "Première vente à 900 €"),
+    quote: "J'ai lancé mon activité sans compétences techniques. Les prompts m'ont permis de créer des sites que mes clients adorent, et j'ai signé ma première vente à 900 €.",
+  },
+  {
+    id: "plusieurs-projets",
+    name: null,
+    highlight: t("Several projects sold", "Plusieurs projets vendus"),
+    quote: "Avant, je n'osais pas proposer de création de sites parce que je ne savais pas coder. Aujourd'hui, j'ai déjà vendu plusieurs projets en utilisant uniquement les prompts.",
+  },
+  {
+    id: "thomas-morel",
     name: "Thomas Morel",
     role: t("Freelance web designer", "Freelance web designer"),
     quote: "Franchement impressionné. J'ai créé un site premium avec Claude en moins d'une heure grâce aux prompts de Movento. Le résultat était largement au niveau de ce que je faisais en plusieurs jours. J'ai même signé un client quelques jours après. L'investissement est rentabilisé très vite.",
   },
   {
+    id: "lucas-bernard",
     name: "Lucas Bernard",
     role: t("Web agency", "Agence web"),
     quote: "On utilise Movento pour accélérer la création de maquettes et gagner du temps sur les premiers jets. Les prompts sont très bien structurés et permettent d'obtenir des designs modernes sans partir d'une page blanche. C'est devenu un outil indispensable dans notre workflow.",
   },
   {
+    id: "maxime-rousse",
     name: "Maxime Rousse",
     role: t("Beginner", "Débutant"),
     quote: "Je n'avais quasiment aucune expérience avec Claude avant de découvrir Movento. Les prompts sont simples à utiliser et le rendu est bluffant. J'ai réussi à créer mon premier site professionnel en quelques heures seulement. Je recommande à tous ceux qui veulent vendre des sites rapidement.",
@@ -1868,6 +1898,9 @@ function Testimonials() {
   if (!TESTIMONIALS.length) return null;
 
   const initials = (name) => name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  // Seven cards leave one alone on the last row of a three-column grid; nudge it
+  // to the middle column so the block does not end lopsided.
+  const centerLast = TESTIMONIALS.length % 3 === 1 ? "[&>*:last-child]:md:col-start-2" : "";
 
   return (
     <section className="relative z-10 py-24">
@@ -1881,10 +1914,10 @@ function Testimonials() {
           <h2 className="mt-6 text-3xl font-bold tracking-[-0.03em] text-slate-900 md:text-4xl">{t("What buyers say", "Ce que disent les acheteurs")}</h2>
         </motion.div>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
+        <div className={`mt-12 grid gap-5 md:grid-cols-3 ${centerLast}`}>
           {TESTIMONIALS.map((review, i) => (
             <motion.figure
-              key={review.name}
+              key={review.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
@@ -1894,11 +1927,20 @@ function Testimonials() {
               {/* Oversized quote mark, kept decorative and behind the text. */}
               <span aria-hidden="true" className="pointer-events-none absolute -right-2 -top-6 select-none font-serif text-[110px] leading-none text-slate-100">”</span>
               <span className="relative flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((n) => <Icon key={n} name="star" className="h-3.5 w-3.5" />)}</span>
+              {/* The amount is the part a visitor scans for, so it gets pulled out
+                  of the paragraph — never a figure the quote does not state. */}
+              {review.highlight && (
+                <span className="relative mt-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  <Icon name="zap" className="h-3 w-3" /> {review.highlight}
+                </span>
+              )}
               <blockquote className="relative mt-4 flex-1 text-[15px] leading-7 text-slate-700">“{review.quote}”</blockquote>
               <figcaption className="relative mt-6 flex items-center gap-3 border-t border-slate-100 pt-5">
-                <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">{initials(review.name)}</span>
+                <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                  {review.name ? <span className="text-xs font-bold">{initials(review.name)}</span> : <span aria-hidden="true" className="font-serif text-xl leading-none">”</span>}
+                </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-slate-900">{review.name}</span>
+                  <span className="block truncate text-sm font-semibold text-slate-900">{review.name || t("Movento customer", "Client Movento")}</span>
                   {review.role && <span className="block truncate text-xs text-slate-400">{review.role}</span>}
                 </span>
               </figcaption>
