@@ -345,10 +345,12 @@ function isPromptAvailable(item) {
 // that promises how many prompts a buyer gets.
 const availablePrompts = prompts.filter(isPromptAvailable);
 
-// Three prompts are given away: they show what the catalogue is worth without
-// asking for a card. Copying one still costs an email (the lead modal), so a
-// free prompt is a lead, not an anonymous download. Must stay in sync with the
-// same list in api/_shared.js — the server is what actually enforces access.
+// The prompts given away: they show what the catalogue is worth without asking
+// for a card. Copying one still costs an email (the lead modal), so a free
+// prompt is a lead, not an anonymous download. Must stay in sync with the same
+// list in api/_shared.js — the server is what actually enforces access.
+// The list deliberately holds no flagship landing page: a component and a
+// single hero prove the quality without handing over what people pay for.
 const FREE_PROMPT_FILES = new Set([
   "Picway_Gallery_Hero.md",
   "Boomerang_Landing.md",
@@ -356,6 +358,8 @@ const FREE_PROMPT_FILES = new Set([
   "Healcure_Medical_Hero.md",
   "Lumina_Vision_Hero.md",
   "Qumica_Infrastructure_Hero.md",
+  "Aesthetic_Login_Screen.md",
+  "Adventra_Travel_Hero.md",
 ]);
 
 // Order here is the order every pricing grid renders in, so lifetime leads:
