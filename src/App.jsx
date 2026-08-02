@@ -9,6 +9,10 @@ const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_UR
 // Walkthrough video shown under the three steps. TikTok's iframe embed is used
 // rather than their embed.js so the page pulls no third-party script.
 const TIKTOK_VIDEO_ID = "7662839288530210080";
+// Where lifetime buyers reach a human. Shown on the success page only, to the
+// plan that was actually sold direct support.
+const SUPPORT_URL = "https://www.tiktok.com/@weblover011";
+const SUPPORT_HANDLE = "@weblover011";
 // Free bonus ebook handed to buyers on the post-payment page.
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
 // Exclusive promo code surfaced at the end of the welcome quiz (create it in Whop
@@ -894,7 +898,7 @@ function WelcomeQuiz({ onDone }) {
 
   function pickGoal(g) { setGoal(g); track("quiz_goal", { goal: g.key }); setStep(1); }
   function pickLevel(l) { setLevel(l); track("quiz_level", { level: l.key }); setStep(2); }
-  function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "", ...refProps(), promo: promoCode }); onDone(); }
+  function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "", ...refProps(), promo: promoCode }); onDone({ showFree: true }); }
   // Escape hatch on both questions: a visitor who only wants the gallery should
   // never have to answer to reach it.
   function skipQuiz() { track("quiz_skipped", { step, ...refProps() }); onDone(); }
@@ -970,7 +974,7 @@ function WelcomeQuiz({ onDone }) {
                   <p className="mt-2 text-[11px] text-slate-400">{t("Apply it at checkout — reserved, don't miss it.", "À appliquer au paiement — réservé, profites-en.")}</p>
                 </div>
 
-                <button onClick={finish} className="mt-4 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{t("Browse the prompts", "Voir les prompts")} →</button>
+                <button onClick={finish} className="mt-4 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{t("See the free prompts", "Voir les prompts gratuits")} →</button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1263,7 +1267,7 @@ export default function MoventoSite() {
   return (
     <main className="min-h-screen overflow-hidden bg-white text-slate-900">
       <AnimatePresence>
-        {showQuiz && <WelcomeQuiz onDone={() => { try { window.localStorage.setItem("movento_quiz_done", "1"); } catch (_) {} setShowQuiz(false); }} />}
+        {showQuiz && <WelcomeQuiz onDone={(opts) => { try { window.localStorage.setItem("movento_quiz_done", "1"); } catch (_) {} setShowQuiz(false); if (opts?.showFree) setSortOrder("free"); }} />}
         {showLeadModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowLeadModal(false)}>
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
@@ -1572,6 +1576,9 @@ function SuccessPage() {
   // Unknown plans get it: a paying customer must never be denied by a lookup
   // that merely failed to identify their plan.
   const [ebookEarned, setEbookEarned] = useState(true);
+  // Direct support is a lifetime perk, so an unidentified plan does NOT get the
+  // contact block — promising support we did not sell is the worse mistake here.
+  const [supportEarned, setSupportEarned] = useState(false);
 
   // Prefill from ?email= if the checkout redirect carried it, and log a custom
   // event (separate from the automatic /success pageview) so purchase landings
@@ -1611,6 +1618,7 @@ function SuccessPage() {
           });
           const subData = await sub.json().catch(() => ({}));
           setEbookEarned(subData?.kind !== "monthly");
+          setSupportEarned(subData?.kind === "lifetime" || subData?.type === "lifetime");
         } catch { setEbookEarned(true); }
       } else {
         setStatus({ loading: false, ok: false, error: t("No access found for this email yet. If you just paid, wait a minute and retry — activation can take a moment.", "Aucun accès trouvé pour cet email pour l'instant. Si tu viens de payer, patiente une minute et réessaie — l'activation peut prendre un instant.") });
@@ -1671,6 +1679,17 @@ function SuccessPage() {
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-600">{t("The full playbook: build your site, sell it, find clients and manage everything — from A to Z.", "Le guide complet : créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.")}</p>
             <a href={EBOOK_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-6 py-3 text-sm font-semibold text-[#1a1400] transition hover:bg-amber-300 hover:scale-[1.02]"><Icon name="download" className="h-4 w-4" /> {t("Download the ebook", "Télécharger l'ebook")}</a>
+          </div>
+        )}
+
+        {status.ok && supportEarned && (
+          <div className="mt-4 rounded-[28px] border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_40px_-28px_rgba(37,99,235,0.25)] md:p-7">
+            <div className="flex items-center gap-3">
+              <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-blue-600 text-white"><Icon name="shield" className="h-4 w-4" /></span>
+              <h2 className="text-lg font-semibold text-slate-900">{t("Your direct support", "Ton support direct")}</h2>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600">{t("Questions, advice, a second look at your project — write anytime and a real person answers within 24h.", "Questions, conseils, un avis sur ton projet — écris quand tu veux, une vraie personne te répond sous 24h.")}</p>
+            <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 hover:scale-[1.02]"><Icon name="arrow" className="h-4 w-4" /> {t(`Message ${SUPPORT_HANDLE}`, `Écrire à ${SUPPORT_HANDLE}`)}</a>
           </div>
         )}
 
