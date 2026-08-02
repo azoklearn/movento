@@ -1,5 +1,5 @@
 import { Redis } from "@upstash/redis";
-import { methodNotAllowed, normalizeEmail } from "./_shared.js";
+import { methodNotAllowed, normalizeEmail, notifyTelegram } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -29,6 +29,16 @@ export default async function handler(req, res) {
       });
       // Also add to a sorted set for easy listing by date
       await redis.zadd("leads", { score: Date.now(), member: email });
+
+      // Only the first sighting is worth a ping — a returning visitor copying a
+      // second free prompt is not news. Total is read after the insert, so the
+      // notification carries the new running count.
+      const total = await redis.zcard("leads").catch(() => null);
+      const lines = [`🆕 Nouvel email — ${email}`];
+      if (prompt) lines.push(`Prompt : ${prompt}`);
+      if (ref) lines.push(`Via : ${ref}`);
+      if (total) lines.push(`Total : ${total}`);
+      await notifyTelegram(lines.join("\n"));
     }
 
     return res.json({ ok: true });

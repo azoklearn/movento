@@ -141,6 +141,30 @@ export const WHOP_PORTAL_URL = process.env.WHOP_PORTAL_URL || "https://whop.com/
 // the period ends; "completed" covers one-time (lifetime) purchases.
 const ACCESS_STATUSES = new Set(["active", "trialing", "past_due", "canceling", "completed"]);
 
+// Pushes a line to Telegram. Silent no-op when the bot is not configured, and
+// never throws: a notification failing must not cost a visitor their prompt or
+// a customer their purchase. Times out so a hanging Telegram cannot hold the
+// serverless response open.
+export async function notifyTelegram(text) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return false;
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!response.ok) console.error("Telegram notify failed:", response.status, await response.text().catch(() => ""));
+    return response.ok;
+  } catch (error) {
+    console.error("Telegram notify failed:", error);
+    return false;
+  }
+}
+
 export function normalizeEmail(email) {
   // Strip every whitespace/zero-width char (mobile autocomplete can inject a
   // non-breaking or zero-width space that trim() leaves behind).
