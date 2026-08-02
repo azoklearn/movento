@@ -294,6 +294,7 @@ const AVAILABLE_FILES = new Set([
   "CloudB_Sneaker_Hero.md",
   "Labs_ISP_Hero.md",
   "Muse_Editorial_Gallery.md",
+  "Wallet_Finance_Scroll_Header.md",
   "Verto_Scroll_Video_Landing.md",
   "Velora_Luxury_Car_Hero.md",
   "Portiva_Creative_Agency_Hero.md",
