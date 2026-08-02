@@ -1849,6 +1849,11 @@ const TESTIMONIALS = [
   },
 ];
 
+// The quotes that name an amount sit next to the plan cards, where the price is
+// the question being asked; the signed ones keep their own block further down.
+const EARNINGS_TESTIMONIALS = TESTIMONIALS.filter((review) => review.highlight);
+const NAMED_TESTIMONIALS = TESTIMONIALS.filter((review) => review.name);
+
 function PricingShowcase({ onPick }) {
   const items = useMemo(
     () => SHOWCASE_TITLES.map((title) => prompts.find((p) => p.title === title)).filter(Boolean),
@@ -1894,13 +1899,43 @@ function PricingShowcase({ onPick }) {
   );
 }
 
-function Testimonials() {
-  if (!TESTIMONIALS.length) return null;
+const initialsOf = (name) => name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
-  const initials = (name) => name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-  // Seven cards leave one alone on the last row of a three-column grid; nudge it
-  // to the middle column so the block does not end lopsided.
-  const centerLast = TESTIMONIALS.length % 3 === 1 ? "[&>*:last-child]:md:col-start-2" : "";
+// One card, two densities: the full one for the standalone block, the compact
+// one for the rail that runs alongside the plan cards.
+function TestimonialCard({ review, compact = false }) {
+  return (
+    <figure className={`relative flex h-full flex-col overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_40px_-28px_rgba(15,23,42,0.25)] transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-24px_rgba(37,99,235,0.3)] ${compact ? "p-5" : "p-7"}`}>
+      {/* Oversized quote mark, kept decorative and behind the text. */}
+      {!compact && <span aria-hidden="true" className="pointer-events-none absolute -right-2 -top-6 select-none font-serif text-[110px] leading-none text-slate-100">”</span>}
+      <span className="relative flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((n) => <Icon key={n} name="star" className={compact ? "h-3 w-3" : "h-3.5 w-3.5"} />)}</span>
+      {/* The amount is the part a visitor scans for, so it gets pulled out
+          of the paragraph — never a figure the quote does not state. */}
+      {review.highlight && (
+        <span className={`relative inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-semibold text-emerald-700 ${compact ? "mt-3 text-[11px]" : "mt-4 text-xs"}`}>
+          <Icon name="zap" className="h-3 w-3" /> {review.highlight}
+        </span>
+      )}
+      <blockquote className={`relative flex-1 text-slate-700 ${compact ? "mt-3 text-[13px] leading-6" : "mt-4 text-[15px] leading-7"}`}>“{review.quote}”</blockquote>
+      <figcaption className={`relative flex items-center gap-3 border-t border-slate-100 ${compact ? "mt-4 pt-4" : "mt-6 pt-5"}`}>
+        <span className={`grid flex-none place-items-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${compact ? "h-8 w-8" : "h-10 w-10"}`}>
+          {review.name ? <span className={compact ? "text-[10px] font-bold" : "text-xs font-bold"}>{initialsOf(review.name)}</span> : <span aria-hidden="true" className={`font-serif leading-none ${compact ? "text-lg" : "text-xl"}`}>”</span>}
+        </span>
+        <span className="min-w-0">
+          <span className={`block truncate font-semibold text-slate-900 ${compact ? "text-[13px]" : "text-sm"}`}>{review.name || t("Movento customer", "Client Movento")}</span>
+          {review.role && <span className="block truncate text-xs text-slate-400">{review.role}</span>}
+        </span>
+      </figcaption>
+    </figure>
+  );
+}
+
+function Testimonials({ items = TESTIMONIALS }) {
+  if (!items.length) return null;
+
+  // A lone card on the last row of a three-column grid reads as a mistake;
+  // nudge it to the middle column so the block does not end lopsided.
+  const centerLast = items.length % 3 === 1 ? "[&>*:last-child]:md:col-start-2" : "";
 
   return (
     <section className="relative z-10 py-24">
@@ -1915,36 +1950,16 @@ function Testimonials() {
         </motion.div>
 
         <div className={`mt-12 grid gap-5 md:grid-cols-3 ${centerLast}`}>
-          {TESTIMONIALS.map((review, i) => (
-            <motion.figure
+          {items.map((review, i) => (
+            <motion.div
               key={review.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="relative flex h-full flex-col overflow-hidden rounded-[20px] border border-slate-200 bg-white p-7 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_40px_-28px_rgba(15,23,42,0.25)] transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-24px_rgba(37,99,235,0.3)]"
             >
-              {/* Oversized quote mark, kept decorative and behind the text. */}
-              <span aria-hidden="true" className="pointer-events-none absolute -right-2 -top-6 select-none font-serif text-[110px] leading-none text-slate-100">”</span>
-              <span className="relative flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((n) => <Icon key={n} name="star" className="h-3.5 w-3.5" />)}</span>
-              {/* The amount is the part a visitor scans for, so it gets pulled out
-                  of the paragraph — never a figure the quote does not state. */}
-              {review.highlight && (
-                <span className="relative mt-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                  <Icon name="zap" className="h-3 w-3" /> {review.highlight}
-                </span>
-              )}
-              <blockquote className="relative mt-4 flex-1 text-[15px] leading-7 text-slate-700">“{review.quote}”</blockquote>
-              <figcaption className="relative mt-6 flex items-center gap-3 border-t border-slate-100 pt-5">
-                <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                  {review.name ? <span className="text-xs font-bold">{initials(review.name)}</span> : <span aria-hidden="true" className="font-serif text-xl leading-none">”</span>}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-slate-900">{review.name || t("Movento customer", "Client Movento")}</span>
-                  {review.role && <span className="block truncate text-xs text-slate-400">{review.role}</span>}
-                </span>
-              </figcaption>
-            </motion.figure>
+              <TestimonialCard review={review} />
+            </motion.div>
           ))}
         </div>
       </div>
@@ -2020,18 +2035,36 @@ function PricingPage() {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto mt-14 grid scroll-mt-24 gap-5 ${planGridWidth} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
-          {visiblePlans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
-          ))}
-        </motion.div>
+        {/* Plans and proof share one row: the price and the "I sold it for
+            800 €" answer to it should be readable without scrolling between
+            them. Below xl the rail drops under the cards rather than squeezing
+            them — the cards are what the page is for. */}
+        <div className="mt-14 grid items-start gap-8 xl:grid-cols-[minmax(0,720px)_minmax(0,340px)] xl:justify-center">
+          <div>
+            <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 gap-5 ${planGridWidth} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
+              {visiblePlans.map((plan) => (
+                <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
+              ))}
+            </motion.div>
+            <Reassurance className="mt-9" />
+          </div>
 
-        <Reassurance className="mt-9" />
+          {Boolean(EARNINGS_TESTIMONIALS.length) && (
+            <motion.aside initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.2, ease: [0.22, 1, 0.36, 1] }} className="mx-auto w-full max-w-3xl xl:max-w-none">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{t("They already made it back", "Ils l'ont déjà rentabilisé")}</h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                {EARNINGS_TESTIMONIALS.map((review) => (
+                  <TestimonialCard key={review.id} review={review} compact />
+                ))}
+              </div>
+            </motion.aside>
+          )}
+        </div>
       </section>
 
       <PricingShowcase onPick={scrollToPlans} />
 
-      <Testimonials />
+      <Testimonials items={NAMED_TESTIMONIALS} />
 
       <footer className="relative z-10 border-t border-slate-200 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
