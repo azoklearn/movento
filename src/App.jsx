@@ -349,12 +349,12 @@ const plans = [
     name: t("Monthly", "Mensuel"),
     price: "21.99€",
     period: t("/ mo", "/ mois"),
-    subPrice: t("1-day free trial, then 21.99€/mo — cancel anytime", "1 jour d'essai gratuit, puis 21,99€/mois — résiliable à tout moment"),
-    badge: t("1-day free trial", "Essai 1 jour"),
-    description: t("Try it for a day, then full access to the catalog, billed monthly.", "Essaie une journée, puis accès complet au catalogue, facturé chaque mois."),
-    cta: t("Start the free trial", "Commencer l'essai gratuit"),
+    subPrice: t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment"),
+    badge: t("Flexible", "Flexible"),
+    description: t("Full access to the catalog, billed monthly. Cancel anytime.", "Accès complet au catalogue, facturé chaque mois. Résiliez à tout moment."),
+    cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
     featured: false,
-    features: [t("1-day free trial", "1 jour d'essai gratuit"), t("Access to all prompts", "Accès à tous les prompts"), t("New prompts added regularly", "Nouveaux prompts ajoutés régulièrement"), t("Cancel anytime", "Résiliez à tout moment")],
+    features: [t("Access to all prompts", "Accès à tous les prompts"), t("New prompts added regularly", "Nouveaux prompts ajoutés régulièrement"), t("One-click prompt copy", "Copie en un clic"), t("Cancel anytime", "Résiliez à tout moment")],
   },
   {
     id: "yearly",
@@ -1574,7 +1574,7 @@ export default function MoventoSite() {
 function SuccessPage() {
   const [email, setEmail] = useState(getStoredAccessEmail);
   const [status, setStatus] = useState({ loading: false, ok: false, error: "" });
-  // The bonus ebook ships with yearly and lifetime, not with the monthly trial.
+  // The bonus ebook ships with yearly and lifetime, not with the monthly plan.
   // Unknown plans get it: a paying customer must never be denied by a lookup
   // that merely failed to identify their plan.
   const [ebookEarned, setEbookEarned] = useState(true);
