@@ -50,6 +50,7 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Kelo AI Support Hero", category: "AI / SaaS", type: "Hero", file: "Kelo_AI_Support_Hero.md", preview: "https://cdn.jiro.build/Kelo/video/AI%20Customer%20Support%20Hero%20Kelo.mp4", tags: ["AI", "Glass", "Dark"], gradient: "from-slate-200 via-slate-600 to-black" },
   { title: "LGPSM Fashion Reveal", category: "Landing Page", type: "Landing", file: "LGPSM_Future_Forward_Fashion.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/synthArea.mp4", tags: ["Fashion", "Minimal", "Interactive"], gradient: "from-white via-slate-300 to-slate-600" },
   { title: "Wallet Finance Header", category: "Web3", type: "Hero", file: "Wallet_Finance_Scroll_Header.md", preview: "https://cdn.jiro.build/videos/header/Finance%20Header%20-%20Wallet.mp4", tags: ["Web3", "Scroll Video", "Space"], gradient: "from-indigo-200 via-indigo-800 to-[#05060a]" },
   { title: "Verto Agency Scroll", category: "Agency", type: "Landing", file: "Verto_Scroll_Video_Landing.md", preview: "https://cdn.sceneai.art/landing-pages/f3f4ce4a-8688-4dfc-a147-1ea906ec5a59.mp4", tags: ["Agency", "Scroll Video", "Dark"], gradient: "from-orange-300 via-orange-700 to-[#150a08]" },
@@ -295,6 +296,7 @@ const AVAILABLE_FILES = new Set([
   "CloudB_Sneaker_Hero.md",
   "Labs_ISP_Hero.md",
   "Muse_Editorial_Gallery.md",
+  "Kelo_AI_Support_Hero.md",
   "LGPSM_Future_Forward_Fashion.md",
   "Wallet_Finance_Scroll_Header.md",
   "Verto_Scroll_Video_Landing.md",
