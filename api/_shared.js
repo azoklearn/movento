@@ -65,6 +65,13 @@ const WHOP_API = "https://api.whop.com/api/v1";
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_pAiB9wlNdjRGF";
 const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_Yj3NE8r5Jj0E1";
 
+// The links we ship with. An env var overrides them, but see resolvePlanId: a
+// product-page env var must not cost us the embedded checkout these provide.
+const fallbackUrls = {
+  monthly: MONTHLY_FALLBACK_URL,
+  yearly: YEARLY_FALLBACK_URL,
+};
+
 export const checkoutUrls = {
   monthly: process.env.WHOP_MONTHLY_URL || MONTHLY_FALLBACK_URL,
   yearly: process.env.WHOP_YEARLY_URL || YEARLY_FALLBACK_URL,
@@ -87,8 +94,21 @@ const planIdEnv = {
 export function resolvePlanId(plan) {
   const explicit = planIdEnv[plan];
   if (explicit && /^plan_[A-Za-z0-9]+$/.test(explicit.trim())) return explicit.trim();
-  const match = String(checkoutUrls[plan] || "").match(/plan_[A-Za-z0-9]+/);
-  return match ? match[0] : null;
+  const fromEnvUrl = String(checkoutUrls[plan] || "").match(/plan_[A-Za-z0-9]+/);
+  if (fromEnvUrl) return fromEnvUrl[0];
+  // An env var pointing at a product page (a leftover from before the plan had a
+  // checkout link) would otherwise silently downgrade the buyer to a redirect.
+  const fromFallback = String(fallbackUrls[plan] || "").match(/plan_[A-Za-z0-9]+/);
+  return fromFallback ? fromFallback[0] : null;
+}
+
+// The URL to send a buyer to when we redirect rather than embed. A plan checkout
+// link beats a product page: it lands on the right plan in one hop.
+export function bestCheckoutUrl(plan) {
+  const configured = checkoutUrls[plan];
+  if (configured && /plan_[A-Za-z0-9]+/.test(configured)) return configured;
+  const planId = resolvePlanId(plan);
+  return planId ? `https://whop.com/checkout/${planId}` : configured || null;
 }
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
