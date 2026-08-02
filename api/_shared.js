@@ -60,9 +60,9 @@ const WHOP_API = "https://api.whop.com/api/v1";
 
 // Hosted Whop checkout links, one per plan (set in Vercel env).
 // A .../checkout/plan_xxx link powers the on-site EMBEDDED checkout: the plan id
-// is read straight out of it. A product-page link only powers the REDIRECT flow,
-// which is where the monthly one still sits.
-const MONTHLY_FALLBACK_URL = "https://whop.com/movento/abonnement-mensuel-movento/";
+// is read straight out of it. A product-page link would only power the REDIRECT
+// flow, which is why both fallbacks below are checkout links.
+const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_pAiB9wlNdjRGF";
 const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_Yj3NE8r5Jj0E1";
 
 export const checkoutUrls = {
