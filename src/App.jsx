@@ -333,6 +333,9 @@ const FREE_PROMPT_FILES = new Set([
   "Picway_Gallery_Hero.md",
   "Boomerang_Landing.md",
   "Mapple_Headphone_Store.md",
+  "Healcure_Medical_Hero.md",
+  "Lumina_Vision_Hero.md",
+  "Qumica_Infrastructure_Hero.md",
 ]);
 
 const plans = [
