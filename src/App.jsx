@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ?
 const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_URL}/api/create-checkout-session`;
 // Walkthrough video shown under the three steps. TikTok's iframe embed is used
 // rather than their embed.js so the page pulls no third-party script.
-const TIKTOK_VIDEO_ID = "7662839288530210080";
+const TIKTOK_VIDEO_ID = "7669448902474485025";
 // Where lifetime buyers reach a human. Shown on the success page only, to the
 // plan that was actually sold direct support.
 const SUPPORT_URL = "https://www.tiktok.com/@weblover011";
