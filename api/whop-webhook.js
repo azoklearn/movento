@@ -59,8 +59,12 @@ function verifySignature(rawBody, headers, secret) {
 // "lifetime" | "subscription" | "unknown" for a webhook payload. The plan id is
 // authoritative; the renewal date is the fallback, since payment.succeeded
 // payloads carry a payment rather than a membership.
+function planKindFrom(data) {
+  return planKindFromPlanId(data.plan?.id || data.plan_id);
+}
+
 function membershipTypeFrom(data) {
-  const kind = planKindFromPlanId(data.plan?.id || data.plan_id);
+  const kind = planKindFrom(data);
   if (kind) return kind === "lifetime" ? "lifetime" : "subscription";
   if (data.renewal_period_end) return "subscription";
   if (data.status === "completed") return "lifetime";
@@ -101,8 +105,12 @@ export default async function handler(req, res) {
     if (action === "membership.activated" || action === "payment.succeeded") {
       const previous = await redisGetAccessRecord(email);
       const type = membershipTypeFrom(data);
+      // The exact plan ("monthly" | "yearly" | "lifetime") decides whether the
+      // buyer earned the bonus ebook, which "subscription" alone cannot tell.
+      const kind = planKindFrom(data);
       await redisSetAccess(email, {
         plan: data.plan?.id || data.product?.title || "unknown",
+        kind: kind || previous?.kind || null,
         // Never downgrade a known type: membership.activated identifies the plan,
         // the payment.succeeded that follows it usually cannot, and losing the
         // type here would cost a lifetime buyer their bonus ebook.

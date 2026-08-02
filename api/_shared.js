@@ -259,16 +259,20 @@ export async function getMembershipInfo(email) {
     // bonus ebook here instead of falling through as "unknown".
     const record = await redisGetAccessRecord(normalizedEmail);
     if (record) {
-      return { found: true, active: true, type: record.type || "unknown", plan: "Movento", portalUrl: WHOP_PORTAL_URL, source: "redis" };
+      return { found: true, active: true, type: record.type || "unknown", kind: record.kind || null, plan: "Movento", portalUrl: WHOP_PORTAL_URL, source: "redis" };
     }
     return { found: false, active: false };
   }
 
   const isLifetime = membership.status === "completed" || !membership.renewal_period_end;
+  // Fall back to the webhook record when the API response carries no plan id —
+  // "kind" is what tells a monthly trial from a yearly subscription.
+  const record = await redisGetAccessRecord(normalizedEmail);
   return {
     found: true,
     active: true,
     type: isLifetime ? "lifetime" : "subscription",
+    kind: planKindFromPlanId(membership.plan?.id || membership.plan_id) || record?.kind || null,
     status: membership.status,
     plan: membership.product?.title || "Movento",
     cancelAtPeriodEnd: Boolean(membership.cancel_at_period_end) || membership.status === "canceling",

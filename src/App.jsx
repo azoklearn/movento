@@ -345,20 +345,18 @@ const plans = [
     name: t("Monthly", "Mensuel"),
     price: "21.99€",
     period: t("/ mo", "/ mois"),
-    subPrice: t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment"),
-    badge: t("Flexible", "Flexible"),
-    description: t("Full access to the catalog, billed monthly. Cancel anytime.", "Accès complet au catalogue, facturé chaque mois. Résiliez à tout moment."),
-    cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
+    subPrice: t("1-day free trial, then 21.99€/mo — cancel anytime", "1 jour d'essai gratuit, puis 21,99€/mois — résiliable à tout moment"),
+    badge: t("1-day free trial", "Essai 1 jour"),
+    description: t("Try it for a day, then full access to the catalog, billed monthly.", "Essaie une journée, puis accès complet au catalogue, facturé chaque mois."),
+    cta: t("Start the free trial", "Commencer l'essai gratuit"),
     featured: false,
-    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
-    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
-    features: [t("Access to all prompts", "Accès à tous les prompts"), t("New prompts added regularly", "Nouveaux prompts ajoutés régulièrement"), t("One-click prompt copy", "Copie en un clic"), t("Cancel anytime", "Résiliez à tout moment")],
+    features: [t("1-day free trial", "1 jour d'essai gratuit"), t("Access to all prompts", "Accès à tous les prompts"), t("New prompts added regularly", "Nouveaux prompts ajoutés régulièrement"), t("Cancel anytime", "Résiliez à tout moment")],
   },
   {
     id: "yearly",
     hidden: false,
     name: t("Yearly", "Annuel"),
-    price: "90€",
+    price: "89.99€",
     period: t("/ yr", "/ an"),
     subPrice: t("≈ 7.50€/mo — save 66% vs monthly", "≈ 7,50€/mois — 66% d'économie vs mensuel"),
     badge: t("Best value", "Meilleur rapport"),
@@ -1557,6 +1555,10 @@ export default function MoventoSite() {
 function SuccessPage() {
   const [email, setEmail] = useState(getStoredAccessEmail);
   const [status, setStatus] = useState({ loading: false, ok: false, error: "" });
+  // The bonus ebook ships with yearly and lifetime, not with the monthly trial.
+  // Unknown plans get it: a paying customer must never be denied by a lookup
+  // that merely failed to identify their plan.
+  const [ebookEarned, setEbookEarned] = useState(true);
 
   // Prefill from ?email= if the checkout redirect carried it, and log a custom
   // event (separate from the automatic /success pageview) so purchase landings
@@ -1588,6 +1590,15 @@ function SuccessPage() {
       if (data.hasAccess) {
         window.localStorage.setItem("movento_access_email", normalized);
         setStatus({ loading: false, ok: true, error: "" });
+        try {
+          const sub = await fetch(`${API_BASE_URL}/api/subscription-status`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: normalized }),
+          });
+          const subData = await sub.json().catch(() => ({}));
+          setEbookEarned(subData?.kind !== "monthly");
+        } catch { setEbookEarned(true); }
       } else {
         setStatus({ loading: false, ok: false, error: t("No access found for this email yet. If you just paid, wait a minute and retry — activation can take a moment.", "Aucun accès trouvé pour cet email pour l'instant. Si tu viens de payer, patiente une minute et réessaie — l'activation peut prendre un instant.") });
       }
@@ -1638,8 +1649,8 @@ function SuccessPage() {
           )}
         </div>
 
-        {/* Bonus ebook — every plan, monthly included */}
-        {status.ok && (
+        {/* Bonus ebook — yearly and lifetime */}
+        {status.ok && ebookEarned && (
           <div className="mt-4 rounded-[28px] border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_40px_-28px_rgba(217,119,6,0.25)] md:p-7">
             <div className="flex items-center gap-3">
               <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-amber-400 text-white"><Icon name="gift" className="h-4 w-4" /></span>
