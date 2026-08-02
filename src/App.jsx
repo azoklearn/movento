@@ -356,16 +356,18 @@ const plans = [
   },
   {
     id: "yearly",
-    hidden: true,
+    hidden: false,
     name: t("Yearly", "Annuel"),
-    price: "50€",
+    price: "90€",
     period: t("/ yr", "/ an"),
-    subPrice: t("≈ 4.17€/mo — save 72% vs monthly", "≈ 4,17€/mois — 72% d'économie vs mensuel"),
+    subPrice: t("≈ 7.50€/mo — save 66% vs monthly", "≈ 7,50€/mois — 66% d'économie vs mensuel"),
     badge: t("Best value", "Meilleur rapport"),
-    description: t("Build premium AI websites regularly.", "Créez des sites premium toute l'année."),
+    description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
-    featured: true,
-    features: [t("Full Movento catalog", "Catalogue Movento complet"), t("Year-round updates", "Mises à jour toute l'année"), t("New premium categories", "Nouvelles catégories premium"), t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"), t("Save over 45%", "Économisez plus de 45%")],
+    featured: false,
+    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
+    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
+    features: [t("Full Movento catalog", "Catalogue Movento complet"), t("Year-round updates", "Mises à jour toute l'année"), t("New premium categories", "Nouvelles catégories premium"), t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"), t("Save 66% vs monthly", "66% d'économie vs mensuel")],
   },
   {
     id: "lifetime",
@@ -1482,7 +1484,7 @@ export default function MoventoSite() {
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-[-0.04em] text-slate-900 md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-500">{t("Access every premium prompt. Monthly, yearly or lifetime.", "Accède à tous les prompts premium. Au mois, à l'année ou à vie.")}</p>
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
           <div className="mt-5 flex items-center justify-center gap-2">
@@ -1531,7 +1533,7 @@ export default function MoventoSite() {
           <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-blue-100 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-blue-700 shadow-xl shadow-blue-950/20 transition hover:scale-[1.04]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-            <span className="text-xs text-blue-100/80">{t("Monthly or lifetime — your call", "Au mois ou à vie — tu choisis")}</span>
+            <span className="text-xs text-blue-100/80">{t("Monthly, yearly or lifetime — your call", "Au mois, à l'année ou à vie — tu choisis")}</span>
           </div>
         </div>
       </section>
@@ -1911,7 +1913,7 @@ function PricingPage() {
             {t("Choose your", "Choisissez votre")}{" "}
             <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 bg-clip-text text-transparent">{t("plan", "offre")}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-500">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-500">{t("Access every premium prompt. Monthly, yearly or lifetime.", "Accède à tous les prompts premium. Au mois, à l'année ou à vie.")}</p>
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
           <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 shadow-sm backdrop-blur">
