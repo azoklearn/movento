@@ -331,6 +331,12 @@ function isPromptAvailable(item) {
   return Boolean(item.link) || AVAILABLE_FILES.has(item.file);
 }
 
+// The only list the site is allowed to show or count. `prompts` still holds
+// entries whose markdown was never added to the repo — they must not be
+// rendered, opened by URL, featured in the showcase, or counted in the copy
+// that promises how many prompts a buyer gets.
+const availablePrompts = prompts.filter(isPromptAvailable);
+
 // Three prompts are given away: they show what the catalogue is worth without
 // asking for a card. Copying one still costs an email (the lead modal), so a
 // free prompt is a lead, not an anonymous download. Must stay in sync with the
@@ -1034,7 +1040,7 @@ export default function MoventoSite() {
   useEffect(() => {
     const syncFromUrl = () => {
       const slug = (window.location.pathname.match(/^\/prompt\/([^/?#]+)/) || [])[1];
-      setPreviewItem(slug ? prompts.find((p) => slugify(p.title) === decodeURIComponent(slug).toLowerCase()) || null : null);
+      setPreviewItem(slug ? availablePrompts.find((p) => slugify(p.title) === decodeURIComponent(slug).toLowerCase()) || null : null);
     };
     syncFromUrl();
     window.addEventListener("popstate", syncFromUrl);
@@ -1088,12 +1094,11 @@ export default function MoventoSite() {
   }, [isSuccessPage]);
 
   const filtered = useMemo(() => {
-    // prompts is kept newest-first (new entries are added at the top), so the
-    // array order is already the order the gallery shows.
-    const list = prompts.filter((p) => {
-      if (!isPromptAvailable(p)) return false;
-      return `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase());
-    });
+    // availablePrompts is kept newest-first (new entries are added at the top),
+    // so the array order is already the order the gallery shows.
+    const list = availablePrompts.filter((p) =>
+      `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase()),
+    );
     // "free" floats the free prompts to the top rather than hiding the rest —
     // a visitor who came for the free ones still sees what they are missing.
     if (sortOrder !== "free") return list;
@@ -1459,7 +1464,7 @@ export default function MoventoSite() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-600">{t("Gallery", "Galerie")}</p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 md:text-4xl">{t("Premium prompts", "Prompts premium")}</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : `${prompts.filter(isPromptAvailable).length}+ ${t("premium prompts. Unlock the full catalog with one-time lifetime access.", "prompts premium. Débloque tout le catalogue avec l'accès à vie, en un seul paiement.")}`}</p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : `${availablePrompts.length}+ ${t("premium prompts. Unlock the full catalog with one-time lifetime access.", "prompts premium. Débloque tout le catalogue avec l'accès à vie, en un seul paiement.")}`}</p>
           </div>
         </div>
         {hasPremiumAccess ? (
@@ -1860,7 +1865,7 @@ const NAMED_TESTIMONIALS = TESTIMONIALS.filter((review) => review.name);
 
 function PricingShowcase({ onPick }) {
   const items = useMemo(
-    () => SHOWCASE_TITLES.map((title) => prompts.find((p) => p.title === title)).filter(Boolean),
+    () => SHOWCASE_TITLES.map((title) => availablePrompts.find((p) => p.title === title)).filter(Boolean),
     [],
   );
   if (!items.length) return null;
@@ -1877,8 +1882,8 @@ function PricingShowcase({ onPick }) {
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-base leading-7 text-slate-500">
             {t(
-              `${prompts.length} premium prompts, each one describing a complete site — fonts, colors, animations, section by section.`,
-              `${prompts.length} prompts premium, chacun décrivant un site complet — polices, couleurs, animations, section par section.`,
+              `${availablePrompts.length} premium prompts, each one describing a complete site — fonts, colors, animations, section by section.`,
+              `${availablePrompts.length} prompts premium, chacun décrivant un site complet — polices, couleurs, animations, section par section.`,
             )}
           </p>
         </motion.div>
@@ -2054,7 +2059,7 @@ function PricingPage() {
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-16 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/80 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700 backdrop-blur">
-            <Icon name="sparkles" className="h-3 w-3" /> {t(`${prompts.length} premium prompts`, `${prompts.length} prompts premium`)}
+            <Icon name="sparkles" className="h-3 w-3" /> {t(`${availablePrompts.length} premium prompts`, `${availablePrompts.length} prompts premium`)}
           </span>
           <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-slate-900 md:text-6xl">
             {t("Choose your", "Choisissez votre")}{" "}
