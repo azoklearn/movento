@@ -342,7 +342,30 @@ const FREE_PROMPT_FILES = new Set([
   "Qumica_Infrastructure_Hero.md",
 ]);
 
+// Order here is the order every pricing grid renders in, so lifetime leads:
+// it is the offer that converts, and the two subscriptions read as the
+// alternatives to it rather than the other way round.
 const plans = [
+  {
+    id: "lifetime",
+    hidden: false,
+    name: t("Lifetime", "À vie"),
+    price: "145€",
+    originalPrice: "250€",
+    discountBadge: "-42%",
+    period: t("forever", "à vie"),
+    badge: t("One shot", "Une fois pour toutes"),
+    description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
+    cta: t("Get lifetime access", "Obtenir l'accès à vie"),
+    featured: true,
+    // Direct support is what lifetime has that the subscriptions do not, so it
+    // gets its own block above the ebook rather than a line in the bullet list.
+    perk: t("Direct support, answered within 24h", "Support direct, réponse sous 24h"),
+    perkDesc: t("Write whenever you need — questions, advice, a second look at your project. A real person answers, never a bot.", "Écris quand tu veux — questions, conseils, un avis sur ton projet. Une vraie personne te répond, jamais un bot."),
+    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
+    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
+    features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
+  },
   {
     id: "monthly",
     hidden: false,
@@ -370,26 +393,6 @@ const plans = [
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
     bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
     features: [t("Full Movento catalog", "Catalogue Movento complet"), t("Year-round updates", "Mises à jour toute l'année"), t("New premium categories", "Nouvelles catégories premium"), t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"), t("Save 66% vs monthly", "66% d'économie vs mensuel")],
-  },
-  {
-    id: "lifetime",
-    hidden: false,
-    name: t("Lifetime", "À vie"),
-    price: "145€",
-    originalPrice: "250€",
-    discountBadge: "-42%",
-    period: t("forever", "à vie"),
-    badge: t("One shot", "Une fois pour toutes"),
-    description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
-    cta: t("Get lifetime access", "Obtenir l'accès à vie"),
-    featured: true,
-    // Direct support is what lifetime has that the subscriptions do not, so it
-    // gets its own block above the ebook rather than a line in the bullet list.
-    perk: t("Direct support, answered within 24h", "Support direct, réponse sous 24h"),
-    perkDesc: t("Write whenever you need — questions, advice, a second look at your project. A real person answers, never a bot.", "Écris quand tu veux — questions, conseils, un avis sur ton projet. Une vraie personne te répond, jamais un bot."),
-    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
-    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
-    features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
   },
 ];
 
