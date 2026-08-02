@@ -1048,6 +1048,7 @@ export default function MoventoSite() {
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
   const isSubscriptionPage = typeof window !== "undefined" && window.location.pathname === "/subscription";
+  const isAdminPage = typeof window !== "undefined" && window.location.pathname === "/admin";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -1238,7 +1239,7 @@ export default function MoventoSite() {
       await fetch(`${API_BASE_URL}/api/collect-lead`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, prompt: pendingFreeItem?.title || null, ref: getRef() }),
       });
     } catch (_) {}
 
@@ -1271,6 +1272,7 @@ export default function MoventoSite() {
     track("access_unlocked");
   }
 
+  if (isAdminPage) return <AdminLeadsPage />;
   if (isMentionsPage) return <MentionsLegales />;
   if (isPricingPage) return <PricingPage />;
   if (isSubscriptionPage) return <SubscriptionPage />;
@@ -2115,6 +2117,175 @@ function formatDate(value) {
   const date = typeof value === "number" ? new Date(value * 1000) : new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", { year: "numeric", month: "long", day: "numeric" });
+}
+
+// Live view of the emails captured for the free prompts. Unlisted, gated by
+// ADMIN_TOKEN server-side, and never linked from the site: the API is what
+// actually protects the data, this page only carries the token.
+function AdminLeadsPage() {
+  const [token, setToken] = useState(() => {
+    try { return window.localStorage.getItem("movento_admin_token") || ""; } catch { return ""; }
+  });
+  const [input, setInput] = useState("");
+  const [state, setState] = useState({ loading: false, error: "", total: 0, leads: [], fetchedAt: null });
+  const [live, setLive] = useState(true);
+  // Emails that showed up while the page was open, so a new signup is visible
+  // at a glance instead of silently appearing in the list.
+  const seenRef = useRef(null);
+  const [fresh, setFresh] = useState(() => new Set());
+
+  useEffect(() => {
+    if (!token) return undefined;
+    let cancelled = false;
+
+    async function load() {
+      setState((s) => ({ ...s, loading: true }));
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/leads?limit=500`, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await response.json().catch(() => ({}));
+        if (cancelled) return;
+        if (response.status === 401) {
+          setState({ loading: false, error: "Token refusé.", total: 0, leads: [], fetchedAt: null });
+          return;
+        }
+        if (!response.ok) throw new Error(data.error || "Lecture impossible.");
+
+        const leads = data.leads || [];
+        if (seenRef.current) {
+          const added = leads.map((l) => l.email).filter((e) => !seenRef.current.has(e));
+          if (added.length) setFresh((prev) => new Set([...prev, ...added]));
+        }
+        seenRef.current = new Set(leads.map((l) => l.email));
+        setState({ loading: false, error: "", total: data.total || leads.length, leads, fetchedAt: new Date() });
+      } catch (error) {
+        if (!cancelled) setState((s) => ({ ...s, loading: false, error: error.message }));
+      }
+    }
+
+    load();
+    if (!live) return () => { cancelled = true; };
+    const id = window.setInterval(load, 10000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, [token, live]);
+
+  function saveToken(e) {
+    e.preventDefault();
+    const value = input.trim();
+    if (!value) return;
+    try { window.localStorage.setItem("movento_admin_token", value); } catch (_) {}
+    setToken(value);
+    setInput("");
+  }
+
+  function forget() {
+    try { window.localStorage.removeItem("movento_admin_token"); } catch (_) {}
+    setToken("");
+    setState({ loading: false, error: "", total: 0, leads: [], fetchedAt: null });
+    seenRef.current = null;
+    setFresh(new Set());
+  }
+
+  function exportCsv() {
+    const rows = [["email", "date", "prompt", "ref"]].concat(
+      state.leads.map((l) => [l.email, l.registeredAt || "", l.prompt || "", l.ref || ""]),
+    );
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "movento-leads.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const ago = (iso) => {
+    if (!iso) return "";
+    const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    if (seconds < 60) return `il y a ${seconds}s`;
+    if (seconds < 3600) return `il y a ${Math.round(seconds / 60)} min`;
+    if (seconds < 86400) return `il y a ${Math.round(seconds / 3600)} h`;
+    return `il y a ${Math.round(seconds / 86400)} j`;
+  };
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const today = state.leads.filter((l) => l.registeredAt && new Date(l.registeredAt) >= startOfDay).length;
+  const last24h = state.leads.filter((l) => l.registeredAt && Date.now() - new Date(l.registeredAt).getTime() < 86400000).length;
+
+  if (!token) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-slate-50 px-6">
+        <form onSubmit={saveToken} className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <Logo />
+          <h1 className="mt-6 text-xl font-bold tracking-tight text-slate-900">Emails en direct</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Colle le token d'administration pour voir les inscriptions aux prompts gratuits.</p>
+          <input
+            type="password"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="ADMIN_TOKEN"
+            className="mt-5 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+          />
+          <button type="submit" className="mt-3 w-full rounded-2xl bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">Entrer</button>
+        </form>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-50 pb-24">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">
+          <a href="/" className="transition hover:opacity-80"><Logo /></a>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setLive((v) => !v)} className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${live ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-500"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${live ? "animate-pulse bg-emerald-500" : "bg-slate-300"}`} />
+              {live ? "En direct" : "En pause"}
+            </button>
+            <button onClick={exportCsv} className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:text-slate-900">CSV</button>
+            <button onClick={forget} className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-400 transition hover:text-slate-900">Quitter</button>
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-4xl px-6 pt-10">
+        <h1 className="text-3xl font-bold tracking-[-0.03em] text-slate-900">Emails collectés</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          {state.fetchedAt ? `Actualisé à ${state.fetchedAt.toLocaleTimeString("fr-FR")}` : "Chargement…"}
+          {live && " · rafraîchissement toutes les 10 s"}
+        </p>
+
+        {state.error && <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{state.error}</div>}
+
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          {[["Total", state.total], ["Aujourd'hui", today], ["24 h", last24h]].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
+              <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          {state.leads.length === 0 && !state.loading ? (
+            <p className="px-5 py-10 text-center text-sm text-slate-400">Aucun email pour l'instant.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {state.leads.map((lead) => (
+                <li key={lead.email} className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3.5 transition ${fresh.has(lead.email) ? "bg-emerald-50/70" : ""}`}>
+                  <span className="min-w-0 flex-1">
+                    <button onClick={() => copyTextToClipboard(lead.email)} title="Copier" className="block max-w-full truncate text-left text-sm font-medium text-slate-900 transition hover:text-blue-600">{lead.email}</button>
+                    {lead.prompt && <span className="block truncate text-xs text-slate-400">{lead.prompt}{lead.ref ? ` · via ${lead.ref}` : ""}</span>}
+                  </span>
+                  <span className="flex-none text-xs text-slate-400">{ago(lead.registeredAt)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </main>
+  );
 }
 
 function SubscriptionPage() {
