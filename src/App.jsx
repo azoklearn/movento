@@ -379,6 +379,10 @@ const plans = [
     description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
     cta: t("Get lifetime access", "Obtenir l'accès à vie"),
     featured: true,
+    // Direct support is what lifetime has that the subscriptions do not, so it
+    // gets its own block above the ebook rather than a line in the bullet list.
+    perk: t("Direct support, answered within 24h", "Support direct, réponse sous 24h"),
+    perkDesc: t("Write whenever you need — questions, advice, a second look at your project. A real person answers, never a bot.", "Écris quand tu veux — questions, conseils, un avis sur ton projet. Une vraie personne te répond, jamais un bot."),
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
     bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
     features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
@@ -424,8 +428,17 @@ function PlanCard({ plan, onBuy, loading, featured }) {
           </li>
         ))}
       </ul>
+      {plan.perk && (
+        <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5">
+          <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-blue-600 text-white"><Icon name="shield" className="h-3 w-3" /></span>
+          <div>
+            <p className="text-sm font-semibold text-blue-700">{plan.perk}</p>
+            {plan.perkDesc && <p className="mt-0.5 text-xs leading-5 text-blue-700/80">{plan.perkDesc}</p>}
+          </div>
+        </div>
+      )}
       {plan.bonus && (
-        <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+        <div className={`${plan.perk ? "mt-2.5" : "mt-5"} flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5`}>
           <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-amber-400 text-white"><Icon name="gift" className="h-3 w-3" /></span>
           <div>
             <p className="text-sm font-semibold text-amber-700">{plan.bonus}</p>
