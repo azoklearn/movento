@@ -63,7 +63,7 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // flow — replace it (or set WHOP_MONTHLY_PLAN_ID) with the plan's checkout link
 // https://whop.com/checkout/plan_xxx to get the on-site embedded checkout back.
 const MONTHLY_FALLBACK_URL = "https://whop.com/movento/abonnement-mensuel-movento/";
-const YEARLY_FALLBACK_URL = "https://whop.com/movento/abonnement-annuel-ebook";
+const YEARLY_FALLBACK_URL = "https://whop.com/movento/abonnement-annuel-ebook/";
 
 export const checkoutUrls = {
   monthly: process.env.WHOP_MONTHLY_URL || MONTHLY_FALLBACK_URL,
