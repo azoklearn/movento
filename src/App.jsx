@@ -401,11 +401,11 @@ const plans = [
     id: "yearly",
     hidden: false,
     name: t("Yearly", "Annuel"),
-    price: "89.99€",
+    price: "79.99€",
     period: t("/ yr", "/ an"),
     // No more "vs monthly" comparisons: the monthly plan is off sale, and a
     // discount against an offer nobody can buy is not a real discount.
-    subPrice: t("≈ 7.50€/mo, billed once a year", "≈ 7,50€/mois, facturé une fois par an"),
+    subPrice: t("≈ 6.67€/mo, billed once a year", "≈ 6,67€/mois, facturé une fois par an"),
     badge: t("Best value", "Meilleur rapport"),
     description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
