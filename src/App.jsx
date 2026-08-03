@@ -345,17 +345,10 @@ function isPromptAvailable(item) {
 // that promises how many prompts a buyer gets.
 const availablePrompts = prompts.filter(isPromptAvailable);
 
-// The prompts given away. Kept to two on purpose: with eight of them, 93% of
-// visitors left having copied something without ever meeting an offer — the
-// giveaway has to end early enough that wanting a second prompt means seeing
-// the price. These two stay because the TikTok traffic lands straight on them.
-// Copying one still costs an email (the lead modal), so a free prompt is a
-// lead, not an anonymous download. Must stay in sync with the same list in
-// api/_shared.js — the server is what actually enforces access.
-const FREE_PROMPT_FILES = new Set([
-  "Picway_Gallery_Hero.md",
-  "Mapple_Headphone_Store.md",
-]);
+// Nothing is given away any more: every prompt sits behind the paywall.
+// Putting a filename back here re-opens that prompt, and it must be added to
+// the same set in api/_shared.js, which is what actually enforces access.
+const FREE_PROMPT_FILES = new Set([]);
 
 // Order here is the order every pricing grid renders in, so lifetime leads:
 // it is the offer that converts, and the two subscriptions read as the
@@ -923,7 +916,7 @@ function WelcomeQuiz({ onDone }) {
 
   function pickGoal(g) { setGoal(g); track("quiz_goal", { goal: g.key }); setStep(1); }
   function pickLevel(l) { setLevel(l); track("quiz_level", { level: l.key }); setStep(2); }
-  function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "", ...refProps(), promo: promoCode }); onDone({ showFree: true }); }
+  function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "", ...refProps(), promo: promoCode }); onDone(); }
   // Escape hatch on both questions: a visitor who only wants the gallery should
   // never have to answer to reach it.
   function skipQuiz() { track("quiz_skipped", { step, ...refProps() }); onDone(); }
@@ -999,7 +992,7 @@ function WelcomeQuiz({ onDone }) {
                   <p className="mt-2 text-[11px] text-slate-400">{t("Apply it at checkout — reserved, don't miss it.", "À appliquer au paiement — réservé, profites-en.")}</p>
                 </div>
 
-                <button onClick={finish} className="mt-4 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{t("See the free prompts", "Voir les prompts gratuits")} →</button>
+                <button onClick={finish} className="mt-4 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{t("See the prompts", "Voir les prompts")} →</button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1011,7 +1004,6 @@ function WelcomeQuiz({ onDone }) {
 
 export default function MoventoSite() {
   const [query, setQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState("recent"); // recent | free
   const [copiedCard, setCopiedCard] = useState("");
   const [copyError, setCopyError] = useState("");
   const [unlockNotice, setUnlockNotice] = useState("");
@@ -1103,14 +1095,10 @@ export default function MoventoSite() {
   const filtered = useMemo(() => {
     // availablePrompts is kept newest-first (new entries are added at the top),
     // so the array order is already the order the gallery shows.
-    const list = availablePrompts.filter((p) =>
+    return availablePrompts.filter((p) =>
       `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase()),
     );
-    // "free" floats the free prompts to the top rather than hiding the rest —
-    // a visitor who came for the free ones still sees what they are missing.
-    if (sortOrder !== "free") return list;
-    return [...list].sort((a, b) => Number(FREE_PROMPT_FILES.has(b.file)) - Number(FREE_PROMPT_FILES.has(a.file)));
-  }, [query, sortOrder]);
+  }, [query]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
     // Emails never contain whitespace, so strip every whitespace/zero-width char
@@ -1295,7 +1283,7 @@ export default function MoventoSite() {
   return (
     <main className="min-h-screen overflow-hidden bg-white text-slate-900">
       <AnimatePresence>
-        {showQuiz && <WelcomeQuiz onDone={(opts) => { try { window.localStorage.setItem("movento_quiz_done", "1"); } catch (_) {} setShowQuiz(false); if (opts?.showFree) setSortOrder("free"); }} />}
+        {showQuiz && <WelcomeQuiz onDone={() => { try { window.localStorage.setItem("movento_quiz_done", "1"); } catch (_) {} setShowQuiz(false); }} />}
         {showLeadModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowLeadModal(false)}>
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
@@ -1494,11 +1482,6 @@ export default function MoventoSite() {
         {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 ${accessStatus.error ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-700"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
         {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
-        <div className="mb-8 flex flex-wrap items-center gap-2">
-          {[["recent", t("Newest", "Plus récents")], ["free", t("Free first", "Gratuits d'abord")]].map(([val, label]) => (
-            <button key={val} onClick={() => setSortOrder(val)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${sortOrder === val ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/20" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}>{label}</button>
-          ))}
-        </div>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <AnimatePresence>
             {filtered.map((item) => {
