@@ -7,13 +7,7 @@ export const CUSTOM_PROMPTS_REPO = "https://raw.githubusercontent.com/azoklearn/
 // whether /api/prompt actually hands the markdown over.
 export const FREE_PROMPT_FILES = new Set([
   "Picway_Gallery_Hero.md",
-  "Boomerang_Landing.md",
   "Mapple_Headphone_Store.md",
-  "Healcure_Medical_Hero.md",
-  "Lumina_Vision_Hero.md",
-  "Qumica_Infrastructure_Hero.md",
-  "Aesthetic_Login_Screen.md",
-  "Adventra_Travel_Hero.md",
 ]);
 
 // The prompts live in this repo. While it is public, anyone can download the
