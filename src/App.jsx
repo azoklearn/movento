@@ -926,7 +926,6 @@ export default function MoventoSite() {
   const [checkoutPlan, setCheckoutPlan] = useState(null); // plan being purchased in the embedded overlay
   const [leadEmail, setLeadEmail] = useState(getStoredLeadEmail);
   const [showLeadModal, setShowLeadModal] = useState(false);
-  const [showPricingModal, setShowPricingModal] = useState(false);
   const [pendingFreeItem, setPendingFreeItem] = useState(null);
   const [leadEmailInput, setLeadEmailInput] = useState("");
   const [leadSubmitting, setLeadSubmitting] = useState(false);
@@ -959,7 +958,6 @@ export default function MoventoSite() {
     return () => window.removeEventListener("popstate", syncFromUrl);
   }, []);
 
-  const [paywallItem, setPaywallItem] = useState(null); // the paid prompt that triggered the paywall
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
@@ -1121,8 +1119,10 @@ export default function MoventoSite() {
 
     if (!isFree && !hasPremiumAccess) {
       track("paywall_shown", { prompt: item.title, category: item.category, ...refProps() });
-      setPaywallItem(item);
-      setShowPricingModal(true);
+      // The offer lives on one page. A modal put a second, slightly different
+      // pricing surface in front of the buyer and left them on a page they then
+      // had to leave anyway.
+      window.location.assign(`/pricing?from=${encodeURIComponent(slugify(item.title))}`);
       return;
     }
 
@@ -1169,7 +1169,6 @@ export default function MoventoSite() {
   // fetches the plan id and mounts the Whop checkout inline.
   function startCheckout(plan) {
     track("checkout_started", { plan: plan.id, ...refProps() });
-    setShowPricingModal(false);
     setCheckoutPlan(plan);
   }
 
@@ -1211,29 +1210,6 @@ export default function MoventoSite() {
             </motion.div>
           </motion.div>
         )}
-        {showPricingModal && !checkoutPlan && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-3 py-4 sm:px-4 sm:py-8" onClick={() => setShowPricingModal(false)}>
-            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 16 }} transition={{ type: "spring", stiffness: 300, damping: 26 }} className={`relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#121214] shadow-2xl shadow-black/60 sm:rounded-[32px] ${visiblePlans.length === 1 ? "max-w-md" : "max-w-3xl"}`} onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setShowPricingModal(false)} className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-[#121214] text-white/55 transition hover:text-[#EDE9E0]"><Icon name="close" className="h-4 w-4" /></button>
-              <div className="overflow-y-auto overscroll-contain p-6 pt-8 sm:p-8">
-                <div className="pr-8 text-center">
-                  <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0] sm:text-3xl">{paywallItem ? t(`Unlock “${paywallItem.title}”`, `Débloque « ${paywallItem.title} »`) : t("Unlock all prompts", "Débloque tous les prompts")}</h2>
-                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">{t("Choose a plan to unlock the whole Movento catalog.", "Choisis une offre pour débloquer tout le catalogue Movento.")}</p>
-                </div>
-                <div className={`mx-auto mt-8 grid gap-4 ${planGridMd}`}>
-                  {visiblePlans.map((plan) => (
-                    <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={startCheckout} />
-                  ))}
-                </div>
-                <Reassurance className="mt-6" />
-                <div className="mt-6 text-center">
-                  <button onClick={() => { setShowPricingModal(false); setShowUnlockModal(true); }} className="text-sm text-white/40 transition hover:text-white/75">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
         {checkoutPlan && (
           <CheckoutOverlay
             plan={checkoutPlan}
@@ -1256,7 +1232,7 @@ export default function MoventoSite() {
               </form>
               {accessStatus.error && <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-red-300"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{accessStatus.error}</p>}
               <div className="mt-5 border-t border-white/[0.07] pt-4 text-center">
-                <button onClick={() => { setShowUnlockModal(false); setPaywallItem(null); setShowPricingModal(true); }} className="text-xs text-white/40 transition hover:text-white/75">{t("Not a customer yet? See the offer", "Pas encore client ? Voir l'offre")}</button>
+                <a href="/pricing" className="text-xs text-white/40 transition hover:text-white/75">{t("Not a customer yet? See the offer", "Pas encore client ? Voir l'offre")}</a>
               </div>
             </motion.div>
           </motion.div>
@@ -1904,6 +1880,13 @@ function PromoReminder() {
 
 function PricingPage() {
   const [checkoutPlan, setCheckoutPlan] = useState(null);
+  // The prompt the visitor was trying to copy, carried over in ?from= so the
+  // page answers the click they actually made rather than starting from zero.
+  const [fromPrompt] = useState(() => {
+    if (typeof window === "undefined") return null;
+    const slug = new URLSearchParams(window.location.search).get("from");
+    return slug ? availablePrompts.find((p) => slugify(p.title) === slug.toLowerCase()) || null : null;
+  });
 
   function onUnlocked(email) {
     window.localStorage.setItem("movento_access_email", email);
@@ -1959,6 +1942,11 @@ function PricingPage() {
             <span className="text-white/45">{t("plan", "offre")}</span>
           </h1>
           <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Monthly, yearly or lifetime.", "Accède à tous les prompts premium. Au mois, à l'année ou à vie.")}</p>
+          {fromPrompt && (
+            <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
+              <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
+            </p>
+          )}
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
           <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 shadow-sm backdrop-blur">
