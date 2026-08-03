@@ -50,6 +50,9 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "VortxLab Immersive", category: "Agency", type: "Landing", file: "VortxLab_Immersive_Landing.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/buttterflies%20purpleArea.mp4", tags: ["Studio", "Video", "Glass"], gradient: "from-violet-200 via-purple-700 to-[#0a0510]" },
+  { title: "Dental Health Clinic", category: "Landing Page", type: "Landing", file: "Dental_Health_Clinic_Landing.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(12).webp", tags: ["Health", "Mosaic", "Editorial"], gradient: "from-stone-100 via-stone-400 to-stone-800" },
+  { title: "CozyPaws Pet Store", category: "E-commerce", type: "Hero", file: "CozyPaws_Pet_Store_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/prompts%20(i've%20added%20them%20to%20the%20motionsites)/petsArea.mp4", tags: ["Pets", "Serif", "Playful"], gradient: "from-lime-100 via-emerald-600 to-[#0d2410]" },
   { title: "Halo Nutrition Hero", category: "Landing Page", type: "Hero", file: "Halo_Nutrition_Health_Hero.md", preview: "https://cdn.jiro.build/Halo/Video/Nutrition-Health%20Hero%2001%20Halo.mp4", tags: ["Health", "Marquee", "Green"], gradient: "from-lime-100 via-emerald-800 to-[#04231f]" },
   { title: "Strip Juice Header", category: "E-commerce", type: "Hero", file: "Strip_Juice_Header.md", preview: "https://cdn.jiro.build/videos/header/Juice%20Video%20Header.mp4", tags: ["E-commerce", "Video", "Dark"], gradient: "from-orange-200 via-orange-700 to-black" },
   { title: "Kelo AI Support Hero", category: "AI / SaaS", type: "Hero", file: "Kelo_AI_Support_Hero.md", preview: "https://cdn.jiro.build/Kelo/video/AI%20Customer%20Support%20Hero%20Kelo.mp4", tags: ["AI", "Glass", "Dark"], gradient: "from-slate-200 via-slate-600 to-black" },
@@ -298,6 +301,9 @@ const AVAILABLE_FILES = new Set([
   "CloudB_Sneaker_Hero.md",
   "Labs_ISP_Hero.md",
   "Muse_Editorial_Gallery.md",
+  "VortxLab_Immersive_Landing.md",
+  "Dental_Health_Clinic_Landing.md",
+  "CozyPaws_Pet_Store_Hero.md",
   "Halo_Nutrition_Health_Hero.md",
   "Strip_Juice_Header.md",
   "Kelo_AI_Support_Hero.md",
