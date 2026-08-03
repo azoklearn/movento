@@ -1316,25 +1316,6 @@ export default function MoventoSite() {
         </motion.div>
       </section>
 
-      {/* Walkthrough sits right under the hero: it answers "what is this?" before
-          the visitor has to judge the catalogue on thumbnails alone. */}
-      <section id="video" className="relative z-10 mx-auto max-w-7xl px-6 pt-12 pb-4 text-center lg:px-8 lg:pt-16">
-        <h2 className="text-3xl font-bold tracking-[-0.04em] text-slate-900 md:text-5xl">{t("What is Movento?", "Movento, c'est quoi ?")}</h2>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500 md:mt-4 md:text-base md:leading-7">{t("A minute to see how it works, from the prompt to the finished site.", "Une minute pour voir comment ça marche, du prompt au site fini.")}</p>
-        <div className="mx-auto mt-6 w-full max-w-[325px] overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_50px_-30px_rgba(15,23,42,0.35)] md:mt-8">
-          <iframe
-            src={`https://www.tiktok.com/embed/v2/${TIKTOK_VIDEO_ID}`}
-            title={t("How Movento works", "Comment fonctionne Movento")}
-            // Height follows the viewport so the vertical video never overflows a
-            // phone screen, bounded so it stays watchable on short and tall ones.
-            className="block h-[78vh] max-h-[740px] min-h-[480px] w-full border-0"
-            loading="lazy"
-            allow="encrypted-media; picture-in-picture; fullscreen"
-            referrerPolicy="strict-origin-when-cross-origin"
-          />
-        </div>
-      </section>
-
       <section id="prompts" className="relative z-10 mx-auto max-w-7xl px-6 pt-10 pb-24 lg:px-8 lg:pt-14">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -1385,6 +1366,27 @@ export default function MoventoSite() {
       <section id="how" className="relative z-10 mx-auto max-w-7xl px-6 pb-24 lg:px-8">
         <div className="overflow-hidden rounded-[36px] border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-8 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_50px_-30px_rgba(37,99,235,0.3)] md:p-12"><div className="grid gap-10 md:grid-cols-3">{[t("Choose a style", "Choisir un style"), t("Copy the prompt", "Copier le prompt"), t("Generate your site", "Générer votre site")].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-600/25">0{i + 1}</div><h3 className="text-xl font-semibold text-slate-900">{step}</h3><p className="mt-3 text-sm leading-6 text-slate-500">{i === 0 ? t("Browse previews and find a design direction that suits your offer.", "Parcourez les aperçus et trouvez une direction design adaptée à votre offre.") : i === 1 ? t("The prompt is loaded directly from the source to stay intact.", "Le prompt est chargé directement depuis la source pour rester intact.") : t("Paste it into your favorite AI tool and customize the result.", "Collez-le dans votre outil IA préféré et personnalisez le résultat.")}</p></div>)}</div></div>
       </section>
+
+      {/* The walkthrough sits after the catalogue, not before it: the designs are
+          what sell, and a vertical video between the hero and the gallery pushed
+          the prompts a full screen down on mobile. */}
+      <section id="video" className="relative z-10 mx-auto max-w-7xl px-6 pt-12 pb-4 text-center lg:px-8 lg:pt-16">
+        <h2 className="text-3xl font-bold tracking-[-0.04em] text-slate-900 md:text-5xl">{t("What is Movento?", "Movento, c'est quoi ?")}</h2>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500 md:mt-4 md:text-base md:leading-7">{t("A minute to see how it works, from the prompt to the finished site.", "Une minute pour voir comment ça marche, du prompt au site fini.")}</p>
+        <div className="mx-auto mt-6 w-full max-w-[325px] overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_50px_-30px_rgba(15,23,42,0.35)] md:mt-8">
+          <iframe
+            src={`https://www.tiktok.com/embed/v2/${TIKTOK_VIDEO_ID}`}
+            title={t("How Movento works", "Comment fonctionne Movento")}
+            // Height follows the viewport so the vertical video never overflows a
+            // phone screen, bounded so it stays watchable on short and tall ones.
+            className="block h-[78vh] max-h-[740px] min-h-[480px] w-full border-0"
+            loading="lazy"
+            allow="encrypted-media; picture-in-picture; fullscreen"
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        </div>
+      </section>
+
 
       <Testimonials />
 
