@@ -15,8 +15,8 @@ html {
 
 body {
   margin: 0;
-  background: #ffffff;
-  color: #0f172a;
+  background: #0A0A0B;
+  color: #EDE9E0;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -30,8 +30,8 @@ body {
 }
 
 ::selection {
-  background: rgba(37, 99, 235, 0.18);
-  color: #1e3a8a;
+  background: rgba(237, 233, 224, 0.22);
+  color: #ffffff;
 }
 
 h1,
@@ -45,7 +45,7 @@ p {
 }
 
 :focus-visible {
-  outline: 2px solid rgba(37, 99, 235, 0.7);
+  outline: 2px solid rgba(237, 233, 224, 0.7);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -55,7 +55,7 @@ a[href]:active {
   transform: scale(0.98);
 }
 
-/* Soft drifting aurora used behind the light hero/sections. */
+/* Soft drifting glow used behind the dark hero/sections. */
 @keyframes mv-aurora {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(4%, -3%, 0) scale(1.08); }
