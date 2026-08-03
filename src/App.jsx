@@ -50,6 +50,8 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Lithos Geology Reveal", category: "Landing Page", type: "Hero", file: "Lithos_Geology_Reveal_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(7).webp", tags: ["Spotlight", "Serif", "Dark"], gradient: "from-orange-200 via-stone-600 to-[#0c0a09]" },
+  { title: "Vanguard Agency Hero", category: "Agency", type: "Hero", file: "Vanguard_Agency_Video_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(10).webp", tags: ["Agency", "Video", "Bold"], gradient: "from-zinc-200 via-zinc-600 to-black" },
   { title: "VortxLab Immersive", category: "Agency", type: "Landing", file: "VortxLab_Immersive_Landing.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/buttterflies%20purpleArea.mp4", tags: ["Studio", "Video", "Glass"], gradient: "from-violet-200 via-purple-700 to-[#0a0510]" },
   { title: "Dental Health Clinic", category: "Landing Page", type: "Landing", file: "Dental_Health_Clinic_Landing.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(12).webp", tags: ["Health", "Mosaic", "Editorial"], gradient: "from-stone-100 via-stone-400 to-stone-800" },
   { title: "CozyPaws Pet Store", category: "E-commerce", type: "Hero", file: "CozyPaws_Pet_Store_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/prompts%20(i've%20added%20them%20to%20the%20motionsites)/petsArea.mp4", tags: ["Pets", "Serif", "Playful"], gradient: "from-lime-100 via-emerald-600 to-[#0d2410]" },
@@ -301,6 +303,8 @@ const AVAILABLE_FILES = new Set([
   "CloudB_Sneaker_Hero.md",
   "Labs_ISP_Hero.md",
   "Muse_Editorial_Gallery.md",
+  "Lithos_Geology_Reveal_Hero.md",
+  "Vanguard_Agency_Video_Hero.md",
   "VortxLab_Immersive_Landing.md",
   "Dental_Health_Clinic_Landing.md",
   "CozyPaws_Pet_Store_Hero.md",
