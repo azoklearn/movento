@@ -375,29 +375,14 @@ const plans = [
     features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
   },
   {
-    id: "monthly",
-    // Retired from sale: the plan definition stays so existing monthly members
-    // keep a valid subscription, but nobody can start a new one.
-    hidden: true,
-    name: t("Monthly", "Mensuel"),
-    price: "21.99€",
-    period: t("/ mo", "/ mois"),
-    subPrice: t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment"),
-    badge: t("Flexible", "Flexible"),
-    description: t("Full access to the catalog, billed monthly. Cancel anytime.", "Accès complet au catalogue, facturé chaque mois. Résiliez à tout moment."),
-    cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
-    featured: false,
-    features: [t("Access to all prompts", "Accès à tous les prompts"), t("New prompts added regularly", "Nouveaux prompts ajoutés régulièrement"), t("One-click prompt copy", "Copie en un clic"), t("Cancel anytime", "Résiliez à tout moment")],
-  },
-  {
     id: "yearly",
     hidden: false,
     name: t("Yearly", "Annuel"),
     price: "49€",
     period: t("/ yr", "/ an"),
-    // No more "vs monthly" comparisons: the monthly plan is off sale, and a
-    // discount against an offer nobody can buy is not a real discount.
-    subPrice: t("≈ 4.08€/mo, billed once a year", "≈ 4,08€/mois, facturé une fois par an"),
+    // The per-month figure is what makes the yearly readable next to the 9.99
+    // monthly sitting beside it — 4.08 vs 9.99 is the whole argument.
+    subPrice: t("≈ 4.08€/mo — save 59% vs monthly", "≈ 4,08€/mois — 59% d'économie vs mensuel"),
     badge: t("Best value", "Meilleur rapport"),
     description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
@@ -405,6 +390,19 @@ const plans = [
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
     bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
     features: [t("Full Movento catalog", "Catalogue Movento complet"), t("Year-round updates", "Mises à jour toute l'année"), t("New premium categories", "Nouvelles catégories premium"), t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"), t("Cancel anytime", "Résiliez à tout moment")],
+  },
+  {
+    id: "monthly",
+    hidden: false,
+    name: t("Monthly", "Mensuel"),
+    price: "9.99€",
+    period: t("/ mo", "/ mois"),
+    subPrice: t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment"),
+    badge: t("Flexible", "Flexible"),
+    description: t("Full access to the catalog, billed monthly. Cancel anytime.", "Accès complet au catalogue, facturé chaque mois. Résiliez à tout moment."),
+    cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
+    featured: false,
+    features: [t("Access to all prompts", "Accès à tous les prompts"), t("New prompts added regularly", "Nouveaux prompts ajoutés régulièrement"), t("One-click prompt copy", "Copie en un clic"), t("Cancel anytime", "Résiliez à tout moment")],
   },
 ];
 
@@ -878,7 +876,7 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(!validatePlanId("monthly"), "monthly is retired and should not be purchasable");
+  console.assert(validatePlanId("monthly"), "monthly should be valid");
   console.assert(validatePlanId("yearly"), "yearly should be valid");
   console.assert(validatePlanId("lifetime"), "lifetime should be valid");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
@@ -1394,7 +1392,7 @@ export default function MoventoSite() {
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Yearly or lifetime.", "Accède à tous les prompts premium. À l'année ou à vie.")}</p>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Monthly, yearly or lifetime.", "Accède à tous les prompts premium. Au mois, à l'année ou à vie.")}</p>
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
           <div className="mt-5 flex items-center justify-center gap-2">
@@ -1422,7 +1420,7 @@ export default function MoventoSite() {
           {[
             { q: t("How does it work?", "Comment ça marche ?"), a: t("Pick a prompt in the gallery, copy it in one click, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify. The AI generates the full site — you just customize the content.", "Choisissez un prompt dans la galerie, copiez-le en un clic, collez-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify. L'IA génère le site complet — il ne vous reste qu'à personnaliser le contenu.") },
             { q: t("Which tools are supported?", "Quels outils sont compatibles ?"), a: t("Any AI tool that accepts a text prompt: Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... The prompts describe every detail (fonts, colors, animations) so the result stays faithful.", "Tous les outils IA qui acceptent un prompt texte : Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... Les prompts décrivent chaque détail (polices, couleurs, animations) pour un résultat fidèle.") },
-            { q: t("Can I cancel anytime?", "Puis-je résilier à tout moment ?"), a: t("Yes. The annual plan can be cancelled anytime from the My subscription page or directly on Whop — no minimum commitment.", "Oui. L'offre annuelle peut être résiliée à tout moment depuis la page Mon abonnement ou directement sur Whop — sans engagement minimum.") },
+            { q: t("Can I cancel anytime?", "Puis-je résilier à tout moment ?"), a: t("Yes. Monthly and annual plans can be cancelled anytime from the My subscription page or directly on Whop — no minimum commitment.", "Oui. Les offres mensuelle et annuelle peuvent être résiliées à tout moment depuis la page Mon abonnement ou directement sur Whop — sans engagement minimum.") },
             { q: t("How do I access prompts after paying?", "Comment j'accède aux prompts après paiement ?"), a: t("The email you used at checkout is your access key. Enter it in the gallery on any device and every prompt unlocks instantly.", "L'email utilisé au paiement est votre clé d'accès. Entrez-le dans la galerie sur n'importe quel appareil et tous les prompts se débloquent instantanément.") },
             { q: t("Is the catalog updated?", "Le catalogue est-il mis à jour ?"), a: t("Yes — new premium prompts are added regularly, and they're all included in your plan at no extra cost.", "Oui — de nouveaux prompts premium sont ajoutés régulièrement, et ils sont tous inclus dans votre abonnement sans surcoût.") },
             { q: t("Can I use the sites commercially?", "Puis-je utiliser les sites commercialement ?"), a: t("Yes. The sites you generate from our prompts are yours — client projects, portfolios, product launches, anything.", "Oui. Les sites que vous générez à partir de nos prompts vous appartiennent — projets clients, portfolios, lancements de produits, tout est permis.") },
@@ -1443,7 +1441,7 @@ export default function MoventoSite() {
           <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-white/60 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-8 py-3.5 text-sm font-bold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-            <span className="text-xs text-white/50">{t("Yearly or lifetime — your call", "À l'année ou à vie — tu choisis")}</span>
+            <span className="text-xs text-white/50">{t("Monthly, yearly or lifetime — your call", "Au mois, à l'année ou à vie — tu choisis")}</span>
           </div>
         </div>
       </section>
@@ -1639,7 +1637,7 @@ function MentionsLegales() {
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-[#EDE9E0]">5. Payment</h2>
-            <p>Payments are securely processed by <span className="text-white/75">Whop</span>. Subscriptions can be cancelled at any time from your Whop account. Lifetime access is a one-time purchase with no subscription.</p>
+            <p>Payments are securely processed by <span className="text-white/75">Whop</span>. Monthly and annual subscriptions can be cancelled at any time from your Whop account. Lifetime access is a one-time purchase with no subscription.</p>
             <p className="mt-3">You can cancel your subscription at any time from your Whop account, or by emailing <span className="text-white/75">movento.dev@gmail.com</span> from the address used at checkout.</p>
             <p className="mt-3">Movento reserves the right to modify subscription prices at any time.</p>
           </div>
@@ -1936,7 +1934,7 @@ function PricingPage() {
             {t("Choose your", "Choisissez votre")}{" "}
             <span className="text-white/45">{t("plan", "offre")}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Yearly or lifetime.", "Accède à tous les prompts premium. À l'année ou à vie.")}</p>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Monthly, yearly or lifetime.", "Accède à tous les prompts premium. Au mois, à l'année ou à vie.")}</p>
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
           <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 shadow-sm backdrop-blur">
@@ -1950,7 +1948,7 @@ function PricingPage() {
             800 €" answer to it should be readable without scrolling between
             them. Below xl the rail drops under the cards rather than squeezing
             them — the cards are what the page is for. */}
-        <div className="mt-14 grid items-start gap-8 xl:grid-cols-[minmax(0,720px)_minmax(0,340px)] xl:justify-center">
+        <div className="mt-14 grid items-start gap-8 xl:grid-cols-[minmax(0,900px)_minmax(0,300px)] xl:justify-center">
           <div>
             <PromoReminder />
             <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 gap-5 ${planGridWidth} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
