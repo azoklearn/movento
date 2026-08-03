@@ -358,9 +358,9 @@ const plans = [
     id: "lifetime",
     hidden: false,
     name: t("Lifetime", "À vie"),
-    price: "145€",
+    price: "89€",
     originalPrice: "250€",
-    discountBadge: "-42%",
+    discountBadge: "-64%",
     period: t("forever", "à vie"),
     badge: t("One shot", "Une fois pour toutes"),
     description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
@@ -393,11 +393,11 @@ const plans = [
     id: "yearly",
     hidden: false,
     name: t("Yearly", "Annuel"),
-    price: "79.99€",
+    price: "49€",
     period: t("/ yr", "/ an"),
     // No more "vs monthly" comparisons: the monthly plan is off sale, and a
     // discount against an offer nobody can buy is not a real discount.
-    subPrice: t("≈ 6.67€/mo, billed once a year", "≈ 6,67€/mois, facturé une fois par an"),
+    subPrice: t("≈ 4.08€/mo, billed once a year", "≈ 4,08€/mois, facturé une fois par an"),
     badge: t("Best value", "Meilleur rapport"),
     description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
@@ -675,7 +675,10 @@ function Icon({ name, className = "h-4 w-4" }) {
 function Logo() {
   return (
     <span className="flex items-center gap-2.5 select-none">
-      <img src="/logo.png?v=2" alt="" aria-hidden="true" width="36" height="36" className="h-9 w-9 flex-none object-contain" />
+      {/* The mark is a blue gradient; greyscale keeps the ribbon's shading (a flat
+          white silhouette loses the overlap) while dropping the only colour left
+          on the page, and the brightness lift keeps it off a near-black canvas. */}
+      <img src="/logo.png?v=2" alt="" aria-hidden="true" width="36" height="36" className="h-9 w-9 flex-none object-contain grayscale brightness-[1.6]" />
       <span className="text-[22px] font-bold tracking-[-0.03em] text-[#EDE9E0]">Movento</span>
     </span>
   );
