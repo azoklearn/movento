@@ -50,6 +50,11 @@ function t(en, fr) { return lang === "fr" ? fr : en; }
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Convix PR Software", category: "SaaS", type: "Hero", file: "Convix_PR_Software_Hero.md", preview: "https://motionsites.ai/assets/convix-software-hero-B6-tdnN6.gif", tags: ["SaaS", "Dashboard", "Video"], gradient: "from-orange-200 via-neutral-400 to-[#0b0f1a]" },
+  { title: "Cosmic Portfolio", category: "Portfolio", type: "Landing", file: "Michael_Smith_Portfolio_Landing.md", preview: "https://motionsites.ai/assets/hero-portfolio-cosmic-preview-BpvWJ3Nc.gif", tags: ["Portfolio", "GSAP", "Parallax"], gradient: "from-sky-200 via-slate-600 to-[#0a0a0a]" },
+  { title: "Atelier Design Agency", category: "Agency", type: "Hero", file: "Atelier_Design_Agency_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(67).webp", tags: ["Agency", "Serif", "Video"], gradient: "from-neutral-200 via-neutral-500 to-black" },
+  { title: "Sentinel AI 3D Hero", category: "SaaS", type: "Hero", file: "Sentinel_AI_Spline_Hero.md", preview: "https://motionsites.ai/assets/hero-sentinel-ai-preview-BXas7Q1_.gif", tags: ["Security", "Spline 3D", "Dark"], gradient: "from-lime-300 via-neutral-700 to-[#141414]" },
+  { title: "TinyTrails 404 Screen", category: "Component", type: "Component", file: "TinyTrails_404_Screen.md", preview: "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260714_015111_b6301eeb-0a2c-4b2d-b9d2-238eaa3c099e.mp4", tags: ["404", "Kids", "Playful"], gradient: "from-orange-200 via-orange-500 to-[#7a2f0b]" },
   { title: "SkyElite Private Jet", category: "Landing Page", type: "Hero", file: "SkyElite_Private_Jet_Hero.md", preview: "https://motionsites.ai/assets/hero-skyelite-preview-DHaZIgUv.gif", tags: ["Aviation", "Luxury", "Video"], gradient: "from-slate-100 via-slate-400 to-[#202A36]" },
   { title: "Alwayzz Creative", category: "Agency", type: "Hero", file: "Alwayzz_Creative_Agency_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/prompts%20(i've%20added%20them%20to%20the%20motionsites)/agencygradientArea.mp4", tags: ["Agency", "Serif", "Minimal"], gradient: "from-white via-neutral-300 to-neutral-700" },
   { title: "Password Vault Hero", category: "SaaS", type: "Hero", file: "Password_Manager_Video_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(68).webp", tags: ["Security", "Video", "Purple"], gradient: "from-violet-200 via-violet-600 to-[#192837]" },
@@ -306,6 +311,11 @@ const AVAILABLE_FILES = new Set([
   "CloudB_Sneaker_Hero.md",
   "Labs_ISP_Hero.md",
   "Muse_Editorial_Gallery.md",
+  "Convix_PR_Software_Hero.md",
+  "Michael_Smith_Portfolio_Landing.md",
+  "Atelier_Design_Agency_Hero.md",
+  "Sentinel_AI_Spline_Hero.md",
+  "TinyTrails_404_Screen.md",
   "SkyElite_Private_Jet_Hero.md",
   "Alwayzz_Creative_Agency_Hero.md",
   "Password_Manager_Video_Hero.md",
