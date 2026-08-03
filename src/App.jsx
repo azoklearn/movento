@@ -38,14 +38,41 @@ const lang = (() => {
     }
     const stored = window.localStorage.getItem("movento_lang");
     if (stored === "en" || stored === "fr") return stored;
+    // Nobody chose: follow the browser. Defaulting to French meant every
+    // English-speaking visitor landed on a page they could not read, with the
+    // only way out a link buried in the footer.
+    const preferred = window.navigator.languages?.[0] || window.navigator.language || "";
+    if (preferred && !preferred.toLowerCase().startsWith("fr")) return "en";
   } catch {
-    // No storage (private mode) — fall through to the default.
+    // No storage or no navigator — fall through to the default.
   }
   return "fr";
 })();
 // Keep the declared language in step with what is actually rendered.
 try { document.documentElement.lang = lang; } catch { /* no DOM (SSR/tests) */ }
 function t(en, fr) { return lang === "fr" ? fr : en; }
+// API errors ship in both languages; show the visitor theirs.
+function apiError(data, fallback) {
+  const message = lang === "fr" ? data?.error : data?.errorEn || data?.error;
+  return message || fallback;
+}
+
+// Language switch. Lives in the header on every page: buried in the footer it
+// was unreachable for the visitor who most needs it — the one who cannot read
+// the page. Full reload on purpose, `lang` is resolved once at module load.
+function LangSwitch({ className = "" }) {
+  const other = lang === "fr" ? "en" : "fr";
+  return (
+    <a
+      href={`?lang=${other}`}
+      hrefLang={other}
+      aria-label={lang === "fr" ? "Switch to English" : "Passer en français"}
+      className={`rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/45 transition hover:border-white/25 hover:text-[#EDE9E0] ${className}`}
+    >
+      {other}
+    </a>
+  );
+}
 
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
@@ -594,7 +621,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         });
         let d = {};
         try { d = await r.json(); } catch { d = {}; }
-        if (!r.ok) throw new Error(d.error || `Erreur serveur paiement (${r.status}).`);
+        if (!r.ok) throw new Error(apiError(d, t(`Payment server error (${r.status}).`, `Erreur serveur paiement (${r.status}).`)));
         // Referred visitors go to Whop's hosted checkout even when the embed is
         // available: the affiliate code rides on the URL (a=...), which is the
         // only path that credits the commission for certain.
@@ -602,7 +629,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, error: "" }); return; }
         // No embeddable plan id configured — gracefully use the hosted page.
         if (d.checkoutUrl) { window.location.assign(d.checkoutUrl); return; }
-        throw new Error("Checkout indisponible pour cette offre.");
+        throw new Error(t("Checkout is unavailable for this plan.", "Checkout indisponible pour cette offre."));
       } catch (e) {
         if (alive) setLoad({ loading: false, planId: "", error: getCheckoutErrorMessage(e) });
       }
@@ -851,9 +878,9 @@ function validatePlanId(planId) {
 
 function getCheckoutErrorMessage(error) {
   if (error?.name === "TypeError") {
-    return "Le service de paiement Whop n'est pas joignable. Vérifie les liens de checkout Whop dans les variables Vercel.";
+    return t("The Whop payment service cannot be reached. Check the Whop checkout links in the Vercel variables.", "Le service de paiement Whop n'est pas joignable. Vérifie les liens de checkout Whop dans les variables Vercel.");
   }
-  return error?.message || "Impossible de lancer le paiement pour le moment.";
+  return error?.message || t("Unable to start the payment right now.", "Impossible de lancer le paiement pour le moment.");
 }
 
 function getStoredAccessEmail() {
@@ -978,13 +1005,13 @@ export default function MoventoSite() {
     if (!sessionId) return;
 
     async function confirmCheckoutSession() {
-      setAccessStatus({ loading: true, message: "Confirmation du paiement Whop...", error: "" });
+      setAccessStatus({ loading: true, message: t("Confirming your Whop payment…", "Confirmation du paiement Whop…"), error: "" });
 
       try {
         const response = await fetch(`${API_BASE_URL}/api/checkout-session?session_id=${encodeURIComponent(sessionId)}`);
         const data = await response.json();
 
-        if (!response.ok || !data.hasAccess) throw new Error(data.error || "Paiement non confirmé.");
+        if (!response.ok || !data.hasAccess) throw new Error(apiError(data, t("Payment not confirmed.", "Paiement non confirmé.")));
 
         window.localStorage.setItem("movento_access_email", data.email);
         setAccessEmail(data.email);
@@ -1028,7 +1055,7 @@ export default function MoventoSite() {
       });
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || "Unable to verify access.");
+      if (!response.ok) throw new Error(apiError(data, t("Unable to verify access.", "Impossible de vérifier l'accès.")));
 
       setHasPremiumAccess(Boolean(data.hasAccess));
       setAccessEmail(normalizedEmail);
@@ -1062,9 +1089,9 @@ export default function MoventoSite() {
     const msg = String(error?.message || "");
     let message;
     if (msg === "Prompt not found") {
-      message = "Prompt introuvable sur le serveur (erreur 404). Ce n'est pas votre presse-papiers — signalez-le nous.";
+      message = t("Prompt not found on the server (404). This is not your clipboard — please let us know.", "Prompt introuvable sur le serveur (erreur 404). Ce n'est pas votre presse-papiers — signalez-le nous.");
     } else if (name === "TypeError" || msg.toLowerCase().includes("fetch") || msg.toLowerCase().includes("network")) {
-      message = "Connexion au serveur impossible. Vérifiez votre réseau et réessayez.";
+      message = t("Cannot reach the server. Check your connection and try again.", "Connexion au serveur impossible. Vérifiez votre réseau et réessayez.");
     } else {
       message = `Copie bloquée par votre navigateur (${name || "NotAllowedError"}). Réessayez, ou copiez depuis un autre navigateur (Chrome).`;
     }
@@ -1278,7 +1305,10 @@ export default function MoventoSite() {
           <a href="#how" className="transition hover:text-[#EDE9E0]">{t("Guide", "Guide")}</a>
           <a href="#faq" className="transition hover:text-[#EDE9E0]">FAQ</a>
         </nav>
-        <a href="/pricing" className="hidden rounded-full border border-white/15 bg-[#08080A] px-5 py-2.5 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]  md:inline-block">{t("Get started", "Commencer")}</a>
+        <div className="hidden items-center gap-3 md:flex">
+          <LangSwitch />
+          <a href="/pricing" className="rounded-full border border-white/15 bg-[#08080A] px-5 py-2.5 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Get started", "Commencer")}</a>
+        </div>
         <button onClick={() => setMobileMenuOpen((open) => !open)} aria-label={t("Menu", "Menu")} aria-expanded={mobileMenuOpen} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#121214] text-white/60 shadow-sm transition hover:border-white/25 md:hidden">
           <Icon name={mobileMenuOpen ? "close" : "menu"} className="h-5 w-5" />
         </button>
@@ -1295,6 +1325,7 @@ export default function MoventoSite() {
                 <a key={link.label} href={link.href} onClick={() => setMobileMenuOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-medium text-white/60 transition hover:bg-white/[0.03] hover:text-[#EDE9E0]">{link.label}</a>
               ))}
               <a href="/pricing" onClick={() => setMobileMenuOpen(false)} className="mt-1 rounded-2xl bg-[#08080A] px-4 py-3 text-center text-sm font-semibold text-white shadow-none transition hover:bg-[#141418]">{t("Get started", "Commencer")}</a>
+              <div className="mt-1 flex justify-center"><LangSwitch /></div>
             </motion.nav>
           )}
         </AnimatePresence>
@@ -1532,7 +1563,10 @@ function SuccessPage() {
 
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <a href="/"><Logo /></a>
-        <a href="/#prompts" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">{t("Go to the gallery", "Aller à la galerie")} →</a>
+        <div className="flex items-center gap-3">
+          <LangSwitch />
+          <a href="/#prompts" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">{t("Go to the gallery", "Aller à la galerie")} →</a>
+        </div>
       </header>
 
       <section className="relative z-10 mx-auto max-w-2xl px-6 pb-24 pt-8 lg:px-8">
@@ -1610,7 +1644,10 @@ function MentionsLegales() {
       </div>
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <a href="/"><Logo /></a>
-        <a href="/" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">← {t("Back", "Retour")}</a>
+        <div className="flex items-center gap-3">
+          <LangSwitch />
+          <a href="/" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">← {t("Back", "Retour")}</a>
+        </div>
       </header>
       <section className="relative z-10 mx-auto max-w-3xl px-6 pb-24 pt-12 lg:px-8">
         <h1 className="text-4xl font-bold tracking-tight text-[#EDE9E0] md:text-5xl">{t("Legal notice", "Mentions légales")}</h1>
@@ -1693,42 +1730,49 @@ const TESTIMONIALS = [
     name: null,
     highlight: t("First site sold €800", "Premier site vendu 800 €"),
     quote: "Je n'avais jamais codé de ma vie. Après avoir utilisé les prompts de Movento, j'ai créé mon premier site et je l'ai vendu 800 €. Je ne pensais vraiment pas que c'était possible.",
+    quoteEn: "I had never written a line of code in my life. After using Movento's prompts I built my first site and sold it for €800. I really did not think that was possible.",
   },
   {
     id: "vente-1000",
     name: null,
     highlight: t("€1,000 for a first project", "1 000 € pour un premier projet"),
     quote: "Je partais de zéro en développement. Grâce aux prompts, j'ai pu livrer un site professionnel à un client et encaisser 1 000 € pour mon premier projet.",
+    quoteEn: "I was starting from zero in development. Thanks to the prompts I delivered a professional site to a client and took €1,000 for my first project.",
   },
   {
     id: "vente-900",
     name: null,
     highlight: t("First sale at €900", "Première vente à 900 €"),
     quote: "J'ai lancé mon activité sans compétences techniques. Les prompts m'ont permis de créer des sites que mes clients adorent, et j'ai signé ma première vente à 900 €.",
+    quoteEn: "I started my business with no technical skills. The prompts let me build sites my clients love, and I closed my first sale at €900.",
   },
   {
     id: "plusieurs-projets",
     name: null,
     highlight: t("Several projects sold", "Plusieurs projets vendus"),
     quote: "Avant, je n'osais pas proposer de création de sites parce que je ne savais pas coder. Aujourd'hui, j'ai déjà vendu plusieurs projets en utilisant uniquement les prompts.",
+    quoteEn: "I used to avoid offering website work because I could not code. Today I have already sold several projects using nothing but the prompts.",
   },
   {
     id: "thomas-morel",
     name: "Thomas Morel",
     role: t("Freelance web designer", "Freelance web designer"),
     quote: "Franchement impressionné. J'ai créé un site premium avec Claude en moins d'une heure grâce aux prompts de Movento. Le résultat était largement au niveau de ce que je faisais en plusieurs jours. J'ai même signé un client quelques jours après. L'investissement est rentabilisé très vite.",
+    quoteEn: "Genuinely impressed. I built a premium site with Claude in under an hour using Movento's prompts. The result easily matched what used to take me several days. I even signed a client a few days later. It pays for itself very quickly.",
   },
   {
     id: "lucas-bernard",
     name: "Lucas Bernard",
     role: t("Web agency", "Agence web"),
     quote: "On utilise Movento pour accélérer la création de maquettes et gagner du temps sur les premiers jets. Les prompts sont très bien structurés et permettent d'obtenir des designs modernes sans partir d'une page blanche. C'est devenu un outil indispensable dans notre workflow.",
+    quoteEn: "We use Movento to speed up mockups and save time on first drafts. The prompts are very well structured and produce modern designs without starting from a blank page. It has become essential to our workflow.",
   },
   {
     id: "maxime-rousse",
     name: "Maxime Rousse",
     role: t("Beginner", "Débutant"),
     quote: "Je n'avais quasiment aucune expérience avec Claude avant de découvrir Movento. Les prompts sont simples à utiliser et le rendu est bluffant. J'ai réussi à créer mon premier site professionnel en quelques heures seulement. Je recommande à tous ceux qui veulent vendre des sites rapidement.",
+    quoteEn: "I had almost no experience with Claude before finding Movento. The prompts are simple to use and the result is stunning. I built my first professional site in a matter of hours. I recommend it to anyone who wants to sell sites fast.",
   },
 ];
 
@@ -1795,7 +1839,10 @@ function TestimonialCard({ review, compact = false }) {
           <Icon name="zap" className="h-3 w-3" /> {review.highlight}
         </span>
       )}
-      <blockquote className={`relative flex-1 text-white/75 ${compact ? "mt-3 text-[13px] leading-6" : "mt-4 text-[15px] leading-7"}`}>“{review.quote}”</blockquote>
+      <blockquote className={`relative flex-1 text-white/75 ${compact ? "mt-3 text-[13px] leading-6" : "mt-4 text-[15px] leading-7"}`}>
+        “{lang === "fr" ? review.quote : review.quoteEn || review.quote}”
+        {lang !== "fr" && review.quoteEn && <span className="mt-2 block text-[11px] text-white/30">Translated from French</span>}
+      </blockquote>
       <figcaption className={`relative flex items-center gap-3 border-t border-white/[0.07] ${compact ? "mt-4 pt-4" : "mt-6 pt-5"}`}>
         <span className={`grid flex-none place-items-center rounded-full bg-white/10 text-[#EDE9E0] ${compact ? "h-8 w-8" : "h-10 w-10"}`}>
           {review.name ? <span className={compact ? "text-[10px] font-bold" : "text-xs font-bold"}>{initialsOf(review.name)}</span> : <span aria-hidden="true" className={`font-serif leading-none ${compact ? "text-lg" : "text-xl"}`}>”</span>}
@@ -1927,6 +1974,7 @@ function PricingPage() {
           <a href="/" className="transition hover:opacity-80"><Logo /></a>
           <div className="flex items-center gap-2">
             <a href="/#prompts" className="hidden rounded-full px-4 py-2.5 text-sm font-medium text-white/55 transition hover:text-[#EDE9E0] sm:inline-block">{t("Catalog", "Catalogue")}</a>
+            <LangSwitch />
             <a href="/" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">← {t("Back", "Retour")}</a>
           </div>
         </div>
@@ -2177,7 +2225,7 @@ function SubscriptionPage() {
         body: JSON.stringify({ email: clean(email) }),
       });
       const d = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(d.error || t("Cancellation failed. Please retry.", "La r\u00E9siliation a \u00E9chou\u00E9. R\u00E9essaie."));
+      if (!response.ok) throw new Error(apiError(d, t("Cancellation failed. Please retry.", "La r\u00E9siliation a \u00E9chou\u00E9. R\u00E9essaie.")));
       setCancel({ confirming: false, loading: false, done: true, error: "", renewalDate: d.renewalDate || null });
     } catch (error) {
       setCancel((c) => ({ ...c, loading: false, error: error.message }));
@@ -2221,7 +2269,10 @@ function SubscriptionPage() {
 
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <a href="/"><Logo /></a>
-        <a href="/" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">← {t("Back", "Retour")}</a>
+        <div className="flex items-center gap-3">
+          <LangSwitch />
+          <a href="/" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">← {t("Back", "Retour")}</a>
+        </div>
       </header>
 
       <section className="relative z-10 mx-auto max-w-2xl px-6 pb-24 pt-8 lg:px-8">

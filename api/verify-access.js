@@ -12,6 +12,6 @@ export default async function handler(req, res) {
     return res.json({ hasAccess: await customerHasWhopAccess(email) });
   } catch (error) {
     console.error("Access verification failed:", error);
-    return res.status(500).json({ error: "Impossible de vérifier l’accès." });
+    return res.status(500).json({ error: "Impossible de vérifier l’accès.", errorEn: "Unable to verify access." });
   }
 }

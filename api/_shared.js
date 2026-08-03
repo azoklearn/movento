@@ -367,5 +367,5 @@ export async function cancelWhopMembership(email) {
 
 export function methodNotAllowed(res, allowed = "POST") {
   res.setHeader("Allow", allowed);
-  return res.status(405).json({ error: "Méthode non autorisée." });
+  return res.status(405).json({ error: "Méthode non autorisée.", errorEn: "Method not allowed." });
 }

@@ -11,6 +11,6 @@ export default async function handler(req, res) {
     return res.json(info);
   } catch (error) {
     console.error("subscription-status error:", error);
-    return res.status(500).json({ error: "Impossible de récupérer l'abonnement." });
+    return res.status(500).json({ error: "Impossible de récupérer l'abonnement.", errorEn: "Unable to load the subscription." });
   }
 }
