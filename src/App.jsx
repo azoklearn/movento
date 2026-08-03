@@ -1740,10 +1740,6 @@ const TESTIMONIALS = [
   },
 ];
 
-// The quotes that name an amount sit next to the plan cards, where the price is
-// the question being asked; the signed ones keep their own block further down.
-const EARNINGS_TESTIMONIALS = TESTIMONIALS.filter((review) => review.highlight);
-const NAMED_TESTIMONIALS = TESTIMONIALS.filter((review) => review.name);
 
 function PricingShowcase({ onPick }) {
   const items = useMemo(
@@ -1873,17 +1869,19 @@ function PromoReminder() {
   }
 
   return (
-    <div className="mx-auto mb-5 flex w-fit max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl border border-dashed border-white/20 bg-white/[0.05]/70 px-4 py-3 text-center backdrop-blur">
-      <span className="text-sm font-medium text-[#EDE9E0]">{t("Your −10% code", "Ton code −10%")}</span>
+    // One quiet line rather than a dashed coupon box: the code has to be
+    // available, not shouted, on a page whose job is the three cards.
+    <div className="mx-auto mb-8 flex w-fit max-w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-center">
+      <span className="text-xs uppercase tracking-[0.14em] text-white/40">{t("Code −10%", "Code −10%")}</span>
       <button
         onClick={copy}
-        className="group inline-flex items-center gap-2 rounded-lg border border-white/20 bg-[#121214] px-3 py-1.5 font-mono text-sm font-bold tracking-[0.18em] text-white/80 transition hover:border-white/35 hover:bg-white/[0.06]"
+        className="group inline-flex items-center gap-2 border-b border-dotted border-white/25 pb-0.5 font-mono text-sm font-semibold tracking-[0.18em] text-[#EDE9E0] transition hover:border-white/50"
         title={t("Copy the code", "Copier le code")}
       >
         {code}
-        <Icon name={copied ? "check" : "copy"} className={`h-3.5 w-3.5 ${copied ? "text-emerald-300" : "text-white/40 group-hover:text-white/80"}`} />
+        <Icon name={copied ? "check" : "copy"} className={`h-3.5 w-3.5 ${copied ? "text-emerald-300" : "text-white/35 group-hover:text-white/70"}`} />
       </button>
-      <span className="text-xs text-white/45">{copied ? t("Copied", "Copié") : t("to apply at checkout", "à appliquer au paiement")}</span>
+      <span className="text-xs text-white/35">{copied ? t("Copied", "Copié") : t("at checkout", "au paiement")}</span>
     </div>
   );
 }
@@ -1954,37 +1952,22 @@ function PricingPage() {
           </div>
         </motion.div>
 
-        {/* Plans and proof share one row: the price and the "I sold it for
-            800 €" answer to it should be readable without scrolling between
-            them. Below xl the rail drops under the cards rather than squeezing
-            them — the cards are what the page is for. */}
-        <div className="mt-14 grid items-start gap-8 xl:grid-cols-[minmax(0,900px)_minmax(0,300px)] xl:justify-center">
-          <div>
-            <PromoReminder />
-            <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 gap-5 ${planGridWidth} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
-              {visiblePlans.map((plan) => (
-                <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
-              ))}
-            </motion.div>
-            <Reassurance className="mt-9" />
-          </div>
-
-          {Boolean(EARNINGS_TESTIMONIALS.length) && (
-            <motion.aside initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.2, ease: [0.22, 1, 0.36, 1] }} className="mx-auto w-full max-w-3xl xl:max-w-none">
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">{t("They already made it back", "Ils l'ont déjà rentabilisé")}</h2>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-                {EARNINGS_TESTIMONIALS.map((review) => (
-                  <TestimonialCard key={review.id} review={review} compact />
-                ))}
-              </div>
-            </motion.aside>
-          )}
+        {/* One column, centred: the offer is the page. Proof lives further down
+            so nothing competes with the cards at the moment of the decision. */}
+        <div className="mt-14">
+          <PromoReminder />
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 gap-5 ${planGridWidth} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
+            {visiblePlans.map((plan) => (
+              <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
+            ))}
+          </motion.div>
+          <Reassurance className="mt-9" />
         </div>
       </section>
 
       <PricingShowcase onPick={scrollToPlans} />
 
-      <Testimonials items={NAMED_TESTIMONIALS} />
+      <Testimonials />
 
       <footer className="relative z-10 border-t border-white/10 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
