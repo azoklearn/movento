@@ -15,9 +15,9 @@ const SUPPORT_URL = "https://www.tiktok.com/@weblover011";
 const SUPPORT_HANDLE = "@weblover011";
 // Free bonus ebook handed to buyers on the post-payment page.
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
-// Exclusive promo code surfaced at the end of the welcome quiz (create it in Whop
-// for it to actually apply at checkout). Visitors arriving through an affiliate
-// link get their own code, so their redemptions can be told apart.
+// Promo code shown on the pricing page (create it in Whop for it to actually
+// apply at checkout). Visitors arriving through an affiliate link get their own
+// code, so their redemptions can be told apart.
 const PROMO_CODE = "HERO10";
 const AFFILIATE_PROMO_CODE = "MOVENTO10";
 // Customer rating, kept in one place: it is shown on the page AND declared as
@@ -888,120 +888,6 @@ if (typeof window !== "undefined" && !window.__MOVENTO_TESTS_RAN__) {
   runSelfTests();
 }
 
-// Welcome quiz — a short, tap-only, non-skippable onboarding shown once per device.
-// Goal is conviction, not lead capture: every answer reassures the visitor that
-// Movento fits their goal, then the final screen teases the bonus ebook + promo code.
-const QUIZ_GOALS = [
-  { key: "self", emoji: "🚀", label: t("Launch my own site / business", "Lancer mon propre site / business"), affirm: t("Your project deserves a site that turns heads. Premium result, without writing a line of code.", "Ton projet mérite un site qui envoie. Rendu premium, sans écrire une ligne de code.") },
-  { key: "clients", emoji: "💼", label: t("Build sites for clients", "Créer des sites pour des clients"), affirm: t("Deliver agency-grade sites in minutes. Your clients will love it.", "Livre des sites dignes d'une agence en quelques minutes. Tes clients vont adorer.") },
-  { key: "resell", emoji: "💰", label: t("Resell turnkey sites", "Revendre des sites clé en main"), affirm: t("Every prompt is a resellable site. Your margin is the time you save.", "Chaque prompt = un site revendable. Ta marge, c'est le temps que tu gagnes.") },
-  { key: "learn", emoji: "🎨", label: t("Learn / level up", "Apprendre / me perfectionner"), affirm: t("Start from an already-pro site and tweak it — the best way to progress.", "Pars d'un site déjà pro et bidouille-le — la meilleure façon de progresser.") },
-];
-
-const QUIZ_LEVELS = [
-  { key: "none", emoji: "🌱", label: t("Zero — I'm just starting", "Zéro, je débute"), affirm: t("Perfect: not a single line to write. Copy, paste, it's online.", "Parfait : zéro ligne à écrire. Tu copies, tu colles, c'est en ligne.") },
-  { key: "some", emoji: "⚡", label: t("I get by a little", "Je me débrouille un peu"), affirm: t("The heavy lifting is done — you just personalize and publish.", "Le gros du travail est déjà fait — tu personnalises et tu publies.") },
-  { key: "pro", emoji: "💻", label: t("I already code", "Je code déjà"), affirm: t("Save hours: no more blank page, start from a pro base.", "Gagne des heures : finie la page blanche, tu pars d'une base pro.") },
-];
-
-function WelcomeQuiz({ onDone }) {
-  const [step, setStep] = useState(0); // 0 = goal, 1 = level, 2 = final
-  const [goal, setGoal] = useState(null);
-  const [level, setLevel] = useState(null);
-  // Read once on mount: the code shown must not change under the visitor's eyes.
-  const [referred] = useState(() => Boolean(getRef()));
-  const promoCode = referred ? AFFILIATE_PROMO_CODE : PROMO_CODE;
-
-  useEffect(() => { track("quiz_shown"); }, []);
-
-  function pickGoal(g) { setGoal(g); track("quiz_goal", { goal: g.key }); setStep(1); }
-  function pickLevel(l) { setLevel(l); track("quiz_level", { level: l.key }); setStep(2); }
-  function finish() { track("quiz_completed", { goal: goal?.key || "", level: level?.key || "", ...refProps(), promo: promoCode }); onDone(); }
-  // Escape hatch on both questions: a visitor who only wants the gallery should
-  // never have to answer to reach it.
-  function skipQuiz() { track("quiz_skipped", { step, ...refProps() }); onDone(); }
-  const optionClass = "group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-left shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:shadow-md";
-
-  return (
-    <motion.div key="quiz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] overflow-y-auto bg-white text-slate-900">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="mv-aurora absolute left-1/2 top-[-15%] h-[440px] w-[560px] -translate-x-1/2 rounded-full bg-blue-400/20 blur-[130px]" />
-        <div className="absolute bottom-[-12%] right-[-8%] h-[380px] w-[380px] rounded-full bg-indigo-300/20 blur-[130px]" />
-      </div>
-
-      <div className="relative z-10 mx-auto flex min-h-full max-w-xl flex-col px-5 py-6 sm:px-6">
-        <div className="flex items-center justify-between">
-          <Logo />
-          {step < 2 && <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-700"><Icon name="gift" className="h-3.5 w-3.5" /> {t("Free bonus at the end", "Bonus offert à la fin")}</span>}
-        </div>
-
-        <div className="flex flex-1 flex-col justify-center py-8">
-          <AnimatePresence mode="wait">
-            {step === 0 && (
-              <motion.div key="q1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{t("Question 1 / 2", "Question 1 / 2")}</p>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{t("What brings you to Movento?", "Qu'est-ce qui t'amène sur Movento ?")}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">{t("Whatever your answer, you're in the right place.", "Peu importe ta réponse, tu es au bon endroit.")}</p>
-                <div className="mt-5 flex flex-col gap-3">
-                  {QUIZ_GOALS.map((g) => (
-                    <button key={g.key} onClick={() => pickGoal(g)} className={optionClass}>
-                      <span className="text-2xl">{g.emoji}</span>
-                      <span className="flex-1 text-sm font-medium text-slate-800">{g.label}</span>
-                      <Icon name="arrow" className="h-4 w-4 flex-none text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-500" />
-                    </button>
-                  ))}
-                </div>
-                <button onClick={skipQuiz} className="mt-4 w-full rounded-2xl px-4 py-3 text-center text-sm font-medium text-slate-400 transition hover:bg-slate-50 hover:text-slate-700">{t("I just want to see the prompts", "Je veux juste voir les prompts")} →</button>
-              </motion.div>
-            )}
-
-            {step === 1 && (
-              <motion.div key="q2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setStep(0)} className="text-xs text-slate-400 transition hover:text-slate-700">← {t("Back", "Retour")}</button>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{t("Question 2 / 2", "Question 2 / 2")}</p>
-                </div>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{t("Your level with code?", "Ton niveau en code ?")}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">{t("No wrong answer — Movento adapts to every level.", "Aucune mauvaise réponse — Movento s'adapte à tous les niveaux.")}</p>
-                <div className="mt-5 flex flex-col gap-3">
-                  {QUIZ_LEVELS.map((l) => (
-                    <button key={l.key} onClick={() => pickLevel(l)} className={optionClass}>
-                      <span className="text-2xl">{l.emoji}</span>
-                      <span className="flex-1 text-sm font-medium text-slate-800">{l.label}</span>
-                      <Icon name="arrow" className="h-4 w-4 flex-none text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-500" />
-                    </button>
-                  ))}
-                </div>
-                <button onClick={skipQuiz} className="mt-4 w-full rounded-2xl px-4 py-3 text-center text-sm font-medium text-slate-400 transition hover:bg-slate-50 hover:text-slate-700">{t("I just want to see the prompts", "Je veux juste voir les prompts")} →</button>
-              </motion.div>
-            )}
-
-            {step === 2 && (
-              <motion.div key="final" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-                <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"><Icon name="check" className="h-6 w-6" /></div>
-                <h2 className="mt-4 text-center text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">{t("Whatever your goal, you're in the right place. 🎯", "Peu importe ton objectif, tu es au bon endroit. 🎯")}</h2>
-                {goal && <p className="mt-3 text-center text-sm leading-6 text-slate-600">{goal.affirm}</p>}
-                {level && <p className="mt-1.5 text-center text-sm leading-6 text-slate-400">{level.affirm}</p>}
-
-                <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t("Your exclusive code", "Ton code exclusif")}</p>
-                  <div className="mt-2 flex items-center justify-center gap-2.5">
-                    <span className="rounded-lg border border-dashed border-blue-300 bg-blue-50 px-4 py-2 font-mono text-lg font-bold tracking-[0.2em] text-blue-700">{promoCode}</span>
-                    <span className="text-sm font-semibold text-emerald-600">−10%</span>
-                  </div>
-                  <p className="mt-2 text-[11px] text-slate-400">{t("Apply it at checkout — reserved, don't miss it.", "À appliquer au paiement — réservé, profites-en.")}</p>
-                </div>
-
-                <button onClick={finish} className="mt-4 w-full rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:scale-[1.01]">{t("See the prompts", "Voir les prompts")} →</button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
 export default function MoventoSite() {
   const [query, setQuery] = useState("");
   const [copiedCard, setCopiedCard] = useState("");
@@ -1047,10 +933,6 @@ export default function MoventoSite() {
   }, []);
 
   const [paywallItem, setPaywallItem] = useState(null); // the paid prompt that triggered the paywall
-  const [showQuiz, setShowQuiz] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try { return !window.localStorage.getItem("movento_quiz_done"); } catch { return false; }
-  });
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
@@ -1283,7 +1165,6 @@ export default function MoventoSite() {
   return (
     <main className="min-h-screen overflow-hidden bg-white text-slate-900">
       <AnimatePresence>
-        {showQuiz && <WelcomeQuiz onDone={() => { try { window.localStorage.setItem("movento_quiz_done", "1"); } catch (_) {} setShowQuiz(false); }} />}
         {showLeadModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowLeadModal(false)}>
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
@@ -1966,9 +1847,8 @@ function Testimonials({ items = TESTIMONIALS }) {
   );
 }
 
-// The quiz hands out a −10% code, then the visitor lands here a few clicks
-// later with nothing to remind them of it. Same rule as the quiz: an affiliate
-// visitor gets the affiliate code so redemptions stay tellable apart.
+// The −10% code, shown where it is used. An affiliate visitor gets the
+// affiliate code so redemptions stay tellable apart.
 function PromoReminder() {
   const [copied, setCopied] = useState(false);
   const code = getRef() ? AFFILIATE_PROMO_CODE : PROMO_CODE;
