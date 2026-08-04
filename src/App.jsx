@@ -77,6 +77,12 @@ function LangSwitch({ className = "" }) {
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Lumora Studio", category: "Agency", type: "Landing", file: "Lumora_Studio_Landing.md", preview: "https://storage.getlayers.ai/templates/lumora-preview.mp4", tags: ["Studio", "GSAP", "Editorial"], gradient: "from-amber-100 via-neutral-500 to-[#0b0b0c]" },
+  { title: "Flowstate Waitlist", category: "SaaS", type: "Hero", file: "Flowstate_Fluid_Waitlist.md", preview: "https://storage.getlayers.ai/templates/flowstate-4c494408e1-preview.mp4", tags: ["WebGL", "Fluid", "Waitlist"], gradient: "from-cyan-300 via-violet-500 to-[#04050c]" },
+  { title: "Laocoön Bronze Scroll", category: "Portfolio", type: "Landing", file: "Laocoon_Bronze_Scroll.md", preview: "https://storage.getlayers.ai/templates/laocoon-preview.mp4", tags: ["Three.js", "3D", "Art"], gradient: "from-amber-200 via-amber-700 to-[#0a0806]" },
+  { title: "Loopstack", category: "SaaS", type: "Landing", file: "Loopstack_Motion_Landing.md", preview: "https://storage.getlayers.ai/templates/loopstack-preview.mp4", tags: ["Video", "Motion", "Dark"], gradient: "from-rose-200 via-neutral-600 to-[#080808]" },
+  { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
+  { title: "Baseline Tennis Club", category: "Landing Page", type: "Landing", file: "Baseline_Tennis_Club.md", preview: "https://storage.getlayers.ai/templates/baseline-preview.mp4", tags: ["Sport", "Club", "Editorial"], gradient: "from-emerald-200 via-teal-600 to-[#04120e]" },
   { title: "Convix PR Software", category: "SaaS", type: "Hero", file: "Convix_PR_Software_Hero.md", preview: "https://motionsites.ai/assets/convix-software-hero-B6-tdnN6.gif", tags: ["SaaS", "Dashboard", "Video"], gradient: "from-orange-200 via-neutral-400 to-[#0b0f1a]" },
   { title: "Cosmic Portfolio", category: "Portfolio", type: "Landing", file: "Michael_Smith_Portfolio_Landing.md", preview: "https://motionsites.ai/assets/hero-portfolio-cosmic-preview-BpvWJ3Nc.gif", tags: ["Portfolio", "GSAP", "Parallax"], gradient: "from-sky-200 via-slate-600 to-[#0a0a0a]" },
   { title: "Atelier Design Agency", category: "Agency", type: "Hero", file: "Atelier_Design_Agency_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(67).webp", tags: ["Agency", "Serif", "Video"], gradient: "from-neutral-200 via-neutral-500 to-black" },
@@ -338,6 +344,12 @@ const AVAILABLE_FILES = new Set([
   "CloudB_Sneaker_Hero.md",
   "Labs_ISP_Hero.md",
   "Muse_Editorial_Gallery.md",
+  "Lumora_Studio_Landing.md",
+  "Flowstate_Fluid_Waitlist.md",
+  "Laocoon_Bronze_Scroll.md",
+  "Loopstack_Motion_Landing.md",
+  "Soda_3D_Flavor_Hero.md",
+  "Baseline_Tennis_Club.md",
   "Convix_PR_Software_Hero.md",
   "Michael_Smith_Portfolio_Landing.md",
   "Atelier_Design_Agency_Hero.md",
