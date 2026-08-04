@@ -26,11 +26,13 @@
     <meta name="twitter:title" content="Prompts IA pour créer un site internet — Movento" />
     <meta name="twitter:description" content="Copiez un prompt premium, collez-le dans votre outil IA, obtenez un site web moderne en quelques minutes. Sans coder." />
     <meta name="twitter:image" content="https://movento.dev/og.png" />
-    <!-- One source file for every icon slot. Versioned so a logo swap is not
+    <!-- Purpose-built icons rather than one 512px file squashed into every slot,
+         and a real favicon.ico so clients that request it by default do not get
+         index.html back through the SPA rewrite. Versioned so a logo swap is not
          served from the months-old favicon browsers cache aggressively. -->
-    <link rel="icon" type="image/png" href="/logo.png?v=3" />
-    <link rel="shortcut icon" type="image/png" href="/logo.png?v=3" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/logo.png?v=3" />
+    <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=3" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3" />
     <meta name="theme-color" content="#0A0A0B" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
