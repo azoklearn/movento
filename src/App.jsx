@@ -15,11 +15,6 @@ const SUPPORT_URL = "https://www.tiktok.com/@weblover011";
 const SUPPORT_HANDLE = "@weblover011";
 // Free bonus ebook handed to buyers on the post-payment page.
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
-// Promo code shown on the pricing page (create it in Whop for it to actually
-// apply at checkout). Visitors arriving through an affiliate link get their own
-// code, so their redemptions can be told apart.
-const PROMO_CODE = "HERO10";
-const AFFILIATE_PROMO_CODE = "MOVENTO10";
 // Customer rating, kept in one place: it is shown on the page AND declared as
 // AggregateRating in index.html, and Google drops the markup if the two disagree.
 const RATING_SCORE = "4.8";
@@ -1906,38 +1901,6 @@ function Testimonials({ items = TESTIMONIALS }) {
   );
 }
 
-// The −10% code, shown where it is used. An affiliate visitor gets the
-// affiliate code so redemptions stay tellable apart.
-function PromoReminder() {
-  const [copied, setCopied] = useState(false);
-  const code = getRef() ? AFFILIATE_PROMO_CODE : PROMO_CODE;
-
-  async function copy() {
-    const ok = await copyTextToClipboard(code);
-    if (!ok) return;
-    track("promo_code_copied", { code, ...refProps() });
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
-  }
-
-  return (
-    // One quiet line rather than a dashed coupon box: the code has to be
-    // available, not shouted, on a page whose job is the three cards.
-    <div className="mx-auto mb-8 flex w-fit max-w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-center">
-      <span className="text-xs uppercase tracking-[0.14em] text-white/40">{t("Code −10%", "Code −10%")}</span>
-      <button
-        onClick={copy}
-        className="group inline-flex items-center gap-2 border-b border-dotted border-white/25 pb-0.5 font-mono text-sm font-semibold tracking-[0.18em] text-[#EDE9E0] transition hover:border-white/50"
-        title={t("Copy the code", "Copier le code")}
-      >
-        {code}
-        <Icon name={copied ? "check" : "copy"} className={`h-3.5 w-3.5 ${copied ? "text-emerald-300" : "text-white/35 group-hover:text-white/70"}`} />
-      </button>
-      <span className="text-xs text-white/35">{copied ? t("Copied", "Copié") : t("at checkout", "au paiement")}</span>
-    </div>
-  );
-}
-
 function PricingPage() {
   const [checkoutPlan, setCheckoutPlan] = useState(null);
   // The prompt the visitor was trying to copy, carried over in ?from= so the
@@ -2020,7 +1983,6 @@ function PricingPage() {
         {/* One column, centred: the offer is the page. Proof lives further down
             so nothing competes with the cards at the moment of the decision. */}
         <div className="mt-14">
-          <PromoReminder />
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 gap-5 ${planGridWidth} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
             {visiblePlans.map((plan) => (
               <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
