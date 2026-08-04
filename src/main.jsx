@@ -21,9 +21,23 @@ if (typeof window !== "undefined") {
   if (ref && isFirstRefVisitOfSession()) track("affiliate_visit", { ref });
 }
 
+// Opening a prompt preview pushes /prompt/<slug> into the history, which the
+// analytics script counts as a page view. That buried the pages that matter
+// (/, /pricing) under one row per prompt. Drop those views — custom events are
+// kept, so prompt_copied and paywall_shown still report which prompt was
+// involved.
+function dropPromptPageviews(event) {
+  if (event.type !== "pageview") return event;
+  try {
+    return new URL(event.url).pathname.startsWith("/prompt/") ? null : event;
+  } catch {
+    return event;
+  }
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <App />
-    <Analytics />
+    <Analytics beforeSend={dropPromptPageviews} />
   </React.StrictMode>
 );
