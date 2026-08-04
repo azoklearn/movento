@@ -726,10 +726,9 @@ function Icon({ name, className = "h-4 w-4" }) {
 function Logo() {
   return (
     <span className="flex items-center gap-2.5 select-none">
-      {/* The mark is a blue gradient; greyscale keeps the ribbon's shading (a flat
-          white silhouette loses the overlap) while dropping the only colour left
-          on the page, and the brightness lift keeps it off a near-black canvas. */}
-      <img src="/logo.png?v=2" alt="" aria-hidden="true" width="36" height="36" className="h-9 w-9 flex-none object-contain grayscale brightness-[1.6]" />
+      {/* The mark ships black and white, so no filter: greyscaling it now would
+          only wash out the ribbon and lift the black tile off the page. */}
+      <img src="/logo.png?v=3" alt="" aria-hidden="true" width="36" height="36" className="h-9 w-9 flex-none object-contain" />
       <span className="text-[22px] font-bold tracking-[-0.03em] text-[#EDE9E0]">Movento</span>
     </span>
   );
