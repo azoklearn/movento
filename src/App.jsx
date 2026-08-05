@@ -72,6 +72,11 @@ function LangSwitch({ className = "" }) {
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Aurora Weather Dashboard", category: "SaaS", type: "Landing", file: "Aurora_Weather_Dashboard.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/wetherappArea.mp4", tags: ["Dashboard", "Liquid Glass", "Weather"], gradient: "from-teal-200 via-slate-600 to-[#04121b]" },
+  { title: "Bali Travel App", category: "Component", type: "Component", file: "Bali_Travel_App_Mockup.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/mobile%20apps/balitravel.mp4", tags: ["Mobile App", "Liquid Glass", "Travel"], gradient: "from-orange-200 via-neutral-500 to-[#0a0a0c]" },
+  { title: "F1 Racing Hub", category: "Landing Page", type: "Hero", file: "F1_Racing_Hub_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/F1%20Racing%20HubArea.mp4", tags: ["Sport", "Mobile App", "Count-up"], gradient: "from-yellow-300 via-red-700 to-[#0a0e1c]" },
+  { title: "iOS Dual Device Showcase", category: "Component", type: "Component", file: "iOS_Dual_Device_Showcase.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/perplxmobile.mp4", tags: ["Mobile App", "Paywall", "Video"], gradient: "from-sky-100 via-slate-400 to-[#14151d]" },
+  { title: "Coffee Profile Screen", category: "Component", type: "Component", file: "Coffee_Profile_Screen.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/uploaded/coffeorangeArea.mp4", tags: ["Mobile App", "Liquid Glass", "Warm"], gradient: "from-amber-200 via-orange-700 to-[#180a06]" },
   { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", demo: "https://fizz-magic.lovable.app", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
   { title: "Nexum AI Ops", category: "AI / SaaS", type: "Hero", file: "Nexum_AI_Ops_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/Agent%20Grove.mp4", demo: "https://nexum-cinematic-hub.lovable.app/", tags: ["AI Agents", "Glass", "Video"], gradient: "from-neutral-200 via-neutral-600 to-[#010101]" },
   { title: "Hunsy Car Rental", category: "Landing Page", type: "Hero", file: "Hunsy_Car_Rental_Hero.md", preview: "https://cdn.sceneai.art/landing-pages/abaa1a2b-c06b-49d5-a2c9-986674b6cdb7.mp4", demo: "https://grand-ride-intro.lovable.app/", tags: ["Automotive", "Video", "Glass"], gradient: "from-slate-200 via-slate-600 to-[#04060b]" },
@@ -341,6 +346,11 @@ const AVAILABLE_FILES = new Set([
   "CloudB_Sneaker_Hero.md",
   "Labs_ISP_Hero.md",
   "Muse_Editorial_Gallery.md",
+  "Aurora_Weather_Dashboard.md",
+  "Bali_Travel_App_Mockup.md",
+  "F1_Racing_Hub_Hero.md",
+  "iOS_Dual_Device_Showcase.md",
+  "Coffee_Profile_Screen.md",
   "Nexum_AI_Ops_Hero.md",
   "Hunsy_Car_Rental_Hero.md",
   "Lumora_Studio_Landing.md",
