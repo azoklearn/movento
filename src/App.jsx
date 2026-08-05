@@ -144,7 +144,7 @@ const prompts = [
   { title: "NHM Hero", category: "Landing Page", type: "Landing", file: "NHM_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(75).webp", tags: ["Museum", "Editorial", "Scroll"], gradient: "from-neutral-300 via-stone-600 to-[#0a0a0a]" },
   { title: "Love Bag Hero", category: "Landing Page", type: "Landing", file: "Love_Bag_Hero.md", preview: "https://admin.lafys.com/api/media/file/bags_EV1r0FBY.mp4", tags: ["E-commerce", "Scroll", "Video"], gradient: "from-amber-100 via-stone-300 to-neutral-900" },
   { title: "Pallet Ross", category: "Landing Page", type: "Landing", file: "Pallet_Ross_Landing.md", preview: "https://admin.lafys.com/api/media/file/4d32e42469657663b66a3c08aeccd70e_1DkflpwZ.mp4", tags: ["Marketplace", "Scroll", "Video"], gradient: "from-teal-200 via-red-400 to-neutral-900" },
-  { title: "VALMAX Hero", category: "Portfolio", type: "Landing", file: "Valmax_Hero.md", preview: "https://admin.lafys.com/api/media/file/valmax_NCXFcrZo.mp4", tags: ["Photography", "Stars", "Video"], gradient: "from-lime-300 via-neutral-700 to-black" },
+  { title: "Photographer Portfolio", category: "Portfolio", type: "Landing", file: "Valmax_Hero.md", preview: "https://admin.lafys.com/api/media/file/valmax_NCXFcrZo.mp4", demo: "https://valmax-bloom.lovable.app", tags: ["Photography", "Stars", "Video"], gradient: "from-lime-300 via-neutral-700 to-black" },
   { title: "Vibrant Wellness Hero", category: "Landing Page", type: "Hero", file: "Vibrant_Wellness_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/brainhealthArea.mp4", tags: ["Wellness", "Glass", "Video"], gradient: "from-emerald-200 via-teal-500 to-stone-900" },
   { title: "CoreOS Construction", category: "Landing Page", type: "Hero", file: "Coreos_Construction_Hero.md", preview: "https://cdn.sceneai.art/landing-pages/012e77ab-bb14-48ec-ac1e-a2d050b857e6.mov", tags: ["Construction", "Bold", "Video"], gradient: "from-stone-300 via-stone-600 to-black" },
   { title: "Axon Hero", category: "SaaS", type: "Hero", file: "Axon_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/naturezoompuirple.mp4", tags: ["AI", "Agents", "Video"], gradient: "from-violet-200 via-purple-500 to-[#1B133C]" },
@@ -1743,7 +1743,7 @@ const SHOWCASE_TITLES = [
   "Synergeus Fintech",
   "Marcus Bennet Portfolio",
   "Boomerang",
-  "VALMAX Hero",
+  "Photographer Portfolio",
   "Wandor Travel Hero",
 ];
 
