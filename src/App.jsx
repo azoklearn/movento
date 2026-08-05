@@ -1524,6 +1524,36 @@ export default function MoventoSite() {
   );
 }
 
+// The bonus ships with yearly and lifetime, not with monthly. A plan we failed
+// to identify gets it: refusing a paid-for bonus because a lookup came back
+// empty is the worse of the two mistakes.
+function earnedEbook(info) {
+  return info?.kind !== "monthly";
+}
+
+// Shown on /success right after the purchase AND on "My subscription", because
+// a buyer who closes the success tab had no other way to get the ebook back.
+function EbookCard({ className = "" }) {
+  return (
+    <div className={`rounded-[28px] border border-amber-400/25 bg-amber-400/[0.06] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7 ${className}`}>
+      <div className="flex items-center gap-3">
+        <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-amber-400 text-[#1a1400]"><Icon name="gift" className="h-4 w-4" /></span>
+        <h2 className="text-lg font-semibold text-[#EDE9E0]">{t("Your free bonus ebook", "Ton ebook bonus offert")}</h2>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-white/60">{t("The full playbook: build your site, sell it, find clients and manage everything — from A to Z.", "Le guide complet : créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.")}</p>
+      <a
+        href={EBOOK_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => track("ebook_opened", { ...refProps() })}
+        className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-6 py-3 text-sm font-semibold text-[#1a1400] transition hover:bg-amber-300 hover:scale-[1.02]"
+      >
+        <Icon name="download" className="h-4 w-4" /> {t("Download the ebook", "Télécharger l'ebook")}
+      </a>
+    </div>
+  );
+}
+
 function SuccessPage() {
   const [email, setEmail] = useState(getStoredAccessEmail);
   const [status, setStatus] = useState({ loading: false, ok: false, error: "" });
@@ -1572,7 +1602,7 @@ function SuccessPage() {
             body: JSON.stringify({ email: normalized }),
           });
           const subData = await sub.json().catch(() => ({}));
-          setEbookEarned(subData?.kind !== "monthly");
+          setEbookEarned(earnedEbook(subData));
           setSupportEarned(subData?.kind === "lifetime" || subData?.type === "lifetime");
         } catch { setEbookEarned(true); }
       } else {
@@ -1629,16 +1659,7 @@ function SuccessPage() {
         </div>
 
         {/* Bonus ebook — yearly and lifetime */}
-        {status.ok && ebookEarned && (
-          <div className="mt-4 rounded-[28px] border border-amber-400/25 bg-gradient-to-br from-amber-50 to-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_40px_-28px_rgba(217,119,6,0.25)] md:p-7">
-            <div className="flex items-center gap-3">
-              <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-amber-400 text-white"><Icon name="gift" className="h-4 w-4" /></span>
-              <h2 className="text-lg font-semibold text-[#EDE9E0]">{t("Your free bonus ebook", "Ton ebook bonus offert")}</h2>
-            </div>
-            <p className="mt-3 text-sm leading-6 text-white/60">{t("The full playbook: build your site, sell it, find clients and manage everything — from A to Z.", "Le guide complet : créer ton site, le vendre, trouver des clients et tout gérer — de A à Z.")}</p>
-            <a href={EBOOK_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-6 py-3 text-sm font-semibold text-[#1a1400] transition hover:bg-amber-300 hover:scale-[1.02]"><Icon name="download" className="h-4 w-4" /> {t("Download the ebook", "Télécharger l'ebook")}</a>
-          </div>
-        )}
+        {status.ok && ebookEarned && <EbookCard className="mt-4" />}
 
         {status.ok && supportEarned && (
           <div className="mt-4 rounded-[28px] border border-white/12 bg-[#121214] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7">
@@ -2347,6 +2368,9 @@ function SubscriptionPage() {
             )}
           </div>
         )}
+
+        {/* The ebook lives here too, so it survives closing the success page. */}
+        {status.checked && data && data.found && earnedEbook(data) && <EbookCard className="mt-4" />}
       </section>
 
       <footer className="relative z-10 border-t border-white/10 py-10">
