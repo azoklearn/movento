@@ -72,6 +72,7 @@ function LangSwitch({ className = "" }) {
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Nexum AI Ops", category: "AI / SaaS", type: "Hero", file: "Nexum_AI_Ops_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/Agent%20Grove.mp4", tags: ["AI Agents", "Glass", "Video"], gradient: "from-neutral-200 via-neutral-600 to-[#010101]" },
   { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", demo: "https://fizz-magic.lovable.app", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
   { title: "Hunsy Car Rental", category: "Landing Page", type: "Hero", file: "Hunsy_Car_Rental_Hero.md", preview: "https://cdn.sceneai.art/landing-pages/abaa1a2b-c06b-49d5-a2c9-986674b6cdb7.mp4", demo: "https://grand-ride-intro.lovable.app/", tags: ["Automotive", "Video", "Glass"], gradient: "from-slate-200 via-slate-600 to-[#04060b]" },
   { title: "Lumora Studio", category: "Agency", type: "Landing", file: "Lumora_Studio_Landing.md", preview: "https://storage.getlayers.ai/templates/lumora-preview.mp4", demo: "https://lumora-one-file-wonder.lovable.app/", tags: ["Studio", "GSAP", "Editorial"], gradient: "from-amber-100 via-neutral-500 to-[#0b0b0c]" },
@@ -340,6 +341,7 @@ const AVAILABLE_FILES = new Set([
   "CloudB_Sneaker_Hero.md",
   "Labs_ISP_Hero.md",
   "Muse_Editorial_Gallery.md",
+  "Nexum_AI_Ops_Hero.md",
   "Hunsy_Car_Rental_Hero.md",
   "Lumora_Studio_Landing.md",
   "Flowstate_Fluid_Waitlist.md",
