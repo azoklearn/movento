@@ -72,7 +72,7 @@ function LangSwitch({ className = "" }) {
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
-  { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
+  { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", demo: "https://fizz-magic.lovable.app", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
   { title: "Hunsy Car Rental", category: "Landing Page", type: "Hero", file: "Hunsy_Car_Rental_Hero.md", preview: "https://cdn.sceneai.art/landing-pages/abaa1a2b-c06b-49d5-a2c9-986674b6cdb7.mp4", tags: ["Automotive", "Video", "Glass"], gradient: "from-slate-200 via-slate-600 to-[#04060b]" },
   { title: "Lumora Studio", category: "Agency", type: "Landing", file: "Lumora_Studio_Landing.md", preview: "https://storage.getlayers.ai/templates/lumora-preview.mp4", tags: ["Studio", "GSAP", "Editorial"], gradient: "from-amber-100 via-neutral-500 to-[#0b0b0c]" },
   { title: "Flowstate Waitlist", category: "SaaS", type: "Hero", file: "Flowstate_Fluid_Waitlist.md", preview: "https://storage.getlayers.ai/templates/flowstate-4c494408e1-preview.mp4", tags: ["WebGL", "Fluid", "Waitlist"], gradient: "from-cyan-300 via-violet-500 to-[#04050c]" },
