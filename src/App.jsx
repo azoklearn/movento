@@ -72,6 +72,9 @@ function LangSwitch({ className = "" }) {
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Beauty Categories Grid", category: "E-commerce", type: "Component", file: "Beauty_Categories_Grid.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/animated%20(67).webp", tags: ["Beauty", "Video", "Scroll Reveal"], gradient: "from-rose-100 via-neutral-400 to-[#111]" },
+  { title: "S.P.D Red Manifesto", category: "Landing Page", type: "Component", file: "SPD_Red_Manifesto.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/animated%20(48).webp", tags: ["Editorial", "Bold", "Video"], gradient: "from-red-300 via-red-600 to-[#3a0000]" },
+  { title: "Max Reed Bento Features", category: "Portfolio", type: "Component", file: "Max_Reed_Bento_Features.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/animated%20(6).webp", tags: ["Bento", "Marquee", "Liquid Glass"], gradient: "from-teal-200 via-neutral-600 to-[#0a0a0a]" },
   { title: "Aurora Weather Dashboard", category: "SaaS", type: "Landing", file: "Aurora_Weather_Dashboard.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/wetherappArea.mp4", tags: ["Dashboard", "Liquid Glass", "Weather"], gradient: "from-teal-200 via-slate-600 to-[#04121b]" },
   { title: "Bali Travel App", category: "Component", type: "Component", file: "Bali_Travel_App_Mockup.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/mobile%20apps/balitravel.mp4", tags: ["Mobile App", "Liquid Glass", "Travel"], gradient: "from-orange-200 via-neutral-500 to-[#0a0a0c]" },
   { title: "F1 Racing Hub", category: "Landing Page", type: "Hero", file: "F1_Racing_Hub_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/F1%20Racing%20HubArea.mp4", tags: ["Sport", "Mobile App", "Count-up"], gradient: "from-yellow-300 via-red-700 to-[#0a0e1c]" },
@@ -346,6 +349,9 @@ const AVAILABLE_FILES = new Set([
   "CloudB_Sneaker_Hero.md",
   "Labs_ISP_Hero.md",
   "Muse_Editorial_Gallery.md",
+  "Beauty_Categories_Grid.md",
+  "SPD_Red_Manifesto.md",
+  "Max_Reed_Bento_Features.md",
   "Aurora_Weather_Dashboard.md",
   "Bali_Travel_App_Mockup.md",
   "F1_Racing_Hub_Hero.md",
