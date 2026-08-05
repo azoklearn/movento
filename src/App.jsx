@@ -405,7 +405,13 @@ function isPromptAvailable(item) {
 // entries whose markdown was never added to the repo — they must not be
 // rendered, opened by URL, featured in the showcase, or counted in the copy
 // that promises how many prompts a buyer gets.
-const availablePrompts = prompts.filter(isPromptAvailable);
+// Cards with a live build come first: a visitor who can click through to the
+// finished site is the one most likely to believe the prompt produces it.
+// The sort is stable, so within each group the hand-picked order of `prompts`
+// is preserved — and adding a `demo` to any entry promotes it on its own.
+const availablePrompts = prompts
+  .filter(isPromptAvailable)
+  .sort((a, b) => Number(Boolean(b.demo)) - Number(Boolean(a.demo)));
 
 // Nothing is given away any more: every prompt sits behind the paywall.
 // Putting a filename back here re-opens that prompt, and it must be added to
@@ -1035,8 +1041,8 @@ export default function MoventoSite() {
   }, [isSuccessPage]);
 
   const filtered = useMemo(() => {
-    // availablePrompts is kept newest-first (new entries are added at the top),
-    // so the array order is already the order the gallery shows.
+    // availablePrompts is already in display order: live-demo cards first,
+    // then newest-first (new entries are added at the top of `prompts`).
     return availablePrompts.filter((p) =>
       `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase()),
     );
