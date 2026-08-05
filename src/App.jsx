@@ -78,7 +78,7 @@ const prompts = [
   { title: "Flowstate Waitlist", category: "SaaS", type: "Hero", file: "Flowstate_Fluid_Waitlist.md", preview: "https://storage.getlayers.ai/templates/flowstate-4c494408e1-preview.mp4", tags: ["WebGL", "Fluid", "Waitlist"], gradient: "from-cyan-300 via-violet-500 to-[#04050c]" },
   { title: "Laocoön Bronze Scroll", category: "Portfolio", type: "Landing", file: "Laocoon_Bronze_Scroll.md", preview: "https://storage.getlayers.ai/templates/laocoon-preview.mp4", tags: ["Three.js", "3D", "Art"], gradient: "from-amber-200 via-amber-700 to-[#0a0806]" },
   { title: "Loopstack", category: "SaaS", type: "Landing", file: "Loopstack_Motion_Landing.md", preview: "https://storage.getlayers.ai/templates/loopstack-preview.mp4", tags: ["Video", "Motion", "Dark"], gradient: "from-rose-200 via-neutral-600 to-[#080808]" },
-  { title: "Baseline Tennis Club", category: "Landing Page", type: "Landing", file: "Baseline_Tennis_Club.md", preview: "https://storage.getlayers.ai/templates/baseline-preview.mp4", tags: ["Sport", "Club", "Editorial"], gradient: "from-emerald-200 via-teal-600 to-[#04120e]" },
+  { title: "Baseline Tennis Club", category: "Landing Page", type: "Landing", file: "Baseline_Tennis_Club.md", preview: "https://storage.getlayers.ai/templates/baseline-preview.mp4", demo: "https://court-craft-html.lovable.app", tags: ["Sport", "Club", "Editorial"], gradient: "from-emerald-200 via-teal-600 to-[#04120e]" },
   { title: "Convix PR Software", category: "SaaS", type: "Hero", file: "Convix_PR_Software_Hero.md", preview: "https://motionsites.ai/assets/convix-software-hero-B6-tdnN6.gif", tags: ["SaaS", "Dashboard", "Video"], gradient: "from-orange-200 via-neutral-400 to-[#0b0f1a]" },
   { title: "Cosmic Portfolio", category: "Portfolio", type: "Landing", file: "Michael_Smith_Portfolio_Landing.md", preview: "https://motionsites.ai/assets/hero-portfolio-cosmic-preview-BpvWJ3Nc.gif", tags: ["Portfolio", "GSAP", "Parallax"], gradient: "from-sky-200 via-slate-600 to-[#0a0a0a]" },
   { title: "Atelier Design Agency", category: "Agency", type: "Hero", file: "Atelier_Design_Agency_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(67).webp", tags: ["Agency", "Serif", "Video"], gradient: "from-neutral-200 via-neutral-500 to-black" },
@@ -1290,6 +1290,21 @@ export default function MoventoSite() {
                 <div className="min-w-0">
                   <h3 className="truncate text-base font-semibold text-[#EDE9E0]">{previewItem.title}</h3>
                   <p className="mt-0.5 text-xs text-white/40">{previewItem.category}</p>
+                  {/* Live build of the prompt, when one exists. Deliberately a
+                      quiet link and not the card's `link` field: that one
+                      replaces the copy action, which would cost the visitor
+                      the prompt they came for. */}
+                  {previewItem.demo && (
+                    <a
+                      href={previewItem.demo}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => track("demo_opened", { prompt: previewItem.title, ...refProps() })}
+                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-white/55 underline decoration-white/20 underline-offset-4 transition hover:text-[#EDE9E0] hover:decoration-white/50"
+                    >
+                      <Icon name="arrow" className="h-3 w-3" /> {t("See it live", "Voir le site en live")}
+                    </a>
+                  )}
                 </div>
                 <button onClick={() => { const it = previewItem; closePreview(); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-[#08080A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.02]">
                   {hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
