@@ -9,13 +9,6 @@ const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_UR
 // Walkthrough video shown under the three steps. TikTok's iframe embed is used
 // rather than their embed.js so the page pulls no third-party script.
 const TIKTOK_VIDEO_ID = "7670451978840968480";
-// How many people can be coached at once, and how many places are left. Shown
-// on /pricing next to the coaching. UPDATE THE NUMBER AS YOU SELL: a counter
-// frozen at the same figure for weeks is the kind of claim buyers screenshot,
-// and it costs more trust than the urgency buys. Set COACHING_SLOTS_LEFT to 0
-// and the badge switches to "full" on its own instead of lying.
-const COACHING_SLOTS_TOTAL = 50;
-const COACHING_SLOTS_LEFT = 12;
 
 // Deadline of the launch offer, shown as a live countdown in the bottom banner
 // on /pricing. It MUST be a real, fixed date — an ISO string with an offset,
@@ -36,7 +29,7 @@ const SUPPORT_HANDLE = "WhatsApp";
 // Prefilled so the first message already identifies the buyer's plan.
 const supportUrl = () =>
   `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(
-    t("Hi! I just got Movento lifetime access — I'd like to get started.", "Salut ! Je viens de prendre l'accès à vie Movento, j'aimerais commencer."),
+    t("Hi! I have Movento lifetime access and I have a question.", "Salut ! J'ai l'accès à vie Movento et j'ai une question."),
   )}`;
 // Free bonus ebook handed to buyers on the post-payment page.
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
@@ -474,7 +467,7 @@ const FREE_PROMPT_FILES = new Set([]);
 // The three prices live here rather than inside the cards, because they refer
 // to each other: the annual card quotes the monthly one, and its headline is
 // the annual divided by twelve. Change a number here and every mention follows.
-const PRICE_LIFETIME = 99;
+const PRICE_LIFETIME = 89;
 // Struck-through anchor on the lifetime card and in the bottom banner. The
 // badge is computed from the pair, never typed, so it cannot claim a discount
 // the two numbers do not support.
@@ -533,18 +526,9 @@ const plans = [
     description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
     cta: t("Get lifetime access", "Obtenir l'accès à vie"),
     featured: true,
-    // The coaching is the real differentiator of the lifetime plan — the
-    // catalogue is the same on all three. It gets the loudest block on the card
-    // and its own section below the grid.
-    perk: t("1-to-1 WhatsApp coaching", "Coaching WhatsApp en direct"),
-    perkDesc: t("Building the site is half the job. I walk you through the other half: finding the people who pay for it.", "Créer le site, c'est la moitié du travail. Je t'accompagne sur l'autre moitié : trouver les gens qui le paient."),
-    perkPoints: [
-      t("Finding your first clients: where to look, what to say", "Trouver tes premiers clients : où chercher, quoi leur dire"),
-      t("What to charge, and how to hold your price", "Quel prix demander, et comment le tenir"),
-      t("I review your site and tell you what to fix", "Je regarde ton site et je te dis quoi corriger"),
-      t("Answers within 24h, from me — never a bot", "Réponse sous 24h, par moi — jamais un bot"),
-      t("For life — no session limit, no extra fee", "À vie — aucune limite de séances, aucun supplément"),
-    ],
+    // What lifetime has that the subscription does not, stated plainly.
+    perk: t("Direct support included", "Support direct inclus"),
+    perkDesc: t("A question, a prompt that will not behave, a second look at your site — write and a real person answers.", "Une question, un prompt qui ne veut pas, un avis sur ton site — tu écris et une vraie personne te répond."),
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
     bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
     features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
@@ -644,18 +628,8 @@ function PlanCard({ plan, onBuy, loading, featured }) {
             <div className="min-w-0">
               <p className="text-sm font-semibold text-emerald-200">{plan.perk}</p>
               {plan.perkDesc && <p className="mt-1 text-[13px] leading-6 text-emerald-100/60">{plan.perkDesc}</p>}
-              <CoachingSlots compact className="mt-2.5" />
             </div>
           </div>
-          {plan.perkPoints && (
-            <ul className="mt-4 space-y-2.5">
-              {plan.perkPoints.map((point) => (
-                <li key={point} className="flex items-start gap-3 text-[13px] leading-6 text-emerald-100/75">
-                  <Icon name="check" className="mt-1 h-3.5 w-3.5 flex-none text-emerald-300/80" /> {point}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       )}
       {plan.bonus && (
@@ -1745,34 +1719,33 @@ function earnedEbook(info) {
   return info?.kind !== "monthly";
 }
 
-// Coaching is a lifetime perk. Unlike the ebook this does NOT fail open: an
-// unidentified plan must not be handed a private phone number we did not sell
-// them.
-function earnedCoaching(info) {
+// Direct support is a lifetime perk. Unlike the ebook this does NOT fail open:
+// an unidentified plan must not be handed a private phone number we did not
+// sell them.
+function earnedSupport(info) {
   return info?.kind === "lifetime" || info?.type === "lifetime";
 }
 
-// The link the coaching sold on /pricing is actually delivered through. Shown
-// on /success and on "My subscription", so closing the success tab does not
-// cost the buyer the one thing that is hardest to replace.
+// How a lifetime buyer reaches a human. Shown on /success and on "My
+// subscription", so closing the success tab does not cost them the link.
 function SupportCard({ className = "" }) {
   return (
     <div className={`rounded-[28px] border border-emerald-400/25 bg-emerald-400/[0.06] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7 ${className}`}>
       <div className="flex items-center gap-3">
         <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="chat" className="h-4 w-4" /></span>
-        <h2 className="text-lg font-semibold text-[#EDE9E0]">{t("Your WhatsApp coaching", "Ton coaching WhatsApp")}</h2>
+        <h2 className="text-lg font-semibold text-[#EDE9E0]">{t("Your direct support", "Ton support direct")}</h2>
       </div>
       <p className="mt-3 text-sm leading-6 text-white/60">
         {t(
-          "Write whenever you're stuck — a prompt that won't behave, a site to review, a client to land or to price. I answer within 24h, for life.",
-          "Écris dès que tu bloques — un prompt qui ne veut pas, un site à relire, un client à convaincre ou à facturer. Je réponds sous 24h, à vie.",
+          "Write whenever you're stuck — a prompt that won't behave, a site to review, a question about the catalogue. A real person answers.",
+          "Écris dès que tu bloques — un prompt qui ne veut pas, un site à relire, une question sur le catalogue. Une vraie personne te répond.",
         )}
       </p>
       <a
         href={supportUrl()}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={() => track("coaching_opened", { ...refProps() })}
+        onClick={() => track("support_opened", { ...refProps() })}
         className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3 text-sm font-bold text-[#04150d] transition hover:bg-emerald-300 hover:scale-[1.02]"
       >
         <Icon name="chat" className="h-4 w-4" /> {t(`Message me on ${SUPPORT_HANDLE}`, `M'écrire sur ${SUPPORT_HANDLE}`)}
@@ -1853,7 +1826,7 @@ function SuccessPage() {
           });
           const subData = await sub.json().catch(() => ({}));
           setEbookEarned(earnedEbook(subData));
-          setSupportEarned(earnedCoaching(subData));
+          setSupportEarned(earnedSupport(subData));
         } catch { setEbookEarned(true); }
       } else {
         setStatus({ loading: false, ok: false, error: t("No access found for this email yet. If you just paid, wait a minute and retry — activation can take a moment.", "Aucun accès trouvé pour cet email pour l'instant. Si tu viens de payer, patiente une minute et réessaie — l'activation peut prendre un instant.") });
@@ -2184,48 +2157,6 @@ function Testimonials({ items = TESTIMONIALS }) {
   );
 }
 
-// Remaining coaching places. `compact` is the pill that rides on the plan card;
-// the full version adds the bar. Reads from the two constants at the top of the
-// file so both spots can never disagree.
-function CoachingSlots({ compact = false, className = "" }) {
-  const left = Math.max(0, Math.min(COACHING_SLOTS_LEFT, COACHING_SLOTS_TOTAL));
-  const taken = COACHING_SLOTS_TOTAL - left;
-  const pct = COACHING_SLOTS_TOTAL > 0 ? Math.round((taken / COACHING_SLOTS_TOTAL) * 100) : 0;
-  const full = left === 0;
-
-  const label = full
-    ? t("All places taken for now", "Toutes les places sont prises pour l'instant")
-    : t(`${left} places left out of ${COACHING_SLOTS_TOTAL}`, `${left} places restantes sur ${COACHING_SLOTS_TOTAL}`);
-
-  if (compact) {
-    return (
-      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${full ? "border-white/15 bg-white/[0.06] text-white/50" : "border-amber-400/30 bg-amber-400/[0.12] text-amber-200"} ${className}`}>
-        {!full && <span className="h-1.5 w-1.5 flex-none rounded-full bg-amber-300" />}
-        {label}
-      </span>
-    );
-  }
-
-  return (
-    <div className={`rounded-2xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3.5 ${className}`}>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <p className={`text-sm font-bold ${full ? "text-white/60" : "text-amber-200"}`}>{label}</p>
-        {!full && <p className="text-xs text-white/50">{t(`${taken} already coached`, `${taken} déjà accompagnés`)}</p>}
-      </div>
-      {/* A real ratio, not decoration: the bar is filled from the same numbers
-          as the label, so it cannot drift away from what the text claims. */}
-      <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10" role="presentation">
-        <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
-      </div>
-      <p className="mt-2 text-xs leading-5 text-white/45">
-        {full
-          ? t("Lifetime access still includes everything else. Write to me and I'll tell you when a place opens.", "L'accès à vie inclut tout le reste. Écris-moi et je te dirai quand une place se libère.")
-          : t("I cap it so everyone actually gets answered within 24h.", "Je limite le nombre pour que chacun ait vraiment une réponse sous 24h.")}
-      </p>
-    </div>
-  );
-}
-
 // Ticks once a second while a real deadline is ahead. Returns null when there
 // is no deadline or it has passed, so callers drop the countdown entirely
 // rather than freezing on 00:00:00.
@@ -2253,24 +2184,18 @@ function useCountdown(iso) {
   return days > 0 ? `${days}${t("d", "j")} ${clock}` : clock;
 }
 
-// Sticky offer bar at the bottom of /pricing. It carries whichever urgency is
-// actually true: the countdown when a real deadline is configured, the
-// remaining coaching places otherwise — and nothing at all when neither holds.
+// Sticky offer bar at the bottom of /pricing. The countdown is appended only
+// when a real deadline is configured; otherwise the offer stands on its own
+// rather than inventing an urgency.
 function PricingBanner({ onPick }) {
   const countdown = useCountdown(LAUNCH_OFFER_ENDS_AT);
-  const left = Math.max(0, Math.min(COACHING_SLOTS_LEFT, COACHING_SLOTS_TOTAL));
-
-  if (!countdown && left <= 0) return null;
-
-  const tail = countdown
-    ? t(`${countdown} left`, `plus que ${countdown}`)
-    : t(`${left} coaching places left`, `plus que ${left} places de coaching`);
+  const tail = countdown ? t(`${countdown} left`, `plus que ${countdown}`) : null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50">
       <button
         onClick={() => {
-          track("pricing_banner_click", { countdown: Boolean(countdown), left, ...refProps() });
+          track("pricing_banner_click", { countdown: Boolean(countdown), ...refProps() });
           onPick?.();
         }}
         className="group block w-full bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] px-4 py-3 text-left transition hover:brightness-110 sm:px-6"
@@ -2281,7 +2206,7 @@ function PricingBanner({ onPick }) {
           </span>
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
             {t("Launch offer", "Offre de lancement")} — <span className="font-normal text-white/70 line-through">{eur(PRICE_LIFETIME_ANCHOR)}</span>{" "}
-            {t("now", "maintenant")} <span className="font-bold">{eur(PRICE_LIFETIME)}</span> — {tail}
+            {t("now", "maintenant")} <span className="font-bold">{eur(PRICE_LIFETIME)}</span>{tail ? ` — ${tail}` : ""}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
         </span>
@@ -2397,10 +2322,10 @@ function PromoPopup({ onPick }) {
   );
 }
 
-// The three things Movento sells, as a ladder rather than a list: the prompts
-// let you deliver, the ebook lets you sell, the coaching gets you to the first
-// client. Colours match the plan cards — neutral, amber, emerald — so a visitor
-// who has just read them recognises which tier each rung belongs to.
+// The two things Movento sells, as a ladder rather than a list: the prompts
+// let you deliver, the ebook lets you sell. Colours match the plan cards —
+// neutral then amber — so a visitor who has just read them recognises which
+// tier each rung belongs to.
 //
 // Deliberately phrased as capability, never as earnings: "what you can do with
 // it", not "what you will make". No figures, no promises.
@@ -2434,20 +2359,6 @@ function BusinessLadder({ onPick }) {
       icon: "gift",
       iconTone: "bg-amber-400 text-[#1a1400]",
     },
-    {
-      key: "coaching",
-      label: t("Step 3 — Plus the coaching", "Étape 3 — Avec le coaching"),
-      title: t("You get to your first client", "Tu vas jusqu'à ton premier client"),
-      body: t(
-        "Where the guide stops, I take over — on WhatsApp, on your actual project. Where to find them, what to say, what to charge, what to fix before you send it.",
-        "Là où le guide s'arrête, je prends le relais — sur WhatsApp, sur ton projet réel. Où les trouver, quoi leur dire, quel prix demander, quoi corriger avant d'envoyer.",
-      ),
-      tag: t("Lifetime only", "Uniquement avec l'accès à vie"),
-      tone: "border-emerald-400/30 bg-emerald-400/[0.06]",
-      accent: "text-emerald-300/80",
-      icon: "chat",
-      iconTone: "bg-emerald-400 text-[#04150d]",
-    },
   ];
 
   return (
@@ -2471,7 +2382,7 @@ function BusinessLadder({ onPick }) {
         </p>
       </motion.div>
 
-      <ol className="mt-12 grid gap-5 md:grid-cols-3">
+      <ol className="mx-auto mt-12 grid max-w-3xl gap-5 md:grid-cols-2">
         {steps.map((step, i) => (
           <motion.li
             key={step.key}
@@ -2509,95 +2420,9 @@ function BusinessLadder({ onPick }) {
         >
           {t("Get all three", "Prendre les trois")} <Icon name="arrow" className="h-4 w-4" />
         </button>
-        <p className="text-xs text-white/40">{t("The prompts come with both plans. The ebook and the coaching only with lifetime.", "Les prompts sont dans les deux offres. L'ebook et le coaching uniquement à vie.")}</p>
+        <p className="text-xs text-white/40">{t("The prompts come with both plans. The ebook only with lifetime.", "Les prompts sont dans les deux offres. L'ebook uniquement à vie.")}</p>
       </motion.div>
     </section>
-  );
-}
-
-// The catalogue is identical on all three plans, so the coaching is the only
-// thing the lifetime price actually buys on top. It gets its own block right
-// under the grid, where the visitor is still comparing.
-function CoachingBlock({ onPick }) {
-  const steps = [
-    {
-      title: t("You write to me", "Tu m'écris"),
-      body: t("A screenshot, a link, a prompt that won't behave — or a client who won't answer. Whatever you're stuck on, as it happens.", "Une capture, un lien, un prompt qui ne veut pas — ou un client qui ne répond pas. Ce sur quoi tu bloques, au moment où tu bloques."),
-    },
-    {
-      title: t("I answer within 24h", "Je réponds sous 24h"),
-      body: t("Me, on WhatsApp — not a ticket queue and not a bot. Same person every time.", "Moi, sur WhatsApp — pas un ticket, pas un bot. La même personne à chaque fois."),
-    },
-    {
-      title: t("You land the client alone", "Tu signes ton client seul"),
-      body: t("The goal is not to answer forever. It's that you know how to find them, price them and deliver without asking.", "Le but n'est pas de répondre éternellement. C'est que tu saches les trouver, les facturer et livrer sans demander."),
-    },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-[28px] border border-emerald-400/25 bg-emerald-400/[0.05] p-6 md:p-8"
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="chat" className="h-4 w-4" /></span>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/80">{t("Lifetime only", "Uniquement avec l'accès à vie")}</p>
-          <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("You don't just get the prompts. You get me.", "Tu ne prends pas que les prompts. Tu me prends avec.")}</h2>
-        </div>
-      </div>
-
-      <p className="mt-5 max-w-2xl text-sm leading-6 text-white/65">
-        {t(
-          "The catalog is the same on all three plans. What lifetime adds is a person: real coaching over WhatsApp — not only on building the sites, but on finding the clients who pay for them, and on what to charge them.",
-          "Le catalogue est le même sur les trois offres. Ce que l'accès à vie ajoute, c'est quelqu'un : un vrai accompagnement sur WhatsApp — pas seulement pour créer les sites, mais pour trouver les clients qui les paient, et savoir à quel prix les leur vendre.",
-        )}
-      </p>
-
-      {/* Spelled out rather than implied: "coaching" alone reads as tech support,
-          and the client-finding half is the part people actually can't do. */}
-      <div className="mt-6 rounded-2xl border border-white/10 bg-[#0F1512] p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-300/80">{t("What we work on together", "Ce qu'on travaille ensemble")}</p>
-        <ul className="mt-3 flex flex-wrap gap-2">
-          {[
-            t("Finding your first clients", "Trouver tes premiers clients"),
-            t("What to say to land them", "Quoi leur dire pour les convaincre"),
-            t("Setting your prices", "Fixer tes prix"),
-            t("Handling the negotiation", "Tenir face à la négociation"),
-            t("Picking and adapting the right prompt", "Choisir et adapter le bon prompt"),
-            t("Fixing what's wrong with your site", "Corriger ce qui cloche sur ton site"),
-            t("Delivering to the client", "Livrer au client"),
-          ].map((topic) => (
-            <li key={topic} className="rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-100/85">
-              {topic}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <ol className="mt-7 grid gap-4 md:grid-cols-3">
-        {steps.map((step, i) => (
-          <li key={step.title} className="rounded-2xl border border-white/10 bg-[#0F1512] p-5">
-            <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-400/15 text-xs font-bold text-emerald-300">{i + 1}</span>
-            <p className="mt-3 text-sm font-semibold text-[#EDE9E0]">{step.title}</p>
-            <p className="mt-1.5 text-xs leading-5 text-white/55">{step.body}</p>
-          </li>
-        ))}
-      </ol>
-
-      <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
-        <button
-          onClick={onPick}
-          className="inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3 text-sm font-bold text-[#04150d] transition hover:bg-emerald-300 hover:scale-[1.02]"
-        >
-          {t("Get lifetime + coaching", "Prendre l'accès à vie + le coaching")} <Icon name="arrow" className="h-4 w-4" />
-        </button>
-        <p className="text-xs leading-5 text-white/45">{t("No session limit, no hourly rate, no renewal. Paid once.", "Aucune limite de séances, aucun tarif horaire, aucun renouvellement. Payé une fois.")}</p>
-      </div>
-    </motion.div>
   );
 }
 
@@ -2689,7 +2514,6 @@ function PricingPage() {
               <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
             ))}
           </motion.div>
-          <CoachingBlock onPick={scrollToPlans} />
           <Reassurance className="mt-9" />
         </div>
       </section>
@@ -3038,9 +2862,9 @@ function SubscriptionPage() {
           </div>
         )}
 
-        {/* The ebook and the coaching link live here too, so they survive
+        {/* The ebook and the support link live here too, so they survive
             closing the success page. */}
-        {status.checked && data && data.found && earnedCoaching(data) && <SupportCard className="mt-4" />}
+        {status.checked && data && data.found && earnedSupport(data) && <SupportCard className="mt-4" />}
         {status.checked && data && data.found && earnedEbook(data) && <EbookCard className="mt-4" />}
       </section>
 
