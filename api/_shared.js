@@ -55,7 +55,7 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // A .../checkout/plan_xxx link powers the on-site EMBEDDED checkout: the plan id
 // is read straight out of it. A product-page link would only power the REDIRECT
 // flow, which is why both fallbacks below are checkout links.
-const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_lg2xFDMH1crhQ";
+const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_pAiB9wlNdjRGF";
 const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
 
 // The links we ship with. An env var overrides them, but see resolvePlanId: a
