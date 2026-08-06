@@ -452,10 +452,17 @@ const plans = [
     description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
     cta: t("Get lifetime access", "Obtenir l'accès à vie"),
     featured: true,
-    // Direct support is what lifetime has that the subscriptions do not, so it
-    // gets its own block above the ebook rather than a line in the bullet list.
-    perk: t("Direct support, answered within 24h", "Support direct, réponse sous 24h"),
-    perkDesc: t("Write whenever you need — questions, advice, a second look at your project. A real person answers, never a bot.", "Écris quand tu veux — questions, conseils, un avis sur ton projet. Une vraie personne te répond, jamais un bot."),
+    // The coaching is the real differentiator of the lifetime plan — the
+    // catalogue is the same on all three. It gets the loudest block on the card
+    // and its own section below the grid.
+    perk: t("1-to-1 WhatsApp coaching", "Coaching WhatsApp en direct"),
+    perkDesc: t("Not a support inbox: I walk you through it until you can do it on your own.", "Pas un service client : je t'accompagne jusqu'à ce que tu saches le faire seul."),
+    perkPoints: [
+      t("Answers within 24h, from me — never a bot", "Réponse sous 24h, par moi — jamais un bot"),
+      t("I review your site and tell you what to fix", "Je regarde ton site et je te dis quoi corriger"),
+      t("Which prompt to pick, how to adapt it to your client", "Quel prompt choisir, comment l'adapter à ton client"),
+      t("For life — no session limit, no extra fee", "À vie — aucune limite de séances, aucun supplément"),
+    ],
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
     bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
     features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
@@ -536,12 +543,25 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         ))}
       </ul>
       {plan.perk && (
-        <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-white/12 bg-white/[0.05] px-3 py-2.5">
-          <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10 text-[#EDE9E0]"><Icon name="shield" className="h-3 w-3" /></span>
-          <div>
-            <p className="text-sm font-semibold text-white/80">{plan.perk}</p>
-            {plan.perkDesc && <p className="mt-0.5 text-xs leading-5 text-white/80/80">{plan.perkDesc}</p>}
+        // Louder than the ebook block on purpose: the coaching is what the
+        // lifetime plan sells that the subscriptions cannot.
+        <div className="mt-5 rounded-2xl border border-emerald-400/30 bg-emerald-400/[0.07] px-3.5 py-3">
+          <div className="flex items-start gap-2.5">
+            <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="chat" className="h-3 w-3" /></span>
+            <div>
+              <p className="text-sm font-semibold text-emerald-200">{plan.perk}</p>
+              {plan.perkDesc && <p className="mt-0.5 text-xs leading-5 text-emerald-100/70">{plan.perkDesc}</p>}
+            </div>
           </div>
+          {plan.perkPoints && (
+            <ul className="mt-2.5 space-y-1.5 border-t border-emerald-400/15 pt-2.5">
+              {plan.perkPoints.map((point) => (
+                <li key={point} className="flex items-start gap-2 text-xs leading-5 text-emerald-100/80">
+                  <Icon name="check" className="mt-1 h-3 w-3 flex-none text-emerald-300" /> {point}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
       {plan.bonus && (
@@ -750,6 +770,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   if (name === "lock") children = <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>;
   if (name === "gift") children = <><path d="M20 12v10H4V12" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" /></>;
   if (name === "download") children = <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></>;
+  if (name === "chat") children = <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4.1-1L3 20l1.1-4.6A8.4 8.4 0 0 1 3 11.4a8.4 8.4 0 0 1 8.5-8.4h.5a8.4 8.4 0 0 1 9 8.5z" />;
 
   return <svg {...common}>{children}</svg>;
 }
@@ -1962,6 +1983,71 @@ function Testimonials({ items = TESTIMONIALS }) {
   );
 }
 
+// The catalogue is identical on all three plans, so the coaching is the only
+// thing the lifetime price actually buys on top. It gets its own block right
+// under the grid, where the visitor is still comparing.
+function CoachingBlock({ onPick }) {
+  const steps = [
+    {
+      title: t("You send me your screen", "Tu m'envoies ton écran"),
+      body: t("A screenshot, a link, a prompt that won't behave. Whatever you're stuck on, as it happens.", "Une capture, un lien, un prompt qui ne veut pas. Ce sur quoi tu bloques, au moment où tu bloques."),
+    },
+    {
+      title: t("I answer within 24h", "Je réponds sous 24h"),
+      body: t("Me, on WhatsApp — not a ticket queue and not a bot. Same person every time.", "Moi, sur WhatsApp — pas un ticket, pas un bot. La même personne à chaque fois."),
+    },
+    {
+      title: t("You learn to do it alone", "Tu apprends à le faire seul"),
+      body: t("The goal is not to answer forever. It's that you stop needing to ask.", "Le but n'est pas de répondre éternellement. C'est que tu n'aies plus besoin de demander."),
+    },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-[28px] border border-emerald-400/25 bg-emerald-400/[0.05] p-6 md:p-8"
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="chat" className="h-4 w-4" /></span>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/80">{t("Lifetime only", "Uniquement avec l'accès à vie")}</p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("You don't just get the prompts. You get me.", "Tu ne prends pas que les prompts. Tu me prends avec.")}</h2>
+        </div>
+      </div>
+
+      <p className="mt-5 max-w-2xl text-sm leading-6 text-white/65">
+        {t(
+          "The catalog is the same on all three plans. What lifetime adds is a person: real coaching over WhatsApp, for as long as you need it, until you can build and sell these sites without asking anyone.",
+          "Le catalogue est le même sur les trois offres. Ce que l'accès à vie ajoute, c'est quelqu'un : un vrai accompagnement sur WhatsApp, aussi longtemps qu'il te faut, jusqu'à ce que tu saches créer et vendre ces sites sans demander à personne.",
+        )}
+      </p>
+
+      <ol className="mt-7 grid gap-4 md:grid-cols-3">
+        {steps.map((step, i) => (
+          <li key={step.title} className="rounded-2xl border border-white/10 bg-[#0F1512] p-5">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-400/15 text-xs font-bold text-emerald-300">{i + 1}</span>
+            <p className="mt-3 text-sm font-semibold text-[#EDE9E0]">{step.title}</p>
+            <p className="mt-1.5 text-xs leading-5 text-white/55">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <button
+          onClick={onPick}
+          className="inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3 text-sm font-bold text-[#04150d] transition hover:bg-emerald-300 hover:scale-[1.02]"
+        >
+          {t("Get lifetime + coaching", "Prendre l'accès à vie + le coaching")} <Icon name="arrow" className="h-4 w-4" />
+        </button>
+        <p className="text-xs leading-5 text-white/45">{t("No session limit, no hourly rate, no renewal. Paid once.", "Aucune limite de séances, aucun tarif horaire, aucun renouvellement. Payé une fois.")}</p>
+      </div>
+    </motion.div>
+  );
+}
+
 function PricingPage() {
   const [checkoutPlan, setCheckoutPlan] = useState(null);
   // The prompt the visitor was trying to copy, carried over in ?from= so the
@@ -2049,6 +2135,7 @@ function PricingPage() {
               <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
             ))}
           </motion.div>
+          <CoachingBlock onPick={scrollToPlans} />
           <Reassurance className="mt-9" />
         </div>
       </section>
