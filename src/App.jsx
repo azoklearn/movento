@@ -471,7 +471,7 @@ const PRICE_LIFETIME = 89;
 // Struck-through anchor on the lifetime card and in the bottom banner. The
 // badge is computed from the pair, never typed, so it cannot claim a discount
 // the two numbers do not support.
-const PRICE_LIFETIME_ANCHOR = 349;
+const PRICE_LIFETIME_ANCHOR = 159;
 const PRICE_YEARLY = 99;
 const PRICE_MONTHLY = 21.99;
 const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
