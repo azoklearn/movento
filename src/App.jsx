@@ -11,8 +11,15 @@ const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_UR
 const TIKTOK_VIDEO_ID = "7670451978840968480";
 // Where lifetime buyers reach a human. Shown on the success page only, to the
 // plan that was actually sold direct support.
-const SUPPORT_URL = "https://www.tiktok.com/@weblover011";
-const SUPPORT_HANDLE = "@weblover011";
+// WhatsApp in international format, no +, no spaces — wa.me rejects anything
+// else. 07 66 87 39 15 (FR) becomes 33766873915.
+const SUPPORT_WHATSAPP = "33766873915";
+const SUPPORT_HANDLE = "WhatsApp";
+// Prefilled so the first message already identifies the buyer's plan.
+const supportUrl = () =>
+  `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(
+    t("Hi! I just got Movento lifetime access — I'd like to get started.", "Salut ! Je viens de prendre l'accès à vie Movento, j'aimerais commencer."),
+  )}`;
 // Free bonus ebook handed to buyers on the post-payment page.
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
 // Customer rating, kept in one place: it is shown on the page AND declared as
@@ -1572,6 +1579,42 @@ function earnedEbook(info) {
   return info?.kind !== "monthly";
 }
 
+// Coaching is a lifetime perk. Unlike the ebook this does NOT fail open: an
+// unidentified plan must not be handed a private phone number we did not sell
+// them.
+function earnedCoaching(info) {
+  return info?.kind === "lifetime" || info?.type === "lifetime";
+}
+
+// The link the coaching sold on /pricing is actually delivered through. Shown
+// on /success and on "My subscription", so closing the success tab does not
+// cost the buyer the one thing that is hardest to replace.
+function SupportCard({ className = "" }) {
+  return (
+    <div className={`rounded-[28px] border border-emerald-400/25 bg-emerald-400/[0.06] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7 ${className}`}>
+      <div className="flex items-center gap-3">
+        <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="chat" className="h-4 w-4" /></span>
+        <h2 className="text-lg font-semibold text-[#EDE9E0]">{t("Your WhatsApp coaching", "Ton coaching WhatsApp")}</h2>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-white/60">
+        {t(
+          "Write whenever you're stuck — a prompt that won't behave, a site to review, a client to land or to price. I answer within 24h, for life.",
+          "Écris dès que tu bloques — un prompt qui ne veut pas, un site à relire, un client à convaincre ou à facturer. Je réponds sous 24h, à vie.",
+        )}
+      </p>
+      <a
+        href={supportUrl()}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => track("coaching_opened", { ...refProps() })}
+        className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3 text-sm font-bold text-[#04150d] transition hover:bg-emerald-300 hover:scale-[1.02]"
+      >
+        <Icon name="chat" className="h-4 w-4" /> {t(`Message me on ${SUPPORT_HANDLE}`, `M'écrire sur ${SUPPORT_HANDLE}`)}
+      </a>
+    </div>
+  );
+}
+
 // Shown on /success right after the purchase AND on "My subscription", because
 // a buyer who closes the success tab had no other way to get the ebook back.
 function EbookCard({ className = "" }) {
@@ -1644,7 +1687,7 @@ function SuccessPage() {
           });
           const subData = await sub.json().catch(() => ({}));
           setEbookEarned(earnedEbook(subData));
-          setSupportEarned(subData?.kind === "lifetime" || subData?.type === "lifetime");
+          setSupportEarned(earnedCoaching(subData));
         } catch { setEbookEarned(true); }
       } else {
         setStatus({ loading: false, ok: false, error: t("No access found for this email yet. If you just paid, wait a minute and retry — activation can take a moment.", "Aucun accès trouvé pour cet email pour l'instant. Si tu viens de payer, patiente une minute et réessaie — l'activation peut prendre un instant.") });
@@ -1702,16 +1745,7 @@ function SuccessPage() {
         {/* Bonus ebook — yearly and lifetime */}
         {status.ok && ebookEarned && <EbookCard className="mt-4" />}
 
-        {status.ok && supportEarned && (
-          <div className="mt-4 rounded-[28px] border border-white/12 bg-[#121214] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7">
-            <div className="flex items-center gap-3">
-              <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-white/10 text-[#EDE9E0]"><Icon name="shield" className="h-4 w-4" /></span>
-              <h2 className="text-lg font-semibold text-[#EDE9E0]">{t("Your direct support", "Ton support direct")}</h2>
-            </div>
-            <p className="mt-3 text-sm leading-6 text-white/60">{t("Questions, advice, a second look at your project — write anytime and a real person answers within 24h.", "Questions, conseils, un avis sur ton projet — écris quand tu veux, une vraie personne te répond sous 24h.")}</p>
-            <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#08080A] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.02]"><Icon name="arrow" className="h-4 w-4" /> {t(`Message ${SUPPORT_HANDLE}`, `Écrire à ${SUPPORT_HANDLE}`)}</a>
-          </div>
-        )}
+        {status.ok && supportEarned && <SupportCard className="mt-4" />}
 
         <p className="mt-6 text-center text-xs leading-5 text-white/40">{t("Keep this email address — it's your key to access Movento anytime.", "Garde bien cet email — c'est ta clé pour accéder à Movento à tout moment.")}</p>
       </section>
@@ -2497,7 +2531,9 @@ function SubscriptionPage() {
           </div>
         )}
 
-        {/* The ebook lives here too, so it survives closing the success page. */}
+        {/* The ebook and the coaching link live here too, so they survive
+            closing the success page. */}
+        {status.checked && data && data.found && earnedCoaching(data) && <SupportCard className="mt-4" />}
         {status.checked && data && data.found && earnedEbook(data) && <EbookCard className="mt-4" />}
       </section>
 
