@@ -459,9 +459,10 @@ const plans = [
     id: "lifetime",
     hidden: false,
     name: t("Lifetime", "À vie"),
-    price: "89€",
-    originalPrice: "250€",
-    discountBadge: "-64%",
+    // Keep the badge honest whenever either figure moves: 1 - 199/349 = 43%.
+    price: "199€",
+    originalPrice: "349€",
+    discountBadge: "-43%",
     period: t("forever", "à vie"),
     badge: t("One shot", "Une fois pour toutes"),
     description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
