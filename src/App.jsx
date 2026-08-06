@@ -819,6 +819,25 @@ function Icon({ name, className = "h-4 w-4" }) {
 // Used in the navbar, the mobile menu, every page header and the footer — one
 // change here swaps the mark everywhere. The file is /public/logo.png, shared
 // with the favicon, and versioned so a swap is not served from cache.
+// Colour band sweeping across the top-right of a page: cool blue on the left,
+// warm amber where it leaves the frame. Blurred hard and masked at both ends so
+// it dissolves into the page instead of finishing on a line. Sits inside the
+// pointer-events-none backdrop of whichever page mounts it.
+function AuroraBand() {
+  return (
+    <div
+      aria-hidden="true"
+      className="absolute inset-x-[-30%] top-[-24%] h-[300px] -rotate-[20deg] opacity-[0.9] blur-[45px] sm:h-[420px] sm:blur-[70px]"
+      style={{
+        backgroundImage:
+          "linear-gradient(94deg, rgba(24,40,150,0) 10%, rgba(40,72,235,0.55) 30%, rgba(88,84,240,0.6) 43%, rgba(176,104,180,0.55) 55%, rgba(238,126,80,0.68) 66%, rgba(255,170,74,0.82) 74%, rgba(255,226,158,0.72) 82%, rgba(255,226,158,0) 93%)",
+        maskImage: "linear-gradient(to bottom, transparent 2%, #000 34%, #000 64%, transparent 98%)",
+        WebkitMaskImage: "linear-gradient(to bottom, transparent 2%, #000 34%, #000 64%, transparent 98%)",
+      }}
+    />
+  );
+}
+
 // Glowing tail of the hero headline: same font and weight as the rest of the
 // sentence, tinted with a gradient clipped to the glyphs and haloed. Everything
 // visual lives in .hl-mark (index.css) — including the fallback colour for
@@ -1411,20 +1430,7 @@ export default function MoventoSite() {
         )}
       </AnimatePresence>
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        {/* Colour band sweeping across the top-right of the hero: cool blue on
-            the left, warm amber where it leaves the frame. Blurred hard and
-            masked top and bottom so it dissolves into the page instead of
-            ending on a line. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-[-30%] top-[-24%] h-[300px] -rotate-[20deg] opacity-[0.9] blur-[45px] sm:h-[420px] sm:blur-[70px]"
-          style={{
-            backgroundImage:
-              "linear-gradient(94deg, rgba(24,40,150,0) 10%, rgba(40,72,235,0.55) 30%, rgba(88,84,240,0.6) 43%, rgba(176,104,180,0.55) 55%, rgba(238,126,80,0.68) 66%, rgba(255,170,74,0.82) 74%, rgba(255,226,158,0.72) 82%, rgba(255,226,158,0) 93%)",
-            maskImage: "linear-gradient(to bottom, transparent 2%, #000 34%, #000 64%, transparent 98%)",
-            WebkitMaskImage: "linear-gradient(to bottom, transparent 2%, #000 34%, #000 64%, transparent 98%)",
-          }}
-        />
+        <AuroraBand />
         <div className="mv-aurora absolute left-1/2 top-[-30%] h-[620px] w-[900px] -translate-x-1/2 rounded-full bg-white/[0.045] blur-[150px]" />
         <div className="absolute inset-0 opacity-100" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.055) 1px, transparent 0)", backgroundSize: "38px 38px", maskImage: "radial-gradient(ellipse 80% 55% at 50% 0%, #000 30%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 80% 55% at 50% 0%, #000 30%, transparent 100%)" }} />
       </div>
@@ -1513,11 +1519,7 @@ export default function MoventoSite() {
       </header>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pt-12 pb-4 text-center lg:px-8 lg:pt-20">
-        <motion.a href="#pricing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-4 py-1.5 text-xs font-medium text-white/80 transition hover:bg-white/[0.09]">
-          <span className="grid h-4 w-4 place-items-center rounded-full bg-white/10 text-[#EDE9E0]"><Icon name="sparkles" className="h-2.5 w-2.5" /></span>
-          {t("New prompts added every week", "De nouveaux prompts chaque semaine")}
-        </motion.a>
-        <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
+        <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
           {t("Premium websites,", "Des sites premium,")}
           {/* Narrow screens otherwise strand the first word of the highlighted
               phrase at the end of the previous line. */}
@@ -2458,6 +2460,7 @@ function PricingPage() {
           the plan cards, so the cards read as paper on a surface instead of
           floating on flat white. */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <AuroraBand />
         <div className="absolute inset-x-0 top-0 h-[70vh] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:22px_22px] opacity-[0.05] [mask-image:linear-gradient(to_bottom,#000,transparent)]" />
         <div className="absolute left-1/2 top-[-22%] h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-white/[0.05] blur-[130px]" />
       </div>
