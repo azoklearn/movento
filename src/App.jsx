@@ -105,14 +105,14 @@ const prompts = [
   { title: "F1 Racing Hub", category: "Landing Page", type: "Hero", file: "F1_Racing_Hub_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/F1%20Racing%20HubArea.mp4", tags: ["Sport", "Mobile App", "Count-up"], gradient: "from-yellow-300 via-red-700 to-[#0a0e1c]" },
   { title: "iOS Dual Device Showcase", category: "Component", type: "Component", file: "iOS_Dual_Device_Showcase.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/perplxmobile.mp4", tags: ["Mobile App", "Paywall", "Video"], gradient: "from-sky-100 via-slate-400 to-[#14151d]" },
   { title: "Coffee Profile Screen", category: "Component", type: "Component", file: "Coffee_Profile_Screen.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/uploaded/coffeorangeArea.mp4", tags: ["Mobile App", "Liquid Glass", "Warm"], gradient: "from-amber-200 via-orange-700 to-[#180a06]" },
-  { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", demo: "https://fizz-magic.lovable.app", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
-  { title: "Nexum AI Ops", category: "AI / SaaS", type: "Hero", file: "Nexum_AI_Ops_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/Agent%20Grove.mp4", demo: "https://nexum-cinematic-hub.lovable.app/", tags: ["AI Agents", "Glass", "Video"], gradient: "from-neutral-200 via-neutral-600 to-[#010101]" },
-  { title: "Hunsy Car Rental", category: "Landing Page", type: "Hero", file: "Hunsy_Car_Rental_Hero.md", preview: "https://cdn.sceneai.art/landing-pages/abaa1a2b-c06b-49d5-a2c9-986674b6cdb7.mp4", demo: "https://grand-ride-intro.lovable.app/", tags: ["Automotive", "Video", "Glass"], gradient: "from-slate-200 via-slate-600 to-[#04060b]" },
-  { title: "Lumora Studio", category: "Agency", type: "Landing", file: "Lumora_Studio_Landing.md", preview: "https://storage.getlayers.ai/templates/lumora-preview.mp4", demo: "https://lumora-one-file-wonder.lovable.app/", tags: ["Studio", "GSAP", "Editorial"], gradient: "from-amber-100 via-neutral-500 to-[#0b0b0c]" },
+  { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
+  { title: "Nexum AI Ops", category: "AI / SaaS", type: "Hero", file: "Nexum_AI_Ops_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/Agent%20Grove.mp4", tags: ["AI Agents", "Glass", "Video"], gradient: "from-neutral-200 via-neutral-600 to-[#010101]" },
+  { title: "Hunsy Car Rental", category: "Landing Page", type: "Hero", file: "Hunsy_Car_Rental_Hero.md", preview: "https://cdn.sceneai.art/landing-pages/abaa1a2b-c06b-49d5-a2c9-986674b6cdb7.mp4", tags: ["Automotive", "Video", "Glass"], gradient: "from-slate-200 via-slate-600 to-[#04060b]" },
+  { title: "Lumora Studio", category: "Agency", type: "Landing", file: "Lumora_Studio_Landing.md", preview: "https://storage.getlayers.ai/templates/lumora-preview.mp4", tags: ["Studio", "GSAP", "Editorial"], gradient: "from-amber-100 via-neutral-500 to-[#0b0b0c]" },
   { title: "Flowstate Waitlist", category: "SaaS", type: "Hero", file: "Flowstate_Fluid_Waitlist.md", preview: "https://storage.getlayers.ai/templates/flowstate-4c494408e1-preview.mp4", tags: ["WebGL", "Fluid", "Waitlist"], gradient: "from-cyan-300 via-violet-500 to-[#04050c]" },
   { title: "Laocoön Bronze Scroll", category: "Portfolio", type: "Landing", file: "Laocoon_Bronze_Scroll.md", preview: "https://storage.getlayers.ai/templates/laocoon-preview.mp4", tags: ["Three.js", "3D", "Art"], gradient: "from-amber-200 via-amber-700 to-[#0a0806]" },
   { title: "Loopstack", category: "SaaS", type: "Landing", file: "Loopstack_Motion_Landing.md", preview: "https://storage.getlayers.ai/templates/loopstack-preview.mp4", tags: ["Video", "Motion", "Dark"], gradient: "from-rose-200 via-neutral-600 to-[#080808]" },
-  { title: "Baseline Tennis Club", category: "Landing Page", type: "Landing", file: "Baseline_Tennis_Club.md", preview: "https://storage.getlayers.ai/templates/baseline-preview.mp4", demo: "https://court-craft-html.lovable.app", tags: ["Sport", "Club", "Editorial"], gradient: "from-emerald-200 via-teal-600 to-[#04120e]" },
+  { title: "Baseline Tennis Club", category: "Landing Page", type: "Landing", file: "Baseline_Tennis_Club.md", preview: "https://storage.getlayers.ai/templates/baseline-preview.mp4", tags: ["Sport", "Club", "Editorial"], gradient: "from-emerald-200 via-teal-600 to-[#04120e]" },
   { title: "Convix PR Software", category: "SaaS", type: "Hero", file: "Convix_PR_Software_Hero.md", preview: "https://motionsites.ai/assets/convix-software-hero-B6-tdnN6.gif", tags: ["SaaS", "Dashboard", "Video"], gradient: "from-orange-200 via-neutral-400 to-[#0b0f1a]" },
   { title: "Cosmic Portfolio", category: "Portfolio", type: "Landing", file: "Michael_Smith_Portfolio_Landing.md", preview: "https://motionsites.ai/assets/hero-portfolio-cosmic-preview-BpvWJ3Nc.gif", tags: ["Portfolio", "GSAP", "Parallax"], gradient: "from-sky-200 via-slate-600 to-[#0a0a0a]" },
   { title: "Atelier Design Agency", category: "Agency", type: "Hero", file: "Atelier_Design_Agency_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(67).webp", tags: ["Agency", "Serif", "Video"], gradient: "from-neutral-200 via-neutral-500 to-black" },
@@ -155,7 +155,7 @@ const prompts = [
   { title: "LaunchPad Blog", category: "Component", type: "Component", file: "Launchpad_Insights_Blog.md", preview: "https://cdn.sceneai.art/landing-pages/1947878a-fa95-4ac2-9369-84e343feba2e.mov", tags: ["Blog", "SaaS", "Cards"], gradient: "from-blue-200 via-blue-500 to-slate-900" },
   { title: "Synergeus Fintech", category: "Fintech", type: "Landing", file: "Synergeus_Fintech_Landing.md", preview: "https://admin.lafys.com/api/media/file/synergeus_JaaqgDoA.mp4", tags: ["Fintech", "AI", "Serif"], gradient: "from-lime-200 via-emerald-600 to-black" },
   { title: "Pelmatech Health", category: "Landing Page", type: "Landing", file: "Pelmatech_Health_Landing.md", preview: "https://admin.lafys.com/api/media/file/Pelmatech1.mp4", tags: ["Health", "Editorial", "Carousel"], gradient: "from-stone-200 via-neutral-400 to-neutral-900" },
-  { title: "Picway Gallery", category: "Landing Page", type: "Hero", file: "Picway_Gallery_Hero.md", preview: "https://cdn.5sdesign.art/projects/picway.mp4", demo: "https://apricot-memory-glow.lovable.app/", tags: ["WebGL", "Editorial", "Gallery"], gradient: "from-orange-100 via-amber-200 to-neutral-800" },
+  { title: "Picway Gallery", category: "Landing Page", type: "Hero", file: "Picway_Gallery_Hero.md", preview: "https://cdn.5sdesign.art/projects/picway.mp4", tags: ["WebGL", "Editorial", "Gallery"], gradient: "from-orange-100 via-amber-200 to-neutral-800" },
   { title: "Azaka Creative Director", category: "Portfolio", type: "Hero", file: "Azaka_Creative_Director.md", preview: "https://cdn.5sdesign.art/projects/azaka.mp4", tags: ["Cinematic", "Cursor", "Dark"], gradient: "from-neutral-200 via-neutral-600 to-[#050505]" },
   { title: "Metery Web3", category: "Web3", type: "Hero", file: "Metery_Web3_Hero.md", preview: "https://cdn.5sdesign.art/projects/metery.mp4", tags: ["Web3", "Nature", "Video"], gradient: "from-amber-200 via-lime-600 to-[#0d130f]" },
   { title: "Airlines Travel", category: "Landing Page", type: "Hero", file: "Airlines_Travel_Hero.md", preview: "https://cdn.sceneai.art/landing-pages/9fffaa43-bc70-467c-b53f-f0bd27a5b342.mp4", tags: ["Travel", "Cinematic", "Video"], gradient: "from-sky-200 via-sky-600 to-slate-900" },
@@ -178,7 +178,7 @@ const prompts = [
   { title: "NHM Hero", category: "Landing Page", type: "Landing", file: "NHM_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(75).webp", tags: ["Museum", "Editorial", "Scroll"], gradient: "from-neutral-300 via-stone-600 to-[#0a0a0a]" },
   { title: "Love Bag Hero", category: "Landing Page", type: "Landing", file: "Love_Bag_Hero.md", preview: "https://admin.lafys.com/api/media/file/bags_EV1r0FBY.mp4", tags: ["E-commerce", "Scroll", "Video"], gradient: "from-amber-100 via-stone-300 to-neutral-900" },
   { title: "Pallet Ross", category: "Landing Page", type: "Landing", file: "Pallet_Ross_Landing.md", preview: "https://admin.lafys.com/api/media/file/4d32e42469657663b66a3c08aeccd70e_1DkflpwZ.mp4", tags: ["Marketplace", "Scroll", "Video"], gradient: "from-teal-200 via-red-400 to-neutral-900" },
-  { title: "Photographer Portfolio", category: "Portfolio", type: "Landing", file: "Valmax_Hero.md", preview: "https://admin.lafys.com/api/media/file/valmax_NCXFcrZo.mp4", demo: "https://valmax-bloom.lovable.app", tags: ["Photography", "Stars", "Video"], gradient: "from-lime-300 via-neutral-700 to-black" },
+  { title: "Photographer Portfolio", category: "Portfolio", type: "Landing", file: "Valmax_Hero.md", preview: "https://admin.lafys.com/api/media/file/valmax_NCXFcrZo.mp4", tags: ["Photography", "Stars", "Video"], gradient: "from-lime-300 via-neutral-700 to-black" },
   { title: "Vibrant Wellness Hero", category: "Landing Page", type: "Hero", file: "Vibrant_Wellness_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/brainhealthArea.mp4", tags: ["Wellness", "Glass", "Video"], gradient: "from-emerald-200 via-teal-500 to-stone-900" },
   { title: "CoreOS Construction", category: "Landing Page", type: "Hero", file: "Coreos_Construction_Hero.md", preview: "https://cdn.sceneai.art/landing-pages/012e77ab-bb14-48ec-ac1e-a2d050b857e6.mov", tags: ["Construction", "Bold", "Video"], gradient: "from-stone-300 via-stone-600 to-black" },
   { title: "Axon Hero", category: "SaaS", type: "Hero", file: "Axon_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/naturezoompuirple.mp4", tags: ["AI", "Agents", "Video"], gradient: "from-violet-200 via-purple-500 to-[#1B133C]" },
@@ -448,13 +448,7 @@ function isPromptAvailable(item) {
 // entries whose markdown was never added to the repo — they must not be
 // rendered, opened by URL, featured in the showcase, or counted in the copy
 // that promises how many prompts a buyer gets.
-// Cards with a live build come first: a visitor who can click through to the
-// finished site is the one most likely to believe the prompt produces it.
-// The sort is stable, so within each group the hand-picked order of `prompts`
-// is preserved — and adding a `demo` to any entry promotes it on its own.
-const availablePrompts = prompts
-  .filter(isPromptAvailable)
-  .sort((a, b) => Number(Boolean(b.demo)) - Number(Boolean(a.demo)));
+const availablePrompts = prompts.filter(isPromptAvailable);
 
 // Nothing is given away any more: every prompt sits behind the paywall.
 // Putting a filename back here re-opens that prompt, and it must be added to
@@ -1422,21 +1416,6 @@ export default function MoventoSite() {
                 <div className="min-w-0">
                   <h3 className="truncate text-base font-semibold text-[#EDE9E0]">{previewItem.title}</h3>
                   <p className="mt-0.5 text-xs text-white/40">{previewItem.category}</p>
-                  {/* Live build of the prompt, when one exists. Deliberately a
-                      quiet link and not the card's `link` field: that one
-                      replaces the copy action, which would cost the visitor
-                      the prompt they came for. */}
-                  {previewItem.demo && (
-                    <a
-                      href={previewItem.demo}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => track("demo_opened", { prompt: previewItem.title, ...refProps() })}
-                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-white/55 underline decoration-white/20 underline-offset-4 transition hover:text-[#EDE9E0] hover:decoration-white/50"
-                    >
-                      <Icon name="arrow" className="h-3 w-3" /> {t("See it live", "Voir le site en live")}
-                    </a>
-                  )}
                 </div>
                 <button onClick={() => { const it = previewItem; closePreview(); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-[#08080A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.02]">
                   {hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
