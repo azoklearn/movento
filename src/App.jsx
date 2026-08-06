@@ -488,12 +488,13 @@ const plans = [
     id: "yearly",
     hidden: false,
     name: t("Yearly", "Annuel"),
-    price: "49€",
+    price: "99€",
     period: t("/ yr", "/ an"),
     // The per-month figure is what makes the yearly readable next to the 17.99
-    // monthly sitting beside it — 4.08 vs 17.99 is the whole argument. Recompute
-    // the percentage whenever either price moves: 1 - (49/12)/17.99 = 77%.
-    subPrice: t("≈ 4.08€/mo — save 77% vs monthly", "≈ 4,08€/mois — 77% d'économie vs mensuel"),
+    // monthly sitting beside it — 8.25 vs 17.99 is the whole argument. Recompute
+    // both figures whenever either price moves: 99/12 = 8.25, and
+    // 1 - 8.25/17.99 = 54%.
+    subPrice: t("≈ 8.25€/mo — save 54% vs monthly", "≈ 8,25€/mois — 54% d'économie vs mensuel"),
     badge: t("Best value", "Meilleur rapport"),
     description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
