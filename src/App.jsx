@@ -662,7 +662,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
 const WHOP_LOADER_SRC = "https://js.whop.com/static/checkout/loader.js";
 let whopCbSeq = 0;
 
-function WhopCheckoutEmbed({ planId, prefillEmail, onComplete }) {
+function WhopCheckoutEmbed({ planId, prefillEmail, promoCode, onComplete }) {
   const cbName = useMemo(() => `moventoWhopComplete_${++whopCbSeq}`, []);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
@@ -679,6 +679,13 @@ function WhopCheckoutEmbed({ planId, prefillEmail, onComplete }) {
     return () => { try { delete window[cbName]; } catch { window[cbName] = undefined; } };
   }, [cbName]);
 
+  // Whop has used both spellings for the promo attribute across versions of the
+  // loader. An attribute it does not read is inert; a missing one silently costs
+  // the buyer the discount, so both are set.
+  const promoAttrs = promoCode
+    ? { "data-whop-checkout-promo-code": promoCode, "data-whop-checkout-promocode": promoCode }
+    : {};
+
   return (
     <div
       key={planId}
@@ -688,6 +695,7 @@ function WhopCheckoutEmbed({ planId, prefillEmail, onComplete }) {
       data-whop-checkout-skip-redirect="true"
       data-whop-checkout-on-complete={cbName}
       {...(prefillEmail ? { "data-whop-checkout-prefill-email": prefillEmail } : {})}
+      {...promoAttrs}
       className="min-h-[540px] w-full overflow-hidden rounded-2xl bg-white/[0.03]"
     />
   );
@@ -738,12 +746,12 @@ function CheckoutSuccess({ prefillEmail, onUnlocked }) {
 // mount the embedded Whop checkout, then confirm access — never leaving the page.
 // Falls back to the hosted redirect only when no plan_xxx id is configured.
 function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
-  const [load, setLoad] = useState({ loading: true, planId: "", error: "" });
+  const [load, setLoad] = useState({ loading: true, planId: "", promoCode: "", error: "" });
   const [done, setDone] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    setLoad({ loading: true, planId: "", error: "" });
+    setLoad({ loading: true, planId: "", promoCode: "", error: "" });
     (async () => {
       try {
         const r = await fetch(CHECKOUT_API_URL, {
@@ -758,12 +766,12 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         // available: the affiliate code rides on the URL (a=...), which is the
         // only path that credits the commission for certain.
         if (d.checkoutUrl && getRef()) { track("checkout_redirected", { plan: plan.id, ...refProps() }); window.location.assign(d.checkoutUrl); return; }
-        if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, error: "" }); return; }
+        if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, promoCode: d.promoCode || "", error: "" }); return; }
         // No embeddable plan id configured — gracefully use the hosted page.
         if (d.checkoutUrl) { window.location.assign(d.checkoutUrl); return; }
         throw new Error(t("Checkout is unavailable for this plan.", "Checkout indisponible pour cette offre."));
       } catch (e) {
-        if (alive) setLoad({ loading: false, planId: "", error: getCheckoutErrorMessage(e) });
+        if (alive) setLoad({ loading: false, planId: "", promoCode: "", error: getCheckoutErrorMessage(e) });
       }
     })();
     return () => { alive = false; };
@@ -795,9 +803,16 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
               <button onClick={() => setLoad((s) => ({ ...s }))} className="rounded-full bg-[#08080A] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418]">{t("Retry", "Réessayer")}</button>
             </div>
           ) : (
-            <WhopCheckoutEmbed planId={load.planId} prefillEmail={prefillEmail} onComplete={() => { track("checkout_completed", { plan: plan.id, ...refProps() }); setDone(true); }} />
+            <WhopCheckoutEmbed planId={load.planId} prefillEmail={prefillEmail} promoCode={load.promoCode} onComplete={() => { track("checkout_completed", { plan: plan.id, ...refProps() }); setDone(true); }} />
           )}
         </div>
+        {/* Stated, not silent: the buyer should see the discount is on before
+            they read the total, and notice if it is not. */}
+        {load.promoCode && !done && (
+          <div className="flex items-center justify-center gap-1.5 border-t border-emerald-400/20 bg-emerald-400/[0.06] px-5 py-2.5 text-[11px] font-semibold text-emerald-300">
+            <Icon name="check" className="h-3 w-3" /> {t(`Code ${load.promoCode} applied automatically`, `Code ${load.promoCode} appliqué automatiquement`)}
+          </div>
+        )}
         <div className="flex items-center justify-center gap-1.5 border-t border-white/[0.07] px-5 py-3 text-[11px] text-white/40">
           <Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}
         </div>

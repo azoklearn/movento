@@ -127,6 +127,28 @@ export function appendAffiliate(url, ref) {
   }
 }
 
+// Discount applied for the buyer instead of being typed by them. The code has
+// to exist in Whop with this exact spelling — an unknown code is ignored at
+// checkout, so the buyer simply pays full price with no error shown anywhere.
+// Set it to "" to stop applying one.
+export const CHECKOUT_PROMO_CODE = process.env.WHOP_PROMO_CODE ?? "HERO10";
+
+// Whop reads the promo from the checkout URL. Both spellings are sent: the
+// hosted checkout has used camelCase and snake_case at different times, and an
+// unread parameter is harmless while a missing one costs the buyer the discount.
+export function appendPromo(url, code = CHECKOUT_PROMO_CODE) {
+  const clean = String(code || "").trim().slice(0, 64).replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!url || !clean) return url;
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("promoCode", clean);
+    parsed.searchParams.set("promo_code", clean);
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 // Where customers manage/cancel their membership.
 export const WHOP_PORTAL_URL = process.env.WHOP_PORTAL_URL || "https://whop.com/orders/";
 
