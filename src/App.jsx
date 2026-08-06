@@ -474,7 +474,7 @@ const FREE_PROMPT_FILES = new Set([]);
 // The three prices live here rather than inside the cards, because they refer
 // to each other: the annual card quotes the monthly one, and its headline is
 // the annual divided by twelve. Change a number here and every mention follows.
-const PRICE_LIFETIME = 129;
+const PRICE_LIFETIME = 99;
 // Struck-through anchor on the lifetime card and in the bottom banner. The
 // badge is computed from the pair, never typed, so it cannot claim a discount
 // the two numbers do not support.
@@ -560,8 +560,6 @@ const plans = [
     description: t("Full access to the catalog, billed monthly. Cancel anytime.", "Accès complet au catalogue, facturé chaque mois. Résiliez à tout moment."),
     cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
     featured: false,
-    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
-    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
     features: [t("Access to all prompts", "Accès à tous les prompts"), t("New prompts added regularly", "Nouveaux prompts ajoutés régulièrement"), t("One-click prompt copy", "Copie en un clic"), t("Cancel anytime", "Résiliez à tout moment")],
   },
 ];
@@ -1740,12 +1738,11 @@ export default function MoventoSite() {
   );
 }
 
-// Every plan now includes the ebook, monthly included — so this is
-// unconditional. Kept as a function, and still the only thing the delivery
-// pages consult, so restricting it again means editing one line here rather
-// than hunting for the two places that show the download.
-function earnedEbook() {
-  return true;
+// The ebook ships with lifetime, not with the monthly plan — the same rule the
+// cards advertise. A plan we failed to identify still gets it: refusing a
+// paid-for bonus because a lookup came back empty is the worse mistake.
+function earnedEbook(info) {
+  return info?.kind !== "monthly";
 }
 
 // Coaching is a lifetime perk. Unlike the ebook this does NOT fail open: an
@@ -1810,7 +1807,7 @@ function EbookCard({ className = "" }) {
 function SuccessPage() {
   const [email, setEmail] = useState(getStoredAccessEmail);
   const [status, setStatus] = useState({ loading: false, ok: false, error: "" });
-  // The bonus ebook ships with every plan.
+  // The bonus ebook ships with lifetime, not with the monthly plan.
   // Unknown plans get it: a paying customer must never be denied by a lookup
   // that merely failed to identify their plan.
   const [ebookEarned, setEbookEarned] = useState(true);
@@ -1911,7 +1908,7 @@ function SuccessPage() {
           )}
         </div>
 
-        {/* Bonus ebook — every plan */}
+        {/* Bonus ebook — lifetime only */}
         {status.ok && ebookEarned && <EbookCard className="mt-4" />}
 
         {status.ok && supportEarned && <SupportCard className="mt-4" />}
@@ -2417,7 +2414,7 @@ function BusinessLadder({ onPick }) {
         "Copy a prompt, paste it into Lovable, Cursor or Claude, and a complete site comes out — fonts, animations, sections. You ship work you could not have coded.",
         "Tu copies un prompt, tu le colles dans Lovable, Cursor ou Claude, et un site complet en sort — polices, animations, sections. Tu livres un travail que tu n'aurais pas su coder.",
       ),
-      tag: t("In all three plans", "Dans les trois offres"),
+      tag: t("In both plans", "Dans les deux offres"),
       tone: "border-white/12 bg-white/[0.03]",
       accent: "text-white/45",
       icon: "sparkles",
@@ -2431,7 +2428,7 @@ function BusinessLadder({ onPick }) {
         "Building is half the job. The guide covers the other half: pricing a site, writing the offer, handling the client, delivering and getting paid.",
         "Créer, c'est la moitié du travail. Le guide couvre l'autre moitié : fixer un prix, rédiger l'offre, gérer le client, livrer et te faire payer.",
       ),
-      tag: t("In all three plans", "Dans les trois offres"),
+      tag: t("Lifetime only", "Uniquement avec l'accès à vie"),
       tone: "border-amber-400/25 bg-amber-400/[0.05]",
       accent: "text-amber-300/80",
       icon: "gift",
@@ -2512,7 +2509,7 @@ function BusinessLadder({ onPick }) {
         >
           {t("Get all three", "Prendre les trois")} <Icon name="arrow" className="h-4 w-4" />
         </button>
-        <p className="text-xs text-white/40">{t("The first two come with every plan. The third only with lifetime.", "Les deux premières sont dans toutes les offres. La troisième uniquement à vie.")}</p>
+        <p className="text-xs text-white/40">{t("The prompts come with both plans. The ebook and the coaching only with lifetime.", "Les prompts sont dans les deux offres. L'ebook et le coaching uniquement à vie.")}</p>
       </motion.div>
     </section>
   );
