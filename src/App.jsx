@@ -521,6 +521,8 @@ const plans = [
     description: t("Full access to the catalog, billed monthly. Cancel anytime.", "Accès complet au catalogue, facturé chaque mois. Résiliez à tout moment."),
     cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
     featured: false,
+    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
+    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
     features: [t("Access to all prompts", "Accès à tous les prompts"), t("New prompts added regularly", "Nouveaux prompts ajoutés régulièrement"), t("One-click prompt copy", "Copie en un clic"), t("Cancel anytime", "Résiliez à tout moment")],
   },
 ];
@@ -1674,11 +1676,12 @@ export default function MoventoSite() {
   );
 }
 
-// The bonus ships with yearly and lifetime, not with monthly. A plan we failed
-// to identify gets it: refusing a paid-for bonus because a lookup came back
-// empty is the worse of the two mistakes.
-function earnedEbook(info) {
-  return info?.kind !== "monthly";
+// Every plan now includes the ebook, monthly included — so this is
+// unconditional. Kept as a function, and still the only thing the delivery
+// pages consult, so restricting it again means editing one line here rather
+// than hunting for the two places that show the download.
+function earnedEbook() {
+  return true;
 }
 
 // Coaching is a lifetime perk. Unlike the ebook this does NOT fail open: an
