@@ -458,13 +458,22 @@ const FREE_PROMPT_FILES = new Set([]);
 // Order here is the order every pricing grid renders in, so lifetime leads:
 // it is the offer that converts, and the two subscriptions read as the
 // alternatives to it rather than the other way round.
+// The three prices live here rather than inside the cards, because they refer
+// to each other: the annual card quotes the monthly one, and its headline is
+// the annual divided by twelve. Change a number here and every mention follows.
+const PRICE_LIFETIME = 199;
+const PRICE_YEARLY = 99;
+const PRICE_MONTHLY = 31.99;
+const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
+const YEARLY_PER_MONTH = (PRICE_YEARLY / 12).toFixed(2);
+
 const plans = [
   {
     id: "lifetime",
     hidden: false,
     name: t("Lifetime", "À vie"),
     // Keep the badge honest whenever either figure moves: 1 - 199/349 = 43%.
-    price: "199€",
+    price: eur(PRICE_LIFETIME),
     originalPrice: "349€",
     discountBadge: "-43%",
     period: t("forever", "à vie"),
@@ -492,16 +501,19 @@ const plans = [
     id: "yearly",
     hidden: false,
     name: t("Yearly", "Annuel"),
-    price: "99€",
+    price: eur(PRICE_YEARLY),
     period: t("/ yr", "/ an"),
-    // 8.25 next to the 17.99 monthly IS the argument, so the card leads with it
-    // and demotes the 99 to the billing line — the amount actually charged is
-    // still stated, just not as the headline. Recompute all three figures
-    // whenever either price moves: 99/12 = 8.25, and 1 - 8.25/17.99 = 54%.
-    priceMonthly: t("8.25€", "8,25€"),
+    // The card leads with the per-month figure — that is what a visitor
+    // compares against the monthly card — and states the amount really charged
+    // right underneath. Both are derived, so neither can drift from the price.
+    //
+    // No percentage on purpose: against a 31.99 monthly the discount computes
+    // to 74%, and a number that large reads as an inflated monthly rather than
+    // a generous annual. The two prices side by side make the case on their own.
+    priceMonthly: eur(YEARLY_PER_MONTH),
     priceMonthlyPeriod: t("/ mo", "/ mois"),
-    billedNote: t("99€ billed once a year", "99€ facturé une fois par an"),
-    subPrice: t("Save 54% vs monthly", "54% d'économie vs mensuel"),
+    billedNote: t(`${eur(PRICE_YEARLY)} billed once a year`, `${eur(PRICE_YEARLY)} facturé une fois par an`),
+    subPrice: t(`instead of ${eur(PRICE_MONTHLY)}/mo`, `au lieu de ${eur(PRICE_MONTHLY)}/mois`),
     badge: t("Best value", "Meilleur rapport"),
     description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
@@ -514,7 +526,7 @@ const plans = [
     id: "monthly",
     hidden: false,
     name: t("Monthly", "Mensuel"),
-    price: "17.99€",
+    price: eur(PRICE_MONTHLY),
     period: t("/ mo", "/ mois"),
     subPrice: t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment"),
     badge: t("Flexible", "Flexible"),
