@@ -1605,6 +1605,10 @@ export default function MoventoSite() {
         <div className="overflow-hidden rounded-[36px] border border-white/10 bg-[#121214] p-8 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-12"><div className="grid gap-10 md:grid-cols-3">{[t("Choose a style", "Choisir un style"), t("Copy the prompt", "Copier le prompt"), t("Generate your site", "Générer votre site")].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-[#08080A] text-sm font-bold text-white shadow-none">0{i + 1}</div><h3 className="text-xl font-semibold text-[#EDE9E0]">{step}</h3><p className="mt-3 text-sm leading-6 text-white/55">{i === 0 ? t("Browse previews and find a design direction that suits your offer.", "Parcourez les aperçus et trouvez une direction design adaptée à votre offre.") : i === 1 ? t("The prompt is loaded directly from the source to stay intact.", "Le prompt est chargé directement depuis la source pour rester intact.") : t("Paste it into your favorite AI tool and customize the result.", "Collez-le dans votre outil IA préféré et personnalisez le résultat.")}</p></div>)}</div></div>
       </section>
 
+      {/* Right after "how it works": the visitor now knows the mechanic, this
+          is what the mechanic is FOR. */}
+      <BusinessLadder onPick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+
       {/* The walkthrough sits after the catalogue, not before it: the designs are
           what sell, and a vertical video between the hero and the gallery pushed
           the prompts a full screen down on mobile. */}
@@ -2358,6 +2362,124 @@ function CoachingSlotsPopup({ onPick }) {
   );
 }
 
+// The three things Movento sells, as a ladder rather than a list: the prompts
+// let you deliver, the ebook lets you sell, the coaching gets you to the first
+// client. Colours match the plan cards — neutral, amber, emerald — so a visitor
+// who has just read them recognises which tier each rung belongs to.
+//
+// Deliberately phrased as capability, never as earnings: "what you can do with
+// it", not "what you will make". No figures, no promises.
+function BusinessLadder({ onPick }) {
+  const steps = [
+    {
+      key: "prompts",
+      label: t("Step 1 — The prompts", "Étape 1 — Les prompts"),
+      title: t("You can deliver a site today", "Tu livres un site dès aujourd'hui"),
+      body: t(
+        "Copy a prompt, paste it into Lovable, Cursor or Claude, and a complete site comes out — fonts, animations, sections. You ship work you could not have coded.",
+        "Tu copies un prompt, tu le colles dans Lovable, Cursor ou Claude, et un site complet en sort — polices, animations, sections. Tu livres un travail que tu n'aurais pas su coder.",
+      ),
+      tag: t("In all three plans", "Dans les trois offres"),
+      tone: "border-white/12 bg-white/[0.03]",
+      accent: "text-white/45",
+      icon: "sparkles",
+      iconTone: "bg-white/10 text-[#EDE9E0]",
+    },
+    {
+      key: "ebook",
+      label: t("Step 2 — Plus the ebook", "Étape 2 — Avec l'ebook"),
+      title: t("You can sell what you deliver", "Tu sais vendre ce que tu livres"),
+      body: t(
+        "Building is half the job. The guide covers the other half: pricing a site, writing the offer, handling the client, delivering and getting paid.",
+        "Créer, c'est la moitié du travail. Le guide couvre l'autre moitié : fixer un prix, rédiger l'offre, gérer le client, livrer et te faire payer.",
+      ),
+      tag: t("In all three plans", "Dans les trois offres"),
+      tone: "border-amber-400/25 bg-amber-400/[0.05]",
+      accent: "text-amber-300/80",
+      icon: "gift",
+      iconTone: "bg-amber-400 text-[#1a1400]",
+    },
+    {
+      key: "coaching",
+      label: t("Step 3 — Plus the coaching", "Étape 3 — Avec le coaching"),
+      title: t("You get to your first client", "Tu vas jusqu'à ton premier client"),
+      body: t(
+        "Where the guide stops, I take over — on WhatsApp, on your actual project. Where to find them, what to say, what to charge, what to fix before you send it.",
+        "Là où le guide s'arrête, je prends le relais — sur WhatsApp, sur ton projet réel. Où les trouver, quoi leur dire, quel prix demander, quoi corriger avant d'envoyer.",
+      ),
+      tag: t("Lifetime only", "Uniquement avec l'accès à vie"),
+      tone: "border-emerald-400/30 bg-emerald-400/[0.06]",
+      accent: "text-emerald-300/80",
+      icon: "chat",
+      iconTone: "bg-emerald-400 text-[#04150d]",
+    },
+  ];
+
+  return (
+    <section className="relative z-10 mx-auto max-w-6xl px-6 py-16 lg:px-8 lg:py-24">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        className="mx-auto max-w-2xl text-center"
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("Why people buy", "Pourquoi on achète Movento")}</p>
+        <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#EDE9E0] md:text-4xl">
+          {t("Enough to start selling websites", "De quoi lancer ton activité de revente de sites")}
+        </h2>
+        <p className="mt-4 text-sm leading-6 text-white/55">
+          {t(
+            "Three things, and each one takes you further than the last.",
+            "Trois choses, et chacune te mène plus loin que la précédente.",
+          )}
+        </p>
+      </motion.div>
+
+      <ol className="mt-12 grid gap-5 md:grid-cols-3">
+        {steps.map((step, i) => (
+          <motion.li
+            key={step.key}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className={`flex flex-col rounded-[26px] border p-6 md:p-7 ${step.tone}`}
+          >
+            <div className="flex items-center gap-3">
+              <span className={`grid h-8 w-8 flex-none place-items-center rounded-full ${step.iconTone}`}>
+                <Icon name={step.icon} className="h-4 w-4" />
+              </span>
+              <p className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${step.accent}`}>{step.label}</p>
+            </div>
+            <h3 className="mt-4 text-lg font-semibold leading-snug tracking-tight text-[#EDE9E0]">{step.title}</h3>
+            <p className="mt-2.5 text-sm leading-6 text-white/55">{step.body}</p>
+            {/* mt-auto, not a fixed margin: the three bodies differ in length and
+                the plan labels would otherwise sit at three different heights. */}
+            <p className="mt-auto border-t border-white/[0.08] pt-4 text-xs font-medium text-white/40 [margin-top:1.25rem] md:[margin-top:auto]">{step.tag}</p>
+          </motion.li>
+        ))}
+      </ol>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.25 }}
+        className="mt-10 flex flex-col items-center gap-3"
+      >
+        <button
+          onClick={onPick}
+          className="inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-7 py-3.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white hover:scale-[1.02]"
+        >
+          {t("Get all three", "Prendre les trois")} <Icon name="arrow" className="h-4 w-4" />
+        </button>
+        <p className="text-xs text-white/40">{t("The first two come with every plan. The third only with lifetime.", "Les deux premières sont dans toutes les offres. La troisième uniquement à vie.")}</p>
+      </motion.div>
+    </section>
+  );
+}
+
 // The catalogue is identical on all three plans, so the coaching is the only
 // thing the lifetime price actually buys on top. It gets its own block right
 // under the grid, where the visitor is still comparing.
@@ -2538,6 +2660,8 @@ function PricingPage() {
       </section>
 
       <CoachingSlotsPopup onPick={scrollToPlans} />
+
+      <BusinessLadder onPick={scrollToPlans} />
 
       <PricingShowcase onPick={scrollToPlans} />
 
