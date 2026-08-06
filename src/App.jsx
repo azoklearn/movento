@@ -456,11 +456,12 @@ const plans = [
     // catalogue is the same on all three. It gets the loudest block on the card
     // and its own section below the grid.
     perk: t("1-to-1 WhatsApp coaching", "Coaching WhatsApp en direct"),
-    perkDesc: t("Not a support inbox: I walk you through it until you can do it on your own.", "Pas un service client : je t'accompagne jusqu'à ce que tu saches le faire seul."),
+    perkDesc: t("Building the site is half the job. I walk you through the other half: finding the people who pay for it.", "Créer le site, c'est la moitié du travail. Je t'accompagne sur l'autre moitié : trouver les gens qui le paient."),
     perkPoints: [
-      t("Answers within 24h, from me — never a bot", "Réponse sous 24h, par moi — jamais un bot"),
+      t("Finding your first clients: where to look, what to say", "Trouver tes premiers clients : où chercher, quoi leur dire"),
+      t("What to charge, and how to hold your price", "Quel prix demander, et comment le tenir"),
       t("I review your site and tell you what to fix", "Je regarde ton site et je te dis quoi corriger"),
-      t("Which prompt to pick, how to adapt it to your client", "Quel prompt choisir, comment l'adapter à ton client"),
+      t("Answers within 24h, from me — never a bot", "Réponse sous 24h, par moi — jamais un bot"),
       t("For life — no session limit, no extra fee", "À vie — aucune limite de séances, aucun supplément"),
     ],
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
@@ -1989,16 +1990,16 @@ function Testimonials({ items = TESTIMONIALS }) {
 function CoachingBlock({ onPick }) {
   const steps = [
     {
-      title: t("You send me your screen", "Tu m'envoies ton écran"),
-      body: t("A screenshot, a link, a prompt that won't behave. Whatever you're stuck on, as it happens.", "Une capture, un lien, un prompt qui ne veut pas. Ce sur quoi tu bloques, au moment où tu bloques."),
+      title: t("You write to me", "Tu m'écris"),
+      body: t("A screenshot, a link, a prompt that won't behave — or a client who won't answer. Whatever you're stuck on, as it happens.", "Une capture, un lien, un prompt qui ne veut pas — ou un client qui ne répond pas. Ce sur quoi tu bloques, au moment où tu bloques."),
     },
     {
       title: t("I answer within 24h", "Je réponds sous 24h"),
       body: t("Me, on WhatsApp — not a ticket queue and not a bot. Same person every time.", "Moi, sur WhatsApp — pas un ticket, pas un bot. La même personne à chaque fois."),
     },
     {
-      title: t("You learn to do it alone", "Tu apprends à le faire seul"),
-      body: t("The goal is not to answer forever. It's that you stop needing to ask.", "Le but n'est pas de répondre éternellement. C'est que tu n'aies plus besoin de demander."),
+      title: t("You land the client alone", "Tu signes ton client seul"),
+      body: t("The goal is not to answer forever. It's that you know how to find them, price them and deliver without asking.", "Le but n'est pas de répondre éternellement. C'est que tu saches les trouver, les facturer et livrer sans demander."),
     },
   ];
 
@@ -2020,10 +2021,31 @@ function CoachingBlock({ onPick }) {
 
       <p className="mt-5 max-w-2xl text-sm leading-6 text-white/65">
         {t(
-          "The catalog is the same on all three plans. What lifetime adds is a person: real coaching over WhatsApp, for as long as you need it, until you can build and sell these sites without asking anyone.",
-          "Le catalogue est le même sur les trois offres. Ce que l'accès à vie ajoute, c'est quelqu'un : un vrai accompagnement sur WhatsApp, aussi longtemps qu'il te faut, jusqu'à ce que tu saches créer et vendre ces sites sans demander à personne.",
+          "The catalog is the same on all three plans. What lifetime adds is a person: real coaching over WhatsApp — not only on building the sites, but on finding the clients who pay for them, and on what to charge them.",
+          "Le catalogue est le même sur les trois offres. Ce que l'accès à vie ajoute, c'est quelqu'un : un vrai accompagnement sur WhatsApp — pas seulement pour créer les sites, mais pour trouver les clients qui les paient, et savoir à quel prix les leur vendre.",
         )}
       </p>
+
+      {/* Spelled out rather than implied: "coaching" alone reads as tech support,
+          and the client-finding half is the part people actually can't do. */}
+      <div className="mt-6 rounded-2xl border border-white/10 bg-[#0F1512] p-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-300/80">{t("What we work on together", "Ce qu'on travaille ensemble")}</p>
+        <ul className="mt-3 flex flex-wrap gap-2">
+          {[
+            t("Finding your first clients", "Trouver tes premiers clients"),
+            t("What to say to land them", "Quoi leur dire pour les convaincre"),
+            t("Setting your prices", "Fixer tes prix"),
+            t("Handling the negotiation", "Tenir face à la négociation"),
+            t("Picking and adapting the right prompt", "Choisir et adapter le bon prompt"),
+            t("Fixing what's wrong with your site", "Corriger ce qui cloche sur ton site"),
+            t("Delivering to the client", "Livrer au client"),
+          ].map((topic) => (
+            <li key={topic} className="rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-100/85">
+              {topic}
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <ol className="mt-7 grid gap-4 md:grid-cols-3">
         {steps.map((step, i) => (
