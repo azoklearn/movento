@@ -227,8 +227,14 @@ export async function redisClearAccess(normalizedEmail) {
   }
 }
 
+// The company id is not a secret (it is the same one Whop puts in public
+// checkout URLs), so it ships with a default. Only the API key has to live in
+// the environment — and without this default, a deploy that has the key but not
+// the id silently falls back to Redis-only access checks.
+const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID || "biz_2CQPz7bDNhG3va";
+
 function whopConfigured() {
-  return Boolean(process.env.WHOP_API_KEY && process.env.WHOP_COMPANY_ID);
+  return Boolean(process.env.WHOP_API_KEY && WHOP_COMPANY_ID);
 }
 
 // Whop's memberships endpoint has NO email filter, so we page through the
@@ -239,7 +245,7 @@ async function findWhopMembership(normalizedEmail) {
 
   let after = null;
   for (let page = 0; page < 20; page++) {
-    const params = new URLSearchParams({ company_id: process.env.WHOP_COMPANY_ID, first: "100" });
+    const params = new URLSearchParams({ company_id: WHOP_COMPANY_ID, first: "100" });
     for (const status of ACCESS_STATUSES) params.append("statuses[]", status);
     if (after) params.set("after", after);
 
