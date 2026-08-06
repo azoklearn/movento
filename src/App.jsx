@@ -480,6 +480,13 @@ const PRICE_MONTHLY = 31.99;
 const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
 const YEARLY_PER_MONTH = (PRICE_YEARLY / 12).toFixed(2);
 
+// The discount announced on /pricing. It must match CHECKOUT_PROMO_CODE in
+// api/_shared.js, which is what actually gets applied — announcing a code the
+// checkout does not add is the one failure mode that costs trust. Set the code
+// to "" here and there to stop announcing and applying it.
+const PROMO_CODE = "HERO10";
+const PROMO_PERCENT = 10;
+
 const plans = [
   {
     id: "yearly",
@@ -2273,28 +2280,28 @@ function PricingBanner({ onPick }) {
   );
 }
 
-// The remaining places as a popup on /pricing. Shown once per session and
+// The automatic discount as a popup on /pricing. Shown once per session and
 // after a delay, so it lands on a visitor who is already reading rather than
 // interrupting the page load — and never again on the same visit.
-const SLOTS_POPUP_KEY = "movento_slots_popup_seen";
+const PROMO_POPUP_KEY = "movento_promo_popup_seen";
 
-function CoachingSlotsPopup({ onPick }) {
+function PromoPopup({ onPick }) {
   const [open, setOpen] = useState(false);
   const closeRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // Nothing to announce once the places are gone.
-    if (COACHING_SLOTS_LEFT <= 0) return;
+    // Nothing to announce when no code is being applied.
+    if (!PROMO_CODE) return;
     try {
-      if (window.sessionStorage.getItem(SLOTS_POPUP_KEY)) return;
+      if (window.sessionStorage.getItem(PROMO_POPUP_KEY)) return;
     } catch {
       /* private mode: fall through and show it, it just won't be remembered */
     }
     const id = window.setTimeout(() => {
       setOpen(true);
-      track("slots_popup_shown", { left: COACHING_SLOTS_LEFT, ...refProps() });
-      try { window.sessionStorage.setItem(SLOTS_POPUP_KEY, "1"); } catch { /* ignore */ }
+      track("promo_popup_shown", { code: PROMO_CODE, ...refProps() });
+      try { window.sessionStorage.setItem(PROMO_POPUP_KEY, "1"); } catch { /* ignore */ }
     }, 2600);
     return () => window.clearTimeout(id);
   }, []);
@@ -2308,7 +2315,7 @@ function CoachingSlotsPopup({ onPick }) {
   }, [open]);
 
   function take() {
-    track("slots_popup_cta", { left: COACHING_SLOTS_LEFT, ...refProps() });
+    track("promo_popup_cta", { code: PROMO_CODE, ...refProps() });
     setOpen(false);
     onPick?.();
   }
@@ -2327,7 +2334,7 @@ function CoachingSlotsPopup({ onPick }) {
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="slots-popup-title"
+            aria-labelledby="promo-popup-title"
             initial={{ opacity: 0, y: 24, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.97 }}
@@ -2345,27 +2352,30 @@ function CoachingSlotsPopup({ onPick }) {
             </button>
 
             <div className="flex items-center gap-3">
-              <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="chat" className="h-4 w-4" /></span>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/80">{t("Lifetime only", "Uniquement avec l'accès à vie")}</p>
+              <span className="grid h-11 w-11 flex-none place-items-center rounded-2xl bg-emerald-400 text-sm font-black text-[#04150d]">-{PROMO_PERCENT}%</span>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/80">{t("On every plan", "Sur toutes les offres")}</p>
             </div>
 
-            <h2 id="slots-popup-title" className="mt-4 text-xl font-bold tracking-tight text-[#EDE9E0]">
-              {t("The coaching is limited", "L'accompagnement est limité")}
+            <h2 id="promo-popup-title" className="mt-4 text-xl font-bold tracking-tight text-[#EDE9E0]">
+              {t(`Your ${PROMO_PERCENT}% is already applied`, `Tes ${PROMO_PERCENT}% sont déjà appliqués`)}
             </h2>
             <p className="mt-2 text-sm leading-6 text-white/60">
               {t(
-                "Lifetime access includes 1-to-1 WhatsApp coaching: finding your first clients, what to charge, and a second pair of eyes on your site.",
-                "L'accès à vie inclut le coaching WhatsApp en direct : trouver tes premiers clients, quel prix demander, et un deuxième regard sur ton site.",
+                `Nothing to type and nothing to remember: the code is added for you at checkout, whichever plan you pick.`,
+                `Rien à saisir, rien à retenir : le code est ajouté pour toi au moment du paiement, quelle que soit l'offre.`,
               )}
             </p>
 
-            <CoachingSlots className="mt-5" />
+            <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-dashed border-emerald-400/30 bg-emerald-400/[0.07] px-4 py-3.5">
+              <span className="font-mono text-lg font-bold tracking-[0.22em] text-emerald-200">{PROMO_CODE}</span>
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300/90"><Icon name="check" className="h-3.5 w-3.5" /> {t("Applied automatically", "Appliqué automatiquement")}</span>
+            </div>
 
             <button
               onClick={take}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3.5 text-sm font-bold text-[#04150d] transition hover:bg-emerald-300 hover:scale-[1.01]"
             >
-              {t("See lifetime access", "Voir l'accès à vie")} <Icon name="arrow" className="h-4 w-4" />
+              {t("See the plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4" />
             </button>
             <button onClick={() => setOpen(false)} className="mt-2.5 w-full text-center text-xs text-white/40 transition hover:text-white/70">
               {t("Maybe later", "Plus tard")}
@@ -2674,7 +2684,7 @@ function PricingPage() {
         </div>
       </section>
 
-      <CoachingSlotsPopup onPick={scrollToPlans} />
+      <PromoPopup onPick={scrollToPlans} />
 
       <BusinessLadder onPick={scrollToPlans} />
 
