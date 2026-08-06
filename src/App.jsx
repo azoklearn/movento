@@ -808,17 +808,13 @@ function Icon({ name, className = "h-4 w-4" }) {
 // Used in the navbar, the mobile menu, every page header and the footer — one
 // change here swaps the mark everywhere. The file is /public/logo.png, shared
 // with the favicon, and versioned so a swap is not served from cache.
-// Marker-pen highlight for the tail of the hero headline. The words keep the
-// headline's own font and weight — only the background is added — so it still
-// reads as one sentence.
-//
-// The mark is a background on the text itself with box-decoration-break: clone,
-// NOT an absolutely positioned bar: a bar cannot follow text that wraps, which
-// forced whitespace-nowrap and pushed the phrase off screen below 390px. The
-// wipe-in and the glow live in index.css (.hl-mark) so a single
-// prefers-reduced-motion rule disables both.
+// Glowing tail of the hero headline: same font and weight as the rest of the
+// sentence, tinted with a gradient clipped to the glyphs and haloed. Everything
+// visual lives in .hl-mark (index.css) — including the fallback colour for
+// engines without background-clip: text, and the reduced-motion variant, which
+// keeps the look and drops the movement.
 function Highlight({ children }) {
-  return <span className="hl-mark text-[#EDE9E0]">{children}</span>;
+  return <span className="hl-mark">{children}</span>;
 }
 
 function Logo() {

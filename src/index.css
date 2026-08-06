@@ -62,35 +62,67 @@ a[href]:active {
 }
 .mv-aurora { animation: mv-aurora 16s ease-in-out infinite; }
 
-/* Highlighted tail of the hero headline. The mark is a background on the text
-   itself, cloned across line breaks, so it follows the words when the phrase
-   wraps on a narrow screen instead of overflowing as a fixed bar would. */
-@keyframes hl-wipe {
-  from { background-size: 0% 100%; }
-  to { background-size: 100% 100%; }
+/* Highlighted tail of the hero headline: the glyphs themselves carry a warm
+   cream → pale blue gradient with a soft bloom around them. No box, no second
+   typeface — the phrase keeps the headline's font and only its colour changes,
+   so it lifts off the page without breaking the sentence. */
+/* Only the light passes; the warm→cool base underneath never moves, so the
+   phrase always reads with the same colours. */
+@keyframes hl-sheen {
+  0% { background-position: -140% 0, 0 0; }
+  60%, 100% { background-position: 240% 0, 0 0; }
 }
-/* Slow breath on the edge, so the eye returns to it without anything moving. */
-@keyframes hl-glow {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.20), 0 0 0 0 rgba(52, 211, 153, 0); }
-  50% { box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.38), 0 0 22px 0 rgba(52, 211, 153, 0.16); }
+@keyframes hl-bloom {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 14px rgba(255, 222, 176, 0.22))
+      drop-shadow(0 0 38px rgba(176, 196, 255, 0.16));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 20px rgba(255, 222, 176, 0.36))
+      drop-shadow(0 0 58px rgba(176, 196, 255, 0.28));
+  }
 }
+
+/* Fallback for engines without background-clip: text — the phrase stays
+   readable in the headline's own ink rather than turning invisible. */
 .hl-mark {
-  background-image: linear-gradient(180deg, rgba(52, 211, 153, 0.20) 0%, rgba(52, 211, 153, 0.28) 100%);
-  background-repeat: no-repeat;
-  background-position: 0 0;
-  background-size: 100% 100%;
-  border-radius: 8px;
-  padding: 0.02em 0.16em;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  animation:
-    hl-wipe 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both,
-    hl-glow 4s ease-in-out 1.3s infinite;
+  color: #EDE9E0;
+  /* Deliberately NOT box-decoration-break: clone. Sliced is the default and is
+     what a gradient wants across a line break — line one takes the warm end,
+     line two continues into the cool one. Cloning would restart the whole ramp
+     on every line. */
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hl-mark {
+    /* Two layers: a travelling highlight, then the fixed warm→cool base. */
+    background-image:
+      linear-gradient(112deg, rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0) 62%),
+      linear-gradient(100deg, #f4e3bf 0%, #fff6e6 26%, #ffffff 46%, #ede5ff 68%, #d5e4ff 88%, #eaf1ff 100%);
+    background-size: 260% 100%, 100% 100%;
+    background-position: -140% 0, 0 0;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation:
+      hl-sheen 7s ease-in-out 1.4s infinite,
+      hl-bloom 5s ease-in-out infinite;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .mv-aurora { animation: none; }
   html { scroll-behavior: auto; }
-  /* Keep the mark, drop the motion. */
-  .hl-mark { animation: none; background-size: 100% 100%; }
+  /* Keep the gradient and the bloom, drop the movement. */
+  .hl-mark {
+    animation: none;
+    background-position: 240% 0, 0 0;
+    filter:
+      drop-shadow(0 0 16px rgba(255, 222, 176, 0.26))
+      drop-shadow(0 0 44px rgba(176, 196, 255, 0.2));
+  }
 }
