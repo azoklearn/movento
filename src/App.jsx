@@ -17,6 +17,16 @@ const TIKTOK_VIDEO_ID = "7670451978840968480";
 const COACHING_SLOTS_TOTAL = 50;
 const COACHING_SLOTS_LEFT = 12;
 
+// Deadline of the launch offer, shown as a live countdown in the bottom banner
+// on /pricing. It MUST be a real, fixed date — an ISO string with an offset,
+// e.g. "2026-08-31T23:59:59+02:00". Leave it null and the banner falls back to
+// the remaining places, which are true whatever the day.
+//
+// Never make this relative to the visitor's first view: a timer that restarts
+// on every reload is a lie the visitor catches the moment they come back, and
+// it costs more than the urgency is worth.
+const LAUNCH_OFFER_ENDS_AT = null;
+
 // Where lifetime buyers reach a human. Shown on the success page only, to the
 // plan that was actually sold direct support.
 // WhatsApp in international format, no +, no spaces — wa.me rejects anything
@@ -801,6 +811,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   if (name === "gift") children = <><path d="M20 12v10H4V12" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" /></>;
   if (name === "download") children = <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></>;
   if (name === "chat") children = <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4.1-1L3 20l1.1-4.6A8.4 8.4 0 0 1 3 11.4a8.4 8.4 0 0 1 8.5-8.4h.5a8.4 8.4 0 0 1 9 8.5z" />;
+  if (name === "clock") children = <><circle cx="12" cy="12" r="9" /><path d="M12 7.2V12l3.2 2" /></>;
 
   return <svg {...common}>{children}</svg>;
 }
@@ -2095,6 +2106,70 @@ function CoachingSlots({ compact = false, className = "" }) {
   );
 }
 
+// Ticks once a second while a real deadline is ahead. Returns null when there
+// is no deadline or it has passed, so callers drop the countdown entirely
+// rather than freezing on 00:00:00.
+function useCountdown(iso) {
+  const target = useMemo(() => {
+    if (!iso) return null;
+    const ms = Date.parse(iso);
+    return Number.isNaN(ms) ? null : ms;
+  }, [iso]);
+
+  const [left, setLeft] = useState(() => (target ? Math.max(0, target - Date.now()) : 0));
+
+  useEffect(() => {
+    if (!target) return;
+    setLeft(Math.max(0, target - Date.now()));
+    const id = window.setInterval(() => setLeft(Math.max(0, target - Date.now())), 1000);
+    return () => window.clearInterval(id);
+  }, [target]);
+
+  if (!target || left <= 0) return null;
+  const total = Math.floor(left / 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  const days = Math.floor(total / 86400);
+  const clock = `${pad(Math.floor((total % 86400) / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
+  return days > 0 ? `${days}${t("d", "j")} ${clock}` : clock;
+}
+
+// Sticky offer bar at the bottom of /pricing. It carries whichever urgency is
+// actually true: the countdown when a real deadline is configured, the
+// remaining coaching places otherwise — and nothing at all when neither holds.
+function PricingBanner({ onPick }) {
+  const countdown = useCountdown(LAUNCH_OFFER_ENDS_AT);
+  const left = Math.max(0, Math.min(COACHING_SLOTS_LEFT, COACHING_SLOTS_TOTAL));
+
+  if (!countdown && left <= 0) return null;
+
+  const tail = countdown
+    ? t(`${countdown} left`, `plus que ${countdown}`)
+    : t(`${left} coaching places left`, `plus que ${left} places de coaching`);
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-50">
+      <button
+        onClick={() => {
+          track("pricing_banner_click", { countdown: Boolean(countdown), left, ...refProps() });
+          onPick?.();
+        }}
+        className="group block w-full bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] px-4 py-3 text-left transition hover:brightness-110 sm:px-6"
+      >
+        <span className="mx-auto flex max-w-5xl items-center gap-3">
+          <span className="grid h-7 w-7 flex-none place-items-center rounded-full border border-white/45 text-white">
+            <Icon name="clock" className="h-4 w-4" />
+          </span>
+          <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
+            {t("Launch offer", "Offre de lancement")} — <span className="font-normal text-white/70 line-through">349€</span>{" "}
+            {t("now", "maintenant")} <span className="font-bold">199€</span> — {tail}
+          </span>
+          <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
+        </span>
+      </button>
+    </div>
+  );
+}
+
 // The remaining places as a popup on /pricing. Shown once per session and
 // after a delay, so it lands on a visitor who is already reading rather than
 // interrupting the page load — and never again on the same visit.
@@ -2390,6 +2465,11 @@ function PricingPage() {
           <a href="/" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Back to home", "Retour à l'accueil")}</a>
         </div>
       </footer>
+
+      {/* The banner is fixed, so without this the last rows of the footer sit
+          under it once the page is scrolled to the bottom. */}
+      <div aria-hidden="true" className="h-16" />
+      <PricingBanner onPick={scrollToPlans} />
     </main>
   );
 }
