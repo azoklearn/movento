@@ -480,7 +480,7 @@ const PRICE_LIFETIME = 129;
 // the two numbers do not support.
 const PRICE_LIFETIME_ANCHOR = 349;
 const PRICE_YEARLY = 99;
-const PRICE_MONTHLY = 31.99;
+const PRICE_MONTHLY = 21.99;
 const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
 const YEARLY_PER_MONTH = (PRICE_YEARLY / 12).toFixed(2);
 const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
@@ -505,9 +505,10 @@ const plans = [
     // compares against the monthly card — and states the amount really charged
     // right underneath. Both are derived, so neither can drift from the price.
     //
-    // No percentage on purpose: against a 31.99 monthly the discount computes
-    // to 74%, and a number that large reads as an inflated monthly rather than
-    // a generous annual. The two prices side by side make the case on their own.
+    // No percentage on purpose: against any monthly price this plan has been
+    // compared to, the discount computes past 60%, and a number that large
+    // reads as an inflated monthly rather than a generous annual. Quoting the
+    // two prices side by side makes the case without asking to be believed.
     priceMonthly: eur(YEARLY_PER_MONTH),
     priceMonthlyPeriod: t("/ mo", "/ mois"),
     billedNote: t(`${eur(PRICE_YEARLY)} billed once a year`, `${eur(PRICE_YEARLY)} facturé une fois par an`),
