@@ -97,6 +97,7 @@ function LangSwitch({ className = "" }) {
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
+  { title: "Basilico Restaurant", category: "Landing Page", type: "Landing", file: "Basilico_Luxury_Restaurant.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1781521132099-basilico_restaurant.webp", tags: ["Restaurant", "Gold", "GSAP"], gradient: "from-amber-200 via-orange-700 to-[#070707]" },
   { title: "Beauty Categories Grid", category: "E-commerce", type: "Component", file: "Beauty_Categories_Grid.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/animated%20(67).webp", tags: ["Beauty", "Video", "Scroll Reveal"], gradient: "from-rose-100 via-neutral-400 to-[#111]" },
   { title: "S.P.D Red Manifesto", category: "Landing Page", type: "Component", file: "SPD_Red_Manifesto.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/animated%20(48).webp", tags: ["Editorial", "Bold", "Video"], gradient: "from-red-300 via-red-600 to-[#3a0000]" },
   { title: "Max Reed Bento Features", category: "Portfolio", type: "Component", file: "Max_Reed_Bento_Features.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/animated%20(6).webp", tags: ["Bento", "Marquee", "Liquid Glass"], gradient: "from-teal-200 via-neutral-600 to-[#0a0a0a]" },
@@ -296,6 +297,11 @@ const prompts = [
   { title: "Web3 EOS Hero", category: "Web3", type: "Hero", file: "Web3_EOS_Hero.md", preview: "https://motionsites.ai/assets/hero-web3-eos-poster-DF0_WdVS.png", tags: ["Web3", "EOS", "Hero"], gradient: "from-purple-300 via-indigo-500 to-black" },
   { title: "Weblex Dark Hero", category: "Landing Page", type: "Hero", file: "Weblex_Dark_Hero.md", preview: "https://motionsites.ai/assets/hero-weblex-preview-BoIbrUHI.gif", tags: ["Dark", "Agency", "Hero"], gradient: "from-zinc-100 via-zinc-500 to-black" },
   { title: "xPortfolio Hero", category: "Hero Section", type: "Hero", file: "xPortfolio_Hero.md", preview: "https://motionsites.ai/assets/hero-xportfolio-preview-D4A8maiC.gif", tags: ["Portfolio", "Hero", "Creative"], gradient: "from-fuchsia-300 via-violet-500 to-black" },
+  // Added at the end on purpose: the gallery renders this array in order, so
+  // these sit at the bottom rather than in front of the catalogue.
+  { title: "Maison Horlogerie", category: "E-commerce", type: "Landing", file: "Maison_Horlogerie_Luxury_Watch.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1780917018587-Maison-watch.webp", tags: ["Luxury", "GSAP", "Pinned Scroll"], gradient: "from-amber-200 via-slate-600 to-black" },
+  { title: "Pixzen AI Agency", category: "Agency", type: "Landing", file: "Pixzen_AI_Agency.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1781522720269-Pixzen.webp", tags: ["Editorial", "Monochrome", "GSAP"], gradient: "from-stone-100 via-stone-400 to-[#0A0A0A]" },
+  { title: "Creative Developer Portfolio", category: "Portfolio", type: "Hero", file: "Creative_Developer_Portfolio_Hero.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1782992185168-my_portfolio_hero.webp", tags: ["Portfolio", "Glass", "Video"], gradient: "from-violet-300 via-indigo-600 to-[#030305]" },
 ];
 
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
@@ -374,6 +380,10 @@ const AVAILABLE_FILES = new Set([
   "CloudB_Sneaker_Hero.md",
   "Labs_ISP_Hero.md",
   "Muse_Editorial_Gallery.md",
+  "Basilico_Luxury_Restaurant.md",
+  "Maison_Horlogerie_Luxury_Watch.md",
+  "Pixzen_AI_Agency.md",
+  "Creative_Developer_Portfolio_Hero.md",
   "Beauty_Categories_Grid.md",
   "SPD_Red_Manifesto.md",
   "Max_Reed_Bento_Features.md",
