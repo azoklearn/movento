@@ -56,7 +56,7 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // is read straight out of it. A product-page link would only power the REDIRECT
 // flow, which is why both fallbacks below are checkout links.
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_RRfrJryvQw5oE";
-const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_Yj3NE8r5Jj0E1";
+const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
 
 // The links we ship with. An env var overrides them, but see resolvePlanId: a
 // product-page env var must not cost us the embedded checkout these provide.
