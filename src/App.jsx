@@ -2069,6 +2069,110 @@ function CoachingSlots({ compact = false, className = "" }) {
   );
 }
 
+// The remaining places as a popup on /pricing. Shown once per session and
+// after a delay, so it lands on a visitor who is already reading rather than
+// interrupting the page load — and never again on the same visit.
+const SLOTS_POPUP_KEY = "movento_slots_popup_seen";
+
+function CoachingSlotsPopup({ onPick }) {
+  const [open, setOpen] = useState(false);
+  const closeRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Nothing to announce once the places are gone.
+    if (COACHING_SLOTS_LEFT <= 0) return;
+    try {
+      if (window.sessionStorage.getItem(SLOTS_POPUP_KEY)) return;
+    } catch {
+      /* private mode: fall through and show it, it just won't be remembered */
+    }
+    const id = window.setTimeout(() => {
+      setOpen(true);
+      track("slots_popup_shown", { left: COACHING_SLOTS_LEFT, ...refProps() });
+      try { window.sessionStorage.setItem(SLOTS_POPUP_KEY, "1"); } catch { /* ignore */ }
+    }, 2600);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    closeRef.current?.focus();
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  function take() {
+    track("slots_popup_cta", { left: COACHING_SLOTS_LEFT, ...refProps() });
+    setOpen(false);
+    onPick?.();
+  }
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-end justify-center px-4 pb-4 sm:items-center sm:pb-0"
+          onClick={() => setOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="slots-popup-title"
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/12 bg-[#121214] p-6 shadow-2xl shadow-black/60 md:p-7"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              ref={closeRef}
+              onClick={() => setOpen(false)}
+              aria-label={t("Close", "Fermer")}
+              className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-black/50 text-white/70 transition hover:bg-black/80 hover:text-white"
+            >
+              <Icon name="close" className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="chat" className="h-4 w-4" /></span>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/80">{t("Lifetime only", "Uniquement avec l'accès à vie")}</p>
+            </div>
+
+            <h2 id="slots-popup-title" className="mt-4 text-xl font-bold tracking-tight text-[#EDE9E0]">
+              {t("The coaching is limited", "L'accompagnement est limité")}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              {t(
+                "Lifetime access includes 1-to-1 WhatsApp coaching: finding your first clients, what to charge, and a second pair of eyes on your site.",
+                "L'accès à vie inclut le coaching WhatsApp en direct : trouver tes premiers clients, quel prix demander, et un deuxième regard sur ton site.",
+              )}
+            </p>
+
+            <CoachingSlots className="mt-5" />
+
+            <button
+              onClick={take}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3.5 text-sm font-bold text-[#04150d] transition hover:bg-emerald-300 hover:scale-[1.01]"
+            >
+              {t("See lifetime access", "Voir l'accès à vie")} <Icon name="arrow" className="h-4 w-4" />
+            </button>
+            <button onClick={() => setOpen(false)} className="mt-2.5 w-full text-center text-xs text-white/40 transition hover:text-white/70">
+              {t("Maybe later", "Plus tard")}
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // The catalogue is identical on all three plans, so the coaching is the only
 // thing the lifetime price actually buys on top. It gets its own block right
 // under the grid, where the visitor is still comparing.
@@ -2103,8 +2207,6 @@ function CoachingBlock({ onPick }) {
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("You don't just get the prompts. You get me.", "Tu ne prends pas que les prompts. Tu me prends avec.")}</h2>
         </div>
       </div>
-
-      <CoachingSlots className="mt-5" />
 
       <p className="mt-5 max-w-2xl text-sm leading-6 text-white/65">
         {t(
@@ -2248,6 +2350,8 @@ function PricingPage() {
           <Reassurance className="mt-9" />
         </div>
       </section>
+
+      <CoachingSlotsPopup onPick={scrollToPlans} />
 
       <PricingShowcase onPick={scrollToPlans} />
 
