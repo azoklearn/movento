@@ -541,63 +541,78 @@ const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.l
 // the row narrows with the number of plans on sale.
 const planGridWidth = visiblePlans.length === 1 ? "max-w-sm" : visiblePlans.length === 2 ? "max-w-3xl" : "max-w-5xl";
 
-// Clean, single-focus pricing card used across every purchase surface (paywall
-// modal, pricing section, /pricing page). Intentionally minimal: price, one CTA,
-// a few essential bullets — nothing else.
+// Pricing card used across every purchase surface (paywall modal, pricing
+// section, /pricing page). Laid out in four quiet bands — identity, price,
+// action, then what you get — separated by hairlines rather than by boxes, so
+// nothing is dropped to make it look calm.
 function PlanCard({ plan, onBuy, loading, featured }) {
   return (
-    <div className={`relative flex flex-col rounded-[28px] p-6 transition sm:p-7 ${featured ? "border-2 border-white/30 bg-[#141417] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]" : "border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"}`}>
+    <div className={`relative flex flex-col rounded-[28px] p-7 transition sm:p-8 ${featured ? "border border-white/25 bg-[#141417] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]" : "border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"}`}>
       {featured && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{t("Best value", "Meilleur choix")}</span>}
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-[#EDE9E0]">{plan.name}</h3>
-        {plan.discountBadge && <span className="rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">{plan.discountBadge}</span>}
+
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-xl font-semibold tracking-tight text-[#EDE9E0]">{plan.name}</h3>
+        {plan.discountBadge && <span className="mt-1 flex-none rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">{plan.discountBadge}</span>}
       </div>
+      {/* Reserved height for the longest description in the grid, so the rule,
+          the price and the button land on the same line across the three
+          cards. Only from sm: stacked on a phone there is nothing to align. */}
+      {plan.description && <p className="mt-2 text-sm leading-6 text-white/45 sm:min-h-[4.5rem]">{plan.description}</p>}
+
+      <div className="my-6 border-t border-dashed border-white/[0.14]" />
+
       {/* A plan billed yearly leads with its monthly equivalent — that is the
           number a visitor compares against the monthly card. The amount really
           charged stays right underneath, never hidden. */}
-      <div className="mt-4 flex items-end gap-2">
-        <span className="text-5xl font-bold tracking-[-0.06em] text-[#EDE9E0]">{plan.priceMonthly || plan.price}</span>
-        <span className="pb-1.5 text-sm text-white/40">{plan.priceMonthly ? plan.priceMonthlyPeriod : plan.period}</span>
+      <div className="flex items-end gap-2">
+        <span className="text-[52px] font-bold leading-none tracking-[-0.05em] text-[#EDE9E0]">{plan.priceMonthly || plan.price}</span>
+        <span className="pb-1 text-sm text-white/40">{plan.priceMonthly ? plan.priceMonthlyPeriod : plan.period}</span>
       </div>
-      {plan.billedNote && (
-        <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-sm text-white/45">
-          <Icon name="check" className="h-3.5 w-3.5 flex-none text-white/30" /> {plan.billedNote}
-        </p>
-      )}
-      {plan.originalPrice && <p className="mt-1.5 text-sm text-white/40"><span className="line-through">{plan.originalPrice}</span></p>}
-      {plan.subPrice && <p className="mt-1.5 text-xs font-medium text-emerald-300">{plan.subPrice}</p>}
+      {/* Same reasoning as the description: the plans carry a different number
+          of price lines, and without a floor the three buttons sit at three
+          different heights. */}
+      <div className="mt-3 space-y-1 sm:min-h-[2.75rem]">
+        {plan.billedNote && <p className="text-sm text-white/45">{plan.billedNote}</p>}
+        {plan.originalPrice && <p className="text-sm text-white/35 line-through">{plan.originalPrice}</p>}
+        {plan.subPrice && <p className="text-sm font-medium text-emerald-300">{plan.subPrice}</p>}
+      </div>
+
       <button
         onClick={() => onBuy(plan)}
         disabled={loading}
-        className={`group mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${featured ? "border border-white/20 bg-[#08080A] text-[#EDE9E0] hover:border-white/35 hover:bg-[#141418]" : "border border-white/10 bg-[#121214] text-[#EDE9E0] hover:border-white/20 hover:bg-white/[0.05]"}`}
+        className={`group mt-7 flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-bold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${featured ? "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white" : "border border-white/15 bg-transparent text-[#EDE9E0] hover:border-white/35 hover:bg-white/[0.05]"}`}
       >
         {loading ? t("Loading…", "Chargement…") : plan.cta}
         <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
       </button>
-      <ul className="mt-6 space-y-2.5">
-        {plan.features.slice(0, 4).map((feat) => (
-          <li key={feat} className="flex items-center gap-2.5 text-sm text-white/60">
-            <span className="grid h-4 w-4 flex-none place-items-center rounded-full bg-white/10 text-[#EDE9E0]"><Icon name="check" className="h-3 w-3" /></span> {feat}
+
+      {/* Every feature, not the first four: the lifetime plan lists five and the
+          fifth used to be dropped silently. */}
+      <ul className="mt-8 space-y-3.5">
+        {plan.features.map((feat) => (
+          <li key={feat} className="flex items-start gap-3 text-sm leading-6 text-white/65">
+            <Icon name="check" className="mt-1 h-4 w-4 flex-none text-white/70" /> {feat}
           </li>
         ))}
       </ul>
+      {/* Both extras keep their colour — they are what separates the plans —
+          but they now read as continuations of the feature list rather than as
+          two boxes stacked at the bottom. */}
       {plan.perk && (
-        // Louder than the ebook block on purpose: the coaching is what the
-        // lifetime plan sells that the subscriptions cannot.
-        <div className="mt-5 rounded-2xl border border-emerald-400/30 bg-emerald-400/[0.07] px-3.5 py-3">
-          <div className="flex items-start gap-2.5">
-            <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="chat" className="h-3 w-3" /></span>
-            <div>
+        <div className="mt-7 border-t border-dashed border-white/[0.14] pt-6">
+          <div className="flex items-start gap-3">
+            <Icon name="chat" className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-emerald-200">{plan.perk}</p>
-              {plan.perkDesc && <p className="mt-0.5 text-xs leading-5 text-emerald-100/70">{plan.perkDesc}</p>}
-              <CoachingSlots compact className="mt-2" />
+              {plan.perkDesc && <p className="mt-1 text-[13px] leading-6 text-emerald-100/60">{plan.perkDesc}</p>}
+              <CoachingSlots compact className="mt-2.5" />
             </div>
           </div>
           {plan.perkPoints && (
-            <ul className="mt-2.5 space-y-1.5 border-t border-emerald-400/15 pt-2.5">
+            <ul className="mt-4 space-y-2.5">
               {plan.perkPoints.map((point) => (
-                <li key={point} className="flex items-start gap-2 text-xs leading-5 text-emerald-100/80">
-                  <Icon name="check" className="mt-1 h-3 w-3 flex-none text-emerald-300" /> {point}
+                <li key={point} className="flex items-start gap-3 text-[13px] leading-6 text-emerald-100/75">
+                  <Icon name="check" className="mt-1 h-3.5 w-3.5 flex-none text-emerald-300/80" /> {point}
                 </li>
               ))}
             </ul>
@@ -605,11 +620,13 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         </div>
       )}
       {plan.bonus && (
-        <div className={`${plan.perk ? "mt-2.5" : "mt-5"} flex items-start gap-2.5 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-3 py-2.5`}>
-          <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-amber-400 text-white"><Icon name="gift" className="h-3 w-3" /></span>
-          <div>
-            <p className="text-sm font-semibold text-amber-300">{plan.bonus}</p>
-            {plan.bonusDesc && <p className="mt-0.5 text-xs leading-5 text-amber-300/80">{plan.bonusDesc}</p>}
+        <div className="mt-7 border-t border-dashed border-white/[0.14] pt-6">
+          <div className="flex items-start gap-3">
+            <Icon name="gift" className="mt-0.5 h-4 w-4 flex-none text-amber-300" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-amber-200">{plan.bonus}</p>
+              {plan.bonusDesc && <p className="mt-1 text-[13px] leading-6 text-amber-100/60">{plan.bonusDesc}</p>}
+            </div>
           </div>
         </div>
       )}
