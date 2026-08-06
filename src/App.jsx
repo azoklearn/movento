@@ -569,6 +569,10 @@ const plans = [
 // with a button that would fail.
 const visiblePlans = plans.filter((plan) => !plan.hidden);
 // Tailwind only sees literal class names, so pick whole strings.
+// Two plans sit side by side even on a phone — the whole decision is a
+// comparison, and stacking them puts a screen of scrolling between the two
+// prices. Three would be unreadable at that width, so they still stack.
+const planGridBase = visiblePlans.length === 2 ? "grid-cols-2" : "grid-cols-1";
 const planGridMd = visiblePlans.length === 1 ? "md:grid-cols-1" : visiblePlans.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
 const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
 // Two cards stretched over the three-card width read as oversized banners, so
@@ -581,40 +585,42 @@ const planGridWidth = visiblePlans.length === 1 ? "max-w-sm" : visiblePlans.leng
 // nothing is dropped to make it look calm.
 function PlanCard({ plan, onBuy, loading, featured }) {
   return (
-    <div className={`relative flex flex-col rounded-[28px] p-7 transition sm:p-8 ${featured ? "border border-white/25 bg-[#141417] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]" : "border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"}`}>
+    <div className={`relative flex flex-col rounded-[22px] px-4 pb-4 pt-9 transition sm:rounded-[28px] sm:p-8 ${featured ? "border border-white/25 bg-[#141417] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]" : "border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"}`}>
       {featured && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{t("Best value", "Meilleur choix")}</span>}
 
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-xl font-semibold tracking-tight text-[#EDE9E0]">{plan.name}</h3>
-        {plan.discountBadge && <span className="mt-1 flex-none rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">{plan.discountBadge}</span>}
+      <div className="flex items-start justify-between gap-1.5 sm:gap-3">
+        <h3 className="text-base font-semibold tracking-tight text-[#EDE9E0] sm:text-xl">{plan.name}</h3>
+        {plan.discountBadge && <span className="mt-0.5 flex-none rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-[10px] font-semibold leading-4 text-emerald-300 sm:mt-1 sm:px-2.5 sm:text-[11px]">{plan.discountBadge}</span>}
       </div>
       {/* Reserved height for the longest description in the grid, so the rule,
           the price and the button land on the same line across the three
           cards. Only from sm: stacked on a phone there is nothing to align. */}
-      {plan.description && <p className="mt-2 text-sm leading-6 text-white/45 sm:min-h-[4.5rem]">{plan.description}</p>}
+      {plan.description && <p className="mt-2 min-h-[7.5rem] text-[12.5px] leading-5 text-white/45 sm:min-h-[4.5rem] sm:text-sm sm:leading-6">{plan.description}</p>}
 
-      <div className="my-6 border-t border-dashed border-white/[0.14]" />
+      <div className="my-4 border-t border-dashed border-white/[0.14] sm:my-6" />
 
       {/* A plan billed yearly leads with its monthly equivalent — that is the
           number a visitor compares against the monthly card. The amount really
           charged stays right underneath, never hidden. */}
-      <div className="flex items-end gap-2">
-        <span className="text-[52px] font-bold leading-none tracking-[-0.05em] text-[#EDE9E0]">{plan.priceMonthly || plan.price}</span>
-        <span className="pb-1 text-sm text-white/40">{plan.priceMonthly ? plan.priceMonthlyPeriod : plan.period}</span>
+      {/* Wraps on purpose: at 320px the period label sat 14px past the card and
+          pushed the page into horizontal scroll. */}
+      <div className="flex min-h-[3.25rem] flex-wrap items-end gap-x-1.5 gap-y-0.5 sm:min-h-0 sm:gap-x-2">
+        <span className="text-[32px] font-bold leading-none tracking-[-0.05em] text-[#EDE9E0] sm:text-[52px]">{plan.priceMonthly || plan.price}</span>
+        <span className="pb-0.5 text-xs text-white/40 sm:pb-1 sm:text-sm">{plan.priceMonthly ? plan.priceMonthlyPeriod : plan.period}</span>
       </div>
       {/* Same reasoning as the description: the plans carry a different number
           of price lines, and without a floor the three buttons sit at three
           different heights. */}
-      <div className="mt-3 space-y-1 sm:min-h-[2.75rem]">
-        {plan.billedNote && <p className="text-sm text-white/45">{plan.billedNote}</p>}
-        {plan.originalPrice && <p className="text-sm text-white/35 line-through">{plan.originalPrice}</p>}
-        {plan.subPrice && <p className="text-sm font-medium text-emerald-300">{plan.subPrice}</p>}
+      <div className="mt-3 min-h-[4rem] space-y-1 sm:min-h-[2.75rem]">
+        {plan.billedNote && <p className="text-xs text-white/45 sm:text-sm">{plan.billedNote}</p>}
+        {plan.originalPrice && <p className="text-xs text-white/35 line-through sm:text-sm">{plan.originalPrice}</p>}
+        {plan.subPrice && <p className="text-xs font-medium text-emerald-300 sm:text-sm">{plan.subPrice}</p>}
       </div>
 
       <button
         onClick={() => onBuy(plan)}
         disabled={loading}
-        className={`group mt-7 flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-bold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${featured ? "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white" : "border border-white/15 bg-transparent text-[#EDE9E0] hover:border-white/35 hover:bg-white/[0.05]"}`}
+        className={`group mt-5 flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-3 text-[13px] font-bold sm:mt-7 sm:gap-2 sm:px-5 sm:py-3.5 sm:text-sm transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${featured ? "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white" : "border border-white/15 bg-transparent text-[#EDE9E0] hover:border-white/35 hover:bg-white/[0.05]"}`}
       >
         {loading ? t("Loading…", "Chargement…") : plan.cta}
         <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
@@ -622,9 +628,9 @@ function PlanCard({ plan, onBuy, loading, featured }) {
 
       {/* Every feature, not the first four: the lifetime plan lists five and the
           fifth used to be dropped silently. */}
-      <ul className="mt-8 space-y-3.5">
+      <ul className="mt-6 space-y-3 sm:mt-8 sm:space-y-3.5">
         {plan.features.map((feat) => (
-          <li key={feat} className="flex items-start gap-3 text-sm leading-6 text-white/65">
+          <li key={feat} className="flex items-start gap-2 text-[12.5px] leading-5 text-white/65 sm:gap-3 sm:text-sm sm:leading-6">
             <Icon name="check" className="mt-1 h-4 w-4 flex-none text-white/70" /> {feat}
           </li>
         ))}
@@ -633,7 +639,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
           but they now read as continuations of the feature list rather than as
           two boxes stacked at the bottom. */}
       {plan.perk && (
-        <div className="mt-7 border-t border-dashed border-white/[0.14] pt-6">
+        <div className="mt-6 border-t border-dashed border-white/[0.14] pt-5 sm:mt-7 sm:pt-6">
           <div className="flex items-start gap-3">
             <Icon name="chat" className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />
             <div className="min-w-0">
@@ -654,7 +660,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         </div>
       )}
       {plan.bonus && (
-        <div className="mt-7 border-t border-dashed border-white/[0.14] pt-6">
+        <div className="mt-6 border-t border-dashed border-white/[0.14] pt-5 sm:mt-7 sm:pt-6">
           <div className="flex items-start gap-3">
             <Icon name="gift" className="mt-0.5 h-4 w-4 flex-none text-amber-300" />
             <div className="min-w-0">
@@ -1673,7 +1679,7 @@ export default function MoventoSite() {
           </div>
         </div>
 
-        <div className={`mx-auto mt-12 grid gap-5 ${planGridWidth} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
+        <div className={`mx-auto mt-12 grid gap-3 sm:gap-5 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
           {visiblePlans.map((plan) => (
             <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={startCheckout} />
           ))}
@@ -2680,7 +2686,7 @@ function PricingPage() {
         {/* One column, centred: the offer is the page. Proof lives further down
             so nothing competes with the cards at the moment of the decision. */}
         <div className="mt-14">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 gap-5 ${planGridWidth} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 gap-3 sm:gap-5 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
             {visiblePlans.map((plan) => (
               <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
             ))}
