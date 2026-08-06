@@ -9,6 +9,14 @@ const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_UR
 // Walkthrough video shown under the three steps. TikTok's iframe embed is used
 // rather than their embed.js so the page pulls no third-party script.
 const TIKTOK_VIDEO_ID = "7670451978840968480";
+// How many people can be coached at once, and how many places are left. Shown
+// on /pricing next to the coaching. UPDATE THE NUMBER AS YOU SELL: a counter
+// frozen at the same figure for weeks is the kind of claim buyers screenshot,
+// and it costs more trust than the urgency buys. Set COACHING_SLOTS_LEFT to 0
+// and the badge switches to "full" on its own instead of lying.
+const COACHING_SLOTS_TOTAL = 50;
+const COACHING_SLOTS_LEFT = 12;
+
 // Where lifetime buyers reach a human. Shown on the success page only, to the
 // plan that was actually sold direct support.
 // WhatsApp in international format, no +, no spaces — wa.me rejects anything
@@ -559,6 +567,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
             <div>
               <p className="text-sm font-semibold text-emerald-200">{plan.perk}</p>
               {plan.perkDesc && <p className="mt-0.5 text-xs leading-5 text-emerald-100/70">{plan.perkDesc}</p>}
+              <CoachingSlots compact className="mt-2" />
             </div>
           </div>
           {plan.perkPoints && (
@@ -2018,6 +2027,48 @@ function Testimonials({ items = TESTIMONIALS }) {
   );
 }
 
+// Remaining coaching places. `compact` is the pill that rides on the plan card;
+// the full version adds the bar. Reads from the two constants at the top of the
+// file so both spots can never disagree.
+function CoachingSlots({ compact = false, className = "" }) {
+  const left = Math.max(0, Math.min(COACHING_SLOTS_LEFT, COACHING_SLOTS_TOTAL));
+  const taken = COACHING_SLOTS_TOTAL - left;
+  const pct = COACHING_SLOTS_TOTAL > 0 ? Math.round((taken / COACHING_SLOTS_TOTAL) * 100) : 0;
+  const full = left === 0;
+
+  const label = full
+    ? t("All places taken for now", "Toutes les places sont prises pour l'instant")
+    : t(`${left} places left out of ${COACHING_SLOTS_TOTAL}`, `${left} places restantes sur ${COACHING_SLOTS_TOTAL}`);
+
+  if (compact) {
+    return (
+      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${full ? "border-white/15 bg-white/[0.06] text-white/50" : "border-amber-400/30 bg-amber-400/[0.12] text-amber-200"} ${className}`}>
+        {!full && <span className="h-1.5 w-1.5 flex-none rounded-full bg-amber-300" />}
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    <div className={`rounded-2xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3.5 ${className}`}>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <p className={`text-sm font-bold ${full ? "text-white/60" : "text-amber-200"}`}>{label}</p>
+        {!full && <p className="text-xs text-white/50">{t(`${taken} already coached`, `${taken} déjà accompagnés`)}</p>}
+      </div>
+      {/* A real ratio, not decoration: the bar is filled from the same numbers
+          as the label, so it cannot drift away from what the text claims. */}
+      <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10" role="presentation">
+        <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-2 text-xs leading-5 text-white/45">
+        {full
+          ? t("Lifetime access still includes everything else. Write to me and I'll tell you when a place opens.", "L'accès à vie inclut tout le reste. Écris-moi et je te dirai quand une place se libère.")
+          : t("I cap it so everyone actually gets answered within 24h.", "Je limite le nombre pour que chacun ait vraiment une réponse sous 24h.")}
+      </p>
+    </div>
+  );
+}
+
 // The catalogue is identical on all three plans, so the coaching is the only
 // thing the lifetime price actually buys on top. It gets its own block right
 // under the grid, where the visitor is still comparing.
@@ -2052,6 +2103,8 @@ function CoachingBlock({ onPick }) {
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("You don't just get the prompts. You get me.", "Tu ne prends pas que les prompts. Tu me prends avec.")}</h2>
         </div>
       </div>
+
+      <CoachingSlots className="mt-5" />
 
       <p className="mt-5 max-w-2xl text-sm leading-6 text-white/65">
         {t(
