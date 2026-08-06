@@ -490,11 +490,14 @@ const plans = [
     name: t("Yearly", "Annuel"),
     price: "99€",
     period: t("/ yr", "/ an"),
-    // The per-month figure is what makes the yearly readable next to the 17.99
-    // monthly sitting beside it — 8.25 vs 17.99 is the whole argument. Recompute
-    // both figures whenever either price moves: 99/12 = 8.25, and
-    // 1 - 8.25/17.99 = 54%.
-    subPrice: t("≈ 8.25€/mo — save 54% vs monthly", "≈ 8,25€/mois — 54% d'économie vs mensuel"),
+    // 8.25 next to the 17.99 monthly IS the argument, so the card leads with it
+    // and demotes the 99 to the billing line — the amount actually charged is
+    // still stated, just not as the headline. Recompute all three figures
+    // whenever either price moves: 99/12 = 8.25, and 1 - 8.25/17.99 = 54%.
+    priceMonthly: t("8.25€", "8,25€"),
+    priceMonthlyPeriod: t("/ mo", "/ mois"),
+    billedNote: t("99€ billed once a year", "99€ facturé une fois par an"),
+    subPrice: t("Save 54% vs monthly", "54% d'économie vs mensuel"),
     badge: t("Best value", "Meilleur rapport"),
     description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
@@ -539,10 +542,18 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         <h3 className="text-base font-semibold text-[#EDE9E0]">{plan.name}</h3>
         {plan.discountBadge && <span className="rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">{plan.discountBadge}</span>}
       </div>
+      {/* A plan billed yearly leads with its monthly equivalent — that is the
+          number a visitor compares against the monthly card. The amount really
+          charged stays right underneath, never hidden. */}
       <div className="mt-4 flex items-end gap-2">
-        <span className="text-5xl font-bold tracking-[-0.06em] text-[#EDE9E0]">{plan.price}</span>
-        <span className="pb-1.5 text-sm text-white/40">{plan.period}</span>
+        <span className="text-5xl font-bold tracking-[-0.06em] text-[#EDE9E0]">{plan.priceMonthly || plan.price}</span>
+        <span className="pb-1.5 text-sm text-white/40">{plan.priceMonthly ? plan.priceMonthlyPeriod : plan.period}</span>
       </div>
+      {plan.billedNote && (
+        <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-sm text-white/45">
+          <Icon name="check" className="h-3.5 w-3.5 flex-none text-white/30" /> {plan.billedNote}
+        </p>
+      )}
       {plan.originalPrice && <p className="mt-1.5 text-sm text-white/40"><span className="line-through">{plan.originalPrice}</span></p>}
       {plan.subPrice && <p className="mt-1.5 text-xs font-medium text-emerald-300">{plan.subPrice}</p>}
       <button
