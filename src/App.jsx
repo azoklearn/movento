@@ -482,6 +482,31 @@ const YEARLY_PER_MONTH = (PRICE_YEARLY / 12).toFixed(2);
 
 const plans = [
   {
+    id: "yearly",
+    hidden: false,
+    name: t("Yearly", "Annuel"),
+    price: eur(PRICE_YEARLY),
+    period: t("/ yr", "/ an"),
+    // The card leads with the per-month figure — that is what a visitor
+    // compares against the monthly card — and states the amount really charged
+    // right underneath. Both are derived, so neither can drift from the price.
+    //
+    // No percentage on purpose: against a 31.99 monthly the discount computes
+    // to 74%, and a number that large reads as an inflated monthly rather than
+    // a generous annual. The two prices side by side make the case on their own.
+    priceMonthly: eur(YEARLY_PER_MONTH),
+    priceMonthlyPeriod: t("/ mo", "/ mois"),
+    billedNote: t(`${eur(PRICE_YEARLY)} billed once a year`, `${eur(PRICE_YEARLY)} facturé une fois par an`),
+    subPrice: t(`instead of ${eur(PRICE_MONTHLY)}/mo`, `au lieu de ${eur(PRICE_MONTHLY)}/mois`),
+    badge: t("Best value", "Meilleur rapport"),
+    description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
+    cta: t("Get the annual plan", "Prendre l'offre annuelle"),
+    featured: false,
+    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
+    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
+    features: [t("Full Movento catalog", "Catalogue Movento complet"), t("Year-round updates", "Mises à jour toute l'année"), t("New premium categories", "Nouvelles catégories premium"), t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"), t("Cancel anytime", "Résiliez à tout moment")],
+  },
+  {
     id: "lifetime",
     hidden: false,
     name: t("Lifetime", "À vie"),
@@ -509,31 +534,6 @@ const plans = [
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
     bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
     features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
-  },
-  {
-    id: "yearly",
-    hidden: false,
-    name: t("Yearly", "Annuel"),
-    price: eur(PRICE_YEARLY),
-    period: t("/ yr", "/ an"),
-    // The card leads with the per-month figure — that is what a visitor
-    // compares against the monthly card — and states the amount really charged
-    // right underneath. Both are derived, so neither can drift from the price.
-    //
-    // No percentage on purpose: against a 31.99 monthly the discount computes
-    // to 74%, and a number that large reads as an inflated monthly rather than
-    // a generous annual. The two prices side by side make the case on their own.
-    priceMonthly: eur(YEARLY_PER_MONTH),
-    priceMonthlyPeriod: t("/ mo", "/ mois"),
-    billedNote: t(`${eur(PRICE_YEARLY)} billed once a year`, `${eur(PRICE_YEARLY)} facturé une fois par an`),
-    subPrice: t(`instead of ${eur(PRICE_MONTHLY)}/mo`, `au lieu de ${eur(PRICE_MONTHLY)}/mois`),
-    badge: t("Best value", "Meilleur rapport"),
-    description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
-    cta: t("Get the annual plan", "Prendre l'offre annuelle"),
-    featured: false,
-    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
-    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
-    features: [t("Full Movento catalog", "Catalogue Movento complet"), t("Year-round updates", "Mises à jour toute l'année"), t("New premium categories", "Nouvelles catégories premium"), t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"), t("Cancel anytime", "Résiliez à tout moment")],
   },
   {
     id: "monthly",
