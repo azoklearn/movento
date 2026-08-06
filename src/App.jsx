@@ -1534,13 +1534,6 @@ export default function MoventoSite() {
       </section>
 
       <section id="prompts" className="relative z-10 mx-auto max-w-[1560px] px-6 pt-10 pb-24 lg:px-8 lg:pt-14">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/70">{t("Gallery", "Galerie")}</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-4xl">{t("Premium prompts", "Prompts premium")}</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">{hasPremiumAccess ? t("Premium access active. All prompts can be copied.", "Accès premium actif. Tous les prompts peuvent être copiés.") : `${availablePrompts.length}+ ${t("premium prompts. Unlock the full catalog with one-time lifetime access.", "prompts premium. Débloque tout le catalogue avec l'accès à vie, en un seul paiement.")}`}</p>
-          </div>
-        </div>
         {hasPremiumAccess ? (
           <div className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.07] p-4 text-sm">
             <div className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400/[0.1]0 text-white"><Icon name="check" className="h-4 w-4" /></div>
