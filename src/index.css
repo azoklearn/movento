@@ -62,7 +62,35 @@ a[href]:active {
 }
 .mv-aurora { animation: mv-aurora 16s ease-in-out infinite; }
 
+/* Highlighted tail of the hero headline. The mark is a background on the text
+   itself, cloned across line breaks, so it follows the words when the phrase
+   wraps on a narrow screen instead of overflowing as a fixed bar would. */
+@keyframes hl-wipe {
+  from { background-size: 0% 100%; }
+  to { background-size: 100% 100%; }
+}
+/* Slow breath on the edge, so the eye returns to it without anything moving. */
+@keyframes hl-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.20), 0 0 0 0 rgba(52, 211, 153, 0); }
+  50% { box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.38), 0 0 22px 0 rgba(52, 211, 153, 0.16); }
+}
+.hl-mark {
+  background-image: linear-gradient(180deg, rgba(52, 211, 153, 0.20) 0%, rgba(52, 211, 153, 0.28) 100%);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 100% 100%;
+  border-radius: 8px;
+  padding: 0.02em 0.16em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  animation:
+    hl-wipe 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both,
+    hl-glow 4s ease-in-out 1.3s infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mv-aurora { animation: none; }
   html { scroll-behavior: auto; }
+  /* Keep the mark, drop the motion. */
+  .hl-mark { animation: none; background-size: 100% 100%; }
 }

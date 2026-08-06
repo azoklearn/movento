@@ -808,6 +808,19 @@ function Icon({ name, className = "h-4 w-4" }) {
 // Used in the navbar, the mobile menu, every page header and the footer — one
 // change here swaps the mark everywhere. The file is /public/logo.png, shared
 // with the favicon, and versioned so a swap is not served from cache.
+// Marker-pen highlight for the tail of the hero headline. The words keep the
+// headline's own font and weight — only the background is added — so it still
+// reads as one sentence.
+//
+// The mark is a background on the text itself with box-decoration-break: clone,
+// NOT an absolutely positioned bar: a bar cannot follow text that wraps, which
+// forced whitespace-nowrap and pushed the phrase off screen below 390px. The
+// wipe-in and the glow live in index.css (.hl-mark) so a single
+// prefers-reduced-motion rule disables both.
+function Highlight({ children }) {
+  return <span className="hl-mark text-[#EDE9E0]">{children}</span>;
+}
+
 function Logo() {
   return (
     <span className="flex items-center gap-2.5 select-none">
@@ -1436,7 +1449,11 @@ export default function MoventoSite() {
           {t("New prompts added every week", "De nouveaux prompts chaque semaine")}
         </motion.a>
         <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
-          {t("Premium websites,", "Des sites premium,")} <span className="font-display italic font-normal text-white/45">{t("one prompt away", "en un seul prompt")}</span>
+          {t("Premium websites,", "Des sites premium,")}
+          {/* Narrow screens otherwise strand the first word of the highlighted
+              phrase at the end of the previous line. */}
+          <br className="sm:hidden" />{" "}
+          <Highlight>{t("one prompt away", "en un seul prompt")}</Highlight>
         </motion.h1>
         <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55 md:text-lg">
           {t("Copy a prompt, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify, and ship a modern site in minutes. No code.", "Copie un prompt, colle-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify, et obtiens un site moderne en quelques minutes. Sans coder.")}
