@@ -34,14 +34,20 @@ body {
   color: #ffffff;
 }
 
-h1,
-h2,
-h3 {
-  text-wrap: balance;
-}
+/* In @layer base on purpose. Unlayered rules beat every Tailwind utility no
+   matter the specificity, so declaring these outside a layer made `truncate`
+   silently useless on any heading — card titles wrapped to two lines instead
+   of ellipsing. Inside base, a utility can still override them. */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
 
-p {
-  text-wrap: pretty;
+  p {
+    text-wrap: pretty;
+  }
 }
 
 :focus-visible {

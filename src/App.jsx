@@ -950,10 +950,10 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
       <div ref={containerRef} className="relative aspect-[1.35] overflow-hidden bg-[#0B0B0D]">
         {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? (posterFailed ? <video src={`${item.preview}#t=0.1`} className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : <img className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPosterFailed(true)} />) : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
-      <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+      <div className="flex items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-3.5">
         <div className="min-w-0">
-          <h3 className="truncate text-[15px] font-semibold tracking-tight text-[#EDE9E0]">{item.title}</h3>
-          <p className="mt-0.5 text-xs text-white/40">{item.category}</p>
+          <h3 className="truncate text-[13.5px] font-semibold tracking-tight text-[#EDE9E0] sm:text-[15px]">{item.title}</h3>
+          <p className="mt-0.5 truncate text-[11px] text-white/40 sm:text-xs">{item.category}</p>
         </div>
         {badge}
       </div>
@@ -1411,6 +1411,20 @@ export default function MoventoSite() {
         )}
       </AnimatePresence>
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        {/* Colour band sweeping across the top-right of the hero: cool blue on
+            the left, warm amber where it leaves the frame. Blurred hard and
+            masked top and bottom so it dissolves into the page instead of
+            ending on a line. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-[-30%] top-[-24%] h-[300px] -rotate-[20deg] opacity-[0.9] blur-[45px] sm:h-[420px] sm:blur-[70px]"
+          style={{
+            backgroundImage:
+              "linear-gradient(94deg, rgba(24,40,150,0) 10%, rgba(40,72,235,0.55) 30%, rgba(88,84,240,0.6) 43%, rgba(176,104,180,0.55) 55%, rgba(238,126,80,0.68) 66%, rgba(255,170,74,0.82) 74%, rgba(255,226,158,0.72) 82%, rgba(255,226,158,0) 93%)",
+            maskImage: "linear-gradient(to bottom, transparent 2%, #000 34%, #000 64%, transparent 98%)",
+            WebkitMaskImage: "linear-gradient(to bottom, transparent 2%, #000 34%, #000 64%, transparent 98%)",
+          }}
+        />
         <div className="mv-aurora absolute left-1/2 top-[-30%] h-[620px] w-[900px] -translate-x-1/2 rounded-full bg-white/[0.045] blur-[150px]" />
         <div className="absolute inset-0 opacity-100" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.055) 1px, transparent 0)", backgroundSize: "38px 38px", maskImage: "radial-gradient(ellipse 80% 55% at 50% 0%, #000 30%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 80% 55% at 50% 0%, #000 30%, transparent 100%)" }} />
       </div>
@@ -1431,21 +1445,69 @@ export default function MoventoSite() {
         <button onClick={() => setMobileMenuOpen((open) => !open)} aria-label={t("Menu", "Menu")} aria-expanded={mobileMenuOpen} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#121214] text-white/60 shadow-sm transition hover:border-white/25 md:hidden">
           <Icon name={mobileMenuOpen ? "close" : "menu"} className="h-5 w-5" />
         </button>
+        {/* Full-height panel sliding in from the right, rather than a dropdown
+            under the header: on a phone the links get room to breathe and the
+            call to action sits where the thumb already is. */}
         <AnimatePresence>
           {mobileMenuOpen && (
-            <motion.nav initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }} className="absolute left-6 right-6 top-full z-30 flex flex-col gap-1 rounded-3xl border border-white/10 bg-[#121214] p-3 shadow-xl shadow-black/50 md:hidden">
-              {[
-                { href: "#prompts", label: "Prompts" },
-                { href: "/pricing", label: t("Pricing", "Tarifs") },
-                { href: "/subscription", label: t("My subscription", "Mon abonnement") },
-                { href: "#how", label: t("Guide", "Guide") },
-                { href: "#faq", label: "FAQ" },
-              ].map((link) => (
-                <a key={link.label} href={link.href} onClick={() => setMobileMenuOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-medium text-white/60 transition hover:bg-white/[0.03] hover:text-[#EDE9E0]">{link.label}</a>
-              ))}
-              <a href="/pricing" onClick={() => setMobileMenuOpen(false)} className="mt-1 rounded-2xl bg-[#08080A] px-4 py-3 text-center text-sm font-semibold text-white shadow-none transition hover:bg-[#141418]">{t("Get started", "Commencer")}</a>
-              <div className="mt-1 flex justify-center"><LangSwitch /></div>
-            </motion.nav>
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
+              />
+              <motion.nav
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+                className="fixed right-0 top-0 z-50 flex h-[100dvh] w-[78%] max-w-xs flex-col border-l border-white/10 bg-[#131315] md:hidden"
+              >
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label={t("Close", "Fermer")}
+                  className="absolute right-5 top-5 grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-white/[0.06] text-white transition hover:bg-white/[0.14]"
+                >
+                  <Icon name="close" className="h-4 w-4" />
+                </button>
+
+                <div className="flex flex-col gap-1 px-6 pt-24">
+                  {[
+                    { href: "#prompts", label: "Prompts" },
+                    { href: "/pricing", label: t("Pricing", "Tarifs") },
+                    { href: "/subscription", label: t("My subscription", "Mon abonnement") },
+                    { href: "#how", label: t("Guide", "Guide") },
+                    { href: "#faq", label: "FAQ" },
+                  ].map((link, i) => (
+                    <motion.a
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      initial={{ opacity: 0, x: 22 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.35, delay: 0.1 + i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                      className="rounded-2xl px-2 py-3.5 text-lg font-medium text-white/70 transition hover:bg-white/[0.05] hover:text-[#EDE9E0]"
+                    >
+                      {link.label}
+                    </motion.a>
+                  ))}
+                </div>
+
+                <div className="mt-auto px-6 pb-10">
+                  <div className="mb-4 flex justify-start"><LangSwitch /></div>
+                  <a
+                    href="/pricing"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block rounded-full bg-[#EDE9E0] px-5 py-3.5 text-center text-sm font-bold text-[#0A0A0B] transition hover:bg-white"
+                  >
+                    {t("Get started", "Commencer")}
+                  </a>
+                </div>
+              </motion.nav>
+            </>
           )}
         </AnimatePresence>
       </header>
@@ -1499,7 +1561,7 @@ export default function MoventoSite() {
         {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 ${accessStatus.error ? "border-red-400/25 bg-red-400/[0.08] text-red-300" : "border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-300"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-white/12 bg-white/[0.05] p-4 text-sm leading-6 text-white/80"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
         {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-4 text-sm leading-6 text-red-300"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
           <AnimatePresence>
             {filtered.map((item) => {
               const isFree = FREE_PROMPT_FILES.has(item.file);
@@ -1507,8 +1569,11 @@ export default function MoventoSite() {
               return (
                 <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
                   <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={openPreview} badge={
-                    <span className={`flex flex-none items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${copiedCard === item.title ? "bg-emerald-400/15 text-emerald-300" : copiedCard === "Error" ? "bg-red-400/15 text-red-300" : !unlocked ? "border border-white/10 bg-white/[0.04] text-white/60 group-hover:border-white/25 group-hover:bg-white/[0.1] group-hover:text-white" : isFree && !hasPremiumAccess ? "bg-emerald-400/[0.1] text-emerald-300 group-hover:bg-emerald-600 group-hover:text-white" : "border border-white/10 bg-white/[0.06] text-white/80 group-hover:border-white/25 group-hover:bg-white/[0.12] group-hover:text-white"}`}>
-                      {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> {t("Copied", "Copié")}</> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> {t("Error", "Erreur")}</> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> Premium</> : isFree && !hasPremiumAccess ? <><Icon name="gift" className="h-3.5 w-3.5" /> {t("Free", "Gratuit")}</> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> {t("Open", "Ouvrir")}</> : <><Icon name="copy" className="h-3.5 w-3.5" /> {t("Copy", "Copier")}</>}
+                    // Two cards per row on a phone leaves no space for a
+                    // labelled pill, so below sm the badge keeps the icon and
+                    // drops the word.
+                    <span className={`flex flex-none items-center gap-1.5 rounded-full px-2 py-2 text-xs font-semibold transition sm:px-3.5 ${copiedCard === item.title ? "bg-emerald-400/15 text-emerald-300" : copiedCard === "Error" ? "bg-red-400/15 text-red-300" : !unlocked ? "border border-white/10 bg-white/[0.04] text-white/60 group-hover:border-white/25 group-hover:bg-white/[0.1] group-hover:text-white" : isFree && !hasPremiumAccess ? "bg-emerald-400/[0.1] text-emerald-300 group-hover:bg-emerald-600 group-hover:text-white" : "border border-white/10 bg-white/[0.06] text-white/80 group-hover:border-white/25 group-hover:bg-white/[0.12] group-hover:text-white"}`}>
+                      {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copied", "Copié")}</span></> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Error", "Erreur")}</span></> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Premium</span></> : isFree && !hasPremiumAccess ? <><Icon name="gift" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Free", "Gratuit")}</span></> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Open", "Ouvrir")}</span></> : <><Icon name="copy" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copy", "Copier")}</span></>}
                     </span>
                   } />
                 </motion.div>
