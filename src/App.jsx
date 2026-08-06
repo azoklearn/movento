@@ -495,7 +495,9 @@ const PROMO_PERCENT = 10;
 const plans = [
   {
     id: "yearly",
-    hidden: false,
+    // Retired from the grid. Kept defined so existing yearly subscribers still
+    // resolve, and so bringing it back is one word.
+    hidden: true,
     name: t("Yearly", "Annuel"),
     price: eur(PRICE_YEARLY),
     period: t("/ yr", "/ an"),
@@ -1117,7 +1119,7 @@ async function copyTextToClipboard(text) {
 
 function runSelfTests() {
   console.assert(validatePlanId("monthly"), "monthly should be valid");
-  console.assert(validatePlanId("yearly"), "yearly should be valid");
+  console.assert(!validatePlanId("yearly"), "yearly is retired and should not be purchasable");
   console.assert(validatePlanId("lifetime"), "lifetime should be valid");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   console.assert(extractPrompt("# Test\n\n## Prompt\nhello\n* * *\nfooter") === "hello", "extractPrompt should parse prompt block");
@@ -1661,7 +1663,7 @@ export default function MoventoSite() {
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Monthly, yearly or lifetime.", "Accède à tous les prompts premium. Au mois, à l'année ou à vie.")}</p>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
           <div className="mt-5 flex items-center justify-center gap-2">
@@ -1689,7 +1691,7 @@ export default function MoventoSite() {
           {[
             { q: t("How does it work?", "Comment ça marche ?"), a: t("Pick a prompt in the gallery, copy it in one click, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify. The AI generates the full site — you just customize the content.", "Choisissez un prompt dans la galerie, copiez-le en un clic, collez-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify. L'IA génère le site complet — il ne vous reste qu'à personnaliser le contenu.") },
             { q: t("Which tools are supported?", "Quels outils sont compatibles ?"), a: t("Any AI tool that accepts a text prompt: Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... The prompts describe every detail (fonts, colors, animations) so the result stays faithful.", "Tous les outils IA qui acceptent un prompt texte : Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... Les prompts décrivent chaque détail (polices, couleurs, animations) pour un résultat fidèle.") },
-            { q: t("Can I cancel anytime?", "Puis-je résilier à tout moment ?"), a: t("Yes. Monthly and annual plans can be cancelled anytime from the My subscription page or directly on Whop — no minimum commitment.", "Oui. Les offres mensuelle et annuelle peuvent être résiliées à tout moment depuis la page Mon abonnement ou directement sur Whop — sans engagement minimum.") },
+            { q: t("Can I cancel anytime?", "Puis-je résilier à tout moment ?"), a: t("Yes. The monthly plan can be cancelled anytime from the My subscription page or directly on Whop — no minimum commitment.", "Oui. L'offre mensuelle peut être résiliée à tout moment depuis la page Mon abonnement ou directement sur Whop — sans engagement minimum.") },
             { q: t("How do I access prompts after paying?", "Comment j'accède aux prompts après paiement ?"), a: t("The email you used at checkout is your access key. Enter it in the gallery on any device and every prompt unlocks instantly.", "L'email utilisé au paiement est votre clé d'accès. Entrez-le dans la galerie sur n'importe quel appareil et tous les prompts se débloquent instantanément.") },
             { q: t("Is the catalog updated?", "Le catalogue est-il mis à jour ?"), a: t("Yes — new premium prompts are added regularly, and they're all included in your plan at no extra cost.", "Oui — de nouveaux prompts premium sont ajoutés régulièrement, et ils sont tous inclus dans votre abonnement sans surcoût.") },
             { q: t("Can I use the sites commercially?", "Puis-je utiliser les sites commercialement ?"), a: t("Yes. The sites you generate from our prompts are yours — client projects, portfolios, product launches, anything.", "Oui. Les sites que vous générez à partir de nos prompts vous appartiennent — projets clients, portfolios, lancements de produits, tout est permis.") },
@@ -1710,7 +1712,7 @@ export default function MoventoSite() {
           <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-white/60 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-8 py-3.5 text-sm font-bold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-            <span className="text-xs text-white/50">{t("Monthly, yearly or lifetime — your call", "Au mois, à l'année ou à vie — tu choisis")}</span>
+            <span className="text-xs text-white/50">{t("Monthly or lifetime — your call", "Au mois ou à vie — tu choisis")}</span>
           </div>
         </div>
       </section>
@@ -1801,7 +1803,7 @@ function EbookCard({ className = "" }) {
 function SuccessPage() {
   const [email, setEmail] = useState(getStoredAccessEmail);
   const [status, setStatus] = useState({ loading: false, ok: false, error: "" });
-  // The bonus ebook ships with yearly and lifetime, not with the monthly plan.
+  // The bonus ebook ships with every plan.
   // Unknown plans get it: a paying customer must never be denied by a lookup
   // that merely failed to identify their plan.
   const [ebookEarned, setEbookEarned] = useState(true);
@@ -1902,7 +1904,7 @@ function SuccessPage() {
           )}
         </div>
 
-        {/* Bonus ebook — yearly and lifetime */}
+        {/* Bonus ebook — every plan */}
         {status.ok && ebookEarned && <EbookCard className="mt-4" />}
 
         {status.ok && supportEarned && <SupportCard className="mt-4" />}
@@ -2660,7 +2662,7 @@ function PricingPage() {
             {t("Choose your", "Choisissez votre")}{" "}
             <span className="text-white/45">{t("plan", "offre")}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Monthly, yearly or lifetime.", "Accède à tous les prompts premium. Au mois, à l'année ou à vie.")}</p>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
