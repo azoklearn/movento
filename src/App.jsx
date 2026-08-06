@@ -474,11 +474,16 @@ const FREE_PROMPT_FILES = new Set([]);
 // The three prices live here rather than inside the cards, because they refer
 // to each other: the annual card quotes the monthly one, and its headline is
 // the annual divided by twelve. Change a number here and every mention follows.
-const PRICE_LIFETIME = 199;
+const PRICE_LIFETIME = 129;
+// Struck-through anchor on the lifetime card and in the bottom banner. The
+// badge is computed from the pair, never typed, so it cannot claim a discount
+// the two numbers do not support.
+const PRICE_LIFETIME_ANCHOR = 349;
 const PRICE_YEARLY = 99;
 const PRICE_MONTHLY = 31.99;
 const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
 const YEARLY_PER_MONTH = (PRICE_YEARLY / 12).toFixed(2);
+const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
 
 // The discount announced on /pricing. It must match CHECKOUT_PROMO_CODE in
 // api/_shared.js, which is what actually gets applied — announcing a code the
@@ -517,10 +522,9 @@ const plans = [
     id: "lifetime",
     hidden: false,
     name: t("Lifetime", "À vie"),
-    // Keep the badge honest whenever either figure moves: 1 - 199/349 = 43%.
     price: eur(PRICE_LIFETIME),
-    originalPrice: "349€",
-    discountBadge: "-43%",
+    originalPrice: eur(PRICE_LIFETIME_ANCHOR),
+    discountBadge: `-${LIFETIME_DISCOUNT}%`,
     period: t("forever", "à vie"),
     badge: t("One shot", "Une fois pour toutes"),
     description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
@@ -2270,8 +2274,8 @@ function PricingBanner({ onPick }) {
             <Icon name="clock" className="h-4 w-4" />
           </span>
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
-            {t("Launch offer", "Offre de lancement")} — <span className="font-normal text-white/70 line-through">349€</span>{" "}
-            {t("now", "maintenant")} <span className="font-bold">199€</span> — {tail}
+            {t("Launch offer", "Offre de lancement")} — <span className="font-normal text-white/70 line-through">{eur(PRICE_LIFETIME_ANCHOR)}</span>{" "}
+            {t("now", "maintenant")} <span className="font-bold">{eur(PRICE_LIFETIME)}</span> — {tail}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
         </span>
