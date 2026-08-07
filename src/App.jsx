@@ -933,6 +933,9 @@ const promptPath = (item) => `/prompt/${slugify(item.title)}`;
 // which an endsWith check alone would misread as "not a video".
 const isVideoPreview = (url) => Boolean(url) && [".mp4", ".webm", ".mov"].some((ext) => url.endsWith(ext) || url.includes(`${ext}?`));
 const isImagePreview = (url) => Boolean(url) && [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => url.endsWith(ext) || url.includes(`${ext}?`));
+// .gif and .webp are deliberately absent: those two carry their own animation,
+// and drifting a clip that is already moving reads as a glitch.
+const isStillPreview = (url) => Boolean(url) && [".png", ".jpg", ".jpeg"].some((ext) => url.endsWith(ext) || url.includes(`${ext}?`));
 
 function posterFor(previewUrl) {
   const base = decodeURIComponent(previewUrl.split("/").pop().split("?")[0]).replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
@@ -978,6 +981,9 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
   // design — the two parts a buyer looks at first. An item can still ask for
   // previewFit: "cover" if its clip really is 1.35 and edge-to-edge.
   const fitClass = item.previewFit === "cover" ? "object-cover" : "object-contain";
+  // Only drift the stills, and only while the card is actually on screen — an
+  // off-screen animation still costs a compositor layer on every card.
+  const driftClass = hasImage && visible && isStillPreview(item.preview) ? "mv-kenburns" : "";
 
   // Mobile killer: 40 autoplaying previews loading at once. Only mount the heavy
   // media once a card nears the viewport (inView, sticky), and track whether it is
@@ -1018,7 +1024,7 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
           almost every card — and the odd 16:9 or portrait clip is shown whole
           instead of being cropped. The bars pick up the card's own surface. */}
       <div ref={containerRef} className="relative aspect-[1.35] overflow-hidden bg-[#0B0B0D]">
-        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? (posterFailed ? <video src={`${item.preview}#t=0.1`} className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : <img className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPosterFailed(true)} />) : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
+        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? (posterFailed ? <video src={`${item.preview}#t=0.1`} className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : <img className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPosterFailed(true)} />) : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className={`h-full w-full ${fitClass} ${driftClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
       <div className="flex items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-3.5">
         <div className="min-w-0">

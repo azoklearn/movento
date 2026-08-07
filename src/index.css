@@ -68,6 +68,19 @@ a[href]:active {
 }
 .mv-aurora { animation: mv-aurora 16s ease-in-out infinite; }
 
+/* A handful of prompts only ship a still preview. Sat next to 140 autoplaying
+   clips they read as broken cards, so they get a slow drift instead — motion
+   that comes from the frame we actually have rather than invented footage.
+   Animated .gif/.webp previews are excluded: they already move. */
+/* The zoom stays small on purpose: the card uses object-contain so the design
+   is shown whole, and a deeper push would start eating the navbar the buyer is
+   looking at. The full frame is always one click away in the popup. */
+@keyframes mv-kenburns {
+  from { transform: scale(1) translate3d(0, 0, 0); }
+  to { transform: scale(1.08) translate3d(-1.8%, -1.2%, 0); }
+}
+.mv-kenburns { animation: mv-kenburns 9s ease-in-out infinite alternate; will-change: transform; }
+
 /* Highlighted tail of the hero headline: the glyphs themselves carry a warm
    cream → pale blue gradient with a soft bloom around them. No box, no second
    typeface — the phrase keeps the headline's font and only its colour changes,
@@ -122,6 +135,7 @@ a[href]:active {
 
 @media (prefers-reduced-motion: reduce) {
   .mv-aurora { animation: none; }
+  .mv-kenburns { animation: none; }
   html { scroll-behavior: auto; }
   /* Keep the gradient and the bloom, drop the movement. */
   .hl-mark {
