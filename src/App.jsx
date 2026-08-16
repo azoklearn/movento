@@ -92,6 +92,10 @@ const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 const prompts = [
   // Front of the gallery, hand-picked: motion previews first, one per
   // category, so the first screen shows range rather than repetition.
+  { title: "Meridian Revenue", category: "SaaS", type: "Hero", file: "Meridian_Revenue_Intelligence.md", preview: "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260816_024306_e944b7e6-5f27-4960-8e7c-be1edf8ee0db.png", tags: ["Video", "Editorial", "Sharp"], gradient: "from-orange-200 via-blue-700 to-[#0a0a0a]" },
+  { title: "Vantage Dashboards", category: "SaaS", type: "Hero", file: "Vantage_Dashboard_Signal_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/dataflower.mp4", tags: ["Glass", "Video", "Dark"], gradient: "from-neutral-200 via-neutral-600 to-black" },
+  { title: "Signal Falcon Login", category: "SaaS", type: "Component", file: "Signal_Falcon_Login.md", preview: "https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/f97e887b-a455-42d1-950c-98cdd971645e.png", tags: ["Login", "Video", "Split"], gradient: "from-amber-100 via-stone-500 to-[#2c3343]" },
+  { title: "Evolve AI Platform", category: "AI / SaaS", type: "Hero", file: "Evolve_AI_Platform_Hero.md", preview: "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260812_054351_d1d948b3-b00a-4bf2-b434-55f373010de8.png", tags: ["Dot Matrix", "Video", "Stats"], gradient: "from-sky-100 via-slate-600 to-[#050505]" },
   { title: "Echoid Voice ID", category: "SaaS", type: "Hero", file: "Echoid_Voice_Identity.md", preview: "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260807_021301_8daf3f52-acef-462d-b14c-0aaca9747f87.png", tags: ["Video", "Waitlist", "Mono"], gradient: "from-white via-neutral-500 to-black" },
   { title: "Kollektiva Studio", category: "Agency", type: "Landing", file: "Kollektiva_Studio_Team.md", preview: "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260807_033531_2c5d9aeb-d97f-4a16-bef0-2bd850206a50.png", tags: ["Team", "Portraits", "Editorial"], gradient: "from-neutral-100 via-neutral-400 to-[#0b0b0c]" },
   { title: "Beyond Stacked Type", category: "Landing Page", type: "Hero", file: "Beyond_Hero_Stacked_Type.md", preview: "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260807_010505_d6d4aff0-9f6c-46ca-a1c7-c487a0d4e86f.png", tags: ["Typography", "Scroll", "Marquee"], gradient: "from-lime-200 via-orange-500 to-[#EC612C]" },
@@ -382,6 +386,10 @@ const AVAILABLE_FILES = new Set([
   "Echoid_Voice_Identity.md",
   "Kollektiva_Studio_Team.md",
   "Beyond_Hero_Stacked_Type.md",
+  "Meridian_Revenue_Intelligence.md",
+  "Vantage_Dashboard_Signal_Hero.md",
+  "Signal_Falcon_Login.md",
+  "Evolve_AI_Platform_Hero.md",
   "Basilico_Luxury_Restaurant.md",
   "Maison_Horlogerie_Luxury_Watch.md",
   "Pixzen_AI_Agency.md",
