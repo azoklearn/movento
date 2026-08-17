@@ -1649,8 +1649,43 @@ export default function MoventoSite() {
         </div>
       </section>
 
+      {/* Sits directly under the catalogue on purpose: the visitor has just
+          found a design they want, and this is where "and then what?" gets
+          answered. Four beats in the order they actually happen — copy, paste,
+          wait, refine — rather than a description of what the product is. */}
       <section id="how" className="relative z-10 mx-auto max-w-7xl px-6 pb-24 lg:px-8">
-        <div className="overflow-hidden rounded-[36px] border border-white/10 bg-[#121214] p-8 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-12"><div className="grid gap-10 md:grid-cols-3">{[t("Choose a style", "Choisir un style"), t("Copy the prompt", "Copier le prompt"), t("Generate your site", "Générer votre site")].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-[#08080A] text-sm font-bold text-white shadow-none">0{i + 1}</div><h3 className="text-xl font-semibold text-[#EDE9E0]">{step}</h3><p className="mt-3 text-sm leading-6 text-white/55">{i === 0 ? t("Browse previews and find a design direction that suits your offer.", "Parcourez les aperçus et trouvez une direction design adaptée à votre offre.") : i === 1 ? t("The prompt is loaded directly from the source to stay intact.", "Le prompt est chargé directement depuis la source pour rester intact.") : t("Paste it into your favorite AI tool and customize the result.", "Collez-le dans votre outil IA préféré et personnalisez le résultat.")}</p></div>)}</div></div>
+        <div className="overflow-hidden rounded-[36px] border border-white/10 bg-[#121214] p-8 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-12">
+          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[#EDE9E0] md:text-3xl">{t("How to use a prompt", "Comment utiliser un prompt")}</h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-white/50">{t("Four steps, no code.", "Quatre étapes, sans coder.")}</p>
+          {/* Tighter stack on phones: four steps at the desktop rhythm turned
+              this card into a very long scroll. */}
+          <div className="mt-10 grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-4">
+            {[
+              {
+                title: t("Copy the prompt", "Copier le prompt"),
+                body: t("One click on a card and the full prompt lands in your clipboard.", "Un clic sur la carte et le prompt complet part dans ton presse-papiers."),
+              },
+              {
+                title: t("Paste it into an AI", "Le coller dans une IA"),
+                body: t("Lovable, v0, Bolt, Cursor, Claude — any tool that takes a text prompt.", "Lovable, v0, Bolt, Cursor, Claude — n'importe quel outil qui accepte un prompt texte."),
+              },
+              {
+                title: t("Let it generate", "Laisser générer"),
+                body: t("The AI builds the whole site: fonts, colors, animations, section by section.", "L'IA construit le site entier : polices, couleurs, animations, section par section."),
+              },
+              {
+                title: t("Ask for your changes", "Demander tes modifications"),
+                body: t("Ask it to swap the name, the copy, the images. The site is yours.", "Demande-lui de changer le nom, les textes, les images. Le site est à toi."),
+              },
+            ].map((step, i) => (
+              <div key={step.title}>
+                <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-[#08080A] text-sm font-bold text-white shadow-none">0{i + 1}</div>
+                <h3 className="text-xl font-semibold text-[#EDE9E0]">{step.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-white/55">{step.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Right after "how it works": the visitor now knows the mechanic, this
