@@ -1487,14 +1487,39 @@ export default function MoventoSite() {
               ) : (
                 <div className="relative w-full flex-none overflow-hidden bg-[#0B0B0D]" style={{ aspectRatio: "1.35" }}><GeneratedPreview item={previewItem} /></div>
               )}
-              <div className="flex items-center justify-between gap-3 p-5">
-                <div className="min-w-0">
-                  <h3 className="truncate text-base font-semibold text-[#EDE9E0]">{previewItem.title}</h3>
-                  <p className="mt-0.5 text-xs text-white/40">{previewItem.category}</p>
+              {/* Everything under the media scrolls: four steps plus the title
+                  row overflow a short phone in landscape, and the popup itself
+                  is clipped to 92dvh. */}
+              <div className="flex min-h-0 flex-col overflow-y-auto">
+                <div className="flex items-center justify-between gap-3 p-5">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-base font-semibold text-[#EDE9E0]">{previewItem.title}</h3>
+                    <p className="mt-0.5 text-xs text-white/40">{previewItem.category}</p>
+                  </div>
+                  <button onClick={() => { const it = previewItem; closePreview(); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-[#08080A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.02]">
+                    {hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
+                  </button>
                 </div>
-                <button onClick={() => { const it = previewItem; closePreview(); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-[#08080A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.02]">
-                  {hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
-                </button>
+                {/* The one moment the visitor actually needs the instructions:
+                    they are holding the prompt and have nowhere to put it. */}
+                <div className="border-t border-white/[0.07] px-5 pb-5 pt-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/35">{t("How to use it", "Comment l'utiliser")}</p>
+                  <ol className="mt-3 space-y-2.5">
+                    {[
+                      // Deliberately does not name the button: it reads "Copy",
+                      // "Copy for free" or "Unlock" depending on the visitor.
+                      t("Copy the prompt in one click — it goes to your clipboard.", "Copie le prompt en un clic — il part dans ton presse-papiers."),
+                      t("Paste it into Lovable, v0, Bolt, Cursor or Claude.", "Colle-le dans Lovable, v0, Bolt, Cursor ou Claude."),
+                      t("Let the AI generate the whole site.", "Laisse l'IA générer le site en entier."),
+                      t("Then ask it for your changes: name, copy, images.", "Demande-lui ensuite tes modifications : nom, textes, images."),
+                    ].map((step, i) => (
+                      <li key={step} className="flex gap-3 text-sm leading-snug text-white/60">
+                        <span className="mt-px grid h-5 w-5 flex-none place-items-center rounded-full bg-white/[0.07] text-[11px] font-semibold text-white/70">{i + 1}</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -1649,43 +1674,8 @@ export default function MoventoSite() {
         </div>
       </section>
 
-      {/* Sits directly under the catalogue on purpose: the visitor has just
-          found a design they want, and this is where "and then what?" gets
-          answered. Four beats in the order they actually happen — copy, paste,
-          wait, refine — rather than a description of what the product is. */}
       <section id="how" className="relative z-10 mx-auto max-w-7xl px-6 pb-24 lg:px-8">
-        <div className="overflow-hidden rounded-[36px] border border-white/10 bg-[#121214] p-8 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-12">
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[#EDE9E0] md:text-3xl">{t("How to use a prompt", "Comment utiliser un prompt")}</h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-white/50">{t("Four steps, no code.", "Quatre étapes, sans coder.")}</p>
-          {/* Tighter stack on phones: four steps at the desktop rhythm turned
-              this card into a very long scroll. */}
-          <div className="mt-10 grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-4">
-            {[
-              {
-                title: t("Copy the prompt", "Copier le prompt"),
-                body: t("One click on a card and the full prompt lands in your clipboard.", "Un clic sur la carte et le prompt complet part dans ton presse-papiers."),
-              },
-              {
-                title: t("Paste it into an AI", "Le coller dans une IA"),
-                body: t("Lovable, v0, Bolt, Cursor, Claude — any tool that takes a text prompt.", "Lovable, v0, Bolt, Cursor, Claude — n'importe quel outil qui accepte un prompt texte."),
-              },
-              {
-                title: t("Let it generate", "Laisser générer"),
-                body: t("The AI builds the whole site: fonts, colors, animations, section by section.", "L'IA construit le site entier : polices, couleurs, animations, section par section."),
-              },
-              {
-                title: t("Ask for your changes", "Demander tes modifications"),
-                body: t("Ask it to swap the name, the copy, the images. The site is yours.", "Demande-lui de changer le nom, les textes, les images. Le site est à toi."),
-              },
-            ].map((step, i) => (
-              <div key={step.title}>
-                <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-[#08080A] text-sm font-bold text-white shadow-none">0{i + 1}</div>
-                <h3 className="text-xl font-semibold text-[#EDE9E0]">{step.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-white/55">{step.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <div className="overflow-hidden rounded-[36px] border border-white/10 bg-[#121214] p-8 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-12"><div className="grid gap-10 md:grid-cols-3">{[t("Choose a style", "Choisir un style"), t("Copy the prompt", "Copier le prompt"), t("Generate your site", "Générer votre site")].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-[#08080A] text-sm font-bold text-white shadow-none">0{i + 1}</div><h3 className="text-xl font-semibold text-[#EDE9E0]">{step}</h3><p className="mt-3 text-sm leading-6 text-white/55">{i === 0 ? t("Browse previews and find a design direction that suits your offer.", "Parcourez les aperçus et trouvez une direction design adaptée à votre offre.") : i === 1 ? t("The prompt is loaded directly from the source to stay intact.", "Le prompt est chargé directement depuis la source pour rester intact.") : t("Paste it into your favorite AI tool and customize the result.", "Collez-le dans votre outil IA préféré et personnalisez le résultat.")}</p></div>)}</div></div>
       </section>
 
       {/* Right after "how it works": the visitor now knows the mechanic, this
