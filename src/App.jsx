@@ -92,6 +92,7 @@ const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 const prompts = [
   // Front of the gallery, hand-picked: motion previews first, one per
   // category, so the first screen shows range rather than repetition.
+  { title: "Orbit Secure System", category: "Landing Page", type: "Hero", file: "Orbit_Secure_System_Poster.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260813_012454_d8334c3b-0475-40ff-a5e6-483fe41af52d.png&w=1280&q=85", tags: ["Poster", "Canvas Mask", "Pixel Art"], gradient: "from-pink-200 via-fuchsia-500 to-[#161616]" },
   { title: "Vesper AI Infrastructure", category: "AI / SaaS", type: "Hero", file: "Vesper_AI_Operational_Infrastructure.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/darkgradientwhitelineArea.mp4", tags: ["Liquid Metal", "Video", "Dark"], gradient: "from-slate-100 via-neutral-500 to-black" },
   { title: "Graven Drafting Works", category: "Agency", type: "Landing", file: "Graven_Drafting_Works_Scroll.md", preview: "https://www.vividsites.app/media/graven.mp4", tags: ["Scroll Scrub", "Blueprint", "Sticky"], gradient: "from-slate-200 via-slate-600 to-[#0c0f13]" },
   { title: "Meridian Revenue", category: "SaaS", type: "Hero", file: "Meridian_Revenue_Intelligence.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260816_024306_e944b7e6-5f27-4960-8e7c-be1edf8ee0db.png&w=1280&q=85", tags: ["Video", "Editorial", "Sharp"], gradient: "from-orange-200 via-blue-700 to-[#0a0a0a]" },
@@ -388,6 +389,7 @@ const AVAILABLE_FILES = new Set([
   "Echoid_Voice_Identity.md",
   "Kollektiva_Studio_Team.md",
   "Beyond_Hero_Stacked_Type.md",
+  "Orbit_Secure_System_Poster.md",
   "Vesper_AI_Operational_Infrastructure.md",
   "Graven_Drafting_Works_Scroll.md",
   "Meridian_Revenue_Intelligence.md",
