@@ -92,6 +92,7 @@ const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 const prompts = [
   // Front of the gallery, hand-picked: motion previews first, one per
   // category, so the first screen shows range rather than repetition.
+  { title: "Maison Horlogerie", category: "E-commerce", type: "Landing", file: "Maison_Horlogerie_Luxury_Watch.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1780917018587-Maison-watch.webp", tags: ["Luxury", "GSAP", "Pinned Scroll"], gradient: "from-amber-200 via-slate-600 to-black" },
   { title: "Orbit Secure System", category: "Landing Page", type: "Hero", file: "Orbit_Secure_System_Poster.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260813_012454_d8334c3b-0475-40ff-a5e6-483fe41af52d.png&w=1280&q=85", tags: ["Poster", "Canvas Mask", "Pixel Art"], gradient: "from-pink-200 via-fuchsia-500 to-[#161616]" },
   { title: "Vesper AI Infrastructure", category: "AI / SaaS", type: "Hero", file: "Vesper_AI_Operational_Infrastructure.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/darkgradientwhitelineArea.mp4", tags: ["Liquid Metal", "Video", "Dark"], gradient: "from-slate-100 via-neutral-500 to-black" },
   { title: "Graven Drafting Works", category: "Agency", type: "Landing", file: "Graven_Drafting_Works_Scroll.md", preview: "https://www.vividsites.app/media/graven.mp4", tags: ["Scroll Scrub", "Blueprint", "Sticky"], gradient: "from-slate-200 via-slate-600 to-[#0c0f13]" },
@@ -304,7 +305,6 @@ const prompts = [
   { title: "Weblex Dark Hero", category: "Landing Page", type: "Hero", file: "Weblex_Dark_Hero.md", preview: "https://motionsites.ai/assets/hero-weblex-preview-BoIbrUHI.gif", tags: ["Dark", "Agency", "Hero"], gradient: "from-zinc-100 via-zinc-500 to-black" },
   { title: "xPortfolio Hero", category: "Hero Section", type: "Hero", file: "xPortfolio_Hero.md", preview: "https://motionsites.ai/assets/hero-xportfolio-preview-D4A8maiC.gif", tags: ["Portfolio", "Hero", "Creative"], gradient: "from-fuchsia-300 via-violet-500 to-black" },
   // Kept at the end on request — the gallery renders this array in order.
-  { title: "Maison Horlogerie", category: "E-commerce", type: "Landing", file: "Maison_Horlogerie_Luxury_Watch.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1780917018587-Maison-watch.webp", tags: ["Luxury", "GSAP", "Pinned Scroll"], gradient: "from-amber-200 via-slate-600 to-black" },
   { title: "Pixzen AI Agency", category: "Agency", type: "Landing", file: "Pixzen_AI_Agency.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1781522720269-Pixzen.webp", tags: ["Editorial", "Monochrome", "GSAP"], gradient: "from-stone-100 via-stone-400 to-[#0A0A0A]" },
   { title: "Creative Developer Portfolio", category: "Portfolio", type: "Hero", file: "Creative_Developer_Portfolio_Hero.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1782992185168-my_portfolio_hero.webp", tags: ["Portfolio", "Glass", "Video"], gradient: "from-violet-300 via-indigo-600 to-[#030305]" },
 ];
