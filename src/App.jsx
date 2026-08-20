@@ -92,7 +92,7 @@ const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 const prompts = [
   // Front of the gallery, hand-picked: motion previews first, one per
   // category, so the first screen shows range rather than repetition.
-  { title: "Maison Horlogerie", category: "E-commerce", type: "Landing", file: "Maison_Horlogerie_Luxury_Watch.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1780917018587-Maison-watch.webp", tags: ["Luxury", "GSAP", "Pinned Scroll"], gradient: "from-amber-200 via-slate-600 to-black" },
+  { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
   // The only preview in the catalogue that carries Cloudinary transformations,
   // and they are the point: the untransformed clip played on every desktop and
   // on no phone. vc_h264:baseline:3.1 forces the one H.264 profile every phone
@@ -113,7 +113,6 @@ const prompts = [
   { title: "Beyond Stacked Type", category: "Landing Page", type: "Hero", file: "Beyond_Hero_Stacked_Type.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260807_010505_d6d4aff0-9f6c-46ca-a1c7-c487a0d4e86f.png&w=1280&q=85", tags: ["Typography", "Scroll", "Marquee"], gradient: "from-lime-200 via-orange-500 to-[#EC612C]" },
   { title: "Basilico Restaurant", category: "Landing Page", type: "Landing", file: "Basilico_Luxury_Restaurant.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1781521132099-basilico_restaurant.webp", tags: ["Restaurant", "Gold", "GSAP"], gradient: "from-amber-200 via-orange-700 to-[#070707]" },
   { title: "Nexum AI Ops", category: "AI / SaaS", type: "Hero", file: "Nexum_AI_Ops_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/Agent%20Grove.mp4", tags: ["AI Agents", "Glass", "Video"], gradient: "from-neutral-200 via-neutral-600 to-[#010101]" },
-  { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
   { title: "F1 Racing Hub", category: "Landing Page", type: "Hero", file: "F1_Racing_Hub_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/F1%20Racing%20HubArea.mp4", tags: ["Sport", "Mobile App", "Count-up"], gradient: "from-yellow-300 via-red-700 to-[#0a0e1c]" },
   { title: "Laocoön Bronze Scroll", category: "Portfolio", type: "Landing", file: "Laocoon_Bronze_Scroll.md", preview: "https://storage.getlayers.ai/templates/laocoon-preview.mp4", tags: ["Three.js", "3D", "Art"], gradient: "from-amber-200 via-amber-700 to-[#0a0806]" },
   { title: "Hunsy Car Rental", category: "Landing Page", type: "Hero", file: "Hunsy_Car_Rental_Hero.md", preview: "https://cdn.sceneai.art/landing-pages/abaa1a2b-c06b-49d5-a2c9-986674b6cdb7.mp4", tags: ["Automotive", "Video", "Glass"], gradient: "from-slate-200 via-slate-600 to-[#04060b]" },
@@ -313,6 +312,7 @@ const prompts = [
   { title: "Weblex Dark Hero", category: "Landing Page", type: "Hero", file: "Weblex_Dark_Hero.md", preview: "https://motionsites.ai/assets/hero-weblex-preview-BoIbrUHI.gif", tags: ["Dark", "Agency", "Hero"], gradient: "from-zinc-100 via-zinc-500 to-black" },
   { title: "xPortfolio Hero", category: "Hero Section", type: "Hero", file: "xPortfolio_Hero.md", preview: "https://motionsites.ai/assets/hero-xportfolio-preview-D4A8maiC.gif", tags: ["Portfolio", "Hero", "Creative"], gradient: "from-fuchsia-300 via-violet-500 to-black" },
   // Kept at the end on request — the gallery renders this array in order.
+  { title: "Maison Horlogerie", category: "E-commerce", type: "Landing", file: "Maison_Horlogerie_Luxury_Watch.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1780917018587-Maison-watch.webp", tags: ["Luxury", "GSAP", "Pinned Scroll"], gradient: "from-amber-200 via-slate-600 to-black" },
   { title: "Pixzen AI Agency", category: "Agency", type: "Landing", file: "Pixzen_AI_Agency.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1781522720269-Pixzen.webp", tags: ["Editorial", "Monochrome", "GSAP"], gradient: "from-stone-100 via-stone-400 to-[#0A0A0A]" },
   { title: "Creative Developer Portfolio", category: "Portfolio", type: "Hero", file: "Creative_Developer_Portfolio_Hero.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1782992185168-my_portfolio_hero.webp", tags: ["Portfolio", "Glass", "Video"], gradient: "from-violet-300 via-indigo-600 to-[#030305]" },
 ];
