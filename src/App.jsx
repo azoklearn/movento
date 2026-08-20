@@ -930,8 +930,10 @@ function PreviewSkeleton({ item }) {
   return <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-20`} />;
 }
 
-// Local static poster (a frame grabbed at ~3s) for each video preview, generated
-// into /public/posters. On mobile we show only this — the video never loads.
+// Local static poster (a frame grabbed at ~3s) for a video preview, generated
+// into /public/posters. On mobile we show this instead of loading the clip —
+// but only 12 of the 100 video previews actually have one, so most cards fall
+// through to the poster-less branch in PreviewCard.
 // Shared by the card and the popup so the two can never disagree on what a
 // given preview is.
 // Stable, readable identifier for a prompt's shareable URL. Accents are stripped
@@ -999,8 +1001,10 @@ function GeneratedPreview({ item }) {
 
 function PreviewCard({ item, badge, onClick, onPreview }) {
   const [previewFailed, setPreviewFailed] = useState(false);
-  // A missing /posters/*.jpg must not blank the card: we fall back to the video
-  // itself rather than to the generic mockup (see the mobile branch below).
+  // A missing /posters/*.jpg must not blank the card. On mobile it used to fall
+  // back to a bare preload="metadata" video seeked to #t=0.1, which paints
+  // nothing on iOS — so those cards showed an empty rectangle. They now play
+  // like the desktop ones, still gated to the cards actually on screen.
   const [posterFailed, setPosterFailed] = useState(false);
   const [inView, setInView] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -1036,13 +1040,15 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
   }, []);
 
   // Play only the previews on screen so mobile never decodes 40 videos at once.
+  // The ref is attached to the desktop clip and to the mobile poster-less
+  // fallback — nothing else — so "has a ref" already means "should play".
   // Runs after render, so videoRef is always mounted when this fires.
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (!isMobile && visible) v.play?.().catch(() => {});
+    if (visible) v.play?.().catch(() => {});
     else v.pause?.();
-  }, [visible, inView, isMobile]);
+  }, [visible, inView, isMobile, posterFailed]);
 
   // Every card opens the preview popup — the visitor sees the design play at a
   // usable size before deciding, and copies from there. Copying straight from
@@ -1059,7 +1065,7 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
           almost every card — and the odd 16:9 or portrait clip is shown whole
           instead of being cropped. The bars pick up the card's own surface. */}
       <div ref={containerRef} className="relative aspect-[1.35] overflow-hidden bg-[#0B0B0D]">
-        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? (posterFailed ? <video src={`${item.preview}#t=0.1`} className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : <img className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPosterFailed(true)} />) : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className={`h-full w-full ${fitClass} ${driftClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
+        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? (posterFailed ? <video ref={videoRef} src={item.preview} className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : <img className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPosterFailed(true)} />) : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className={`h-full w-full ${fitClass} ${driftClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
       <div className="flex items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-3.5">
         <div className="min-w-0">
