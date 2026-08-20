@@ -931,9 +931,10 @@ function PreviewSkeleton({ item }) {
 }
 
 // Local static poster (a frame grabbed at ~3s) for a video preview, generated
-// into /public/posters. On mobile we show this instead of loading the clip —
-// but only 12 of the 100 video previews actually have one, so most cards fall
-// through to the poster-less branch in PreviewCard.
+// into /public/posters. Only 12 of the 100 video previews actually have one, so
+// this is a nicety on the <video>, never something the card depends on: the
+// SPA rewrite answers a missing poster with index.html, which no browser can
+// decode as an image, and the clip paints regardless.
 // Shared by the card and the popup so the two can never disagree on what a
 // given preview is.
 // Stable, readable identifier for a prompt's shareable URL. Accents are stripped
@@ -1001,16 +1002,8 @@ function GeneratedPreview({ item }) {
 
 function PreviewCard({ item, badge, onClick, onPreview }) {
   const [previewFailed, setPreviewFailed] = useState(false);
-  // A missing /posters/*.jpg must not blank the card. On mobile it used to fall
-  // back to a bare preload="metadata" video seeked to #t=0.1, which paints
-  // nothing on iOS — so those cards showed an empty rectangle. They now play
-  // like the desktop ones, still gated to the cards actually on screen.
-  const [posterFailed, setPosterFailed] = useState(false);
   const [inView, setInView] = useState(false);
   const [visible, setVisible] = useState(false);
-  // On mobile we never stream gallery videos — like motionsites, we show a frozen
-  // first frame instead. That's the single biggest mobile load win.
-  const [isMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const hasVideo = !previewFailed && isVideoPreview(item.preview);
@@ -1039,16 +1032,19 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
     return () => io.disconnect();
   }, []);
 
-  // Play only the previews on screen so mobile never decodes 40 videos at once.
-  // The ref is attached to the desktop clip and to the mobile poster-less
-  // fallback — nothing else — so "has a ref" already means "should play".
+  // Play only the previews on screen, so a phone never decodes 40 clips at once.
   // Runs after render, so videoRef is always mounted when this fires.
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (visible) v.play?.().catch(() => {});
-    else v.pause?.();
-  }, [visible, inView, isMobile, posterFailed]);
+    if (!visible) { v.pause?.(); return; }
+    v.play?.().catch(() => {
+      // Autoplay can still be refused — iOS Low Power Mode is the common one.
+      // Nudge the playhead so the element paints a frame instead of staying an
+      // empty rectangle, which is exactly the failure this card had on phones.
+      try { if (v.readyState >= 1 && !v.currentTime) v.currentTime = 0.1; } catch { /* seek not ready */ }
+    });
+  }, [visible, inView]);
 
   // Every card opens the preview popup — the visitor sees the design play at a
   // usable size before deciding, and copies from there. Copying straight from
@@ -1065,7 +1061,14 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
           almost every card — and the odd 16:9 or portrait clip is shown whole
           instead of being cropped. The bars pick up the card's own surface. */}
       <div ref={containerRef} className="relative aspect-[1.35] overflow-hidden bg-[#0B0B0D]">
-        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? (isMobile ? (posterFailed ? <video ref={videoRef} src={item.preview} className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : <img className={`h-full w-full ${fitClass}`} style={{ objectPosition: item.previewPosition || "center" }} src={posterFor(item.preview)} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPosterFailed(true)} />) : <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} />) : hasImage ? <img className={`h-full w-full ${fitClass} ${driftClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
+      {/* One <video> for every viewport. Phones used to get a separate path —
+          the static poster instead of the clip, to save bandwidth — but with a
+          poster missing for 88 of the 100 clips that path degraded to an empty
+          rectangle on real devices, so the gallery simply had no previews on
+          mobile. Streaming the on-screen clips costs data; showing nothing
+          costs the sale. The IntersectionObserver above still keeps it to the
+          two or three cards actually on screen. */}
+        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`h-full w-full ${fitClass} ${driftClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
       </div>
       <div className="flex items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-3.5">
         <div className="min-w-0">
