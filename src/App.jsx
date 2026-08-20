@@ -93,12 +93,14 @@ const prompts = [
   // Front of the gallery, hand-picked: motion previews first, one per
   // category, so the first screen shows range rather than repetition.
   { title: "Maison Horlogerie", category: "E-commerce", type: "Landing", file: "Maison_Horlogerie_Luxury_Watch.md", preview: "https://strvid.nyc3.cdn.digitaloceanspaces.com/motionitems/1780917018587-Maison-watch.webp", tags: ["Luxury", "GSAP", "Pinned Scroll"], gradient: "from-amber-200 via-slate-600 to-black" },
-  // Served from our own origin (public/previews/) rather than a CDN: the hosted
-  // copy played on desktop but never on a phone, and a file we serve ourselves
-  // has no codec negotiation, hotlink rule or expiry to go wrong. Encode with
-  // -profile:v baseline -pix_fmt yuv420p -movflags +faststart so every phone
-  // decodes it inline.
-  { title: "Vanta Haute Horlogerie", category: "E-commerce", type: "Landing", file: "Vanta_Haute_Horlogerie_Scroll.md", preview: "/previews/vanta.mp4", tags: ["Three.js", "Scroll Scrub", "Luxury"], gradient: "from-white via-neutral-500 to-black" },
+  // The only preview in the catalogue that carries Cloudinary transformations,
+  // and they are the point: the untransformed clip played on every desktop and
+  // on no phone. vc_h264:baseline:3.1 forces the one H.264 profile every phone
+  // decodes inline, w_960 and q_auto cut the weight for mobile data, ac_none
+  // drops the audio track a preview never needs. If this card ever goes blank
+  // again, drop a baseline-encoded file in public/previews/ and point here at
+  // /previews/vanta.mp4 instead — same effect, served from our own origin.
+  { title: "Vanta Haute Horlogerie", category: "E-commerce", type: "Landing", file: "Vanta_Haute_Horlogerie_Scroll.md", preview: "https://res.cloudinary.com/du0hbrmvw/video/upload/vc_h264:baseline:3.1,w_960,q_auto,ac_none/v1787221958/venta_rlsafx.mp4", tags: ["Three.js", "Scroll Scrub", "Luxury"], gradient: "from-white via-neutral-500 to-black" },
   { title: "Orbit Secure System", category: "Landing Page", type: "Hero", file: "Orbit_Secure_System_Poster.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260813_012454_d8334c3b-0475-40ff-a5e6-483fe41af52d.png&w=1280&q=85", tags: ["Poster", "Canvas Mask", "Pixel Art"], gradient: "from-pink-200 via-fuchsia-500 to-[#161616]" },
   { title: "Vesper AI Infrastructure", category: "AI / SaaS", type: "Hero", file: "Vesper_AI_Operational_Infrastructure.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/darkgradientwhitelineArea.mp4", tags: ["Liquid Metal", "Video", "Dark"], gradient: "from-slate-100 via-neutral-500 to-black" },
   { title: "Graven Drafting Works", category: "Agency", type: "Landing", file: "Graven_Drafting_Works_Scroll.md", preview: "https://www.vividsites.app/media/graven.mp4", tags: ["Scroll Scrub", "Blueprint", "Sticky"], gradient: "from-slate-200 via-slate-600 to-[#0c0f13]" },
