@@ -591,7 +591,7 @@ const planGridMd = visiblePlans.length === 1 ? "md:grid-cols-1" : visiblePlans.l
 const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
 // Two cards stretched over the three-card width read as oversized banners, so
 // the row narrows with the number of plans on sale.
-const planGridWidth = visiblePlans.length === 1 ? "max-w-sm" : visiblePlans.length === 2 ? "max-w-3xl" : "max-w-5xl";
+const planGridWidth = visiblePlans.length === 1 ? "max-w-sm" : visiblePlans.length === 2 ? "max-w-3xl lg:max-w-5xl" : "max-w-5xl";
 
 // Pricing card used across every purchase surface (paywall modal, pricing
 // section, /pricing page). Laid out in four quiet bands — identity, price,
@@ -599,7 +599,7 @@ const planGridWidth = visiblePlans.length === 1 ? "max-w-sm" : visiblePlans.leng
 // nothing is dropped to make it look calm.
 function PlanCard({ plan, onBuy, loading, featured }) {
   return (
-    <div className={`relative flex flex-col rounded-[22px] px-4 pb-4 pt-9 transition sm:rounded-[28px] sm:p-8 ${featured ? "border border-white/25 bg-[#141417] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]" : "border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"}`}>
+    <div className={`relative flex flex-col rounded-[22px] px-4 pb-4 pt-9 transition sm:rounded-[28px] sm:p-8 lg:p-5 ${featured ? "border border-white/25 bg-[#141417] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]" : "border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"}`}>
       {featured && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{t("Best value", "Meilleur choix")}</span>}
 
       <div className="flex items-start justify-between gap-1.5 sm:gap-3">
@@ -609,9 +609,9 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       {/* Reserved height for the longest description in the grid, so the rule,
           the price and the button land on the same line across the three
           cards. Only from sm: stacked on a phone there is nothing to align. */}
-      {plan.description && <p className="mt-2 min-h-[7.5rem] text-[12.5px] leading-5 text-white/45 sm:min-h-[4.5rem] sm:text-sm sm:leading-6">{plan.description}</p>}
+      {plan.description && <p className="mt-2 min-h-[7.5rem] text-[12.5px] leading-5 text-white/45 sm:min-h-[4.5rem] sm:text-sm sm:leading-6 lg:min-h-[2.5rem] lg:text-[13px] lg:leading-5">{plan.description}</p>}
 
-      <div className="my-4 border-t border-dashed border-white/[0.14] sm:my-6" />
+      <div className="my-4 border-t border-dashed border-white/[0.14] sm:my-6 lg:my-4" />
 
       {/* A plan billed yearly leads with its monthly equivalent — that is the
           number a visitor compares against the monthly card. The amount really
@@ -619,13 +619,13 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       {/* Wraps on purpose: at 320px the period label sat 14px past the card and
           pushed the page into horizontal scroll. */}
       <div className="flex min-h-[3.25rem] flex-wrap items-end gap-x-1.5 gap-y-0.5 sm:min-h-0 sm:gap-x-2">
-        <span className="text-[32px] font-bold leading-none tracking-[-0.05em] text-[#EDE9E0] sm:text-[52px]">{plan.priceMonthly || plan.price}</span>
+        <span className="text-[32px] font-bold leading-none tracking-[-0.05em] text-[#EDE9E0] sm:text-[52px] lg:text-[42px]">{plan.priceMonthly || plan.price}</span>
         <span className="pb-0.5 text-xs text-white/40 sm:pb-1 sm:text-sm">{plan.priceMonthly ? plan.priceMonthlyPeriod : plan.period}</span>
       </div>
       {/* Same reasoning as the description: the plans carry a different number
           of price lines, and without a floor the three buttons sit at three
           different heights. */}
-      <div className="mt-3 min-h-[4rem] space-y-1 sm:min-h-[2.75rem]">
+      <div className="mt-3 min-h-[4rem] space-y-1 sm:min-h-[2.75rem] lg:mt-2 lg:min-h-[2rem]">
         {plan.billedNote && <p className="text-xs text-white/45 sm:text-sm">{plan.billedNote}</p>}
         {plan.originalPrice && <p className="text-xs text-white/35 line-through sm:text-sm">{plan.originalPrice}</p>}
         {plan.subPrice && <p className="text-xs font-medium text-emerald-300 sm:text-sm">{plan.subPrice}</p>}
@@ -634,7 +634,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       <button
         onClick={() => onBuy(plan)}
         disabled={loading}
-        className={`group mt-5 flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-3 text-[13px] font-bold sm:mt-7 sm:gap-2 sm:px-5 sm:py-3.5 sm:text-sm transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${featured ? "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white" : "border border-white/15 bg-transparent text-[#EDE9E0] hover:border-white/35 hover:bg-white/[0.05]"}`}
+        className={`group mt-5 flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-3 text-[13px] font-bold sm:mt-7 sm:gap-2 sm:px-5 sm:py-3.5 sm:text-sm lg:mt-4 lg:py-3 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${featured ? "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white" : "border border-white/15 bg-transparent text-[#EDE9E0] hover:border-white/35 hover:bg-white/[0.05]"}`}
       >
         {loading ? t("Loading…", "Chargement…") : plan.cta}
         <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
@@ -642,9 +642,9 @@ function PlanCard({ plan, onBuy, loading, featured }) {
 
       {/* Every feature, not the first four: the lifetime plan lists five and the
           fifth used to be dropped silently. */}
-      <ul className="mt-6 space-y-3 sm:mt-8 sm:space-y-3.5">
+      <ul className="mt-6 space-y-3 sm:mt-8 sm:space-y-3.5 lg:mt-4 lg:grid lg:grid-cols-2 lg:gap-x-5 lg:gap-y-2 lg:space-y-0">
         {plan.features.map((feat) => (
-          <li key={feat} className="flex items-start gap-2 text-[12.5px] leading-5 text-white/65 sm:gap-3 sm:text-sm sm:leading-6">
+          <li key={feat} className="flex items-start gap-2 text-[12.5px] leading-5 text-white/65 sm:gap-3 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5">
             <Icon name="check" className="mt-1 h-4 w-4 flex-none text-white/70" /> {feat}
           </li>
         ))}
@@ -653,23 +653,23 @@ function PlanCard({ plan, onBuy, loading, featured }) {
           but they now read as continuations of the feature list rather than as
           two boxes stacked at the bottom. */}
       {plan.perk && (
-        <div className="mt-6 border-t border-dashed border-white/[0.14] pt-5 sm:mt-7 sm:pt-6">
+        <div className="mt-6 border-t border-dashed border-white/[0.14] pt-5 sm:mt-7 sm:pt-6 lg:mt-3 lg:pt-3">
           <div className="flex items-start gap-3">
             <Icon name="chat" className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-emerald-200">{plan.perk}</p>
-              {plan.perkDesc && <p className="mt-1 text-[13px] leading-6 text-emerald-100/60">{plan.perkDesc}</p>}
+              {plan.perkDesc && <p className="mt-1 text-[13px] leading-6 lg:text-xs lg:leading-[1.35] text-emerald-100/60">{plan.perkDesc}</p>}
             </div>
           </div>
         </div>
       )}
       {plan.bonus && (
-        <div className="mt-6 border-t border-dashed border-white/[0.14] pt-5 sm:mt-7 sm:pt-6">
+        <div className="mt-6 border-t border-dashed border-white/[0.14] pt-5 sm:mt-7 sm:pt-6 lg:mt-2.5 lg:border-t-0 lg:pt-0">
           <div className="flex items-start gap-3">
             <Icon name="gift" className="mt-0.5 h-4 w-4 flex-none text-amber-300" />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-amber-200">{plan.bonus}</p>
-              {plan.bonusDesc && <p className="mt-1 text-[13px] leading-6 text-amber-100/60">{plan.bonusDesc}</p>}
+              {plan.bonusDesc && <p className="mt-1 text-[13px] leading-6 lg:text-xs lg:leading-[1.35] text-amber-100/60">{plan.bonusDesc}</p>}
             </div>
           </div>
         </div>
@@ -2572,16 +2572,16 @@ function PricingPage() {
         </div>
       </header>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-16 lg:px-8">
+      <section className="relative z-10 mx-auto flex max-w-7xl flex-col justify-center px-6 pb-24 pt-16 lg:min-h-[calc(100svh-75px)] lg:px-8 lg:pb-20 lg:pt-4">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05]/80 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 backdrop-blur">
             <Icon name="sparkles" className="h-3 w-3" /> {t(`${availablePrompts.length} premium prompts`, `${availablePrompts.length} prompts premium`)}
           </span>
-          <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl">
+          <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
             {t("Choose your", "Choisissez votre")}{" "}
             <span className="text-white/45">{t("plan", "offre")}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
@@ -2589,7 +2589,7 @@ function PricingPage() {
           )}
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
-          <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 shadow-sm backdrop-blur">
+          <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 shadow-sm backdrop-blur lg:mt-2">
             <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3.5 w-3.5" />)}</span>
             <span className="text-sm font-semibold text-[#EDE9E0]">{RATING_SCORE}/5</span>
             <span className="text-sm text-white/40">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
@@ -2598,13 +2598,13 @@ function PricingPage() {
 
         {/* One column, centred: the offer is the page. Proof lives further down
             so nothing competes with the cards at the moment of the decision. */}
-        <div className="mt-14">
+        <div className="mt-14 lg:mt-4">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 gap-3 sm:gap-5 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
             {visiblePlans.map((plan) => (
               <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
             ))}
           </motion.div>
-          <Reassurance className="mt-9" />
+          <Reassurance className="mt-9 lg:mt-3" />
         </div>
       </section>
 
