@@ -1,15 +1,15 @@
-import { appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutUrls, methodNotAllowed, resolvePlanId } from "./_shared.js";
+import { appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutUrls, methodNotAllowed, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
 
   const { plan, ref } = req.body || {};
-  const checkoutUrl = checkoutUrls[plan];
+  const checkoutUrl = RETIRED_PLANS.has(plan) ? null : checkoutUrls[plan];
 
   if (!checkoutUrl) {
     return res.status(400).json({
       error: "Plan invalide ou lien de checkout Whop manquant.",
-      validPlans: Object.keys(checkoutUrls),
+      validPlans: Object.keys(checkoutUrls).filter((id) => !RETIRED_PLANS.has(id)),
     });
   }
 

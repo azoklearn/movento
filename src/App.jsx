@@ -513,7 +513,7 @@ const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR
 // api/_shared.js, which is what actually gets applied — announcing a code the
 // checkout does not add is the one failure mode that costs trust. Set the code
 // to "" here and there to stop announcing and applying it.
-const PROMO_CODE = "HERO10";
+const PROMO_CODE = "";
 const PROMO_PERCENT = 10;
 
 const plans = [
@@ -566,7 +566,10 @@ const plans = [
   },
   {
     id: "monthly",
-    hidden: false,
+    // Retired from the grid alongside the yearly plan: the offer is a single
+    // lifetime payment now. Kept defined so existing monthly subscribers still
+    // resolve, and so bringing it back is one word.
+    hidden: true,
     name: t("Monthly", "Mensuel"),
     price: eur(PRICE_MONTHLY),
     period: t("/ mo", "/ mois"),
@@ -591,7 +594,11 @@ const planGridMd = visiblePlans.length === 1 ? "md:grid-cols-1" : visiblePlans.l
 const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
 // Two cards stretched over the three-card width read as oversized banners, so
 // the row narrows with the number of plans on sale.
-const planGridWidth = visiblePlans.length === 1 ? "max-w-sm" : visiblePlans.length === 2 ? "max-w-3xl lg:max-w-5xl" : "max-w-5xl";
+const planGridWidth = visiblePlans.length === 1 ? "max-w-sm lg:max-w-2xl" : visiblePlans.length === 2 ? "max-w-3xl lg:max-w-5xl" : "max-w-5xl";
+// With one offer on sale there is nothing to choose between and nothing to be
+// the best value of, so the comparison copy steps aside. Derived rather than
+// hardcoded: bringing a plan back out of hiding restores it on its own.
+const isSinglePlan = visiblePlans.length === 1;
 
 // Pricing card used across every purchase surface (paywall modal, pricing
 // section, /pricing page). Laid out in four quiet bands — identity, price,
@@ -600,7 +607,7 @@ const planGridWidth = visiblePlans.length === 1 ? "max-w-sm" : visiblePlans.leng
 function PlanCard({ plan, onBuy, loading, featured }) {
   return (
     <div className={`relative flex flex-col rounded-[22px] px-4 pb-4 pt-9 transition sm:rounded-[28px] sm:p-8 lg:p-5 ${featured ? "border border-white/25 bg-[#141417] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]" : "border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"}`}>
-      {featured && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{t("Best value", "Meilleur choix")}</span>}
+      {featured && !isSinglePlan && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{t("Best value", "Meilleur choix")}</span>}
 
       <div className="flex items-start justify-between gap-1.5 sm:gap-3">
         <h3 className="text-base font-semibold tracking-tight text-[#EDE9E0] sm:text-xl">{plan.name}</h3>
@@ -608,8 +615,9 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       </div>
       {/* Reserved height for the longest description in the grid, so the rule,
           the price and the button land on the same line across the three
-          cards. Only from sm: stacked on a phone there is nothing to align. */}
-      {plan.description && <p className="mt-2 min-h-[7.5rem] text-[12.5px] leading-5 text-white/45 sm:min-h-[4.5rem] sm:text-sm sm:leading-6 lg:min-h-[2.5rem] lg:text-[13px] lg:leading-5">{plan.description}</p>}
+          cards. A lone card has nothing to line up with, and the reserve then
+          only pushes the rest of it further down the screen. */}
+      {plan.description && <p className={isSinglePlan ? "mt-2 text-[12.5px] leading-5 text-white/45 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5" : "mt-2 min-h-[7.5rem] text-[12.5px] leading-5 text-white/45 sm:min-h-[4.5rem] sm:text-sm sm:leading-6 lg:min-h-[2.5rem] lg:text-[13px] lg:leading-5"}>{plan.description}</p>}
 
       <div className="my-4 border-t border-dashed border-white/[0.14] sm:my-6 lg:my-4" />
 
@@ -624,8 +632,8 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       </div>
       {/* Same reasoning as the description: the plans carry a different number
           of price lines, and without a floor the three buttons sit at three
-          different heights. */}
-      <div className="mt-3 min-h-[4rem] space-y-1 sm:min-h-[2.75rem] lg:mt-2 lg:min-h-[2rem]">
+          different heights. Dropped for a lone card, same as above. */}
+      <div className={isSinglePlan ? "mt-3 space-y-1 lg:mt-2" : "mt-3 min-h-[4rem] space-y-1 sm:min-h-[2.75rem] lg:mt-2 lg:min-h-[2rem]"}>
         {plan.billedNote && <p className="text-xs text-white/45 sm:text-sm">{plan.billedNote}</p>}
         {plan.originalPrice && <p className="text-xs text-white/35 line-through sm:text-sm">{plan.originalPrice}</p>}
         {plan.subPrice && <p className="text-xs font-medium text-emerald-300 sm:text-sm">{plan.subPrice}</p>}
@@ -1162,7 +1170,7 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(validatePlanId("monthly"), "monthly should be valid");
+  console.assert(!validatePlanId("monthly"), "monthly is retired and should not be purchasable");
   console.assert(!validatePlanId("yearly"), "yearly is retired and should not be purchasable");
   console.assert(validatePlanId("lifetime"), "lifetime should be valid");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
@@ -1731,8 +1739,8 @@ export default function MoventoSite() {
 
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">{t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
+          <h2 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">{isSinglePlan ? t("One payment, forever", "Un paiement, à vie") : t("Choose your plan", "Choisissez votre offre")}</h2>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.")}</p>
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
           <div className="mt-5 flex items-center justify-center gap-2">
@@ -1760,9 +1768,9 @@ export default function MoventoSite() {
           {[
             { q: t("How does it work?", "Comment ça marche ?"), a: t("Pick a prompt in the gallery, copy it in one click, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify. The AI generates the full site — you just customize the content.", "Choisissez un prompt dans la galerie, copiez-le en un clic, collez-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify. L'IA génère le site complet — il ne vous reste qu'à personnaliser le contenu.") },
             { q: t("Which tools are supported?", "Quels outils sont compatibles ?"), a: t("Any AI tool that accepts a text prompt: Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... The prompts describe every detail (fonts, colors, animations) so the result stays faithful.", "Tous les outils IA qui acceptent un prompt texte : Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... Les prompts décrivent chaque détail (polices, couleurs, animations) pour un résultat fidèle.") },
-            { q: t("Can I cancel anytime?", "Puis-je résilier à tout moment ?"), a: t("Yes. The monthly plan can be cancelled anytime from the My subscription page or directly on Whop — no minimum commitment.", "Oui. L'offre mensuelle peut être résiliée à tout moment depuis la page Mon abonnement ou directement sur Whop — sans engagement minimum.") },
+            { q: t("Is there anything to cancel?", "Y a-t-il quelque chose à résilier ?"), a: t("No. Access is a single payment, with no subscription and nothing billed again. An older monthly subscription can still be cancelled anytime from the My subscription page or directly on Whop.", "Non. L'accès est un paiement unique, sans abonnement et sans rien qui se représente. Un ancien abonnement mensuel reste résiliable à tout moment depuis la page Mon abonnement ou directement sur Whop.") },
             { q: t("How do I access prompts after paying?", "Comment j'accède aux prompts après paiement ?"), a: t("The email you used at checkout is your access key. Enter it in the gallery on any device and every prompt unlocks instantly.", "L'email utilisé au paiement est votre clé d'accès. Entrez-le dans la galerie sur n'importe quel appareil et tous les prompts se débloquent instantanément.") },
-            { q: t("Is the catalog updated?", "Le catalogue est-il mis à jour ?"), a: t("Yes — new premium prompts are added regularly, and they're all included in your plan at no extra cost.", "Oui — de nouveaux prompts premium sont ajoutés régulièrement, et ils sont tous inclus dans votre abonnement sans surcoût.") },
+            { q: t("Is the catalog updated?", "Le catalogue est-il mis à jour ?"), a: t("Yes — new premium prompts are added regularly, and they're all included in your plan at no extra cost.", "Oui — de nouveaux prompts premium sont ajoutés régulièrement, et ils sont tous inclus dans votre accès sans surcoût.") },
             { q: t("Can I use the sites commercially?", "Puis-je utiliser les sites commercialement ?"), a: t("Yes. The sites you generate from our prompts are yours — client projects, portfolios, product launches, anything.", "Oui. Les sites que vous générez à partir de nos prompts vous appartiennent — projets clients, portfolios, lancements de produits, tout est permis.") },
           ].map((item) => (
             <div key={item.q} className="border-t border-white/10 pt-6">
@@ -1781,7 +1789,7 @@ export default function MoventoSite() {
           <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-white/60 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-8 py-3.5 text-sm font-bold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-            <span className="text-xs text-white/50">{t("Monthly or lifetime — your call", "Au mois ou à vie — tu choisis")}</span>
+            <span className="text-xs text-white/50">{t("One payment, lifetime access", "Un paiement, accès à vie")}</span>
           </div>
         </div>
       </section>
@@ -2578,10 +2586,10 @@ function PricingPage() {
             <Icon name="sparkles" className="h-3 w-3" /> {t(`${availablePrompts.length} premium prompts`, `${availablePrompts.length} prompts premium`)}
           </span>
           <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
-            {t("Choose your", "Choisissez votre")}{" "}
-            <span className="text-white/45">{t("plan", "offre")}</span>
+            {isSinglePlan ? t("One payment,", "Un paiement,") : t("Choose your", "Choisissez votre")}{" "}
+            <span className="text-white/45">{isSinglePlan ? t("forever", "à vie") : t("plan", "offre")}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{t("Access every premium prompt. Monthly or lifetime.", "Accède à tous les prompts premium. Au mois ou à vie.")}</p>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.")}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}

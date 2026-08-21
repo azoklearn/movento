@@ -104,6 +104,13 @@ export function bestCheckoutUrl(plan) {
   return planId ? `https://whop.com/checkout/${planId}` : configured || null;
 }
 
+// Plans that are no longer on sale. They stay fully configured above so an
+// existing subscriber's plan_xxx still resolves to a kind — that is what gates
+// their access and the bonus ebook — but no new checkout may be opened on them.
+// This mirrors `hidden: true` in the front-end plan list; the button is gone
+// there, and this is what stops a hand-made request from reaching the old one.
+export const RETIRED_PLANS = new Set(["monthly", "yearly"]);
+
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a
 // lifetime purchase from a subscription — the bonus ebook depends on it.
@@ -131,7 +138,7 @@ export function appendAffiliate(url, ref) {
 // to exist in Whop with this exact spelling — an unknown code is ignored at
 // checkout, so the buyer simply pays full price with no error shown anywhere.
 // Set it to "" to stop applying one.
-export const CHECKOUT_PROMO_CODE = process.env.WHOP_PROMO_CODE ?? "HERO10";
+export const CHECKOUT_PROMO_CODE = process.env.WHOP_PROMO_CODE ?? "";
 
 // Whop reads the promo from the checkout URL. Both spellings are sent: the
 // hosted checkout has used camelCase and snake_case at different times, and an
