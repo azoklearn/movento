@@ -93,6 +93,7 @@ const prompts = [
   // Front of the gallery, hand-picked: motion previews first, one per
   // category, so the first screen shows range rather than repetition.
   { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
+  { title: "JWT 3D Card Carousel", category: "Component", type: "Component", file: "JWT_3D_Card_Carousel.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/animated%20(8).webp", tags: ["3D", "Carousel", "Cards"], gradient: "from-sky-200 via-fuchsia-600 to-black" },
   // The only preview in the catalogue that carries Cloudinary transformations,
   // and they are the point: the untransformed clip played on every desktop and
   // on no phone. vc_h264:baseline:3.1 forces the one H.264 profile every phone
@@ -424,6 +425,7 @@ const AVAILABLE_FILES = new Set([
   "Laocoon_Bronze_Scroll.md",
   "Loopstack_Motion_Landing.md",
   "Soda_3D_Flavor_Hero.md",
+  "JWT_3D_Card_Carousel.md",
   "Baseline_Tennis_Club.md",
   "Convix_PR_Software_Hero.md",
   "Michael_Smith_Portfolio_Landing.md",
