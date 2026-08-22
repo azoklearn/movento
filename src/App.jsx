@@ -1400,6 +1400,10 @@ export default function MoventoSite() {
     }
 
     if (isFree && !accessEmail && !leadEmail) {
+      // The preview popup no longer closes itself on copy, so close it here:
+      // this is the one branch that answers with another modal, and two of them
+      // stacked is a dead end — the lead form sits under the preview.
+      closePreview();
       setPendingFreeItem(item);
       setShowLeadModal(true);
       return;
@@ -1541,8 +1545,12 @@ export default function MoventoSite() {
                       </a>
                     )}
                   </div>
-                  <button onClick={() => { const it = previewItem; closePreview(); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-[#08080A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.02]">
-                    {hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
+                  {/* Copying no longer closes the popup. The visitor came here to
+                      read the preview; throwing them back to the grid the moment
+                      they take the prompt loses their place for nothing. The
+                      button confirms in place and the toast says what happened. */}
+                  <button onClick={() => copyPrompt(previewItem)} className={`flex flex-none items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition hover:scale-[1.02] ${copiedCard === previewItem.title ? "bg-emerald-400/15 text-emerald-300" : "bg-[#08080A] text-white hover:bg-[#141418]"}`}>
+                    {copiedCard === previewItem.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
                   </button>
                 </div>
                 {/* The one moment the visitor actually needs the instructions:
@@ -1567,6 +1575,31 @@ export default function MoventoSite() {
                 </div>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* One line, no buttons, gone in a second and a half. Above the checkout
+          modal (z-70) so it is never the thing hidden behind something else,
+          and clear of the fixed launch banner at the very bottom.
+          pointer-events-none: it must never swallow a click meant for the
+          popup it appears on top of. */}
+      <AnimatePresence>
+        {copiedCard && (
+          <motion.div
+            initial={{ opacity: 0, y: 12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none fixed inset-x-0 bottom-20 z-[80] flex justify-center px-4"
+            role="status"
+            aria-live="polite"
+          >
+            {/* Cream on dark, not another dark pill: it lands on top of the
+                preview popup, whose card is #121214 — a #141418 toast over that
+                is a two-value difference and reads as nothing at all. */}
+            <span className="flex items-center gap-2 rounded-full bg-[#EDE9E0] px-4 py-2.5 text-sm font-semibold text-[#0A0A0B] shadow-[0_18px_44px_-16px_rgba(0,0,0,0.95)]">
+              <Icon name="check" className="h-4 w-4" /> {t("Prompt copied", "Prompt copié")}
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
