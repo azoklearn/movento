@@ -135,3 +135,5 @@ RESPONSIVE / ACCESSIBILITÉ / SEO
   ffmpeg -i source.mp4 -an -c:v libx264 -profile:v high -pix_fmt yuv420p
   -g 6 -keyint_min 6 -crf 20 -movflags +faststart public/vanta.mp4
   (keyframe toutes les 6 images = seek instantané, faststart = buffering web).
+
+RESPONSIVE (obligatoire) : le site doit être entièrement responsive — il doit s'afficher et fonctionner correctement sur mobile, tablette et desktop, sans aucun défilement horizontal, quelle que soit la largeur d'écran.

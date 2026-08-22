@@ -86,3 +86,5 @@ Apply:
 - Center nav pill and desktop Sign Up are `hidden` below `md`; the mobile hamburger is `md:hidden`.
 - Bottom-left paragraph is `hidden sm:block`; bottom-right block is full-width on mobile (`left-5 right-5`) and right-anchored from `sm`.
 - Use `100dvh` so mobile browser chrome doesn't clip the section.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

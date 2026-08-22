@@ -1041,3 +1041,5 @@ const ASSET_BASE_URL = "https://api.getlayers.ai/storage/v1/object/public/public
 Point the `GLTFLoader` at `ASSET_BASE_URL + '/bronze_horse.glb'` and set the `<img>` src to
 `ASSET_BASE_URL + '/1.png'` (or hardcode the full URL). The spark texture is generated procedurally
 in code (no file). Fonts come from Google Fonts (Italiana, Outfit) via the CSS `@import`.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

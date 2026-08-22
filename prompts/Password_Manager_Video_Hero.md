@@ -136,3 +136,5 @@ visible: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.15, duration: 0.
 - `lucide-react` (icons: ArrowRightCircle, Zap, LockKeyhole, Fingerprint, Menu, X)
 - Tailwind CSS 3 with default config, no custom theme extensions
 - Vite + TypeScript
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

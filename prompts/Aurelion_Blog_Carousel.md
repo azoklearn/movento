@@ -60,3 +60,5 @@ Image: https://cdn.sceneai.art/Image%20for%20any%20section/b0688a16-2d8b-4bfb-8f
 Title: "Maximizing Natural Light in Modern Interior Spaces"
 Date: October 6, 2024
 Image: https://cdn.sceneai.art/Image%20for%20any%20section/bb56b4f0-50c0-42bf-8aea-d21fa5e55460.webp
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

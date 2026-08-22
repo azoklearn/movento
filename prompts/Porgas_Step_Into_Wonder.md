@@ -1232,3 +1232,5 @@ npm run build    # tsc + vite build, no errors expected
 ```
 
 If port 5173 is occupied by another local Vite project, Vite auto-bumps to 5174 — open the URL Vite prints, not a hard-coded one.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

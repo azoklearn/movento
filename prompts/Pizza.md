@@ -147,3 +147,5 @@
     <!-- End of bodyEnd -->
 </body>
 </html>
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

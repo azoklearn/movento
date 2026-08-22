@@ -224,3 +224,5 @@ Build a full-screen, scroll-driven fashion/archive landing page for a brand call
 - Videos hidden (`visibility: hidden`) once scroll passes first viewport height
 - Circle symbol randomizes on scroll (throttled to 80ms)
 - Entry animations staggered: logo (0s), nav (0.15s), caption (0.3s), product info (0.45s)
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

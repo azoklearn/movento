@@ -169,3 +169,5 @@ Inner vertical gap: `gap-6 sm:gap-8`
 No dark purple gradients, no extra sections, no stats strips in the nav, no cards in the hero beyond the two glass cards, no overlay labels on the video, no second scroll section. First viewport = brand + one headline + one CTA + two glass cards over the full-bleed CloudFront video.
 
 Recreate pixel-faithfully: same copy, same URLs, same SVG path, same breakpoints, same glass opacities/blurs, same gradient, same Silkscreen on the stat number, same Geist everywhere else.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

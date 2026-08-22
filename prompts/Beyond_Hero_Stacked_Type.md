@@ -163,3 +163,5 @@ SPARK · RENDER · IGNITE · UNFOLD · GENESIS · EVOLVE · PURPOSE · BEYOND ·
 
 ## Do not add
 No nav, cards, CTAs, stats, purple gradients, Inter for the hero display, or the unused local PNGs. Match fonts, colors, asset URL, scroll math, and marquee string/timing exactly as above.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

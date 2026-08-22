@@ -33,3 +33,5 @@ Do NOT include any right-side floating cards or UI elements.
 Do NOT include a grid of partner logos on the right side.
 Do NOT include a bottom frame, scroll indicator, or speaking text at the bottom of the page.
 Do NOT include a giant background watermark text. Keep it completely clean.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

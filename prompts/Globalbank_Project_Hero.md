@@ -62,3 +62,5 @@ Main Top Left Logo (Logo 1):
 </svg>
 
 The five bottom logos (Logos 2 through 6) are the standard grayscale client wordmarks supplied with this asset; reuse the same five SVGs in order, applying `hidden md:block` to the fourth and `hidden lg:block` to the fifth.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -256,3 +256,5 @@ IIFE only. Query `.nav__burger` and `#mobile-menu`. Toggle open/closed as specif
 - Do not add burger-to-X animation unless already specified (it is not)
 
 Match this 1:1.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

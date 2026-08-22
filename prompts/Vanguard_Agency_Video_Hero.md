@@ -80,3 +80,5 @@ With classes: `.animate-fade-up` (0s delay), `.animate-fade-up-delay-1` through 
 - Stats and CTA row use `flex-wrap` to prevent overflow on small screens.
 
 Make everything fully mobile responsive. Use a single `App.tsx` component with `useState` for the menu toggle. No routing needed.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

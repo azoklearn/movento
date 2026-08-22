@@ -52,3 +52,5 @@ Create a responsive HTML page using Tailwind CSS via CDN. The page will have two
 3. Form Wrapper: `<div class="flex w-full max-w-md bg-[#1a1a1a] rounded-xl p-1.5 border border-[#2a2a2a]">`
 4. Input: `<input type="email" placeholder="Your email here" class="w-full bg-transparent text-white px-4 outline-none text-sm placeholder-gray-500">`
 5. Button: `<button class="bg-white text-black px-6 py-2.5 rounded-lg text-sm font-medium hover-lift">Join</button>`
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

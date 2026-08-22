@@ -346,3 +346,5 @@ createRoot(document.getElementById('root')!).render(
 - [ ] Race red appears ONLY on the `Get Tickets` CTA; everything else white over footage.
 - [ ] One screen, no scroll; canvas `#181818`; Inter only; `main.tsx` keeps `StrictMode`.
 - [ ] `npm run build` passes clean (`tsc && vite build`, 0 TS errors).
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

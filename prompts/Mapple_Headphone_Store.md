@@ -118,3 +118,5 @@ None. The page is deliberately icon-free — the nav is text-only and the panels
 - All product copy, prices and themes live only in `src/data/products.js`.
 - Do not remove the `prefers-reduced-motion` guard.
 - The brand is Mapple everywhere — page title, logo, watermark, product names.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

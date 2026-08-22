@@ -28,3 +28,5 @@ BOTTOM-LEFT HERO COPY (absolute, left 56px, bottom 56px, z-index 3, max-width 62
 - Heading: "Rent Your Dream Luxury Car Today" — #fff, weight 600, font-size clamp(38px, 5.8vw, 66px), line-height 0.98, letter-spacing -0.02em.
 - Paragraph: "Enjoy a premium rental experience with exclusive cars, seamless booking, and honest pricing." — color rgba(255,255,255,0.82), 15px, weight 400, line-height 1.5, max-width 480px, margin-top 18px.
 - Button "DISCOVER NOW ↗": glass style — background rgba(255,255,255,0.08), 1px border rgba(255,255,255,0.2), backdrop-blur 6px, color #fff, 14px, weight 600, letter-spacing 0.04em, padding 13px 24px, border-radius 10px, gap 12px, arrow span 15px, margin-top 32px; hover fills solid white with dark text (#0a0a0b) and white border.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

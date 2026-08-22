@@ -815,3 +815,5 @@ Script load order (end of `<body>`):
 - [ ] Theme toggle persists to `ommod-theme`; wormhole recolors on toggle via MutationObserver.
 - [ ] `prefers-reduced-motion`: animations off, loader hidden, static states shown; Lenis disabled.
 - [ ] Primary CTA is white-fill/black-text; lime only on favicon + selection; indigo decorative only.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

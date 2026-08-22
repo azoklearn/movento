@@ -28,3 +28,5 @@ Create a modern, high-end login screen in React using Tailwind CSS and Lucide Re
   - **Submit Button (CRITICAL):** On the right side, a circular button (52x52px). It must have a solid black fill. Around the button, create a bold, multi-colored border using a conic gradient (`#00c6ff, #0072ff, #ff007a, #ff8a00, #00c6ff`). 
   - **Button Interaction:** When hovering over the button, the conic-gradient border must continuously rotate (`animate-spin`), and an outer glowing blur of the exact same conic gradient should become fully visible and spin alongside it. The inner black button should have an inner shadow, and the white ArrowRight icon inside should translate slightly to the right (`translate-x-0.5`).
 - **Footer:** "Don't have an account?" (gray-500) followed by a "Sign up" link where the text has a background clip with the sunset gradient (`from-[#FF512F] to-[#F09819]`). Center aligned at the bottom.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

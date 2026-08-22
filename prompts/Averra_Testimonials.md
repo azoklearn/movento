@@ -32,3 +32,5 @@ Buttons UI: Place two buttons (Left/Right) in a flex row, completely centered be
 Button Style: Background #181A15, rounded corners (rounded-xl or rounded-2xl), dimensions around 56x56px.
 Icons: Use simple SVG left/right arrows colored neon green (#A5E038) with a sleek stroke width (strokeWidth={1.5}).
 Hover Effects: On hover, the button background should turn solid black, and the arrows should smoothly translate a few pixels in the direction they are pointing. Add a subtle shadow on hover.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

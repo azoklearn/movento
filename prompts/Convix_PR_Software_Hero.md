@@ -95,3 +95,5 @@ src/styles/fonts.css
 - No custom animations; only the native looping muted background video
 - Entire hero (video + content + dashboard) is clipped together by the rounded container, so the dashboard cards bleed off the bottom edge
 - Fully responsive: navbar collapses to hamburger under md, headline/CTA scale via `clamp()`, dashboard grid steps from 1 → 2 → 3 columns
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -261,3 +261,5 @@ Three rows (dividers `border-b border-white/15` except last), each `flex gap-5 p
 Top of page: fixed glass nav + service list + intro + "Clear. Precise. Automated." + Mitha glass card over scroll video.
 Scrolling scrubbing advances the CloudFront video smoothly.
 After spacer: "Insight On Demand" + "Learn to see brilliantly." + dual CTAs + three-item frosted capability panel.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

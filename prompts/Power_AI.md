@@ -53,3 +53,5 @@ Liquid glass utility class (in index.css):
 ```
 
 Section structure: `min-h-screen flex flex-col` — navbar at top, content centered via `flex-1 flex items-center justify-center`, marquee at bottom.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

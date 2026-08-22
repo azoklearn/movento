@@ -162,3 +162,5 @@ Root: `<div className="min-h-screen bg-black text-white font-body overflow-x-hid
 - Tailwind default border-radius is overridden to `9999px` (full pill) — every `rounded` in the markup produces pill corners.
 - Do NOT use `video.currentTime` to reverse — the boomerang uses the captured `frames[]` array only.
 - The video element stays mounted (hidden once `framesReady`) so the canvas keeps drawing snapshots.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

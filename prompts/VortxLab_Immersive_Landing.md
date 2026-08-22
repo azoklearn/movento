@@ -128,3 +128,5 @@ Root: `div.h-screen.w-full.bg-black.p-3.md:p-4.font-inter`
 ```js
 theme: { extend: { fontFamily: { inter: ['Inter', 'sans-serif'] } } }
 ```
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

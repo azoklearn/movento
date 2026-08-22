@@ -262,3 +262,5 @@ If a constraint conflicts with a framework limitation, clamp to the nearest vali
 - `<title>CloudB — Walk on Clouds</title>`
 - `<meta name="description" content="CloudB. Walk on clouds. The essential men's shoe." />`
 - Language: `<html lang="en">`. All copy in English.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

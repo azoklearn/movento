@@ -57,3 +57,5 @@ Every element inside the hero is center-aligned. All borders use translucent whi
 STEP 9 — SEO
 
 Set the route page title to "Scalable — Manage your sales and analytics in one place" and the meta description to "Track custom events, increase form submissions, optimise conversion rates and optimise your sales flow with Scalable."
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

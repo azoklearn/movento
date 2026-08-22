@@ -84,3 +84,5 @@ Bottom - Reach Me card (rounded-2xl, bg-[#324444], p-5 md:p-6, noise-overlay):
 ```
 
 Font: Inter (system fallback). Icons from lucide-react: ArrowUpRight, Sparkle, Figma, Framer, Palette, PenTool, Layers, Type, Aperture, Chrome, Camera, Brush, Box, Wand2. All icons use strokeWidth 1.5.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

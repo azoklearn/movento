@@ -84,3 +84,5 @@
 > - This section calls it with threshold `0.1`.
 
 ---
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -112,3 +112,5 @@ Standard Tailwind directives plus two utility classes (not actively used in curr
 - **Max content width:** 1440px, centered with mx-auto
 - **Responsive breakpoints:** Default Tailwind (sm: 640px, md: 768px, lg: 1024px, xl: 1280px)
 - **Live clock:** Updates every second, shows London timezone in HH:MM format
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

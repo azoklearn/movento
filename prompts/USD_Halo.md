@@ -95,3 +95,5 @@ App renders, in order:
 4. UseCasesSection
 
 All section backgrounds are #F5F5F5. All headings use negative letter-spacing for the tight, modern fintech feel. Use `font-medium` (600) as the heaviest weight throughout.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

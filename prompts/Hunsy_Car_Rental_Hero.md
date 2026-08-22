@@ -75,3 +75,5 @@ NOTES
 - Page contains only this hero section — nothing else
 - No white space at top, bottom, left, or right; video is the background for everything
 - On mobile the two bottom groups stack vertically, all content remains left-aligned
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

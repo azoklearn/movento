@@ -68,3 +68,5 @@ Iterate over the options natively outputting `motion.button` wrapper tags allowi
 Contingent Feedback Status Banner: Underneath your service pills, write an `<AnimatePresence mode="wait">` that tracks user state array length:
 - Empty: Show a generic placeholder indicating "Please click to select services above." at fifty percent opacity (`opacity: 0.5, italic, text-xs`).
 - Active Selection: Swap cleanly into a container `<motion.div>` that springs height gracefully (`height: "auto"`). Inside, display an acknowledgment banner reading `Ready to inquire about: [array.join(", ")]` combined with an arrow call-to-action button "Let's Go" (`text-[#4D6D47] uppercase text-xs`). Style the banner with `bg-[#FAFBF9] border rounded-2xl`.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

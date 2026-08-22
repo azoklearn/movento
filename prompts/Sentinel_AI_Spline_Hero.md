@@ -96,3 +96,5 @@ Simple wrapper: `<div className="bg-hero-bg min-h-screen">` containing `<Navbar 
 - Responsive fluid typography uses `clamp()` for the heading, subheading, and description
 - The content is anchored to the bottom-left of the viewport (`flex items-end` on the section + padding-bottom on the content)
 - No hamburger menu on mobile — the nav links and CTA simply hide (`hidden md:flex` / `hidden md:inline-flex`)
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

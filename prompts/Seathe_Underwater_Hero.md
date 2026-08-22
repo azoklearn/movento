@@ -280,3 +280,5 @@ Reproduce exactly. Do not:
 - Leave any black bars baked into the background video — crop the source to its visible content first.
 
 If a constraint conflicts with a tool limitation (e.g. an unavailable font weight), clamp to the nearest valid value and note the substitution in a comment — never silently change it.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

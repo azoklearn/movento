@@ -446,3 +446,5 @@ Scrubbing ~3700px through the sticky stage must produce, in order:
 5. **3360–3660px:** the two round `←` `→` buttons fade in at `left:48px` beneath the cards and become clickable only past `0.98`. Prev/next and card clicks slide the track with the `640ms cubic-bezier(0.22, 1, 0.36, 1)` transition and loop seamlessly via the 3-set clone + instant-jump normalization.
 
 Under `prefers-reduced-motion`, scroll smoothing and pointer parallax are bypassed (values snap, `--mx`/`--my` forced to 0) and layer transitions are disabled — the composition still scrubs, just without inertia.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

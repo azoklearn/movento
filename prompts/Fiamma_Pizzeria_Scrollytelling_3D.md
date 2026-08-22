@@ -338,3 +338,5 @@ play à l'entrée (catch silencieux), pause à la sortie.
    prévu pour cette position — aucun conflit d'animations (c'est le test de l'écrivain unique).
 5. Fonctionne sur un serveur statique quelconque ; les assets se chargent depuis les URLs directes
    du manifeste (texture héro incluse, grâce à crossOrigin + CORS).
+
+RESPONSIVE (obligatoire) : le site doit être entièrement responsive — il doit s'afficher et fonctionner correctement sur mobile, tablette et desktop, sans aucun défilement horizontal, quelle que soit la largeur d'écran.

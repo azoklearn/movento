@@ -98,3 +98,5 @@ body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -m
 - White text with `/70` opacity for secondary text
 - Rounded-full for buttons and inputs, rounded-2xl for containers
 - Page title: "Aurai - Always-On Wellness Companion"
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -56,3 +56,5 @@ Logo Specs: Icons: 15px height. Text: 11px size.
 Brand Names: Google, Cust.io, Hummel, Copper, Tesla.
 
 Placement: Push as far to the bottom as possible while maintaining the 70px side padding.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

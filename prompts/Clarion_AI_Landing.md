@@ -62,3 +62,5 @@ Col 4 (Connect): Instagram, YouTube, LinkedIn, Twitter / X.
 Link styling: text-sm text-gray-400 hover:text-white transition-colors.
 Bottom Bar: flex flex-col md:flex-row justify-center items-center gap-4 text-xs text-gray-500 border-t border-white/5 pt-8.
 Layout EXACTLY as: © 2026 Plety. All rights reserved [dot] by Re-text [dot] Made in Gemini. The names "Re-text" and "Gemini" should be slightly brighter (text-gray-300).
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

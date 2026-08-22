@@ -38,3 +38,5 @@ body { font-family: 'Inter', sans-serif; color: #1B133C; }
 - No other sections or pages — just this single hero.
 - Color palette: deep navy `#1B133C` for text, white/translucent for glass elements, orange-500 for the Y Combinator badge accent.
 - Page title: "Axon — Digital Workers for Mundane Workflows"
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

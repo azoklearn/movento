@@ -171,3 +171,5 @@ All paused until `.ze-ready` class is added to viewport (triggered when both vid
 - Save badge (zePop): 1.55s
 
 **Reduced motion:** All animations disabled via `@media (prefers-reduced-motion: reduce)`.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -55,3 +55,5 @@ Responsiveness: Fully fluid for mobile and desktop.
 Interactions: Hover states for all buttons and smooth transitions for the conic-gradient animation.
 
 Frameworks: Built using Tailwind CSS for layout and standard CSS for custom keyframe animations.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

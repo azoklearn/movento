@@ -95,3 +95,5 @@ Build a full-page creative studio hero with a splash screen entrance, spotlight 
 
 ## Accessibility
 - `@media (prefers-reduced-motion: reduce)`: disable all animations, set final states immediately
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

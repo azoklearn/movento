@@ -65,3 +65,5 @@ Legal Links (Right): Privacy Policy, Terms of Service, Cookies Settings.
 Legal Links Styling: Flex row with wrapping, gap 4 to 6. Text is #71717A, size 13px.
 
 Legal Links Hover State: Use a custom underline. Default state: underline, underline-offset-[4px], decoration-[#E5E7EB]. Hover state: change text and decoration to #0A0A0A with a transition.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

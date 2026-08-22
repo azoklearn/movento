@@ -1394,3 +1394,5 @@ The canvas must have real pixel size — give it `width:100%;height:100%` via CS
 
 None. (Fonts load from Google Fonts; the dithering texture is generated procedurally in-engine; no
 models, images, or video.)
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

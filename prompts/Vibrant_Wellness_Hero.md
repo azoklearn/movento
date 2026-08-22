@@ -49,3 +49,5 @@ Top block (mt-14 sm:mt-20 md:mt-28, max-w-2xl):
 Two stat columns:
 1. First: a small triangular dot-pattern icon built from 9 absolutely-positioned 2.5px white/60 squares inside a 20x20 box; value "48 Hours" (text-xl sm:text-2xl md:text-3xl, font-normal, text-white); label "Initial Consultation" (text-xs sm:text-sm, font-light, text-white/60).
 2. Second: a 3x3 grid icon (grid-cols-3, gap-[2px]) of 4px rounded cells alternating bg-white/60 and bg-white/0 in a checkerboard; value "Initial Consultation" (same sizing); label "Healing Sessions" (text-xs sm:text-sm, font-light, text-white/60).
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

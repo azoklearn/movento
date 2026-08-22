@@ -75,3 +75,5 @@ Use the IntersectionObserver API.
 Select all elements with the .fade-up class.
 When they enter the viewport (e.g., threshold: 0.1), add the .visible class to trigger the CSS transition.
 Add a tiny setTimeout (50ms) to initialize the observer so the initial CTA content animates immediately upon page load.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -70,3 +70,5 @@ Build a single-page React + TypeScript landing page for a travel app called "Wan
 - `src/App.tsx` imports `Hero` from `@/components/Hero` and renders it inside a wrapping `<div>`.
 - `Hero.tsx` contains all the markup above plus a `NavButton` helper component for the centered links.
 - Use the `@/` path alias (maps to `src/`) configured in `vite.config.ts` via `resolve.alias`.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

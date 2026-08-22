@@ -92,3 +92,5 @@ Hero section (`<section>`): `relative w-full overflow-hidden` with inline `style
 * No purple/indigo colors; neutrals + `bg-green-400` status dot only.
 * Responsive: tablet (`sm`) keeps hero text at the same bottom as mobile (`bottom-12`); only desktop (`md`+) raises it (`bottom-56`).
 * Use `useRef` + `requestAnimationFrame` (no external animation libs). Canvas-based radial mask reveal must update each frame.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

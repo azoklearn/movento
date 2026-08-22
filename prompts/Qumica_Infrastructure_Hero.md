@@ -57,3 +57,5 @@ Use lucide-react for all icons.
 Implement smooth CSS keyframe animations for the marquee, the gradient shift, and the light sweep.
 
 Ensure the layout is fully responsive (mobile-friendly).
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

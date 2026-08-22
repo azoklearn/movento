@@ -187,3 +187,5 @@ Studio portrait photography on soft light gray / off-white seamless backgrounds 
 ### App wiring
 
 `App.tsx` renders only `<Hero />`. Import via `@/components/Hero`. State: single `useState(0)` for active slide index.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

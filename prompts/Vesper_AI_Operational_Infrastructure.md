@@ -330,3 +330,5 @@ Hero pad `20px 20px 64px`, still `align-items: flex-end`. Stats **column**, cent
 3. Burger toggles `body.menu-open`.  
 4. Nav links and Escape close the menu.  
 5. Resize to `(min-width: 901px)` closes the menu.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -652,3 +652,5 @@ export default {
 - [ ] All images have meaningful `alt` text formatted as `${artist}, ${title}, ${medium}, ${year}` for artworks.
 - [ ] No purple, no indigo, no neon — only bone + ink + oxblood + ash + paper.
 - [ ] Lenis skipped under reduced-motion.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

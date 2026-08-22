@@ -452,3 +452,5 @@ Make a sister hero for a brand called **"Orbis.Nft"** (cosmic / NFT vibe):
 - Keep the video, scrub algorithm, gradient overlay, and color tokens unchanged
 
 Everything else stays. Paste into the agent → ship in five minutes.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

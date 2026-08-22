@@ -65,3 +65,5 @@ Use Tailwind CSS for all styling.
 Use object-cover for the video to ensure it spans the whole hero without distortion.
 
 Include a grainy texture overlay (0.03 opacity) across the whole page.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

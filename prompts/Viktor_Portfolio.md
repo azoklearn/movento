@@ -86,3 +86,5 @@ Container: `max-w-[1340px]`, full height, flex column, `justify-end items-end`, 
 - Semantic landmarks: `<header>`, `<main>`, `<nav>`, `<section>`
 - ARIA labels on navigation regions and status elements
 - Videos are `aria-hidden="true"`
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

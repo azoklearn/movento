@@ -130,3 +130,5 @@ TECH STACK
 - Tailwind CSS 3
 - framer-motion (for all animations: pull-up text, fade-in, scroll-linked opacity, card entrances)
 - lucide-react (ArrowRight, Check icons)
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

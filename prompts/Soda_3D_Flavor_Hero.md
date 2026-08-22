@@ -1095,3 +1095,5 @@ scale, and usage):
 - `BUBBLE_PNG` (rising bubbles) → `https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/bubble.png`
 
 (URL-encode spaces in filenames as `%20` if your environment requires it.)
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

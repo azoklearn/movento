@@ -231,3 +231,5 @@ The container div is absolutely positioned and translated to `(x, y)` then `-50%
 `src/pages/Index.tsx` simply renders Hero, Collection, PerfectMatch in a Fragment, in that order — no wrapper, no spacing element. Every visual rhythm is handled by each section's internal layout. No global background bleed beyond the torn-paper bridge.
 
 **Visual journey.** Warm cream and editorial sticker collage (Hero) → deep black scroll-driven envelope reveal that delivers six product photos into a horizontal lineup, photos always visible after they appear (Collection) → torn-paper transition into a soft grey orbit field where six matching bags rotate slowly around the headline "Find your perfect match", pausing on hover with a 1.12 lift (PerfectMatch). The yellow-green Instrument Serif accent words ("your", "elegance", "new", "match") tie the three sections together as the brand's signature visual gesture.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

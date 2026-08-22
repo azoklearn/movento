@@ -36,3 +36,5 @@ Here are the strict requirements for the build:
 - The script must split the text nodes by spaces into individual words, wrap EVERY single word in a `<span class="word-wrap">`, and apply an incrementally increasing CSS `animation-delay` to each span. 
 - Ensure the JS preserves `<br>` tags so the specific line breaks are not destroyed.
 - Animation Timeline: The Pin icon drops in first. The Heading animates word-by-word. Right as the heading finishes, the Subheading animates word-by-word. Finally, the Button fades in from the bottom.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

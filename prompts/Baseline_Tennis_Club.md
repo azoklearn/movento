@@ -246,3 +246,5 @@ Base URL: `https://api.getlayers.ai/storage/v1/object/public/public/assets/basel
 | `/assets/5.webp` | `https://api.getlayers.ai/storage/v1/object/public/public/assets/baseline-88535e4000/5.webp` | Hero collection slide 3 (**Academy Kit / Junior Range**) · Trust **slide 1** (Marco Vidal) |
 
 All `<img>` / `background-image` must point at these full URLs. Set `loading`/`fetchpriority` sensibly (hero plate eager, the rest lazy).
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

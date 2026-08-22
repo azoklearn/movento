@@ -96,3 +96,5 @@ AnimatedHeading component: Splits text by \n into lines, then each line into ind
 Color scheme: Black background, white text, gray-300 for secondary text, white/20 for borders. No purple, no indigo.
 
 Stack: React + TypeScript, Tailwind CSS, Vite. No extra UI libraries needed. Icons from lucide-react if needed (none currently used in the hero).
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

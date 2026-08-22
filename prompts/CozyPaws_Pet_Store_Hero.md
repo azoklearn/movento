@@ -135,3 +135,5 @@ All use `animation-fill-mode: both`. `.animate-word-pop` starts with `opacity: 0
 - All responsive layouts use show/hide (`hidden lg:flex`, etc.), not CSS-only media queries
 - Extensive use of `clamp()` for fluid typography and spacing
 - Lucide icons used: Search, ShoppingCart, Star, ArrowUpRight, Play, ArrowRight, Plus
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

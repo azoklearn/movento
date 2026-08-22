@@ -101,3 +101,5 @@ A 100px gradient overlay at the top of the video fades from `#FF0000` to transpa
 | Bottom video | `https://res.cloudinary.com/daklr2whx/video/upload/v1778602552/track-video_2_s9lp53.mp4` |
 
 Hosted on **Cloudinary**.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

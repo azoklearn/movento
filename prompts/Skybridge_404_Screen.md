@@ -171,3 +171,5 @@ At `max-width: 640px`:
 - Give the brand wrapper an `aria-label="LGPSM"`.
 - Use React JSX and CSS/Tailwind utilities as appropriate.
 - Do not add any interface functionality, transition, fade-in, hover state, mouse-following effect, or extra content.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

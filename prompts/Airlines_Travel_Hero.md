@@ -22,3 +22,5 @@ Step 3: Hero Content (Center)
 - Main Headline: "Travel the World<br>Without Any Stress". Font size must be exactly 38px on mobile and 56px on desktop, font-weight medium, line-height tight (1.1), white text.
 - Secondary Text: "Let us take care of the planning while you enjoy meaningful travel experiences crafted just for you." Font size must be exactly 15px on mobile (18px on desktop), white text with 80% opacity.
 - CTA Button: "Start Exploring". Solid white background, black text, 15px font size, font-weight medium. The left and right padding must be exactly 26px (px-[26px]), top and bottom 12px. Include a subtle shadow and a hover effect that scales the button up slightly (scale-105) and increases the shadow.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

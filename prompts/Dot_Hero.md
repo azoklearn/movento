@@ -64,3 +64,5 @@ Create one main `App.tsx` file containing 4 components: `TypingMessages`, `Navba
   `absolute left-[48.5%] md:left-[47.5%] lg:left-[48.5%] -translate-x-1/2 bottom-[32%] z-30 w-[110px] sm:w-[130px] flex justify-start text-left`.
 - Text Style: `font-nokia text-[#2A3616] text-[10px] sm:text-[14px] leading-tight break-words min-h-[1.5em]`.
 - Cursor: Add a blinking Framer Motion cursor `motion.span` (`w-1.5 h-3 bg-[#2A3616] ml-1 align-middle`) animating opacity from 0 to 1 to 0 over 0.8s, repeating infinitely, linearly.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

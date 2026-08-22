@@ -509,3 +509,5 @@ If a constraint conflicts with a framework limitation, **clamp to the nearest va
 - [ ] Headings scramble in / out via `ScrambleIn`; buttons decode on hover via `ScrambleText` (25ms, char locks at frame `i*4`).
 - [ ] Hero: "Software / Engineered" (left) + "One / Brain" (right) + the verbatim description; Highlight: 3 glass cards; Contact: `hello@1brain.dev` + GitHub / X / LinkedIn (`href="#"`).
 - [ ] Palette is black / white / translucent white only — no hue; no dark overlay over the video.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -115,3 +115,5 @@ Navbar size: `w-6 h-6 text-[#191919]`. Wordmark beside it: "Boomerang", `font-se
 - Responsive: nav links hide below `md`; feature rows stack on mobile; typography scales as specified.
 
 Reproduce pixel-faithfully: same copy, colors (`#191919`, `#F4F3F3`, white/90 glass panel), fonts, CloudFront URL, and the capture→boomerang canvas video technique.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

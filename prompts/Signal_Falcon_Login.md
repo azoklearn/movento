@@ -286,3 +286,5 @@ Design intent, in order: **surface establishes depth → brand promise overlaps 
 6. With `prefers-reduced-motion:reduce`, everything is visible immediately and nothing moves.
 7. With JS disabled, the full page renders statically.
 8. The falcon video autoplays silently and loops in every mode, with the poster still visible during buffering.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -69,3 +69,5 @@ Layout Structure:
 - Navigation bar (z-10)
 - Hero section (z-10)
 - All elements should be responsive and maintain the glassmorphic aesthetic with the specified padding, positioning, and smooth animations.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

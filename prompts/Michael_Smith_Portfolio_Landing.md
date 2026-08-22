@@ -187,3 +187,5 @@ Social links [Twitter, LinkedIn, Dribbble, GitHub] + Green pulsing dot + "Availa
 `gsap`, `framer-motion`, `hls.js`, `react-router-dom`, `tailwindcss-animate`
 
 Add smooth scroll nav and page transitions.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

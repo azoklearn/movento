@@ -81,3 +81,5 @@ body {
 - The page is fully responsive with breakpoints at sm, md, lg.
 - Minimal hover animations: button scale, arrow translate, color transitions.
 - No additional sections below the info box.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

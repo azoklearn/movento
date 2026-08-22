@@ -387,3 +387,5 @@ body:not(.is-ready) .scroll-down { animation-play-state: paused !important; }
 10. NO hover animation on buttons. .btn has no :hover rule. Buttons do not move, lift, or glow on hover.
 
 END OF PROMPT.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

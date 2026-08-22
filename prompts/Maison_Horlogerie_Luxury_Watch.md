@@ -135,3 +135,5 @@ Ensure 100% accuracy for the following video and image sources used throughout t
 ## 8. Responsive Behavior
 - Heavily utilize Tailwind's `md:` and `lg:` prefixes.
 - On mobile: Collections Showcase stacks vertically (Image first, text below), particle counts are reduced, font sizes drop from `text-8xl` down to `text-5xl`. Parallax values are minimized to preserve layout stability on touch devices.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

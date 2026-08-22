@@ -696,3 +696,5 @@ ASSET_BASE_URL = https://api.getlayers.ai/storage/v1/object/public/public/assets
 
 - `flower.mp4` → `https://api.getlayers.ai/storage/v1/object/public/public/assets/loopstack-f8c64439bf/flower.mp4` (the background `<video>` `<source src>`).
 - `black_gradient.svg` → `https://api.getlayers.ai/storage/v1/object/public/public/assets/loopstack-f8c64439bf/black_gradient.svg` (the `#top-gradient` `<img src>`).
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

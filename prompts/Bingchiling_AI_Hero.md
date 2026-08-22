@@ -394,3 +394,5 @@ export default defineConfig({
 - [ ] Trust strip: exact line + five fictional logos with their exact SVG paths.
 - [ ] Entrance order fires 0.08 → 0.18 → 0.3 → 0.42 → 0.56s; reduced-motion guard intact.
 - [ ] Gold appears ONLY on the badge chip; no blue/purple/indigo/green anywhere; hero is full-bleed.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

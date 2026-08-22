@@ -1108,3 +1108,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 - [ ] Hero: apricot dawn glow (hero only) → Source Serif 4 headline → Inter subtitle → full-bleed ogl gallery, all `fadeUp`-staggered (custom 0/1/2).
 - [ ] Exactly one filled Ink button per screen; no hero CTA; no second accent color.
 - [ ] One viewport hero; gallery loops infinitely and drags on pointer + touch.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

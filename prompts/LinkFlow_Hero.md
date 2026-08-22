@@ -441,6 +441,8 @@ export default App;
 - Bottom-left block: `absolute left-4 right-4 sm:right-auto sm:left-6 md:left-10 bottom-6 sm:bottom-8 md:bottom-10`
 - Bottom-right video: `absolute right-6 md:right-10 bottom-8 md:bottom-10`
 
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.
+
 ---
 
 ### Dependencies (package.json)

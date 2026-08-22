@@ -208,3 +208,5 @@ All use `cubic-bezier(0.16, 1, 0.3, 1)` easing with `both` fill mode.
 - Panel 2: animate-fade-up delay-1000
 - Panel 3: animate-fade-up delay-1100
 - Inline capsule image: animate-scale-in delay-1000
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

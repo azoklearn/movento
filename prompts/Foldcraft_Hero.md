@@ -73,3 +73,5 @@ Create a fullscreen hero landing page for a creative studio called "Foldcraft" u
 ```
 
 **Dependencies:** React, lucide-react (ArrowRight, Menu, X), Tailwind CSS, Google Fonts Geist.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

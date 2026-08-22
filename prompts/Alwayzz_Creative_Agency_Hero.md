@@ -129,3 +129,5 @@ The book button avatar URL (exact):
 ```
 https://framerusercontent.com/images/hfneFL6CHBi5BnNvCeOaqU9HqE4.png
 ```
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

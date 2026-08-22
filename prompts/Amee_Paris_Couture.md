@@ -552,3 +552,5 @@ tailwind.config.js             (extend colors + fontFamily)
 - [ ] Image hover scale `1.04` over `1200ms ease-out`.
 - [ ] No footer, no eyebrow row in DropShowcase, no figcaptions, no glass card, no Discover button.
 - [ ] `prefers-reduced-motion: reduce` disables all transitions and `.marquee-track` animation.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

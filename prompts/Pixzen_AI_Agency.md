@@ -70,3 +70,5 @@ You are an expert Frontend Engineer tasked with building "PIXZEN", an elite, wor
 - Absolutely NO `any` types in TypeScript.
 - Build fully responsive (stack to single columns on mobile).
 - Ensure `globals.css` properly wires Tailwind v4 themes without needing a separate `tailwind.config.ts`.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

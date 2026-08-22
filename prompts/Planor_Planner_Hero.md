@@ -29,3 +29,5 @@ Follow these strict structural and styling requirements exactly:
 - Headline (H1): EXACTLY `text-[58px]` font size AND must be semi-bold (`font-semibold`). Text is "Plan better, <br class='hidden md:block'> start your day right". The word "right" must be wrapped in a span using the 'Playfair Display' italic font. Apply `.delay-h1`.
 - Subheadline (P): text-white/90, 18px-20px. "A smarter planner for tasks<br>priorities and daily structure". Apply `.delay-p`.
 - CTA Button: "Create your plan". Solid white background, rounded-full padding, hover scale effect. Apply `.delay-btn`.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

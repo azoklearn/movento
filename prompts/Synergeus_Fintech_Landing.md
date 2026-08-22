@@ -527,3 +527,5 @@ COLOR REFERENCE
 Background black #000. Card overlays rgba(0,0,0,0.30) for Card 1 and Card 3, rgba(0,0,0,0.20) for Card 2. White text full opacity #fff for headings. White text 0.60 alpha for subtext, 0.65 for card descriptions, 0.55 for Card 1 answer body, 0.80 for "ASK YOURS". Glass surfaces: background rgba(255,255,255,0.10) with blur(56px) for Card 1's main glass, blur(20px) for Card 3 NodeA pills. White content cards: rgba(255,255,255,0.92) for Card 2's white block, Card 3 NodeB cards, and the Tip pill is rgba(255,255,255,0.80). Green accents: #1DC47D for the dot and connector in Card 2, #8DB800 for the chart stroke and dashed guides, fill gradient rgba(180,210,80,0.85) -> rgba(180,210,80,0.10).
 
 That is the complete spec for Section 3 - every text string, color, font, size, animation timing, easing curve, asset path, layout constant, scroll trigger, looping behavior, and SVG construction.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

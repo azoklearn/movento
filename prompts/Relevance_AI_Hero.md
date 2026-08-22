@@ -31,3 +31,5 @@ Perplexity: https://cdn.sceneai.art/logos/5360e43f-332b-40b0-84de-db847c00fae6.p
 NASA: https://cdn.sceneai.art/logos/9a17d5b4-0ad2-44b6-832f-b46153f7b156.png
 NVIDIA: https://cdn.sceneai.art/logos/23385a15-55a1-405a-accd-51abf2f987cf.png
 Google: https://cdn.sceneai.art/logos/bdb8a52e-00a4-4fb1-8ab2-c07977e5dc72.png
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

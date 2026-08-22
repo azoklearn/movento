@@ -283,3 +283,5 @@ Images:
 - Spacing: 8px base system throughout.
 - Transitions: Most hover transitions 300-700ms. Button slide effect uses `cubic-bezier(0.16, 1, 0.3, 1)`. Letter animations use same cubic bezier.
 - The page is entirely a single `App.tsx` component plus the `SandTransitionImage` helper function in the same file.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

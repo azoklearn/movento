@@ -309,3 +309,5 @@ The entire app is wrapped in `<div className="bg-white">` containing:
 - **Interactions:** `hover:scale-105 transition-transform` on CTA buttons.
 - **Responsive:** Single `md:` (768px) breakpoint. Stacked on mobile, grid on desktop.
 - **No external packages** beyond React and Tailwind.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

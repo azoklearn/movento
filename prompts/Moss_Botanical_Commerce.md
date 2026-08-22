@@ -425,3 +425,5 @@ Reproduce exactly. Do not:
 - Swap the CDN hero video (Layer 5) for a stock/external video — if it fails to load, the hero falls back to solid black, which is by design.
 
 If a constraint conflicts with platform limitations, clamp to the nearest valid value and note the substitution as a comment — do not silently change.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

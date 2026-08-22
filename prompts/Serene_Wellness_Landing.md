@@ -168,3 +168,5 @@ progress = clamp(0, 1, (windowHeight - rect.top) / (windowHeight + rect.height))
 ### Tailwind Config
 
 Default Tailwind config with no extensions — all custom styling handled via CSS utility classes in index.css.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

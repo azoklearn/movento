@@ -221,3 +221,5 @@ Reproduce exactly. Do not:
 - Replace the video with a static image — download the CDN file above to `public/labs-video.mp4` and serve it locally.
 
 If a constraint conflicts with framework limitations, **clamp to the nearest valid value and note the substitution as a comment** — do not silently change.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

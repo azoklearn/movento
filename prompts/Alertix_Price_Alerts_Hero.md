@@ -36,3 +36,5 @@ Create a highly accurate, fully responsive React component for a Hero Section ba
 - When the page loads, ALL content must animate into view smoothly and sequentially over roughly 4 seconds.
 - The Main Heading must animate **word by word** (e.g., "Stay", "Ahead", "With", "Cutting-Edge" sliding up one after the other).
 - Use inline `style={{ animationDelay: '...' }}` to stagger the entrance of the background video, navigation bar, heading words, subheading, main CTA, and finally the bottom store logos so they cascade beautifully onto the screen.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

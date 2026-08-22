@@ -199,3 +199,5 @@ Responsive: Mobile-first with sm:, md:, lg: breakpoints throughout
 Max content width: 1831px across all sections
 
 All text is uppercase except the Condiment cursive accents which are normal-case
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

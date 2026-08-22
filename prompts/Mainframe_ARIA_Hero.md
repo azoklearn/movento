@@ -76,3 +76,5 @@ BACKGROUND VIDEO (mouse-scrub controlled)
 DEPENDENCIES
 
 Only React, ReactDOM, Tailwind CSS, and Vite. No other UI libraries. Lucide-react is available but not used in this component.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -250,3 +250,5 @@ Reproduce exactly. Do not:
 - Drop the `prefers-reduced-motion` guard (both the GSAP early-return and the CSS kill-switch).
 
 If a constraint conflicts with a framework limitation, clamp to the nearest valid value and note the substitution as a code comment — do not silently change.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

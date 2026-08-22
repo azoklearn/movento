@@ -84,3 +84,5 @@ Create a fullscreen hero section for a SaaS product called "flowpath" using Reac
 - The entire section is fully responsive with breakpoints at sm, md, lg, xl
 - No external UI libraries beyond Lucide React for icons
 - Tailwind config is default with no extensions
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

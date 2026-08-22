@@ -25,3 +25,5 @@ Here are the specific requirements:
     *   The main heading specifically must animate appearing word-by-word with a staggered delay.
 
 Please provide only one single HTML file containing all HTML, Tailwind CSS, and JavaScript required to render this exactly as described without any extra content.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

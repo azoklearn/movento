@@ -220,3 +220,5 @@ main.viewport
 - Preserve static timezone string and the copy typo “Vantage bring”.
 
 Implement as a polished production-ready single HTML file that looks identical to this Vantage landing page.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

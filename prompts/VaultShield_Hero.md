@@ -120,3 +120,5 @@ visible: { opacity: 1, y: 0, transition: { delay: i * 0.15, duration: 0.6, ease:
 ---
 
 That is every detail needed to reproduce the hero section exactly as built.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

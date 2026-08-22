@@ -244,3 +244,5 @@ Mobile entrance: burger instead of pill/nav; slightly tighter delays.
 - Trail punches FRONT and paints REVEAL; wordmark readable through transparency
 - Exact two Higgsfield URLs above
 - Orbit Sans + Orbit Display embedded
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

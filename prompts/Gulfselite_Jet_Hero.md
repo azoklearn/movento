@@ -65,3 +65,5 @@ Timing: Headline words stagger by 120ms. Description words stagger by 40ms. The 
 Frameworks: HTML5, Tailwind CSS, and Vanilla JavaScript.
 
 Responsiveness: Ensure the layout is fluid. On mobile, decrease the frame padding and scale down typography while keeping the aircraft centered in the video.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

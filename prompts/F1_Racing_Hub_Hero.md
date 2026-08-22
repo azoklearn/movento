@@ -128,3 +128,5 @@ Top nav `absolute top-0 left-0 right-0 z-30 flex items-center justify-between px
 - Headlines: font-normal or font-semibold, very tight tracking (-0.05em to -0.08em), tight leading (0.72–0.95)
 - Large display numbers: 110–120px, lineHeight 0.72–0.79
 - Labels: text-white/60, 13–16px, font-normal
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

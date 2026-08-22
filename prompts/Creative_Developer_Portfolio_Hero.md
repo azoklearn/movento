@@ -117,3 +117,5 @@ Act as an award-winning designer and web developer. Your task is to recreate a s
 *   **Max-width: 480px (Mobile Portrait)**:
     *   Main title reduces to `2.8rem`.
     *   Sub-title reduces to `1.2rem`.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

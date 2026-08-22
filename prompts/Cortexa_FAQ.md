@@ -48,3 +48,5 @@ Inner wrapper: Must have overflow-hidden.
 Answer Text: - text-gray-500 text-base md:text-lg leading-relaxed pb-8 md:pb-10 pr-4 md:pr-12.
 If the item is index === 0, render the answer using <AnimatedText> with a delayed offset so it staggers in on page load. Otherwise, render the standard text.
 Write the complete code adhering strictly to these specifications.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

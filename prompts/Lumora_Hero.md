@@ -134,3 +134,5 @@ Black background prevents flash before videos load. Single viewport-height secti
 ---
 
 The entire app lives in a single `App.tsx` component with the CSS in `index.css`.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

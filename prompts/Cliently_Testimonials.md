@@ -65,3 +65,5 @@ Quote: "The strategic approach completely changed our trajectory, allowing us to
 Author: "- John Doe Tech Innovations"
 Image URL: https://cdn.sceneai.art/Hero%20section%20image/8dae17e6-2475-46d6-bce8-f72631954cfe.png
 Please put all code into a single file with App as the default export.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

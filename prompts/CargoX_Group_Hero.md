@@ -129,3 +129,5 @@ Use a shared constant: `const EXPO_OUT: [number, number, number, number] = [0.16
 3. All content (header, main, footer) uses `relative z-10` or `z-50` to layer above the video (z-0)
 4. Fully responsive: single column on mobile, 2-column grid on lg+
 5. Mobile hamburger menu with overlay on md breakpoint
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -35,3 +35,5 @@ Shadow: Include a deep 25px blur drop-shadow to create depth against the video.
 Alignment: All content centered vertically and horizontally.
 Padding: Minimum 6px horizontal padding on mobile; standard 7xl max-width for desktop headers.
 Interaction: Smooth transitions (0.3s) for all hover states on buttons and navigation links.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

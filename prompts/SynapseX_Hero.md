@@ -189,3 +189,5 @@ M 1.5,23 L 1.5,33 C 1.5,38.5 6,43 11.5,43 L 16.5,43 C 22,43 26.5,38.5 26.5,33 Q 
 - The hero video is NOT autoplay -- it starts paused at time 0 and is scrubbed by horizontal mouse movement (delta-based, not absolute position). The seek logic chains via `seeked` event to avoid frame-dropping.
 - Framer Motion `useScroll` tracks the second section with offset `["start end", "end start"]`, piped through `useSpring` (stiffness 15, damping 32, mass 1.8) then `useTransform` and `useMotionTemplate` for the 3D text rotation effect.
 - No external state management, no routing, no database -- pure single-page React app.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

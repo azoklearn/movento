@@ -45,3 +45,5 @@ Create a premium private jet landing page hero section with the following specif
 - Main content area: flex-1, flex items-center justify-center
 
 Make it clean, modern, and premium-looking with smooth interactions.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -104,3 +104,5 @@ AI Customer Support Hero Kelo
 - If no project exists, create a minimal React + Tailwind app; if one exists, use it as-is — don't re-scaffold or change the Tailwind/build config or version.
 - Keep it self-contained: scope its fonts and any resets to this section; never set global body/html/* styles or a global font.
 - Install only the libraries this section names.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

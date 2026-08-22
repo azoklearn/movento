@@ -251,3 +251,5 @@ HARD CONSTRAINTS
 - **Avatar:**  
   `https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&h=160&fit=crop&crop=faces&q=80&auto=format`
 - **Fonts:** Google Fonts Inter 400–700 + Inter Tight 500, or the embedded WOFF2s already in `index.html`.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

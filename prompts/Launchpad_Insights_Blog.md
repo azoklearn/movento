@@ -69,3 +69,5 @@ long-term profitability optimizing solely"
 Main Image URL: https://cdn.sceneai.art/Image%20for%20Blog%20section/fceff2cf-8c36-4aa6-b0ab-93467e78d68f.webp
 Author Name: Julian Reed | Date: June 24,2025
 Author Image URL: https://cdn.sceneai.art/Only%20man%20image/7e1339ef-7a01-4979-93c8-21d97af291ee.webp
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

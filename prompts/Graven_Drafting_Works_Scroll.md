@@ -129,3 +129,5 @@ Below sm (<640px): headline text-5xl, "/ DRAFTING WORKS" logo tag hidden, metada
 Below lg (<1024px): center nav links hidden (hamburger → bg-[#0c0f13]/95 backdrop-blur dropdown with the 4 links), scroll progress rail hidden, beats tighten padding.
 md+ : alternating beat sides, larger display sizes, vertical .rule-v spec dividers.
 Reduce scroll container to h-[360vh] below md. Respect prefers-reduced-motion: skip the damped scrub (seek directly), draw rules instantly, reveal beats without blur, and drop grain motion.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

@@ -217,3 +217,5 @@ Custom SVGs for: checkerboard, wireframe globe, four L-shaped corner brackets (p
 - UI text sits above background at z-10/z-20; background is z-0 and non-interactive (`pointer-events-none`)
 
 Recreate this page pixel-faithfully with the exact URLs, exact reveal math (ease 0.1, radius `clamp(160, 16vw, 420)`, gradient stops listed), exact copy, fonts, fluid clamps, and drawer contents above.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

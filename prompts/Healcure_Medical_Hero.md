@@ -42,3 +42,5 @@ Create a fully responsive landing page using HTML and Tailwind CSS. The design m
 
 7.  **Exclusions:**
     *   **Do not** include any logo banners or "proudly worked with" sections at the bottom of the page.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

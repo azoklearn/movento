@@ -248,3 +248,5 @@ Each marker is a motion.g animated opacity 0→1, scale 0→1, duration 0.8s, de
 ### Dependencies
 
 react, react-dom, @tanstack/react-router, @tanstack/react-start, framer-motion, lucide-react, tailwindcss v4, tw-animate-css, vite, typescript, plus the standard shadcn-ui boilerplate. Only src/styles.css, src/routes/index.tsx, src/routes/__root.tsx, src/components/ValmaxLanding.tsx, src/components/IntroSequence.tsx, src/components/StarField.tsx, src/components/LineField.tsx and the listed assets in src/assets/ are page-specific; everything else is the default TanStack Start + shadcn template.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

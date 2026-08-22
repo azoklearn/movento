@@ -90,3 +90,5 @@ You are an expert Frontend Developer and UI/UX Designer. Your task is to build a
 - Every major section should fade in smoothly via GSAP ScrollTrigger as it enters the viewport.
 
 **Execute this build prioritizing flawless responsive design, high-contrast legibility, and premium cinematic immersion.**
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

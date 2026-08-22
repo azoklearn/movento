@@ -84,3 +84,5 @@ Animations (CSS keyframes + classes):
 - Hero CTA button gets animate-fade-rise-delay-2
 
 Layout: No decorative blobs, radial gradients, or overlays. Minimalist, cinematic, vertically centered hero. The video provides all visual depth.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

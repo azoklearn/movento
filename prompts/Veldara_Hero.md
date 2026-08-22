@@ -84,3 +84,5 @@ body { font-family: 'Inter', sans-serif; background: #010101; color: #fff; }
 - Accent blue: `#2C5C88`
 - Text muted: `#9ca3af`, `#d1d5db`
 - White: `#fff`
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

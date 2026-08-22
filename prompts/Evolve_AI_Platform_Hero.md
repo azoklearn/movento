@@ -248,3 +248,5 @@ Also: ≤420px headline/trust tweaks; ≤700px height tighten hero spacing.
 ## Implementation stack
 
 Plain `index.html` + `styles.css` + `main.js`. No React/build step required. Copy local `assets/logo.webp` and `fonts/GeistPixel-Circle.woff2`. Load **Inter**, **BubbledotICG-FinePos** (OnlineWebFonts), and **Font Awesome 6.5.2** from CDNs as specified. Use the **exact** CloudFront MP4 URL above for the background video.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

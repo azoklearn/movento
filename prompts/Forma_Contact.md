@@ -78,3 +78,5 @@ Build a single-page React + TypeScript + Vite + Tailwind site that is a full-scr
 - `src/App.tsx` — entire component plus `SocialBtn` helper.
 - `src/index.css` — Google Fonts import + Tailwind directives + global `* { font-family: 'Inter', sans-serif; }`.
 - Standard Vite + Tailwind config (`tailwind.config.js` scanning `./index.html` and `./src/**/*.{ts,tsx}`).
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

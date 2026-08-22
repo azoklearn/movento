@@ -134,3 +134,5 @@ Place card-1.png through card-7.png and banner-1.png through banner-3.png in the
 **Color tokens used directly.** Page background #F2F2F0, primary text #111111, brand red #C0392B (Section 2 highlight + @howard), brand teal #4ECDC4 (logo + Create strategy dot), brand blue #4D7EFF (@coplin), brand green #3DBF7A (@andrea), white #FFFFFF, plus translucent blacks rgba(0,0,0,0.45) for eyebrow text, rgba(0,0,0,0.55) for body copy, rgba(0,0,0,0.15) for button outlines, rgba(0,0,0,0.05) and rgba(0,0,0,0.06) for hover backgrounds.
 
 **Easing tokens used throughout.** smoothEase [0.22, 1, 0.36, 1] for hero choreography and scroll cascade, hoverEase [0.34, 1.56, 0.64, 1] for snappy hover and re-reveal, easeOut for text reveals, easeInOut for slide cross-fades.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

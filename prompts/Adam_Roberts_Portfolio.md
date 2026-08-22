@@ -216,3 +216,5 @@ DO NOT
 - Do not replace the CloudFront video URL
 - Do not use Inter for pixel words — must be basis33
 - Do not add scrolling or a second viewport section
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

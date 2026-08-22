@@ -81,3 +81,5 @@ Build a mobile coffee profile screen inside a phone mockup frame. Use vanilla HT
 ```
 
 **Responsive:** At 440px viewport, phone scales to zoom 0.6. Body flex-wraps at 900px.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

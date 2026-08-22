@@ -377,3 +377,5 @@ createRoot(document.getElementById('root')!).render(
 - [ ] Navbar: cloud logo + "Dreamy", Explore (chevron) · Journal · Inspiration, "Get Started" CTA, mobile drawer toggled by Menu/X.
 - [ ] Content pinned near the top via the `flex-1` bottom spacer; one screen, no scroll.
 - [ ] Only the four lucide icons used; `prefers-reduced-motion` respected.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

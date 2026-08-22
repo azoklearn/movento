@@ -30,3 +30,5 @@ Text: Build a custom AnimatedText component that takes a string, splits it into 
 Buttons: Fade and slide up the entire button container (fadeInUp) at ~2.2 seconds, after the text animation finishes.
 Dashboard Image: Fade and scale up slightly (fadeInScale) at ~2.8 seconds.
 The complete sequence should naturally finish within a 4-second window on page load.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.

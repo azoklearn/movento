@@ -156,3 +156,5 @@ Use `animation-fill-mode: both`. Honor `prefers-reduced-motion: reduce` by colla
 7. `prefers-reduced-motion` short-circuit
 
 Recreate this **exactly** as specified — same URLs, copy, spacing, z-order, timings, and font.
+
+RESPONSIVE (required): the site must be fully responsive — it has to display and work correctly on mobile, tablet and desktop, with no horizontal scrolling at any screen width.
