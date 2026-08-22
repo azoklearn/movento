@@ -97,7 +97,7 @@ const prompts = [
   // Same Cloudinary account and the same kind of source as Vanta below — a
   // macOS screen recording — so it ships with the transformations already on
   // rather than waiting for the card to go blank on a phone first.
-  { title: "Fiamma Pizzeria", category: "Landing Page", type: "Landing", file: "Fiamma_Pizzeria_Scrollytelling_3D.md", preview: "https://res.cloudinary.com/du0hbrmvw/video/upload/vc_h264:baseline:3.1,w_960,q_auto,ac_none/v1787413782/Enregistrement_de_l_e%CC%81cran_2026-08-22_a%CC%80_17.48.26_online-video-cutter.com_spwzdm.mp4", tags: ["Three.js", "Scrollytelling", "Restaurant"], gradient: "from-amber-100 via-red-600 to-[#1C1A17]" },
+  { title: "Fiamma Pizzeria", category: "Landing Page", type: "Landing", file: "Fiamma_Pizzeria_Scrollytelling_3D.md", demo: "https://pizza-jade-ten.vercel.app/", preview: "https://res.cloudinary.com/du0hbrmvw/video/upload/vc_h264:baseline:3.1,w_960,q_auto,ac_none/v1787413782/Enregistrement_de_l_e%CC%81cran_2026-08-22_a%CC%80_17.48.26_online-video-cutter.com_spwzdm.mp4", tags: ["Three.js", "Scrollytelling", "Restaurant"], gradient: "from-amber-100 via-red-600 to-[#1C1A17]" },
   // The only preview in the catalogue that carries Cloudinary transformations,
   // and they are the point: the untransformed clip played on every desktop and
   // on no phone. vc_h264:baseline:3.1 forces the one H.264 profile every phone
@@ -1532,6 +1532,14 @@ export default function MoventoSite() {
                   <div className="min-w-0">
                     <h3 className="truncate text-base font-semibold text-[#EDE9E0]">{previewItem.title}</h3>
                     <p className="mt-0.5 text-xs text-white/40">{previewItem.category}</p>
+                    {/* Deliberately not `link`, which REPLACES the copy action.
+                        A demo is the finished site to look at before copying —
+                        the prompt still has to end up on the clipboard. */}
+                    {previewItem.demo && (
+                      <a href={previewItem.demo} target="_blank" rel="noopener noreferrer" onClick={() => track("prompt_demo_opened", { prompt: previewItem.title, category: previewItem.category })} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/25 hover:text-[#EDE9E0]">
+                        <Icon name="arrow" className="h-3 w-3 -rotate-45" /> {t("See the live site", "Voir le site en ligne")}
+                      </a>
+                    )}
                   </div>
                   <button onClick={() => { const it = previewItem; closePreview(); copyPrompt(it); }} className="flex flex-none items-center gap-1.5 rounded-full bg-[#08080A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.02]">
                     {hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
