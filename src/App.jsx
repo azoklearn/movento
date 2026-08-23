@@ -1285,6 +1285,7 @@ export default function MoventoSite() {
   const isSubscriptionPage = typeof window !== "undefined" && window.location.pathname === "/subscription";
   const isAdminPage = typeof window !== "undefined" && window.location.pathname === "/admin";
   const isTikTokPage = typeof window !== "undefined" && window.location.pathname === "/tiktok";
+  const isChoosePage = typeof window !== "undefined" && window.location.pathname === "/choose";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -1458,33 +1459,6 @@ export default function MoventoSite() {
     }
   }
 
-  // Spends one single-prompt purchase on this prompt, then puts it on the
-  // clipboard. The server is the authority on whether a credit is available;
-  // the local count only decides what the button offers.
-  async function claimAndCopyPrompt(item) {
-    setCopyError("");
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/claim-prompt`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: accessEmail || leadEmail, file: item.file }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(apiError(data, t("Unable to unlock this prompt.", "Impossible de débloquer ce prompt.")));
-
-      setOwnedPrompts(new Set(Array.isArray(data.owned) ? data.owned : []));
-      setPromptCredits(Number(data.credits) || 0);
-      track("single_prompt_claimed", { prompt: item.title, category: item.category });
-
-      const copied = await copyTextToClipboard(data.prompt);
-      if (!copied) throw Object.assign(new Error("Copy denied by browser"), { name: "NotAllowedError" });
-      setCopiedCard(item.title);
-      setTimeout(() => setCopiedCard(""), 1600);
-    } catch (error) {
-      reportCopyError(error);
-    }
-  }
-
   async function copyPrompt(item) {
     const isFree = FREE_PROMPT_FILES.has(item.file);
 
@@ -1494,9 +1468,11 @@ export default function MoventoSite() {
       return;
     }
 
-    // Paid for a prompt but has not said which one yet — this is the one.
+    // Paid for a pack but has not picked yet: take them to the selection screen
+    // with this prompt already ticked, rather than spending a credit on a single
+    // click. A credit is spent for good and there is no way back from a misclick.
     if (!isFree && !hasPremiumAccess && promptCredits > 0) {
-      await claimAndCopyPrompt(item);
+      window.location.assign(`/choose?pick=${encodeURIComponent(slugify(item.title))}`);
       return;
     }
 
@@ -1579,6 +1555,7 @@ export default function MoventoSite() {
   if (isMentionsPage) return <MentionsLegales />;
   if (isPricingPage) return <PricingPage />;
   if (isTikTokPage) return <TikTokPage />;
+  if (isChoosePage) return <ChoosePromptsPage />;
   if (isSubscriptionPage) return <SubscriptionPage />;
   if (isSuccessPage) return <SuccessPage />;
 
@@ -1667,7 +1644,7 @@ export default function MoventoSite() {
                       they take the prompt loses their place for nothing. The
                       button confirms in place and the toast says what happened. */}
                   <button onClick={() => copyPrompt(previewItem)} className={`flex flex-none items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition hover:scale-[1.02] ${copiedCard === previewItem.title ? "bg-emerald-400/15 text-emerald-300" : "bg-[#08080A] text-white hover:bg-[#141418]"}`}>
-                    {copiedCard === previewItem.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : hasPremiumAccess || ownedPrompts.has(previewItem.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : promptCredits > 0 ? <><Icon name="gift" className="h-4 w-4" /> {t("Use my purchase", "Utiliser mon achat")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
+                    {copiedCard === previewItem.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : hasPremiumAccess || ownedPrompts.has(previewItem.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : promptCredits > 0 ? <><Icon name="gift" className="h-4 w-4" /> {t("Choose it", "Le choisir")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
                   </button>
                 </div>
                 {/* The cheaper way in, offered where the visitor is holding the
@@ -1878,7 +1855,8 @@ export default function MoventoSite() {
               {promptCredits > 1
                 ? t(`You have ${promptCredits} prompts left to pick.`, `Il te reste ${promptCredits} prompts à choisir.`)
                 : t("You have one prompt left to pick.", "Il te reste un prompt à choisir.")}{" "}
-              <span className="text-emerald-200/70">{t("Copy any prompt below — each one you copy is yours to keep.", "Copie n'importe quel prompt ci-dessous — chacun que tu copies est à toi.")}</span>
+              <a href="/choose" className="font-semibold text-emerald-200 underline underline-offset-4 transition hover:text-white">{t("Choose them now", "Les choisir maintenant")}</a>
+              <span className="text-emerald-200/70">{t(" — or pick any prompt below.", " — ou clique sur un prompt ci-dessous.")}</span>
             </p>
           </div>
         )}
@@ -1895,7 +1873,7 @@ export default function MoventoSite() {
                     // labelled pill, so below sm the badge keeps the icon and
                     // drops the word.
                     <span className={`flex flex-none items-center gap-1.5 rounded-full px-2 py-2 text-xs font-semibold transition sm:px-3.5 ${copiedCard === item.title ? "bg-emerald-400/15 text-emerald-300" : copiedCard === "Error" ? "bg-red-400/15 text-red-300" : !unlocked ? "border border-white/10 bg-white/[0.04] text-white/60 group-hover:border-white/25 group-hover:bg-white/[0.1] group-hover:text-white" : isFree && !hasPremiumAccess ? "bg-emerald-400/[0.1] text-emerald-300 group-hover:bg-emerald-600 group-hover:text-white" : "border border-white/10 bg-white/[0.06] text-white/80 group-hover:border-white/25 group-hover:bg-white/[0.12] group-hover:text-white"}`}>
-                      {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copied", "Copié")}</span></> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Error", "Erreur")}</span></> : !unlocked && promptCredits > 0 ? <><Icon name="gift" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Use my purchase", "Utiliser mon achat")}</span></> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Premium</span></> : isFree && !hasPremiumAccess ? <><Icon name="gift" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Free", "Gratuit")}</span></> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Open", "Ouvrir")}</span></> : <><Icon name="copy" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copy", "Copier")}</span></>}
+                      {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copied", "Copié")}</span></> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Error", "Erreur")}</span></> : !unlocked && promptCredits > 0 ? <><Icon name="gift" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Choose it", "Le choisir")}</span></> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Premium</span></> : isFree && !hasPremiumAccess ? <><Icon name="gift" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Free", "Gratuit")}</span></> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Open", "Ouvrir")}</span></> : <><Icon name="copy" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copy", "Copier")}</span></>}
                     </span>
                   } />
                 </motion.div>
@@ -2374,6 +2352,241 @@ function TikTokPage() {
           <a href="/mentions-legales" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Legal notice", "Mentions légales")}</a>
         </div>
       </footer>
+    </main>
+  );
+}
+
+// Where a pack buyer picks their prompts.
+//
+// Deliberately a separate screen rather than a claim on every card: a credit is
+// spent for good, and one stray click on a card that says "use my purchase"
+// used to burn a third of the purchase with no confirmation and no way back.
+// Here the choice is reviewed as a set, and nothing is spent until Confirm.
+function ChoosePromptsPage() {
+  const [email, setEmail] = useState(getStoredAccessEmail);
+  const [emailInput, setEmailInput] = useState(getStoredAccessEmail() || "");
+  const [state, setState] = useState({ loading: true, credits: 0, owned: [], error: "" });
+  const [picked, setPicked] = useState(() => {
+    // Arriving from a card carries that prompt through, so the visitor does not
+    // have to find again the prompt they were just looking at.
+    if (typeof window === "undefined") return new Set();
+    const slug = new URLSearchParams(window.location.search).get("pick");
+    const match = slug && availablePrompts.find((p) => slugify(p.title) === slug.toLowerCase());
+    return new Set(match ? [match.file] : []);
+  });
+  const [query, setQuery] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [claimed, setClaimed] = useState([]); // files unlocked in this session
+  const [copiedFile, setCopiedFile] = useState("");
+
+  const load = React.useCallback(async (address) => {
+    if (!address) { setState({ loading: false, credits: 0, owned: [], error: "" }); return; }
+    setState((s) => ({ ...s, loading: true, error: "" }));
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/claim-prompt?email=${encodeURIComponent(address)}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(apiError(data, t("Unable to read your purchase.", "Impossible de lire ton achat.")));
+      setState({ loading: false, credits: Number(data.credits) || 0, owned: Array.isArray(data.owned) ? data.owned : [], error: "" });
+    } catch (error) {
+      setState({ loading: false, credits: 0, owned: [], error: error.message });
+    }
+  }, []);
+
+  useEffect(() => { load(email); }, [email, load]);
+
+  const owned = new Set(state.owned);
+  const remaining = state.credits;
+  // Never offer a prompt they already own — it would look like a slot spent on
+  // something they can already copy.
+  const pickable = availablePrompts.filter((p) => !owned.has(p.file));
+  const shown = query.trim()
+    ? pickable.filter((p) => `${p.title} ${p.category} ${(p.tags || []).join(" ")}`.toLowerCase().includes(query.trim().toLowerCase()))
+    : pickable;
+
+  function toggle(file) {
+    setPicked((current) => {
+      const next = new Set(current);
+      if (next.has(file)) next.delete(file);
+      else if (next.size < remaining) next.add(file);
+      return next;
+    });
+  }
+
+  async function confirm() {
+    if (!picked.size || confirming) return;
+    setConfirming(true);
+    setState((s) => ({ ...s, error: "" }));
+    const done = [];
+    try {
+      // One request per prompt: each claim is atomic server-side, so a failure
+      // half way leaves the prompts already claimed claimed, and the rest of the
+      // credits untouched.
+      for (const file of picked) {
+        const response = await fetch(`${API_BASE_URL}/api/claim-prompt`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, file }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(apiError(data, t("Unable to unlock this prompt.", "Impossible de débloquer ce prompt.")));
+        done.push({ file, prompt: data.prompt });
+        track("prompt_pack_claimed", { prompt: file });
+      }
+      setClaimed(done);
+      setPicked(new Set());
+      await load(email);
+    } catch (error) {
+      setState((s) => ({ ...s, error: error.message }));
+      setClaimed(done);
+      await load(email);
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  async function copyClaimed(entry) {
+    const copied = await copyTextToClipboard(entry.prompt);
+    if (!copied) return;
+    setCopiedFile(entry.file);
+    setTimeout(() => setCopiedFile(""), 1600);
+  }
+
+  const titleFor = (file) => availablePrompts.find((p) => p.file === file)?.title || file;
+
+  return (
+    <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-white/[0.05] blur-[120px]" />
+      </div>
+
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <a href="/" className="transition hover:opacity-80"><Logo /></a>
+        <div className="flex items-center gap-2">
+          <LangSwitch />
+          <a href="/#prompts" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">← {t("Catalog", "Catalogue")}</a>
+        </div>
+      </header>
+
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-24 pt-4 lg:px-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{t("Choose your prompts", "Choisis tes prompts")}</h1>
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-white/55">
+            {t("Pick them, review your choice, then confirm. Nothing is spent until you do.", "Sélectionne-les, vérifie ton choix, puis confirme. Rien n'est consommé avant.")}
+          </p>
+        </div>
+
+        {/* No email on this device: the purchase is tied to the address used at
+            checkout, so that is the way in. */}
+        {!email && (
+          <form
+            onSubmit={(e) => { e.preventDefault(); const clean = cleanEmail(emailInput); if (!clean) return; window.localStorage.setItem("movento_access_email", clean); setEmail(clean); }}
+            className="mx-auto mt-10 flex max-w-md flex-col gap-3 sm:flex-row"
+          >
+            <input value={emailInput} onChange={(e) => setEmailInput(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35 focus:ring-4 focus:ring-white/10" />
+            <button type="submit" className="rounded-2xl bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Continue", "Continuer")}</button>
+          </form>
+        )}
+
+        {email && state.loading && <p className="mt-10 text-center text-sm text-white/45">{t("Loading your purchase…", "Chargement de ton achat…")}</p>}
+
+        {email && !state.loading && (
+          <>
+            {claimed.length > 0 && (
+              <div className="mt-8 rounded-[24px] border border-emerald-400/25 bg-emerald-400/[0.07] p-5">
+                <p className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
+                  <Icon name="check" className="h-4 w-4" /> {claimed.length > 1 ? t(`${claimed.length} prompts unlocked — they are yours for good.`, `${claimed.length} prompts débloqués — ils sont à toi pour de bon.`) : t("Prompt unlocked — it is yours for good.", "Prompt débloqué — il est à toi pour de bon.")}
+                </p>
+                <ul className="mt-4 space-y-2">
+                  {claimed.map((entry) => (
+                    <li key={entry.file} className="flex items-center justify-between gap-3 rounded-2xl bg-black/25 px-4 py-2.5">
+                      <span className="min-w-0 truncate text-sm text-[#EDE9E0]">{titleFor(entry.file)}</span>
+                      <button onClick={() => copyClaimed(entry)} className="flex flex-none items-center gap-1.5 rounded-full bg-[#EDE9E0] px-4 py-1.5 text-xs font-bold text-[#0A0A0B] transition hover:bg-white">
+                        {copiedFile === entry.file ? <><Icon name="check" className="h-3.5 w-3.5" /> {t("Copied", "Copié")}</> : <><Icon name="copy" className="h-3.5 w-3.5" /> {t("Copy", "Copier")}</>}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {state.error && (
+              <p className="mt-6 flex items-start gap-2 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-4 text-sm leading-6 text-red-300">
+                <Icon name="alert" className="mt-1 h-4 w-4 flex-none" />{state.error}
+              </p>
+            )}
+
+            {remaining === 0 ? (
+              <div className="mt-10 rounded-[24px] border border-white/10 bg-[#121214] p-7 text-center">
+                <p className="text-sm leading-6 text-white/60">
+                  {state.owned.length
+                    ? t("Nothing left to pick. Your prompts are unlocked in the catalog.", "Plus rien à choisir. Tes prompts sont débloqués dans le catalogue.")
+                    : t("No purchase found for this email. Check it matches the one you paid with.", "Aucun achat trouvé pour cet email. Vérifie qu'il correspond à celui du paiement.")}
+                </p>
+                <a href="/#prompts" className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">
+                  {t("Back to the catalog", "Retour au catalogue")} <Icon name="arrow" className="h-4 w-4" />
+                </a>
+              </div>
+            ) : (
+              <>
+                {/* Sticky so the count and the confirm button stay in reach while
+                    scrolling a long catalogue. */}
+                <div className="sticky top-3 z-20 mt-8 flex flex-col gap-3 rounded-2xl border border-white/12 bg-[#121214]/95 p-4 shadow-[0_18px_44px_-20px_rgba(0,0,0,0.9)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[#EDE9E0]">
+                      {t(`${picked.size} of ${remaining} selected`, `${picked.size} sur ${remaining} sélectionné${picked.size > 1 ? "s" : ""}`)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-white/45">
+                      {picked.size < remaining
+                        ? t(`You can still pick ${remaining - picked.size}.`, `Tu peux encore en choisir ${remaining - picked.size}.`)
+                        : t("That is your full pack.", "C'est ton pack complet.")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={confirm}
+                    disabled={!picked.size || confirming}
+                    className="flex-none rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {confirming ? t("Unlocking…", "Déblocage…") : picked.size > 1 ? t(`Unlock these ${picked.size} prompts`, `Débloquer ces ${picked.size} prompts`) : t("Unlock this prompt", "Débloquer ce prompt")}
+                  </button>
+                </div>
+
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  type="search"
+                  placeholder={t("Search a prompt…", "Chercher un prompt…")}
+                  className="mt-5 w-full rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35 focus:ring-4 focus:ring-white/10"
+                />
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {shown.map((item) => {
+                    const isPicked = picked.has(item.file);
+                    const full = !isPicked && picked.size >= remaining;
+                    return (
+                      <button
+                        key={item.file}
+                        onClick={() => toggle(item.file)}
+                        disabled={full}
+                        aria-pressed={isPicked}
+                        className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition ${isPicked ? "border-emerald-400/50 bg-emerald-400/[0.08]" : full ? "cursor-not-allowed border-white/[0.06] bg-white/[0.02] opacity-40" : "border-white/10 bg-[#121214] hover:border-white/25 hover:bg-white/[0.05]"}`}
+                      >
+                        <span className={`grid h-5 w-5 flex-none place-items-center rounded-md border ${isPicked ? "border-emerald-400 bg-emerald-400 text-[#04150d]" : "border-white/25"}`}>
+                          {isPicked && <Icon name="check" className="h-3.5 w-3.5" />}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold text-[#EDE9E0]">{item.title}</span>
+                          <span className="block truncate text-xs text-white/45">{item.category}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {!shown.length && <p className="mt-8 text-center text-sm text-white/45">{t("No prompt matches that search.", "Aucun prompt ne correspond à cette recherche.")}</p>}
+              </>
+            )}
+          </>
+        )}
+      </section>
     </main>
   );
 }
