@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { track } from "@vercel/analytics";
+import { track } from "./analytics.js";
 import { getRef, refProps } from "./affiliate.js";
 
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";

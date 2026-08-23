@@ -15,6 +15,7 @@
     "dotenv": "latest",
     "express": "latest",
     "framer-motion": "latest",
+    "posthog-js": "^1.418.10",
     "react": "latest",
     "react-dom": "latest"
   },

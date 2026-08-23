@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Analytics } from "@vercel/analytics/react";
-import { track } from "@vercel/analytics";
+import { initAnalytics, track } from "./analytics.js";
 import App from "./App.jsx";
 import { captureRef, isFirstRefVisitOfSession } from "./affiliate.js";
 import "./index.css";
@@ -10,6 +10,10 @@ import "./index.css";
 // appends checkout_status=success. Catch that anywhere and route the buyer to
 // the dedicated /success page — no dependency on the exact Whop redirect setting.
 if (typeof window !== "undefined") {
+  // Before anything is tracked, so the very first event is not dropped. A no-op
+  // until VITE_POSTHOG_KEY is set.
+  initAnalytics();
+
   const params = new URLSearchParams(window.location.search);
   if (window.location.pathname !== "/success" && params.get("checkout_status") === "success") {
     window.location.replace("/success");
