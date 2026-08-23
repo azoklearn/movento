@@ -1,5 +1,6 @@
 import {
   customerHasWhopAccess,
+  customerOwnsPrompt,
   extractPrompt,
   fetchPromptMarkdown,
   FREE_PROMPT_FILES,
@@ -19,7 +20,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid prompt." });
   }
 
-  if (!isFreePrompt && !(await customerHasWhopAccess(email))) {
+  // Three ways in: the prompt is free, the customer has full access, or they
+  // bought this one prompt on its own.
+  if (!isFreePrompt && !(await customerHasWhopAccess(email)) && !(await customerOwnsPrompt(email, file))) {
     return res.status(403).json({ error: "Premium access required." });
   }
 

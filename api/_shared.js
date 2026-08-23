@@ -69,6 +69,10 @@ export const checkoutUrls = {
   monthly: process.env.WHOP_MONTHLY_URL || MONTHLY_FALLBACK_URL,
   yearly: process.env.WHOP_YEARLY_URL || YEARLY_FALLBACK_URL,
   lifetime: process.env.WHOP_LIFETIME_URL,
+  // One prompt, bought on its own. A single Whop product covers every prompt:
+  // the buyer picks which one after paying, so there is nothing to create per
+  // prompt and nothing to round-trip through checkout metadata.
+  single: process.env.WHOP_SINGLE_URL,
 };
 
 // Whop plan IDs (plan_xxx), one per plan — required for the on-site EMBEDDED
@@ -80,6 +84,7 @@ const planIdEnv = {
   monthly: process.env.WHOP_MONTHLY_PLAN_ID,
   yearly: process.env.WHOP_YEARLY_PLAN_ID,
   lifetime: process.env.WHOP_LIFETIME_PLAN_ID,
+  single: process.env.WHOP_SINGLE_PLAN_ID,
 };
 
 // Returns the plan_xxx id for embedded checkout, or null when only a product-page
@@ -117,7 +122,7 @@ export const RETIRED_PLANS = new Set(["monthly", "yearly"]);
 export function planKindFromPlanId(planId) {
   const id = String(planId || "").trim();
   if (!id) return null;
-  return ["monthly", "yearly", "lifetime"].find((kind) => resolvePlanId(kind) === id) || null;
+  return ["monthly", "yearly", "lifetime", "single"].find((kind) => resolvePlanId(kind) === id) || null;
 }
 
 // Whop credits an affiliate through the "a" query parameter. Carrying it onto the
@@ -245,6 +250,77 @@ async function redisGetAccess(normalizedEmail) {
 export async function redisSetAccess(normalizedEmail, record) {
   const redis = Redis.fromEnv();
   await redis.set(`access:${normalizedEmail}`, record);
+}
+
+// ---------------------------------------------------------------------------
+// Single-prompt purchases.
+//
+// A buyer of one prompt must NOT get the catalogue, so these live outside the
+// access:{email} record that means "everything is unlocked". Two keys:
+//
+//   credits:{email} — single purchases not yet spent (a number)
+//   prompts:{email} — the files already claimed (an array)
+//
+// One Whop product covers every prompt: the buyer pays, then claims the one
+// they want. That is why the credit exists at all — the purchase and the choice
+// of prompt happen at two different moments, and Whop never has to know which
+// prompt was meant.
+// ---------------------------------------------------------------------------
+
+export async function redisGetPromptCredits(normalizedEmail) {
+  try {
+    const redis = Redis.fromEnv();
+    const value = await redis.get(`credits:${normalizedEmail}`);
+    const count = Number(value);
+    return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function redisAddPromptCredit(normalizedEmail, amount = 1) {
+  const redis = Redis.fromEnv();
+  return await redis.incrby(`credits:${normalizedEmail}`, amount);
+}
+
+export async function redisGetOwnedPrompts(normalizedEmail) {
+  try {
+    const redis = Redis.fromEnv();
+    const value = await redis.get(`prompts:${normalizedEmail}`);
+    if (!value) return [];
+    // Upstash deserializes JSON on the way out, but a value stored as a raw
+    // string still comes back as one — same defensive read as the access record.
+    const list = typeof value === "string" ? JSON.parse(value) : value;
+    return Array.isArray(list) ? list.filter(isSafePromptFile) : [];
+  } catch {
+    return [];
+  }
+}
+
+// Spends one credit on one prompt. Returns what happened so the caller can tell
+// "already yours" (no credit spent) from "no credit left" (nothing to spend).
+export async function redisClaimPrompt(normalizedEmail, file) {
+  const owned = await redisGetOwnedPrompts(normalizedEmail);
+  if (owned.includes(file)) return { ok: true, alreadyOwned: true, owned };
+
+  const redis = Redis.fromEnv();
+  // Decrement first: two clicks in flight at once would otherwise both read a
+  // credit of 1 and both claim. A decrement that lands below zero is put back.
+  const left = await redis.decrby(`credits:${normalizedEmail}`, 1);
+  if (left < 0) {
+    await redis.incrby(`credits:${normalizedEmail}`, 1);
+    return { ok: false, reason: "no_credit", owned };
+  }
+
+  const next = [...owned, file];
+  await redis.set(`prompts:${normalizedEmail}`, next);
+  return { ok: true, alreadyOwned: false, owned: next };
+}
+
+export async function customerOwnsPrompt(email, file) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || !isSafePromptFile(file)) return false;
+  return (await redisGetOwnedPrompts(normalizedEmail)).includes(file);
 }
 
 export async function redisClearAccess(normalizedEmail) {

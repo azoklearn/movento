@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { normalizeEmail, planKindFromPlanId, redisClearAccess, redisGetAccessRecord, redisSetAccess } from "./_shared.js";
+import { normalizeEmail, planKindFromPlanId, redisAddPromptCredit, redisClearAccess, redisGetAccessRecord, redisSetAccess } from "./_shared.js";
 
 export const config = { api: { bodyParser: false } };
 
@@ -65,6 +65,7 @@ function planKindFrom(data) {
 
 function membershipTypeFrom(data) {
   const kind = planKindFrom(data);
+  if (kind === "single") return "single";
   if (kind) return kind === "lifetime" ? "lifetime" : "subscription";
   if (data.renewal_period_end) return "subscription";
   if (data.status === "completed") return "lifetime";
@@ -105,6 +106,23 @@ export default async function handler(req, res) {
     if (action === "membership.activated" || action === "payment.succeeded") {
       const previous = await redisGetAccessRecord(email);
       const type = membershipTypeFrom(data);
+
+      // A single-prompt purchase buys ONE prompt, not the catalogue. It must
+      // never reach redisSetAccess below, which is what unlocks everything.
+      // It grants a credit the buyer then spends on the prompt of their choice.
+      //
+      // Whop sends membership.activated and payment.succeeded for the same
+      // purchase, so the credit is keyed on the payment: crediting on both
+      // would handed out two prompts for one sale. membership.activated is
+      // ignored here and payment.succeeded is the one that pays out.
+      if (planKindFrom(data) === "single") {
+        if (action === "payment.succeeded") {
+          const total = await redisAddPromptCredit(email, 1);
+          console.log("Single-prompt credit granted:", email, "total:", total);
+        }
+        return res.json({ received: true });
+      }
+
       // The exact plan ("monthly" | "yearly" | "lifetime") decides whether the
       // buyer earned the bonus ebook, which "subscription" alone cannot tell.
       const kind = planKindFrom(data);

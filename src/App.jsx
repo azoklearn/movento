@@ -527,6 +527,16 @@ const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR
 const PROMO_CODE = "";
 const PROMO_PERCENT = 10;
 
+// Buying one prompt on its own. A single Whop product covers the whole
+// catalogue: the buyer pays once, then picks which prompt the purchase unlocks.
+//
+// Two switches, same rule as the promo code above. This one decides whether the
+// option is offered at all; WHOP_SINGLE_URL in the Vercel variables is what
+// makes the checkout work. Turn this off, or leave the variable unset, and no
+// visitor is ever shown a button that cannot complete.
+const SINGLE_PROMPT_ENABLED = true;
+const SINGLE_PROMPT_PRICE = 9.99;
+
 const plans = [
   {
     id: "yearly",
@@ -574,6 +584,20 @@ const plans = [
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
     bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
     features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
+  },
+  {
+    id: "single",
+    // Never in the plan grid — a per-prompt price next to a catalogue price
+    // reads as a cheaper catalogue. It is offered only on the paywall trip,
+    // beside the one prompt the visitor was trying to copy.
+    hidden: true,
+    name: t("One prompt", "Un prompt"),
+    price: eur(SINGLE_PROMPT_PRICE),
+    period: t("once", "une fois"),
+    description: t("A single prompt, yours forever.", "Un seul prompt, à toi pour toujours."),
+    cta: t("Buy this prompt", "Acheter ce prompt"),
+    featured: false,
+    features: [t("The prompt of your choice", "Le prompt de ton choix"), t("Yours forever", "À toi pour toujours"), t("No subscription", "Sans abonnement")],
   },
   {
     id: "monthly",
@@ -747,7 +771,10 @@ const cleanEmail = (v) => String(v).replace(/[\s­​-‍⁠﻿]/g, "").toLowerC
 
 // Shown right after the embedded payment completes: the buyer's checkout email is
 // their access key, so we confirm access on this device with a single field.
-function CheckoutSuccess({ prefillEmail, onUnlocked }) {
+function CheckoutSuccess({ plan, prefillEmail, onUnlocked }) {
+  // A single-prompt purchase never grants full access, so waiting for
+  // hasAccess would leave the buyer stuck on "activating" forever.
+  const single = plan?.id === "single";
   const [email, setEmail] = useState(prefillEmail || "");
   const [st, setSt] = useState({ loading: false, error: "" });
 
@@ -763,7 +790,8 @@ function CheckoutSuccess({ prefillEmail, onUnlocked }) {
         body: JSON.stringify({ email: norm }),
       });
       const d = await r.json().catch(() => ({}));
-      if (r.ok && d.hasAccess) { onUnlocked(norm); return; }
+      const recognised = d.hasAccess || Number(d.credits) > 0 || (Array.isArray(d.owned) && d.owned.length > 0);
+      if (r.ok && recognised) { onUnlocked(norm, { single: !d.hasAccess }); return; }
       setSt({ loading: false, error: t("Access is activating — this can take a moment. Retry in a few seconds.", "L'accès s'active — cela peut prendre un instant. Réessaie dans quelques secondes.") });
     } catch {
       setSt({ loading: false, error: t("Unable to verify right now. Please retry.", "Vérification impossible pour le moment. Réessaie.") });
@@ -774,7 +802,7 @@ function CheckoutSuccess({ prefillEmail, onUnlocked }) {
     <div className="py-4 text-center">
       <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-400/[0.1]0 text-white"><Icon name="check" className="h-6 w-6" /></div>
       <h3 className="text-xl font-semibold tracking-tight text-[#EDE9E0]">{t("Payment confirmed 🎉", "Paiement confirmé 🎉")}</h3>
-      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">{t("Confirm the email you paid with to unlock the full catalog on this device.", "Confirme l'email utilisé au paiement pour débloquer tout le catalogue sur cet appareil.")}</p>
+      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">{single ? t("Confirm the email you paid with, then pick the prompt you want.", "Confirme l'email utilisé au paiement, puis choisis le prompt que tu veux.") : t("Confirm the email you paid with to unlock the full catalog on this device.", "Confirme l'email utilisé au paiement pour débloquer tout le catalogue sur cet appareil.")}</p>
       <form onSubmit={submit} className="mx-auto mt-5 flex max-w-sm flex-col gap-3 sm:flex-row">
         <input autoFocus value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35 focus:ring-4 focus:ring-white/10" />
         <button type="submit" disabled={st.loading} className="rounded-2xl bg-[#08080A] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.01] disabled:opacity-60">{st.loading ? t("Checking…", "Vérification…") : t("Unlock", "Débloquer")}</button>
@@ -832,7 +860,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         </div>
         <div className="overflow-y-auto overscroll-contain p-4 sm:p-6">
           {done ? (
-            <CheckoutSuccess prefillEmail={prefillEmail} onUnlocked={onUnlocked} />
+            <CheckoutSuccess plan={plan} prefillEmail={prefillEmail} onUnlocked={onUnlocked} />
           ) : load.loading ? (
             <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
               <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/70" />
@@ -1185,6 +1213,10 @@ function runSelfTests() {
   console.assert(!validatePlanId("yearly"), "yearly is retired and should not be purchasable");
   console.assert(validatePlanId("lifetime"), "lifetime should be valid");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
+  // Deliberately hidden from the plan grid, but still purchasable: the single
+  // prompt is only ever offered beside the prompt it unlocks.
+  console.assert(!validatePlanId("single"), "single is sold per prompt, not from the plan grid");
+  console.assert(plans.some((plan) => plan.id === "single"), "the single-prompt plan must stay defined");
   console.assert(extractPrompt("# Test\n\n## Prompt\nhello\n* * *\nfooter") === "hello", "extractPrompt should parse prompt block");
   console.assert(extractPrompt("plain text") === "plain text", "extractPrompt should fallback to full markdown");
 }
@@ -1201,6 +1233,9 @@ export default function MoventoSite() {
   const [unlockNotice, setUnlockNotice] = useState("");
   const [accessEmail, setAccessEmail] = useState(getStoredAccessEmail);
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
+  // Prompts bought one at a time, and purchases not yet spent on one.
+  const [ownedPrompts, setOwnedPrompts] = useState(() => new Set());
+  const [promptCredits, setPromptCredits] = useState(0);
   const [accessStatus, setAccessStatus] = useState({ loading: false, message: "", error: "" });
   const [checkoutPlan, setCheckoutPlan] = useState(null); // plan being purchased in the embedded overlay
   const [leadEmail, setLeadEmail] = useState(getStoredLeadEmail);
@@ -1312,12 +1347,34 @@ export default function MoventoSite() {
 
       setHasPremiumAccess(Boolean(data.hasAccess));
       setAccessEmail(normalizedEmail);
+      const owned = Array.isArray(data.owned) ? data.owned : [];
+      const credits = Number(data.credits) || 0;
+      setOwnedPrompts(new Set(owned));
+      setPromptCredits(credits);
 
       if (data.hasAccess) {
         window.localStorage.setItem("movento_access_email", normalizedEmail);
         // Only count a deliberate unlock, not the silent re-check on every load.
         if (!options.silent) track("access_unlocked");
         if (!options.silent) setAccessStatus({ loading: false, message: "Premium access activated on this device.", error: "" });
+        return true;
+      }
+
+      // Someone who bought a single prompt has no full access, but the email is
+      // still theirs and still unlocks what they paid for. Forgetting it here
+      // would lock them out of the prompt they own on every reload.
+      if (owned.length || credits) {
+        window.localStorage.setItem("movento_access_email", normalizedEmail);
+        if (!options.silent) track("single_access_recognised", { owned: owned.length, credits });
+        if (!options.silent) {
+          setAccessStatus({
+            loading: false,
+            message: credits
+              ? t(`Purchase found — ${credits} prompt${credits > 1 ? "s" : ""} to unlock.`, `Achat trouvé — ${credits} prompt${credits > 1 ? "s" : ""} à débloquer.`)
+              : t("Your purchased prompts are unlocked on this device.", "Tes prompts achetés sont débloqués sur cet appareil."),
+            error: "",
+          });
+        }
         return true;
       }
 
@@ -1394,8 +1451,47 @@ export default function MoventoSite() {
     }
   }
 
+  // Spends one single-prompt purchase on this prompt, then puts it on the
+  // clipboard. The server is the authority on whether a credit is available;
+  // the local count only decides what the button offers.
+  async function claimAndCopyPrompt(item) {
+    setCopyError("");
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/claim-prompt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: accessEmail || leadEmail, file: item.file }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(apiError(data, t("Unable to unlock this prompt.", "Impossible de débloquer ce prompt.")));
+
+      setOwnedPrompts(new Set(Array.isArray(data.owned) ? data.owned : []));
+      setPromptCredits(Number(data.credits) || 0);
+      track("single_prompt_claimed", { prompt: item.title, category: item.category });
+
+      const copied = await copyTextToClipboard(data.prompt);
+      if (!copied) throw Object.assign(new Error("Copy denied by browser"), { name: "NotAllowedError" });
+      setCopiedCard(item.title);
+      setTimeout(() => setCopiedCard(""), 1600);
+    } catch (error) {
+      reportCopyError(error);
+    }
+  }
+
   async function copyPrompt(item) {
     const isFree = FREE_PROMPT_FILES.has(item.file);
+
+    // Already bought on its own: the server serves it like any unlocked prompt.
+    if (!isFree && !hasPremiumAccess && ownedPrompts.has(item.file)) {
+      await fetchAndCopyPrompt(item);
+      return;
+    }
+
+    // Paid for a prompt but has not said which one yet — this is the one.
+    if (!isFree && !hasPremiumAccess && promptCredits > 0) {
+      await claimAndCopyPrompt(item);
+      return;
+    }
 
     if (!isFree && !hasPremiumAccess) {
       track("paywall_shown", { prompt: item.title, category: item.category, ...refProps() });
@@ -1457,12 +1553,18 @@ export default function MoventoSite() {
   }
 
   // Called once the buyer confirms their access email after paying inline.
-  function handleUnlocked(email) {
+  function handleUnlocked(email, info = {}) {
     window.localStorage.setItem("movento_access_email", email);
     setAccessEmail(email);
-    setHasPremiumAccess(true);
     setCheckoutPlan(null);
     setPaywallItem(null);
+    // A single-prompt buyer must not be marked as having the catalogue. Ask the
+    // server what this email actually holds rather than guessing from the click.
+    if (info.single) {
+      verifyAccess(email, { silent: true });
+      return;
+    }
+    setHasPremiumAccess(true);
     track("access_unlocked");
   }
 
@@ -1558,7 +1660,7 @@ export default function MoventoSite() {
                       they take the prompt loses their place for nothing. The
                       button confirms in place and the toast says what happened. */}
                   <button onClick={() => copyPrompt(previewItem)} className={`flex flex-none items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition hover:scale-[1.02] ${copiedCard === previewItem.title ? "bg-emerald-400/15 text-emerald-300" : "bg-[#08080A] text-white hover:bg-[#141418]"}`}>
-                    {copiedCard === previewItem.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : hasPremiumAccess ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
+                    {copiedCard === previewItem.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : hasPremiumAccess || ownedPrompts.has(previewItem.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : promptCredits > 0 ? <><Icon name="gift" className="h-4 w-4" /> {t("Use my purchase", "Utiliser mon achat")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
                   </button>
                 </div>
                 {/* The one moment the visitor actually needs the instructions:
@@ -1740,11 +1842,26 @@ export default function MoventoSite() {
         {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 ${accessStatus.error ? "border-red-400/25 bg-red-400/[0.08] text-red-300" : "border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-300"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-white/12 bg-white/[0.05] p-4 text-sm leading-6 text-white/80"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
         {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-4 text-sm leading-6 text-red-300"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
+        {/* Someone who paid for a prompt but has not picked one yet would
+            otherwise land on a wall of locked cards with no idea the purchase
+            is waiting for them. */}
+        {promptCredits > 0 && !hasPremiumAccess && (
+          <div className="mb-8 flex items-start gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.07] p-4 text-sm leading-6 text-emerald-300">
+            <Icon name="gift" className="mt-1 h-4 w-4 flex-none" />
+            <p>
+              {promptCredits > 1
+                ? t(`You have ${promptCredits} prompts to unlock.`, `Tu as ${promptCredits} prompts à débloquer.`)
+                : t("You have one prompt to unlock.", "Tu as un prompt à débloquer.")}{" "}
+              <span className="text-emerald-200/70">{t("Pick any prompt below and copy it — that is the one you keep.", "Choisis n'importe quel prompt ci-dessous et copie-le — c'est celui que tu gardes.")}</span>
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
           <AnimatePresence>
             {filtered.map((item) => {
               const isFree = FREE_PROMPT_FILES.has(item.file);
-              const unlocked = hasPremiumAccess || isFree;
+              const ownedAlone = ownedPrompts.has(item.file);
+              const unlocked = hasPremiumAccess || isFree || ownedAlone;
               return (
                 <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
                   <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={openPreview} badge={
@@ -1752,7 +1869,7 @@ export default function MoventoSite() {
                     // labelled pill, so below sm the badge keeps the icon and
                     // drops the word.
                     <span className={`flex flex-none items-center gap-1.5 rounded-full px-2 py-2 text-xs font-semibold transition sm:px-3.5 ${copiedCard === item.title ? "bg-emerald-400/15 text-emerald-300" : copiedCard === "Error" ? "bg-red-400/15 text-red-300" : !unlocked ? "border border-white/10 bg-white/[0.04] text-white/60 group-hover:border-white/25 group-hover:bg-white/[0.1] group-hover:text-white" : isFree && !hasPremiumAccess ? "bg-emerald-400/[0.1] text-emerald-300 group-hover:bg-emerald-600 group-hover:text-white" : "border border-white/10 bg-white/[0.06] text-white/80 group-hover:border-white/25 group-hover:bg-white/[0.12] group-hover:text-white"}`}>
-                      {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copied", "Copié")}</span></> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Error", "Erreur")}</span></> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Premium</span></> : isFree && !hasPremiumAccess ? <><Icon name="gift" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Free", "Gratuit")}</span></> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Open", "Ouvrir")}</span></> : <><Icon name="copy" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copy", "Copier")}</span></>}
+                      {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copied", "Copié")}</span></> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Error", "Erreur")}</span></> : !unlocked && promptCredits > 0 ? <><Icon name="gift" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Use my purchase", "Utiliser mon achat")}</span></> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Premium</span></> : isFree && !hasPremiumAccess ? <><Icon name="gift" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Free", "Gratuit")}</span></> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Open", "Ouvrir")}</span></> : <><Icon name="copy" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copy", "Copier")}</span></>}
                     </span>
                   } />
                 </motion.div>
@@ -2783,6 +2900,8 @@ function PricingPage() {
   }
 
   const scrollToPlans = () => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const singlePlan = plans.find((plan) => plan.id === "single");
+  const showSingleOffer = Boolean(SINGLE_PROMPT_ENABLED && fromPrompt && singlePlan);
 
   return (
     <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
@@ -2817,7 +2936,11 @@ function PricingPage() {
         </div>
       </header>
 
-      <section className="relative z-10 mx-auto flex max-w-7xl flex-col justify-center px-6 pb-24 pt-16 lg:min-h-[calc(100svh-75px)] lg:px-8 lg:pb-20 lg:pt-4">
+      {/* One desktop screen is the rule for the plain pricing page. Arriving
+          from a locked prompt adds two rows — which prompt, and the option to
+          buy just it — and forcing those into the same height only pushed the
+          offer under the launch banner. That trip scrolls instead. */}
+      <section className={`relative z-10 mx-auto flex max-w-7xl flex-col justify-center px-6 pb-24 pt-16 lg:px-8 lg:pb-20 lg:pt-4 ${showSingleOffer ? "" : "lg:min-h-[calc(100svh-75px)]"}`}>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05]/80 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 backdrop-blur">
             <Icon name="sparkles" className="h-3 w-3" /> {t(`${availablePrompts.length} premium prompts`, `${availablePrompts.length} prompts premium`)}
@@ -2849,7 +2972,29 @@ function PricingPage() {
               <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
             ))}
           </motion.div>
-          <Reassurance className="mt-9 lg:mt-3" />
+          {/* Only when the visitor arrived from a specific prompt. Without one
+              there is nothing to buy on its own, and a price with no prompt
+              attached would just read as a cheaper catalogue. */}
+          {showSingleOffer && (
+            <div className="mx-auto mt-6 w-full max-w-sm lg:mt-1 lg:max-w-2xl">
+              {/* Tight on lg: the extra rows of the paywall trip otherwise put
+                  this row's last pixels behind the fixed launch banner. */}
+              <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-5 py-4 text-center sm:flex-row sm:justify-between sm:text-left lg:py-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#EDE9E0]">{t("Only want this one?", "Tu ne veux que celui-là ?")}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-white/50">{t(`“${fromPrompt.title}” on its own, yours forever.`, `« ${fromPrompt.title} » seul, à toi pour toujours.`)}</p>
+                </div>
+                <button
+                  onClick={() => startCheckout(singlePlan, "single_prompt")}
+                  disabled={Boolean(checkoutPlan)}
+                  className="flex-none rounded-full border border-white/15 bg-transparent px-5 py-2.5 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/35 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {t(`Buy it for ${eur(SINGLE_PROMPT_PRICE)}`, `L'acheter pour ${eur(SINGLE_PROMPT_PRICE)}`)}
+                </button>
+              </div>
+            </div>
+          )}
+          <Reassurance className={showSingleOffer ? "mt-9 lg:mt-2" : "mt-9 lg:mt-3"} />
         </div>
       </section>
 
