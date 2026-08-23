@@ -35,6 +35,8 @@ const supportUrl = () =>
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
 // Customer rating, kept in one place: it is shown on the page AND declared as
 // AggregateRating in index.html, and Google drops the markup if the two disagree.
+// Support address, shown wherever a visitor is told to write to us.
+const SUPPORT_EMAIL = "movento.dev@gmail.com";
 const RATING_SCORE = "4.8";
 const RATING_COUNT = 120;
 
@@ -1236,6 +1238,7 @@ export default function MoventoSite() {
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
   const isSubscriptionPage = typeof window !== "undefined" && window.location.pathname === "/subscription";
   const isAdminPage = typeof window !== "undefined" && window.location.pathname === "/admin";
+  const isTikTokPage = typeof window !== "undefined" && window.location.pathname === "/tiktok";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -1462,6 +1465,7 @@ export default function MoventoSite() {
   if (isAdminPage) return <AdminLeadsPage />;
   if (isMentionsPage) return <MentionsLegales />;
   if (isPricingPage) return <PricingPage />;
+  if (isTikTokPage) return <TikTokPage />;
   if (isSubscriptionPage) return <SubscriptionPage />;
   if (isSuccessPage) return <SuccessPage />;
 
@@ -1614,6 +1618,7 @@ export default function MoventoSite() {
         <nav className="hidden items-center gap-8 text-sm font-medium text-white/55 md:flex">
           <a href="#prompts" className="transition hover:text-[#EDE9E0]">Prompts</a>
           <a href="/pricing" className="transition hover:text-[#EDE9E0]">{t("Pricing", "Tarifs")}</a>
+          <a href="/tiktok" className="transition hover:text-[#EDE9E0]">{t("Monetize TikTok", "Monétise TikTok")}</a>
           <a href="/subscription" className="transition hover:text-[#EDE9E0]">{t("My subscription", "Mon abonnement")}</a>
           <a href="#how" className="transition hover:text-[#EDE9E0]">{t("Guide", "Guide")}</a>
           <a href="#faq" className="transition hover:text-[#EDE9E0]">FAQ</a>
@@ -1658,6 +1663,7 @@ export default function MoventoSite() {
                   {[
                     { href: "#prompts", label: "Prompts" },
                     { href: "/pricing", label: t("Pricing", "Tarifs") },
+                    { href: "/tiktok", label: t("Monetize TikTok", "Monétise TikTok") },
                     { href: "/subscription", label: t("My subscription", "Mon abonnement") },
                     { href: "#how", label: t("Guide", "Guide") },
                     { href: "#faq", label: "FAQ" },
@@ -1845,6 +1851,7 @@ export default function MoventoSite() {
           <Logo />
           <p className="text-sm text-white/40">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
           <div className="flex items-center gap-5">
+            <a href="/tiktok" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Monetize TikTok", "Monétise TikTok")}</a>
             <a href="/subscription" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("My subscription", "Mon abonnement")}</a>
             <a href="/mentions-legales" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Legal notice", "Mentions légales")}</a>
             {/* Full reload on purpose: `lang` is resolved once at module load. */}
@@ -2038,6 +2045,186 @@ function SuccessPage() {
           <Logo />
           <p className="text-sm text-white/40">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
           <a href="/subscription" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("My subscription", "Mon abonnement")}</a>
+        </div>
+      </footer>
+    </main>
+  );
+}
+
+// Creator programme: Movento supplies the footage, the creator edits and posts
+// it on their own TikTok and is paid on views. Deliberately a plain page with a
+// mailto rather than a form — the first step really is a conversation with
+// support, and a form would promise an automated onboarding that does not exist.
+function TikTokPage() {
+  const RATE = t("€0.50 per 1,000 views", "0,50 € pour 1 000 vues");
+  const mailSubject = encodeURIComponent(t("Movento TikTok programme", "Programme TikTok Movento"));
+  const mailBody = encodeURIComponent(
+    t(
+      "Hi,\n\nI would like to join the Movento TikTok programme.\n\nMy TikTok account: @\n\nThanks!",
+      "Bonjour,\n\nJe souhaite rejoindre le programme TikTok Movento.\n\nMon compte TikTok : @\n\nMerci !",
+    ),
+  );
+  const mailto = `mailto:${SUPPORT_EMAIL}?subject=${mailSubject}&body=${mailBody}`;
+
+  const steps = [
+    {
+      title: t("Contact support", "Contacte le support"),
+      body: t(
+        `Write to ${SUPPORT_EMAIL} with your TikTok handle. We answer and walk you through the whole thing.`,
+        `Écris à ${SUPPORT_EMAIL} avec ton pseudo TikTok. On te répond et on t'explique tout.`,
+      ),
+    },
+    {
+      title: t("Get the videos", "Reçois les vidéos"),
+      body: t("We supply the footage. You have nothing to film and nothing to write.", "On te fournit les vidéos. Tu n'as rien à filmer, rien à écrire."),
+    },
+    {
+      title: t("Edit and post", "Édite et poste"),
+      body: t("You edit them your way and post them on your own TikTok account.", "Tu les montes à ta façon et tu les postes sur ton propre compte TikTok."),
+    },
+    {
+      title: t("Get paid on views", "Sois payé aux vues"),
+      body: t(`${RATE} on the videos you post.`, `${RATE} sur les vidéos que tu publies.`),
+    },
+  ];
+
+  const noNeed = [
+    t("Your face", "Ton visage"),
+    t("Your voice", "Ta voix"),
+    t("Any equipment", "Du matériel"),
+    t("An existing audience", "Une audience déjà faite"),
+  ];
+
+  return (
+    <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-white/[0.05] blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-white/[0.04] blur-[120px]" />
+      </div>
+
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <a href="/" className="transition hover:opacity-80"><Logo /></a>
+        <div className="flex items-center gap-2">
+          <a href="/#prompts" className="hidden rounded-full px-4 py-2.5 text-sm font-medium text-white/55 transition hover:text-[#EDE9E0] sm:inline-block">{t("Catalog", "Catalogue")}</a>
+          <LangSwitch />
+          <a href="/" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">← {t("Back", "Retour")}</a>
+        </div>
+      </header>
+
+      <section className="relative z-10 mx-auto max-w-3xl px-6 pb-16 pt-8 text-center lg:px-8 lg:pt-12">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 backdrop-blur">
+          <Icon name="zap" className="h-3 w-3" /> {t("Creator programme", "Programme créateurs")}
+        </span>
+        <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl">
+          {t("Monetize TikTok", "Monétise TikTok")}{" "}
+          <span className="text-white/45">{t("with Movento", "avec Movento")}</span>
+        </h1>
+        <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55">
+          {t(
+            "We supply the videos. You edit them and post them on your account. You are paid on the views they make.",
+            "On te fournit les vidéos. Tu les édites et tu les postes sur ton compte. Tu es payé sur les vues qu'elles font.",
+          )}
+        </p>
+
+        {/* The rate is the offer, so it is the biggest thing on the page. */}
+        <div className="mx-auto mt-9 w-full max-w-sm rounded-[28px] border border-white/12 bg-[#121214] p-7 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.9)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">{t("What you earn", "Ce que tu gagnes")}</p>
+          <p className="mt-3 text-[54px] font-bold leading-none tracking-[-0.05em] text-[#EDE9E0]">{t("€0.50", "0,50 €")}</p>
+          <p className="mt-2 text-sm text-white/50">{t("per 1,000 views", "pour 1 000 vues")}</p>
+        </div>
+
+        <a
+          href={mailto}
+          onClick={() => track("tiktok_contact_clicked", { placement: "hero" })}
+          className="group mt-8 inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-8 py-3.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white hover:scale-[1.02]"
+        >
+          {t("Contact support", "Contacter le support")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
+        </a>
+        <p className="mt-3 text-xs text-white/40">{SUPPORT_EMAIL}</p>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-16 lg:px-8">
+        <h2 className="text-center text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("How it works", "Comment ça marche")}</h2>
+        <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map((step, i) => (
+            <li key={step.title} className="rounded-[22px] border border-white/10 bg-[#121214] p-5 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-[#08080A] text-sm font-bold text-white">{i + 1}</span>
+              <h3 className="mt-4 text-base font-semibold text-[#EDE9E0]">{step.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-white/55">{step.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-16 lg:px-8">
+        <div className="rounded-[28px] border border-white/10 bg-[#121214] p-7 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-9">
+          <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("What you do not need", "Ce dont tu n'as pas besoin")}</h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-white/55">
+            {t(
+              "You never appear and you are never heard. Editing and posting is the whole job.",
+              "Tu n'apparais jamais et on ne t'entend jamais. Monter et publier, c'est tout le travail.",
+            )}
+          </p>
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {noNeed.map((item) => (
+              <li key={item} className="flex items-center gap-2.5 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm text-white/70">
+                <Icon name="close" className="h-4 w-4 flex-none text-white/35" /> {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-3xl px-6 pb-20 lg:px-8">
+        <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("Questions", "Questions")}</h2>
+        <div className="mt-7 space-y-6">
+          {[
+            {
+              q: t("Who provides the videos?", "Qui fournit les vidéos ?"),
+              a: t("We do. You receive the footage and you only handle the editing and the posting.", "Nous. Tu reçois les vidéos et tu t'occupes uniquement du montage et de la publication."),
+            },
+            {
+              q: t("Do I need an existing audience?", "Faut-il déjà avoir une audience ?"),
+              a: t("No. You post from your own account and you are paid on the views the videos make.", "Non. Tu postes depuis ton propre compte et tu es payé sur les vues que font les vidéos."),
+            },
+            {
+              q: t("How do I get started?", "Comment je commence ?"),
+              a: t(
+                `Email ${SUPPORT_EMAIL} with your TikTok handle. We answer and explain the whole process, step by step.`,
+                `Écris à ${SUPPORT_EMAIL} avec ton pseudo TikTok. On te répond et on t'explique tout le processus, étape par étape.`,
+              ),
+            },
+          ].map((item) => (
+            <div key={item.q}>
+              <h3 className="text-base font-semibold text-[#EDE9E0]">{item.q}</h3>
+              <p className="mt-2 text-sm leading-6 text-white/55">{item.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-3xl px-6 pb-24 text-center lg:px-8">
+        <div className="rounded-[28px] border border-white/12 bg-[#121214] p-9 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.9)]">
+          <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("Ready to start?", "Prêt à commencer ?")}</h2>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/55">
+            {t("Send us a message with your TikTok handle. We explain the rest.", "Envoie-nous un message avec ton pseudo TikTok. On t'explique la suite.")}
+          </p>
+          <a
+            href={mailto}
+            onClick={() => track("tiktok_contact_clicked", { placement: "footer" })}
+            className="group mt-6 inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-8 py-3.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white hover:scale-[1.02]"
+          >
+            {t("Contact support", "Contacter le support")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
+          </a>
+          <p className="mt-3 text-xs text-white/40">{SUPPORT_EMAIL}</p>
+        </div>
+      </section>
+
+      <footer className="relative z-10 border-t border-white/10 py-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
+          <Logo />
+          <p className="text-sm text-white/40">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
+          <a href="/mentions-legales" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Legal notice", "Mentions légales")}</a>
         </div>
       </footer>
     </main>
