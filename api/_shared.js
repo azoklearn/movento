@@ -57,25 +57,30 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // flow, which is why both fallbacks below are checkout links.
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_pAiB9wlNdjRGF";
 const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
-// One prompt, bought on its own (Whop product prod_zZlcqsSutlXvW).
-const SINGLE_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
+// A pack of prompts, bought without the catalogue (Whop product
+// prod_zZlcqsSutlXvW). One purchase, PROMPT_PACK_SIZE prompts of your choice.
+const PACK_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
+
+// How many prompts one pack unlocks. The webhook credits this many, and the
+// buyer spends them one prompt at a time.
+export const PROMPT_PACK_SIZE = 3;
 
 // The links we ship with. An env var overrides them, but see resolvePlanId: a
 // product-page env var must not cost us the embedded checkout these provide.
 const fallbackUrls = {
   monthly: MONTHLY_FALLBACK_URL,
   yearly: YEARLY_FALLBACK_URL,
-  single: SINGLE_FALLBACK_URL,
+  pack: PACK_FALLBACK_URL,
 };
 
 export const checkoutUrls = {
   monthly: process.env.WHOP_MONTHLY_URL || MONTHLY_FALLBACK_URL,
   yearly: process.env.WHOP_YEARLY_URL || YEARLY_FALLBACK_URL,
   lifetime: process.env.WHOP_LIFETIME_URL,
-  // One prompt, bought on its own. A single Whop product covers every prompt:
-  // the buyer picks which one after paying, so there is nothing to create per
-  // prompt and nothing to round-trip through checkout metadata.
-  single: process.env.WHOP_SINGLE_URL || SINGLE_FALLBACK_URL,
+  // A pack of prompts. One Whop product covers the whole catalogue: the buyer
+  // picks which prompts after paying, so there is nothing to create per prompt
+  // and nothing to round-trip through checkout metadata.
+  pack: process.env.WHOP_PACK_URL || PACK_FALLBACK_URL,
 };
 
 // Whop plan IDs (plan_xxx), one per plan — required for the on-site EMBEDDED
@@ -87,7 +92,7 @@ const planIdEnv = {
   monthly: process.env.WHOP_MONTHLY_PLAN_ID,
   yearly: process.env.WHOP_YEARLY_PLAN_ID,
   lifetime: process.env.WHOP_LIFETIME_PLAN_ID,
-  single: process.env.WHOP_SINGLE_PLAN_ID,
+  pack: process.env.WHOP_PACK_PLAN_ID,
 };
 
 // Returns the plan_xxx id for embedded checkout, or null when only a product-page
@@ -125,7 +130,7 @@ export const RETIRED_PLANS = new Set(["monthly", "yearly"]);
 export function planKindFromPlanId(planId) {
   const id = String(planId || "").trim();
   if (!id) return null;
-  return ["monthly", "yearly", "lifetime", "single"].find((kind) => resolvePlanId(kind) === id) || null;
+  return ["monthly", "yearly", "lifetime", "pack"].find((kind) => resolvePlanId(kind) === id) || null;
 }
 
 // Whop credits an affiliate through the "a" query parameter. Carrying it onto the
@@ -256,18 +261,18 @@ export async function redisSetAccess(normalizedEmail, record) {
 }
 
 // ---------------------------------------------------------------------------
-// Single-prompt purchases.
+// Prompt-pack purchases.
 //
-// A buyer of one prompt must NOT get the catalogue, so these live outside the
+// A pack buyer must NOT get the catalogue, so these live outside the
 // access:{email} record that means "everything is unlocked". Two keys:
 //
-//   credits:{email} — single purchases not yet spent (a number)
+//   credits:{email} — prompts paid for but not yet chosen (a number)
 //   prompts:{email} — the files already claimed (an array)
 //
-// One Whop product covers every prompt: the buyer pays, then claims the one
-// they want. That is why the credit exists at all — the purchase and the choice
-// of prompt happen at two different moments, and Whop never has to know which
-// prompt was meant.
+// One Whop product covers every prompt: the buyer pays, then claims the ones
+// they want. That is why credits exist at all — the purchase and the choice of
+// prompts happen at different moments, and Whop never has to know which prompt
+// was meant.
 // ---------------------------------------------------------------------------
 
 export async function redisGetPromptCredits(normalizedEmail) {

@@ -527,14 +527,18 @@ const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR
 const PROMO_CODE = "";
 const PROMO_PERCENT = 10;
 
-// Buying one prompt on its own. A single Whop product covers the whole
-// catalogue: the buyer pays once, then picks which prompt the purchase unlocks.
+// A pack of prompts, without the catalogue. One Whop product covers every
+// prompt: the buyer pays once, then picks which prompts the purchase unlocks,
+// one at a time.
 //
 // The checkout link ships in api/_shared.js (Whop plan_duNdZcsNAOPSx), so the
-// option works as soon as this switch is on; WHOP_SINGLE_URL only overrides it.
-// Set this to false to stop offering single prompts everywhere at once.
-const SINGLE_PROMPT_ENABLED = true;
-const SINGLE_PROMPT_PRICE = 19.99;
+// option works as soon as this switch is on; WHOP_PACK_URL only overrides it.
+// PROMPT_PACK_SIZE must match the constant of the same name in api/_shared.js,
+// which is what actually credits the buyer — announcing three and crediting one
+// is the one failure mode that costs trust.
+const PROMPT_PACK_ENABLED = true;
+const PROMPT_PACK_SIZE = 3;
+const PROMPT_PACK_PRICE = 19.99;
 
 const plans = [
   {
@@ -585,18 +589,18 @@ const plans = [
     features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
   },
   {
-    id: "single",
-    // Never in the plan grid — a per-prompt price next to a catalogue price
-    // reads as a cheaper catalogue. It is offered only on the paywall trip,
-    // beside the one prompt the visitor was trying to copy.
+    id: "pack",
+    // Never in the plan grid — a small price next to the catalogue price reads
+    // as a cheaper catalogue. It is offered on the paywall trip and in the
+    // popup, beside the prompt the visitor was trying to copy.
     hidden: true,
-    name: t("One prompt", "Un prompt"),
-    price: eur(SINGLE_PROMPT_PRICE),
+    name: t(`${PROMPT_PACK_SIZE} prompts`, `${PROMPT_PACK_SIZE} prompts`),
+    price: eur(PROMPT_PACK_PRICE),
     period: t("once", "une fois"),
-    description: t("A single prompt, yours forever.", "Un seul prompt, à toi pour toujours."),
-    cta: t("Buy this prompt", "Acheter ce prompt"),
+    description: t(`${PROMPT_PACK_SIZE} prompts of your choice, yours forever.`, `${PROMPT_PACK_SIZE} prompts de ton choix, à toi pour toujours.`),
+    cta: t("Get the pack", "Prendre le pack"),
     featured: false,
-    features: [t("The prompt of your choice", "Le prompt de ton choix"), t("Yours forever", "À toi pour toujours"), t("No subscription", "Sans abonnement")],
+    features: [t(`${PROMPT_PACK_SIZE} prompts of your choice`, `${PROMPT_PACK_SIZE} prompts de ton choix`), t("Yours forever", "À toi pour toujours"), t("No subscription", "Sans abonnement")],
   },
   {
     id: "monthly",
@@ -636,7 +640,7 @@ const isSinglePlan = visiblePlans.length === 1;
 // Never in visiblePlans — it is hidden from the grid on purpose — so it is
 // looked up by id, once, for the two places that offer it: the prompt popup and
 // the paywall page.
-const singlePlan = plans.find((plan) => plan.id === "single");
+const packPlan = plans.find((plan) => plan.id === "pack");
 
 // Pricing card used across every purchase surface (paywall modal, pricing
 // section, /pricing page). Laid out in four quiet bands — identity, price,
@@ -775,9 +779,9 @@ const cleanEmail = (v) => String(v).replace(/[\s­​-‍⁠﻿]/g, "").toLowerC
 // Shown right after the embedded payment completes: the buyer's checkout email is
 // their access key, so we confirm access on this device with a single field.
 function CheckoutSuccess({ plan, prefillEmail, onUnlocked }) {
-  // A single-prompt purchase never grants full access, so waiting for
-  // hasAccess would leave the buyer stuck on "activating" forever.
-  const single = plan?.id === "single";
+  // A pack purchase never grants full access, so waiting for hasAccess would
+  // leave the buyer stuck on "activating" forever.
+  const pack = plan?.id === "pack";
   const [email, setEmail] = useState(prefillEmail || "");
   const [st, setSt] = useState({ loading: false, error: "" });
 
@@ -805,7 +809,7 @@ function CheckoutSuccess({ plan, prefillEmail, onUnlocked }) {
     <div className="py-4 text-center">
       <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-400/[0.1]0 text-white"><Icon name="check" className="h-6 w-6" /></div>
       <h3 className="text-xl font-semibold tracking-tight text-[#EDE9E0]">{t("Payment confirmed 🎉", "Paiement confirmé 🎉")}</h3>
-      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">{single ? t("Confirm the email you paid with, then pick the prompt you want.", "Confirme l'email utilisé au paiement, puis choisis le prompt que tu veux.") : t("Confirm the email you paid with to unlock the full catalog on this device.", "Confirme l'email utilisé au paiement pour débloquer tout le catalogue sur cet appareil.")}</p>
+      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">{pack ? t(`Confirm the email you paid with, then pick your ${PROMPT_PACK_SIZE} prompts.`, `Confirme l'email utilisé au paiement, puis choisis tes ${PROMPT_PACK_SIZE} prompts.`) : t("Confirm the email you paid with to unlock the full catalog on this device.", "Confirme l'email utilisé au paiement pour débloquer tout le catalogue sur cet appareil.")}</p>
       <form onSubmit={submit} className="mx-auto mt-5 flex max-w-sm flex-col gap-3 sm:flex-row">
         <input autoFocus value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35 focus:ring-4 focus:ring-white/10" />
         <button type="submit" disabled={st.loading} className="rounded-2xl bg-[#08080A] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.01] disabled:opacity-60">{st.loading ? t("Checking…", "Vérification…") : t("Unlock", "Débloquer")}</button>
@@ -1218,8 +1222,8 @@ function runSelfTests() {
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // Deliberately hidden from the plan grid, but still purchasable: the single
   // prompt is only ever offered beside the prompt it unlocks.
-  console.assert(!validatePlanId("single"), "single is sold per prompt, not from the plan grid");
-  console.assert(plans.some((plan) => plan.id === "single"), "the single-prompt plan must stay defined");
+  console.assert(!validatePlanId("pack"), "the pack is sold beside a prompt, not from the plan grid");
+  console.assert(plans.some((plan) => plan.id === "pack"), "the prompt pack must stay defined");
   console.assert(extractPrompt("# Test\n\n## Prompt\nhello\n* * *\nfooter") === "hello", "extractPrompt should parse prompt block");
   console.assert(extractPrompt("plain text") === "plain text", "extractPrompt should fallback to full markdown");
 }
@@ -1373,7 +1377,7 @@ export default function MoventoSite() {
           setAccessStatus({
             loading: false,
             message: credits
-              ? t(`Purchase found — ${credits} prompt${credits > 1 ? "s" : ""} to unlock.`, `Achat trouvé — ${credits} prompt${credits > 1 ? "s" : ""} à débloquer.`)
+              ? t(`Purchase found — ${credits} prompt${credits > 1 ? "s" : ""} left to pick.`, `Achat trouvé — ${credits} prompt${credits > 1 ? "s" : ""} à choisir.`)
               : t("Your purchased prompts are unlocked on this device.", "Tes prompts achetés sont débloqués sur cet appareil."),
             error: "",
           });
@@ -1670,18 +1674,18 @@ export default function MoventoSite() {
                     one prompt they want. Only for a locked prompt: someone with
                     full access, a free prompt, a prompt they already bought or
                     an unspent purchase all have nothing to buy here. */}
-                {SINGLE_PROMPT_ENABLED && singlePlan && !hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (
+                {PROMPT_PACK_ENABLED && packPlan && !hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (
                   <div className="border-t border-white/[0.07] px-5 pb-4 pt-4">
                     <button
-                      onClick={() => { track("single_prompt_offer_clicked", { prompt: previewItem.title, category: previewItem.category }); startCheckout(singlePlan); }}
+                      onClick={() => { track("prompt_pack_offer_clicked", { prompt: previewItem.title, category: previewItem.category }); startCheckout(packPlan); }}
                       disabled={Boolean(checkoutPlan)}
                       className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-left transition hover:border-white/25 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-[#EDE9E0]">{t("Buy just this prompt", "Acheter ce prompt seul")}</span>
-                        <span className="mt-0.5 block text-xs leading-5 text-white/45">{t("Yours forever, no subscription.", "À toi pour toujours, sans abonnement.")}</span>
+                        <span className="block text-sm font-semibold text-[#EDE9E0]">{t(`Pack of ${PROMPT_PACK_SIZE} prompts`, `Pack de ${PROMPT_PACK_SIZE} prompts`)}</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-white/45">{t("This one and two more of your choice, yours forever.", "Celui-ci et deux autres de ton choix, à toi pour toujours.")}</span>
                       </span>
-                      <span className="flex-none rounded-full bg-[#EDE9E0] px-4 py-2 text-sm font-bold text-[#0A0A0B]">{eur(SINGLE_PROMPT_PRICE)}</span>
+                      <span className="flex-none rounded-full bg-[#EDE9E0] px-4 py-2 text-sm font-bold text-[#0A0A0B]">{eur(PROMPT_PACK_PRICE)}</span>
                     </button>
                   </div>
                 )}
@@ -1872,9 +1876,9 @@ export default function MoventoSite() {
             <Icon name="gift" className="mt-1 h-4 w-4 flex-none" />
             <p>
               {promptCredits > 1
-                ? t(`You have ${promptCredits} prompts to unlock.`, `Tu as ${promptCredits} prompts à débloquer.`)
-                : t("You have one prompt to unlock.", "Tu as un prompt à débloquer.")}{" "}
-              <span className="text-emerald-200/70">{t("Pick any prompt below and copy it — that is the one you keep.", "Choisis n'importe quel prompt ci-dessous et copie-le — c'est celui que tu gardes.")}</span>
+                ? t(`You have ${promptCredits} prompts left to pick.`, `Il te reste ${promptCredits} prompts à choisir.`)
+                : t("You have one prompt left to pick.", "Il te reste un prompt à choisir.")}{" "}
+              <span className="text-emerald-200/70">{t("Copy any prompt below — each one you copy is yours to keep.", "Copie n'importe quel prompt ci-dessous — chacun que tu copies est à toi.")}</span>
             </p>
           </div>
         )}
@@ -2922,7 +2926,7 @@ function PricingPage() {
   }
 
   const scrollToPlans = () => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  const showSingleOffer = Boolean(SINGLE_PROMPT_ENABLED && fromPrompt && singlePlan);
+  const showPackOffer = Boolean(PROMPT_PACK_ENABLED && fromPrompt && packPlan);
 
   return (
     <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
@@ -2961,7 +2965,7 @@ function PricingPage() {
           from a locked prompt adds two rows — which prompt, and the option to
           buy just it — and forcing those into the same height only pushed the
           offer under the launch banner. That trip scrolls instead. */}
-      <section className={`relative z-10 mx-auto flex max-w-7xl flex-col justify-center px-6 pb-24 pt-16 lg:px-8 lg:pb-20 lg:pt-4 ${showSingleOffer ? "" : "lg:min-h-[calc(100svh-75px)]"}`}>
+      <section className={`relative z-10 mx-auto flex max-w-7xl flex-col justify-center px-6 pb-24 pt-16 lg:px-8 lg:pb-20 lg:pt-4 ${showPackOffer ? "" : "lg:min-h-[calc(100svh-75px)]"}`}>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05]/80 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 backdrop-blur">
             <Icon name="sparkles" className="h-3 w-3" /> {t(`${availablePrompts.length} premium prompts`, `${availablePrompts.length} prompts premium`)}
@@ -2996,26 +3000,26 @@ function PricingPage() {
           {/* Only when the visitor arrived from a specific prompt. Without one
               there is nothing to buy on its own, and a price with no prompt
               attached would just read as a cheaper catalogue. */}
-          {showSingleOffer && (
+          {showPackOffer && (
             <div className="mx-auto mt-6 w-full max-w-sm lg:mt-1 lg:max-w-2xl">
               {/* Tight on lg: the extra rows of the paywall trip otherwise put
                   this row's last pixels behind the fixed launch banner. */}
               <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-5 py-4 text-center sm:flex-row sm:justify-between sm:text-left lg:py-3">
                 <div>
-                  <p className="text-sm font-semibold text-[#EDE9E0]">{t("Only want this one?", "Tu ne veux que celui-là ?")}</p>
-                  <p className="mt-0.5 text-xs leading-5 text-white/50">{t(`“${fromPrompt.title}” on its own, yours forever.`, `« ${fromPrompt.title} » seul, à toi pour toujours.`)}</p>
+                  <p className="text-sm font-semibold text-[#EDE9E0]">{t("Don't need the whole catalogue?", "Tu ne veux pas tout le catalogue ?")}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-white/50">{t(`“${fromPrompt.title}” and ${PROMPT_PACK_SIZE - 1} more of your choice, yours forever.`, `« ${fromPrompt.title} » et ${PROMPT_PACK_SIZE - 1} autres de ton choix, à toi pour toujours.`)}</p>
                 </div>
                 <button
-                  onClick={() => startCheckout(singlePlan, "single_prompt")}
+                  onClick={() => startCheckout(packPlan, "prompt_pack")}
                   disabled={Boolean(checkoutPlan)}
                   className="flex-none rounded-full border border-white/15 bg-transparent px-5 py-2.5 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/35 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {t(`Buy it for ${eur(SINGLE_PROMPT_PRICE)}`, `L'acheter pour ${eur(SINGLE_PROMPT_PRICE)}`)}
+                  {t(`Get ${PROMPT_PACK_SIZE} for ${eur(PROMPT_PACK_PRICE)}`, `En prendre ${PROMPT_PACK_SIZE} pour ${eur(PROMPT_PACK_PRICE)}`)}
                 </button>
               </div>
             </div>
           )}
-          <Reassurance className={showSingleOffer ? "mt-9 lg:mt-2" : "mt-9 lg:mt-3"} />
+          <Reassurance className={showPackOffer ? "mt-9 lg:mt-2" : "mt-9 lg:mt-3"} />
         </div>
       </section>
 

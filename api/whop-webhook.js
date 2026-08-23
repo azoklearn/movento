@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { normalizeEmail, planKindFromPlanId, redisAddPromptCredit, redisClearAccess, redisGetAccessRecord, redisSetAccess } from "./_shared.js";
+import { normalizeEmail, planKindFromPlanId, PROMPT_PACK_SIZE, redisAddPromptCredit, redisClearAccess, redisGetAccessRecord, redisSetAccess } from "./_shared.js";
 
 export const config = { api: { bodyParser: false } };
 
@@ -65,7 +65,7 @@ function planKindFrom(data) {
 
 function membershipTypeFrom(data) {
   const kind = planKindFrom(data);
-  if (kind === "single") return "single";
+  if (kind === "pack") return "pack";
   if (kind) return kind === "lifetime" ? "lifetime" : "subscription";
   if (data.renewal_period_end) return "subscription";
   if (data.status === "completed") return "lifetime";
@@ -107,18 +107,18 @@ export default async function handler(req, res) {
       const previous = await redisGetAccessRecord(email);
       const type = membershipTypeFrom(data);
 
-      // A single-prompt purchase buys ONE prompt, not the catalogue. It must
-      // never reach redisSetAccess below, which is what unlocks everything.
-      // It grants a credit the buyer then spends on the prompt of their choice.
+      // A pack buys PROMPT_PACK_SIZE prompts, not the catalogue. It must never
+      // reach redisSetAccess below, which is what unlocks everything. It grants
+      // credits the buyer then spends on the prompts of their choice.
       //
       // Whop sends membership.activated and payment.succeeded for the same
-      // purchase, so the credit is keyed on the payment: crediting on both
-      // would handed out two prompts for one sale. membership.activated is
-      // ignored here and payment.succeeded is the one that pays out.
-      if (planKindFrom(data) === "single") {
+      // purchase, so the credits are keyed on the payment: crediting on both
+      // would hand out two packs for one sale. membership.activated is ignored
+      // here and payment.succeeded is the one that pays out.
+      if (planKindFrom(data) === "pack") {
         if (action === "payment.succeeded") {
-          const total = await redisAddPromptCredit(email, 1);
-          console.log("Single-prompt credit granted:", email, "total:", total);
+          const total = await redisAddPromptCredit(email, PROMPT_PACK_SIZE);
+          console.log("Prompt pack credited:", email, "+", PROMPT_PACK_SIZE, "total:", total);
         }
         return res.json({ received: true });
       }
