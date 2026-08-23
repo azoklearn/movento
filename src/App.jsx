@@ -92,7 +92,7 @@ const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 const prompts = [
   // Front of the gallery, hand-picked: motion previews first, one per
   // category, so the first screen shows range rather than repetition.
-  { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
+  { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", demo: "https://fizzy-display-magic.lovable.app/soda.html", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
   { title: "JWT 3D Card Carousel", category: "Component", type: "Component", file: "JWT_3D_Card_Carousel.md", demo: "https://spin-card.lovable.app/", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/animated%20(8).webp", tags: ["3D", "Carousel", "Cards"], gradient: "from-sky-200 via-fuchsia-600 to-black" },
   // Same Cloudinary account and the same kind of source as Vanta below — a
   // macOS screen recording — so it ships with the transformations already on
