@@ -2558,26 +2558,33 @@ function ChoosePromptsPage() {
                   className="mt-5 w-full rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35 focus:ring-4 focus:ring-white/10"
                 />
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {/* The real preview cards, not a list of titles: nobody picks
+                    three prompts out of a hundred and fifty from their names.
+                    PreviewCard is reused as-is so the previews keep their lazy
+                    mounting — without it a phone would decode every clip in the
+                    catalogue at once. Passing onClick and no onPreview turns the
+                    whole card into the toggle. */}
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
                   {shown.map((item) => {
                     const isPicked = picked.has(item.file);
                     const full = !isPicked && picked.size >= remaining;
                     return (
-                      <button
+                      <div
                         key={item.file}
-                        onClick={() => toggle(item.file)}
-                        disabled={full}
                         aria-pressed={isPicked}
-                        className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition ${isPicked ? "border-emerald-400/50 bg-emerald-400/[0.08]" : full ? "cursor-not-allowed border-white/[0.06] bg-white/[0.02] opacity-40" : "border-white/10 bg-[#121214] hover:border-white/25 hover:bg-white/[0.05]"}`}
+                        role="button"
+                        className={`rounded-[22px] transition ${isPicked ? "ring-2 ring-emerald-400" : ""} ${full ? "pointer-events-none opacity-35" : ""}`}
                       >
-                        <span className={`grid h-5 w-5 flex-none place-items-center rounded-md border ${isPicked ? "border-emerald-400 bg-emerald-400 text-[#04150d]" : "border-white/25"}`}>
-                          {isPicked && <Icon name="check" className="h-3.5 w-3.5" />}
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-semibold text-[#EDE9E0]">{item.title}</span>
-                          <span className="block truncate text-xs text-white/45">{item.category}</span>
-                        </span>
-                      </button>
+                        <PreviewCard
+                          item={item}
+                          onClick={() => toggle(item.file)}
+                          badge={
+                            <span className={`grid h-6 w-6 flex-none place-items-center rounded-full border transition ${isPicked ? "border-emerald-400 bg-emerald-400 text-[#04150d]" : "border-white/25 text-transparent"}`}>
+                              <Icon name="check" className="h-3.5 w-3.5" />
+                            </span>
+                          }
+                        />
+                      </div>
                     );
                   })}
                 </div>
