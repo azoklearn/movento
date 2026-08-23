@@ -95,6 +95,8 @@ const prompts = [
   // Front of the gallery, hand-picked: motion previews first, one per
   // category, so the first screen shows range rather than repetition.
   { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", demo: "https://fizzy-display-magic.lovable.app/soda.html", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
+  { title: "Aurevon Luxury Brand", category: "Landing Page", type: "Hero", file: "Aurevon_Luxury_Brand_Hero.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260820_090556_3e2783f6-b579-4d92-9a0d-eb720a6f90b9.png&w=1920&q=85", tags: ["Video", "Overlay Menu", "Serif"], gradient: "from-stone-200 via-neutral-600 to-black" },
+  { title: "Targo Platform", category: "SaaS", type: "Landing", file: "Targo_Platform_Hero_About.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260823_072718_54380a25-d4e6-4eec-bc9d-198a0159595d.png&w=1920&q=85", tags: ["Chamfered", "Video", "Cyan"], gradient: "from-cyan-200 via-cyan-500 to-[#1a1c1e]" },
   { title: "JWT 3D Card Carousel", category: "Component", type: "Component", file: "JWT_3D_Card_Carousel.md", demo: "https://spin-card.lovable.app/", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/animated%20(8).webp", tags: ["3D", "Carousel", "Cards"], gradient: "from-sky-200 via-fuchsia-600 to-black" },
   // Same Cloudinary account and the same kind of source as Vanta below — a
   // macOS screen recording — so it ships with the transformations already on
@@ -431,6 +433,8 @@ const AVAILABLE_FILES = new Set([
   "Laocoon_Bronze_Scroll.md",
   "Loopstack_Motion_Landing.md",
   "Soda_3D_Flavor_Hero.md",
+  "Aurevon_Luxury_Brand_Hero.md",
+  "Targo_Platform_Hero_About.md",
   "JWT_3D_Card_Carousel.md",
   "Fiamma_Pizzeria_Scrollytelling_3D.md",
   "Baseline_Tennis_Club.md",
