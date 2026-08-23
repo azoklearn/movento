@@ -57,12 +57,15 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // flow, which is why both fallbacks below are checkout links.
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_pAiB9wlNdjRGF";
 const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
+// One prompt, bought on its own (Whop product prod_zZlcqsSutlXvW).
+const SINGLE_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
 
 // The links we ship with. An env var overrides them, but see resolvePlanId: a
 // product-page env var must not cost us the embedded checkout these provide.
 const fallbackUrls = {
   monthly: MONTHLY_FALLBACK_URL,
   yearly: YEARLY_FALLBACK_URL,
+  single: SINGLE_FALLBACK_URL,
 };
 
 export const checkoutUrls = {
@@ -72,7 +75,7 @@ export const checkoutUrls = {
   // One prompt, bought on its own. A single Whop product covers every prompt:
   // the buyer picks which one after paying, so there is nothing to create per
   // prompt and nothing to round-trip through checkout metadata.
-  single: process.env.WHOP_SINGLE_URL,
+  single: process.env.WHOP_SINGLE_URL || SINGLE_FALLBACK_URL,
 };
 
 // Whop plan IDs (plan_xxx), one per plan — required for the on-site EMBEDDED

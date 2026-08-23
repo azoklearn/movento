@@ -530,12 +530,11 @@ const PROMO_PERCENT = 10;
 // Buying one prompt on its own. A single Whop product covers the whole
 // catalogue: the buyer pays once, then picks which prompt the purchase unlocks.
 //
-// Two switches, same rule as the promo code above. This one decides whether the
-// option is offered at all; WHOP_SINGLE_URL in the Vercel variables is what
-// makes the checkout work. Turn this off, or leave the variable unset, and no
-// visitor is ever shown a button that cannot complete.
+// The checkout link ships in api/_shared.js (Whop plan_duNdZcsNAOPSx), so the
+// option works as soon as this switch is on; WHOP_SINGLE_URL only overrides it.
+// Set this to false to stop offering single prompts everywhere at once.
 const SINGLE_PROMPT_ENABLED = true;
-const SINGLE_PROMPT_PRICE = 9.99;
+const SINGLE_PROMPT_PRICE = 19.99;
 
 const plans = [
   {
@@ -634,6 +633,10 @@ const planGridWidth = visiblePlans.length === 1 ? "max-w-sm lg:max-w-2xl" : visi
 // the best value of, so the comparison copy steps aside. Derived rather than
 // hardcoded: bringing a plan back out of hiding restores it on its own.
 const isSinglePlan = visiblePlans.length === 1;
+// Never in visiblePlans — it is hidden from the grid on purpose — so it is
+// looked up by id, once, for the two places that offer it: the prompt popup and
+// the paywall page.
+const singlePlan = plans.find((plan) => plan.id === "single");
 
 // Pricing card used across every purchase surface (paywall modal, pricing
 // section, /pricing page). Laid out in four quiet bands — identity, price,
@@ -1663,6 +1666,25 @@ export default function MoventoSite() {
                     {copiedCard === previewItem.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : hasPremiumAccess || ownedPrompts.has(previewItem.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : promptCredits > 0 ? <><Icon name="gift" className="h-4 w-4" /> {t("Use my purchase", "Utiliser mon achat")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
                   </button>
                 </div>
+                {/* The cheaper way in, offered where the visitor is holding the
+                    one prompt they want. Only for a locked prompt: someone with
+                    full access, a free prompt, a prompt they already bought or
+                    an unspent purchase all have nothing to buy here. */}
+                {SINGLE_PROMPT_ENABLED && singlePlan && !hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (
+                  <div className="border-t border-white/[0.07] px-5 pb-4 pt-4">
+                    <button
+                      onClick={() => { track("single_prompt_offer_clicked", { prompt: previewItem.title, category: previewItem.category }); startCheckout(singlePlan); }}
+                      disabled={Boolean(checkoutPlan)}
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-left transition hover:border-white/25 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-[#EDE9E0]">{t("Buy just this prompt", "Acheter ce prompt seul")}</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-white/45">{t("Yours forever, no subscription.", "À toi pour toujours, sans abonnement.")}</span>
+                      </span>
+                      <span className="flex-none rounded-full bg-[#EDE9E0] px-4 py-2 text-sm font-bold text-[#0A0A0B]">{eur(SINGLE_PROMPT_PRICE)}</span>
+                    </button>
+                  </div>
+                )}
                 {/* The one moment the visitor actually needs the instructions:
                     they are holding the prompt and have nowhere to put it. */}
                 <div className="border-t border-white/[0.07] px-5 pb-5 pt-4">
@@ -2900,7 +2922,6 @@ function PricingPage() {
   }
 
   const scrollToPlans = () => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  const singlePlan = plans.find((plan) => plan.id === "single");
   const showSingleOffer = Boolean(SINGLE_PROMPT_ENABLED && fromPrompt && singlePlan);
 
   return (
