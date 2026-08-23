@@ -57,6 +57,11 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // flow, which is why both fallbacks below are checkout links.
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_pAiB9wlNdjRGF";
 const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
+// Full access, one payment (Whop product prod_YWF4xcOs3RFv9). Shipped here
+// rather than left to WHOP_LIFETIME_URL alone: without a checkout link the plan
+// id cannot be resolved, and the buyer was redirected to Whop instead of paying
+// on the site like every other plan.
+const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
 // A pack of prompts, bought without the catalogue (Whop product
 // prod_zZlcqsSutlXvW). One purchase, PROMPT_PACK_SIZE prompts of your choice.
 const PACK_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
@@ -70,13 +75,14 @@ export const PROMPT_PACK_SIZE = 3;
 const fallbackUrls = {
   monthly: MONTHLY_FALLBACK_URL,
   yearly: YEARLY_FALLBACK_URL,
+  lifetime: LIFETIME_FALLBACK_URL,
   pack: PACK_FALLBACK_URL,
 };
 
 export const checkoutUrls = {
   monthly: process.env.WHOP_MONTHLY_URL || MONTHLY_FALLBACK_URL,
   yearly: process.env.WHOP_YEARLY_URL || YEARLY_FALLBACK_URL,
-  lifetime: process.env.WHOP_LIFETIME_URL,
+  lifetime: process.env.WHOP_LIFETIME_URL || LIFETIME_FALLBACK_URL,
   // A pack of prompts. One Whop product covers the whole catalogue: the buyer
   // picks which prompts after paying, so there is nothing to create per prompt
   // and nothing to round-trip through checkout metadata.

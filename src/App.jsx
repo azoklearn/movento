@@ -641,6 +641,7 @@ const isSinglePlan = visiblePlans.length === 1;
 // looked up by id, once, for the two places that offer it: the prompt popup and
 // the paywall page.
 const packPlan = plans.find((plan) => plan.id === "pack");
+const lifetimePlan = plans.find((plan) => plan.id === "lifetime" && !plan.hidden);
 
 // Pricing card used across every purchase surface (paywall modal, pricing
 // section, /pricing page). Laid out in four quiet bands — identity, price,
@@ -1652,19 +1653,50 @@ export default function MoventoSite() {
                     one prompt they want. Only for a locked prompt: someone with
                     full access, a free prompt, a prompt they already bought or
                     an unspent purchase all have nothing to buy here. */}
-                {PROMPT_PACK_ENABLED && packPlan && !hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (
-                  <div className="border-t border-white/[0.07] px-5 pb-4 pt-4">
-                    <button
-                      onClick={() => { track("prompt_pack_offer_clicked", { prompt: previewItem.title, category: previewItem.category }); startCheckout(packPlan); }}
-                      disabled={Boolean(checkoutPlan)}
-                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-left transition hover:border-white/25 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-[#EDE9E0]">{t(`Pack of ${PROMPT_PACK_SIZE} prompts`, `Pack de ${PROMPT_PACK_SIZE} prompts`)}</span>
-                        <span className="mt-0.5 block text-xs leading-5 text-white/45">{t("This one and two more of your choice, yours forever.", "Celui-ci et deux autres de ton choix, à toi pour toujours.")}</span>
-                      </span>
-                      <span className="flex-none rounded-full bg-[#EDE9E0] px-4 py-2 text-sm font-bold text-[#0A0A0B]">{eur(PROMPT_PACK_PRICE)}</span>
-                    </button>
+                {/* Two ways in, in the order the visitor should weigh them:
+                    everything first, the cheap way second. Same gate as before —
+                    full access, a free prompt, a prompt already bought and an
+                    unspent purchase all have nothing to sell here. */}
+                {!hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (lifetimePlan || (PROMPT_PACK_ENABLED && packPlan)) && (
+                  <div className="space-y-2.5 border-t border-white/[0.07] px-5 pb-4 pt-4">
+                    {lifetimePlan && (
+                      <button
+                        onClick={() => { track("lifetime_offer_clicked", { prompt: previewItem.title, category: previewItem.category, source: "prompt_popup" }); startCheckout(lifetimePlan); }}
+                        disabled={Boolean(checkoutPlan)}
+                        // The launch banner's gradient, so the best offer reads
+                        // as the same thing the visitor has already seen selling
+                        // it at the bottom of every page.
+                        className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] px-4 py-3 text-left transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-white">{t("Unlock every prompt", "Débloquer tous les prompts")}</span>
+                            <span className="flex-none rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">{t("Best value", "Le plus avantageux")}</span>
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-5 text-white/85">{t(`All ${availablePrompts.length} prompts + free ebook + 7/7 support.`, `Les ${availablePrompts.length} prompts + ebook offert + support 7j/7.`)}</span>
+                        </span>
+                        <span className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0A0A0B]">
+                          {eur(PRICE_LIFETIME)}
+                          <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                        </span>
+                      </button>
+                    )}
+                    {PROMPT_PACK_ENABLED && packPlan && (
+                      <button
+                        onClick={() => { track("prompt_pack_offer_clicked", { prompt: previewItem.title, category: previewItem.category }); startCheckout(packPlan); }}
+                        disabled={Boolean(checkoutPlan)}
+                        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-left transition hover:border-white/25 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#EDE9E0]">{t(`Pack of ${PROMPT_PACK_SIZE} prompts`, `Pack de ${PROMPT_PACK_SIZE} prompts`)}</span>
+                            <span className="flex-none rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/45">{t("Budget", "Éco")}</span>
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-5 text-white/45">{t("This one and two more of your choice, yours forever.", "Celui-ci et deux autres de ton choix, à toi pour toujours.")}</span>
+                        </span>
+                        <span className="flex-none rounded-full bg-[#EDE9E0] px-4 py-2 text-sm font-bold text-[#0A0A0B]">{eur(PROMPT_PACK_PRICE)}</span>
+                      </button>
+                    )}
                   </div>
                 )}
                 {/* The one moment the visitor actually needs the instructions:
