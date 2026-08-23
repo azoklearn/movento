@@ -798,7 +798,7 @@ function CheckoutSuccess({ plan, prefillEmail, onUnlocked }) {
       });
       const d = await r.json().catch(() => ({}));
       const recognised = d.hasAccess || Number(d.credits) > 0 || (Array.isArray(d.owned) && d.owned.length > 0);
-      if (r.ok && recognised) { onUnlocked(norm, { single: !d.hasAccess }); return; }
+      if (r.ok && recognised) { onUnlocked(norm, { pack: !d.hasAccess }); return; }
       setSt({ loading: false, error: t("Access is activating — this can take a moment. Retry in a few seconds.", "L'accès s'active — cela peut prendre un instant. Réessaie dans quelques secondes.") });
     } catch {
       setSt({ loading: false, error: t("Unable to verify right now. Please retry.", "Vérification impossible pour le moment. Réessaie.") });
@@ -1541,10 +1541,11 @@ export default function MoventoSite() {
     setAccessEmail(email);
     setCheckoutPlan(null);
     setPaywallItem(null);
-    // A single-prompt buyer must not be marked as having the catalogue. Ask the
-    // server what this email actually holds rather than guessing from the click.
-    if (info.single) {
-      verifyAccess(email, { silent: true });
+    // A pack buyer must not be marked as having the catalogue, and has nothing
+    // unlocked yet — take them to the screen where they pick their prompts.
+    if (info.pack) {
+      track("pack_purchased");
+      window.location.assign("/choose");
       return;
     }
     setHasPremiumAccess(true);
@@ -2451,8 +2452,6 @@ function ChoosePromptsPage() {
     setTimeout(() => setCopiedFile(""), 1600);
   }
 
-  const titleFor = (file) => availablePrompts.find((p) => p.file === file)?.title || file;
-
   return (
     <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -2496,16 +2495,27 @@ function ChoosePromptsPage() {
                 <p className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
                   <Icon name="check" className="h-4 w-4" /> {claimed.length > 1 ? t(`${claimed.length} prompts unlocked — they are yours for good.`, `${claimed.length} prompts débloqués — ils sont à toi pour de bon.`) : t("Prompt unlocked — it is yours for good.", "Prompt débloqué — il est à toi pour de bon.")}
                 </p>
-                <ul className="mt-4 space-y-2">
-                  {claimed.map((entry) => (
-                    <li key={entry.file} className="flex items-center justify-between gap-3 rounded-2xl bg-black/25 px-4 py-2.5">
-                      <span className="min-w-0 truncate text-sm text-[#EDE9E0]">{titleFor(entry.file)}</span>
-                      <button onClick={() => copyClaimed(entry)} className="flex flex-none items-center gap-1.5 rounded-full bg-[#EDE9E0] px-4 py-1.5 text-xs font-bold text-[#0A0A0B] transition hover:bg-white">
-                        {copiedFile === entry.file ? <><Icon name="check" className="h-3.5 w-3.5" /> {t("Copied", "Copié")}</> : <><Icon name="copy" className="h-3.5 w-3.5" /> {t("Copy", "Copier")}</>}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                {/* The same cards again, not a list of names: this is the
+                    moment the buyer sees what they just bought, and the whole
+                    card copies so the button is a reminder, not the only way. */}
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+                  {claimed.map((entry) => {
+                    const item = availablePrompts.find((p) => p.file === entry.file);
+                    if (!item) return null;
+                    return (
+                      <PreviewCard
+                        key={entry.file}
+                        item={item}
+                        onClick={() => copyClaimed(entry)}
+                        badge={
+                          <span className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold transition ${copiedFile === entry.file ? "bg-emerald-400/15 text-emerald-300" : "bg-[#EDE9E0] text-[#0A0A0B]"}`}>
+                            {copiedFile === entry.file ? <><Icon name="check" className="h-3.5 w-3.5" /> {t("Copied", "Copié")}</> : <><Icon name="copy" className="h-3.5 w-3.5" /> {t("Copy", "Copier")}</>}
+                          </span>
+                        }
+                      />
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -3134,8 +3144,15 @@ function PricingPage() {
     return slug ? availablePrompts.find((p) => slugify(p.title) === slug.toLowerCase()) || null : null;
   });
 
-  function onUnlocked(email) {
+  function onUnlocked(email, info = {}) {
     window.localStorage.setItem("movento_access_email", email);
+    // A pack buyer has nothing unlocked yet — the catalogue would be a wall of
+    // locked cards. Send them where the purchase is actually spent.
+    if (info.pack) {
+      track("pack_purchased");
+      window.location.assign("/choose");
+      return;
+    }
     track("access_unlocked");
     window.location.assign("/#prompts");
   }
