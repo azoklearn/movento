@@ -382,6 +382,12 @@ async function findWhopMembership(normalizedEmail) {
   return null;
 }
 
+// Which of our plans a Whop membership was bought on, or null when the payload
+// carries no plan we recognise.
+export function membershipPlanKind(membership) {
+  return planKindFromPlanId(membership?.plan?.id || membership?.plan_id || membership?.plan);
+}
+
 export async function customerHasWhopAccess(email) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return false;
@@ -391,10 +397,67 @@ export async function customerHasWhopAccess(email) {
   if (await redisGetAccess(normalizedEmail)) return true;
 
   try {
-    return Boolean(await findWhopMembership(normalizedEmail));
+    const membership = await findWhopMembership(normalizedEmail);
+    if (!membership) return false;
+    // A pack buys a few prompts, NOT the catalogue. Whop creates a membership
+    // for it like any other purchase, so without this check the fallback below
+    // handed the whole catalogue to a pack buyer.
+    //
+    // Every other membership still passes, including one whose plan we cannot
+    // identify: this path exists so a lifetime buyer is not locked out when the
+    // webhook fails, and an unfamiliar payload must not cost them their access.
+    return membershipPlanKind(membership) !== "pack";
   } catch (error) {
     console.error("Whop access check failed:", error);
     return false;
+  }
+}
+
+// Grants a pack's credits straight from the Whop API, for when the webhook
+// never landed — misconfigured, rejected, or simply late. Without this a paying
+// customer sits on "access is activating" with nothing anyone can do.
+//
+// Idempotent on the membership id rather than the email: SET NX means the first
+// caller wins, so two tabs, or a webhook arriving mid-check, cannot both pay out.
+export async function syncPackCreditsFromWhop(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || !whopConfigured()) return 0;
+
+  let membership = null;
+  try {
+    membership = await findWhopMembership(normalizedEmail);
+  } catch (error) {
+    console.error("Whop pack lookup failed:", error);
+    return 0;
+  }
+  if (!membership || membershipPlanKind(membership) !== "pack") return 0;
+
+  const membershipId = String(membership.id || "");
+  if (!membershipId) return 0;
+
+  // Deliberately conservative. The webhook identifies a purchase by the id in
+  // its own payload, which is not necessarily the membership id the API returns,
+  // so the two paths cannot share one guard key. Anything this buyer already has
+  // — an unspent credit, a prompt already claimed — means a payout already
+  // happened and this must keep its hands off. Paying out twice for one sale is
+  // worse than a rare case that needs a human.
+  const [credits, owned] = await Promise.all([
+    redisGetPromptCredits(normalizedEmail),
+    redisGetOwnedPrompts(normalizedEmail),
+  ]);
+  if (credits > 0 || owned.length > 0) return 0;
+
+  try {
+    const redis = Redis.fromEnv();
+    // SET NX: the first caller wins, so two tabs cannot both pay out.
+    const claimed = await redis.set(`packsync:${membershipId}`, new Date().toISOString(), { nx: true });
+    if (!claimed) return 0;
+    await redisAddPromptCredit(normalizedEmail, PROMPT_PACK_SIZE);
+    console.log("Pack credited from the Whop API (webhook did not land):", normalizedEmail, membershipId);
+    return PROMPT_PACK_SIZE;
+  } catch (error) {
+    console.error("Pack credit grant failed:", error);
+    return 0;
   }
 }
 
