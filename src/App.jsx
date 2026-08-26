@@ -3361,11 +3361,15 @@ function AdminLeadsPage() {
   // guess.
   const [lookupEmail, setLookupEmail] = useState("");
   const [lookup, setLookup] = useState({ loading: false, error: "", data: null });
+  // Two clicks to actually delete something: the first arms it, the second (on
+  // the same email) fires. Same shape as the subscription page's cancel flow.
+  const [revoke, setRevoke] = useState({ confirming: false, loading: false, error: "" });
 
   async function runLookup(e) {
     e.preventDefault();
     const value = lookupEmail.trim();
     if (!value) return;
+    setRevoke({ confirming: false, loading: false, error: "" });
     setLookup({ loading: true, error: "", data: null });
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin-lookup?email=${encodeURIComponent(value)}`, {
@@ -3380,6 +3384,27 @@ function AdminLeadsPage() {
       setLookup({ loading: false, error: "", data });
     } catch (error) {
       setLookup({ loading: false, error: error.message, data: null });
+    }
+  }
+
+  async function runRevoke() {
+    if (!revoke.confirming) {
+      setRevoke({ confirming: true, loading: false, error: "" });
+      return;
+    }
+    setRevoke({ confirming: true, loading: true, error: "" });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin-lookup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ email: lookup.data.email }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Retrait impossible.");
+      setLookup({ loading: false, error: "", data });
+      setRevoke({ confirming: false, loading: false, error: "" });
+    } catch (error) {
+      setRevoke({ confirming: false, loading: false, error: error.message });
     }
   }
 
@@ -3561,6 +3586,39 @@ function AdminLeadsPage() {
               <p className={lookup.data.webhookSecretConfigured ? "text-white/40" : "font-semibold text-red-300"}>
                 {lookup.data.webhookSecretConfigured ? "Signature du webhook Whop vérifiée." : "⚠ WHOP_WEBHOOK_SECRET absent — le webhook accepte des requêtes non signées."}
               </p>
+
+              {lookup.data.revoked && <p className="font-semibold text-emerald-300">Accès retiré.</p>}
+
+              {/* Deletes only our own record — never touches Whop. A live Whop
+                  membership re-grants itself through the fallback this same
+                  endpoint reads, the next time that email is checked, so this
+                  button is the fix for a stray record, not a way to stop
+                  billing. The warning underneath says so whenever one exists. */}
+              {lookup.data.redis && (
+                <div className="border-t border-white/[0.07] pt-3">
+                  {lookup.data.whop.found && (
+                    <p className="mb-2 text-xs text-amber-300/90">
+                      Une adhésion Whop est toujours active pour cet email — retirer l'accès ici ne l'annule pas, il reviendra au prochain contrôle tant qu'elle existe. Annule-la sur Whop pour un retrait définitif.
+                    </p>
+                  )}
+                  {/* type="button" is load-bearing: this sits inside the search
+                      <form>, and a bare <button> there defaults to type="submit"
+                      — every click would have re-run the search first, which
+                      resets `revoke` and made the confirm step unreachable. */}
+                  <button
+                    type="button"
+                    onClick={runRevoke}
+                    disabled={revoke.loading}
+                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${revoke.confirming ? "bg-red-500 text-white hover:bg-red-400" : "border border-red-400/30 bg-red-400/[0.08] text-red-300 hover:bg-red-400/[0.14]"}`}
+                  >
+                    {revoke.loading ? "…" : revoke.confirming ? "Confirmer le retrait" : "Retirer l'accès"}
+                  </button>
+                  {revoke.confirming && !revoke.loading && (
+                    <button type="button" onClick={() => setRevoke({ confirming: false, loading: false, error: "" })} className="ml-2 text-sm text-white/40 hover:text-white/70">Annuler</button>
+                  )}
+                  {revoke.error && <p className="mt-2 text-sm text-red-300">{revoke.error}</p>}
+                </div>
+              )}
             </div>
           )}
         </form>
