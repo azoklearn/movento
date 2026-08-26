@@ -91,14 +91,6 @@ function LangSwitch({ className = "" }) {
 
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
-// The walkthrough shown on the hero. Carries the same Cloudinary transformations
-// as the Vanta preview and for the same reason: an untransformed screen
-// recording from this host played on every desktop and on no phone, and
-// vc_h264:baseline:3.1 is the one H.264 profile every phone decodes inline.
-// Audio is deliberately NOT stripped here — unlike a silent card preview, a
-// walkthrough is worth listening to, so only the video track is re-encoded.
-const HERO_VIDEO_URL = "https://res.cloudinary.com/ce2yatay/video/upload/vc_h264:baseline:3.1,w_1280,q_auto/v1787602539/Download.mp4";
-
 const prompts = [
   // Front of the gallery, hand-picked: the newest work first, then motion
   // previews, one per category, so the first screen shows range rather than
@@ -1869,27 +1861,6 @@ export default function MoventoSite() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.19 }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-6 py-3 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
           <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("See pricing", "Voir les tarifs")}</a>
-        </motion.div>
-
-        {/* The walkthrough, right under the promise. Autoplays muted and looped
-            so it reads as a demo rather than a chore, with controls so anyone
-            who wants the sound can take it.
-            Height is capped rather than fixed: the clip's own ratio drives the
-            box, so a vertical recording cannot swallow the screen. The cap is
-            tightest on a phone: a full-height clip there would push the
-            catalogue a whole screen down, which is exactly why the older
-            walkthrough was moved below the gallery in the first place. */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.26 }} className="mx-auto mt-10 w-full max-w-3xl overflow-hidden rounded-[24px] border border-white/10 bg-[#0B0B0D] shadow-[0_28px_70px_-30px_rgba(0,0,0,0.9)] md:mt-12">
-          <video
-            src={HERO_VIDEO_URL}
-            className="mx-auto max-h-[40vh] w-full object-contain sm:max-h-[52vh] md:max-h-[62vh]"
-            autoPlay
-            loop
-            muted
-            playsInline
-            controls
-            preload="metadata"
-          />
         </motion.div>
       </section>
 
