@@ -597,17 +597,18 @@ const plans = [
   },
   {
     id: "pack",
-    // Never in the plan grid — a small price next to the catalogue price reads
-    // as a cheaper catalogue. It is offered on the paywall trip and in the
-    // popup, beside the prompt the visitor was trying to copy.
-    hidden: true,
+    // On sale in the plan grid, alongside lifetime and on the same terms as
+    // every other surface that offers it — the popup and the paywall trip.
+    // Follows the kill switch so turning the pack off removes it everywhere at
+    // once rather than leaving a card that cannot be bought.
+    hidden: !PROMPT_PACK_ENABLED,
     name: t(`${PROMPT_PACK_SIZE} prompts`, `${PROMPT_PACK_SIZE} prompts`),
     price: eur(PROMPT_PACK_PRICE),
     period: t("once", "une fois"),
     description: t(`${PROMPT_PACK_SIZE} prompts of your choice, yours forever.`, `${PROMPT_PACK_SIZE} prompts de ton choix, à toi pour toujours.`),
     cta: t("Get the pack", "Prendre le pack"),
     featured: false,
-    features: [t(`${PROMPT_PACK_SIZE} prompts of your choice`, `${PROMPT_PACK_SIZE} prompts de ton choix`), t("Yours forever", "À toi pour toujours"), t("No subscription", "Sans abonnement")],
+    features: [t(`${PROMPT_PACK_SIZE} prompts of your choice`, `${PROMPT_PACK_SIZE} prompts de ton choix`), t("Pick them after checkout", "Tu les choisis après paiement"), t("Yours forever", "À toi pour toujours"), t("Instant access", "Accès immédiat"), t("No subscription", "Sans abonnement")],
   },
   {
     id: "monthly",
@@ -631,10 +632,13 @@ const plans = [
 // with a button that would fail.
 const visiblePlans = plans.filter((plan) => !plan.hidden);
 // Tailwind only sees literal class names, so pick whole strings.
-// Two plans sit side by side even on a phone — the whole decision is a
-// comparison, and stacking them puts a screen of scrolling between the two
-// prices. Three would be unreadable at that width, so they still stack.
-const planGridBase = visiblePlans.length === 2 ? "grid-cols-2" : "grid-cols-1";
+// Two plans sit side by side from 640px up — the whole decision is a
+// comparison, and stacking them puts scrolling between the two prices. Below
+// that they stack: the two cards on sale are nowhere near the same height
+// (lifetime carries five features plus support and the ebook, the pack three
+// lines), and at 375px the pair rendered as two narrow columns with the CTA
+// broken over three lines and a hand's depth of empty card beside it.
+const planGridBase = visiblePlans.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1";
 const planGridMd = visiblePlans.length === 1 ? "md:grid-cols-1" : visiblePlans.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
 const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
 // Two cards stretched over the three-card width read as oversized banners, so
@@ -644,9 +648,9 @@ const planGridWidth = visiblePlans.length === 1 ? "max-w-sm lg:max-w-2xl" : visi
 // the best value of, so the comparison copy steps aside. Derived rather than
 // hardcoded: bringing a plan back out of hiding restores it on its own.
 const isSinglePlan = visiblePlans.length === 1;
-// Never in visiblePlans — it is hidden from the grid on purpose — so it is
-// looked up by id, once, for the two places that offer it: the prompt popup and
-// the paywall page.
+// Looked up by id rather than taken from visiblePlans: the popup and the
+// paywall trip offer it on their own, whether or not it is currently in the
+// grid.
 const packPlan = plans.find((plan) => plan.id === "pack");
 const lifetimePlan = plans.find((plan) => plan.id === "lifetime" && !plan.hidden);
 
@@ -664,10 +668,11 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         {plan.discountBadge && <span className="mt-0.5 flex-none rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-[10px] font-semibold leading-4 text-emerald-300 sm:mt-1 sm:px-2.5 sm:text-[11px]">{plan.discountBadge}</span>}
       </div>
       {/* Reserved height for the longest description in the grid, so the rule,
-          the price and the button land on the same line across the three
-          cards. A lone card has nothing to line up with, and the reserve then
-          only pushes the rest of it further down the screen. */}
-      {plan.description && <p className={isSinglePlan ? "mt-2 text-[12.5px] leading-5 text-white/45 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5" : "mt-2 min-h-[7.5rem] text-[12.5px] leading-5 text-white/45 sm:min-h-[4.5rem] sm:text-sm sm:leading-6 lg:min-h-[2.5rem] lg:text-[13px] lg:leading-5"}>{plan.description}</p>}
+          the price and the button land on the same line across the cards. A
+          lone card has nothing to line up with, and the reserve then only
+          pushes the rest of it further down the screen — same below sm, where
+          the cards stack and each one is on its own. */}
+      {plan.description && <p className={isSinglePlan ? "mt-2 text-[12.5px] leading-5 text-white/45 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5" : "mt-2 text-[12.5px] leading-5 text-white/45 sm:min-h-[4.5rem] sm:text-sm sm:leading-6 lg:min-h-[2.5rem] lg:text-[13px] lg:leading-5"}>{plan.description}</p>}
 
       <div className="my-4 border-t border-dashed border-white/[0.14] sm:my-6 lg:my-4" />
 
@@ -681,9 +686,9 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         <span className="pb-0.5 text-xs text-white/40 sm:pb-1 sm:text-sm">{plan.priceMonthly ? plan.priceMonthlyPeriod : plan.period}</span>
       </div>
       {/* Same reasoning as the description: the plans carry a different number
-          of price lines, and without a floor the three buttons sit at three
-          different heights. Dropped for a lone card, same as above. */}
-      <div className={isSinglePlan ? "mt-3 space-y-1 lg:mt-2" : "mt-3 min-h-[4rem] space-y-1 sm:min-h-[2.75rem] lg:mt-2 lg:min-h-[2rem]"}>
+          of price lines, and without a floor the buttons sit at different
+          heights. Dropped for a lone card and below sm, same as above. */}
+      <div className={isSinglePlan ? "mt-3 space-y-1 lg:mt-2" : "mt-3 space-y-1 sm:min-h-[2.75rem] lg:mt-2 lg:min-h-[2rem]"}>
         {plan.billedNote && <p className="text-xs text-white/45 sm:text-sm">{plan.billedNote}</p>}
         {plan.originalPrice && <p className="text-xs text-white/35 line-through sm:text-sm">{plan.originalPrice}</p>}
         {plan.subPrice && <p className="text-xs font-medium text-emerald-300 sm:text-sm">{plan.subPrice}</p>}
@@ -912,7 +917,7 @@ function Reassurance({ className = "" }) {
     <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-white/40 ${className}`}>
       <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
       <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-500" /> {t("Instant access", "Accès immédiat")}</span>
-      <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-500" /> {t("New prompts included", "Nouveaux prompts inclus")}</span>
+      <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-500" /> {t("No subscription", "Sans abonnement")}</span>
     </div>
   );
 }
@@ -1228,9 +1233,9 @@ function runSelfTests() {
   console.assert(!validatePlanId("yearly"), "yearly is retired and should not be purchasable");
   console.assert(validatePlanId("lifetime"), "lifetime should be valid");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
-  // Deliberately hidden from the plan grid, but still purchasable: the single
-  // prompt is only ever offered beside the prompt it unlocks.
-  console.assert(!validatePlanId("pack"), "the pack is sold beside a prompt, not from the plan grid");
+  // On sale in the grid while the kill switch is on, and off it entirely when
+  // it is not — the card and the checkout must never disagree.
+  console.assert(validatePlanId("pack") === PROMPT_PACK_ENABLED, "the pack must be purchasable exactly when it is enabled");
   console.assert(plans.some((plan) => plan.id === "pack"), "the prompt pack must stay defined");
   console.assert(extractPrompt("# Test\n\n## Prompt\nhello\n* * *\nfooter") === "hello", "extractPrompt should parse prompt block");
   console.assert(extractPrompt("plain text") === "plain text", "extractPrompt should fallback to full markdown");
@@ -1957,7 +1962,7 @@ export default function MoventoSite() {
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">{isSinglePlan ? t("One payment, forever", "Un paiement, à vie") : t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.")}</p>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue, or just the prompts you need. No subscription either way.", "Tout le catalogue, ou seulement les prompts qu'il te faut. Sans abonnement dans les deux cas.")}</p>
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
           <div className="mt-5 flex items-center justify-center gap-2">
@@ -3202,7 +3207,9 @@ function PricingPage() {
   }
 
   const scrollToPlans = () => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  const showPackOffer = Boolean(PROMPT_PACK_ENABLED && fromPrompt && packPlan);
+  // Suppressed while the pack has its own card in the grid above: offering the
+  // same thing twice on one screen reads as two different deals.
+  const showPackOffer = Boolean(PROMPT_PACK_ENABLED && fromPrompt && packPlan && !visiblePlans.includes(packPlan));
 
   return (
     <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
@@ -3250,7 +3257,7 @@ function PricingPage() {
             {isSinglePlan ? t("One payment,", "Un paiement,") : t("Choose your", "Choisissez votre")}{" "}
             <span className="text-white/45">{isSinglePlan ? t("forever", "à vie") : t("plan", "offre")}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.")}</p>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue, or just the prompts you need. No subscription either way.", "Tout le catalogue, ou seulement les prompts qu'il te faut. Sans abonnement dans les deux cas.")}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
