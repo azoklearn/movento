@@ -146,6 +146,7 @@ const prompts = [
   { title: "Vanguard Agency Hero", category: "Agency", type: "Hero", file: "Vanguard_Agency_Video_Hero.md", demo: "https://digital-collective-showcase.lovable.app/", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(10).webp", tags: ["Agency", "Video", "Bold"], gradient: "from-zinc-200 via-zinc-600 to-black" },
   { title: "Serene Wellness", category: "Landing Page", type: "Landing", file: "Serene_Wellness_Landing.md", demo: "https://radiant-serene.lovable.app/", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/uploaded/planetscrollArea.mp4", tags: ["Wellness", "Parallax", "Glass"], gradient: "from-sky-200 via-cyan-700 to-[#010A17]" },
   { title: "Zpeed Motorsport", category: "Landing Page", type: "Hero", file: "Zpeed_Motorsport_Hero.md", demo: "https://zpeed-hero-pulse.lovable.app/", preview: "https://cdn.5sdesign.art/projects/zpeed.mp4", tags: ["Sport", "Editorial", "Video"], gradient: "from-red-300 via-red-700 to-[#181818]" },
+  { title: "Angelo Élagage Nancy", category: "Landing Page", type: "Landing", file: "Angelo_Elagage_Nancy_Landing.md", demo: "https://angelo-self.vercel.app/", preview: "https://res.cloudinary.com/du0hbrmvw/image/upload/v1787706054/Capture_d_e%CC%81cran_2026-08-26_a%CC%80_02.59.26_q9ouvp.png", tags: ["Local Business", "Français", "SEO"], gradient: "from-lime-200 via-emerald-800 to-[#12241a]" },
   { title: "Graven Drafting Works", category: "Agency", type: "Landing", file: "Graven_Drafting_Works_Scroll.md", preview: "https://www.vividsites.app/media/graven.mp4", tags: ["Scroll Scrub", "Blueprint", "Sticky"], gradient: "from-slate-200 via-slate-600 to-[#0c0f13]" },
   { title: "Meridian Revenue", category: "SaaS", type: "Hero", file: "Meridian_Revenue_Intelligence.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260816_024306_e944b7e6-5f27-4960-8e7c-be1edf8ee0db.png&w=1280&q=85", tags: ["Video", "Editorial", "Sharp"], gradient: "from-orange-200 via-blue-700 to-[#0a0a0a]" },
   { title: "Vantage Dashboards", category: "SaaS", type: "Hero", file: "Vantage_Dashboard_Signal_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/a/dataflower.mp4", tags: ["Glass", "Video", "Dark"], gradient: "from-neutral-200 via-neutral-600 to-black" },
@@ -339,6 +340,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Angelo_Elagage_Nancy_Landing.md",
   "Jack_3D_Creator.md",
   "Pizza.md",
   "Wandor_Hero.md",
