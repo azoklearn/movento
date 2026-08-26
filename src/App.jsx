@@ -3355,6 +3355,42 @@ function AdminLeadsPage() {
   const seenRef = useRef(null);
   const [fresh, setFresh] = useState(() => new Set());
 
+  // "Why does this email have access" for a support case: reads the same
+  // sources the site itself checks (the Redis grant, then the live Whop
+  // membership) so the answer traces back to a specific reason instead of a
+  // guess.
+  const [lookupEmail, setLookupEmail] = useState("");
+  const [lookup, setLookup] = useState({ loading: false, error: "", data: null });
+
+  async function runLookup(e) {
+    e.preventDefault();
+    const value = lookupEmail.trim();
+    if (!value) return;
+    setLookup({ loading: true, error: "", data: null });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin-lookup?email=${encodeURIComponent(value)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        setLookup({ loading: false, error: "Token refusé.", data: null });
+        return;
+      }
+      if (!response.ok) throw new Error(data.error || "Recherche impossible.");
+      setLookup({ loading: false, error: "", data });
+    } catch (error) {
+      setLookup({ loading: false, error: error.message, data: null });
+    }
+  }
+
+  const LOOKUP_REASONS = {
+    redis_grant: { label: "Accès accordé via le webhook Whop", tone: "text-emerald-300" },
+    whop_free_trial: { label: "Essai gratuit Whop en cours — pas encore facturé", tone: "text-amber-300" },
+    whop_membership: { label: "Adhésion Whop active (achat ou ajout manuel)", tone: "text-emerald-300" },
+    pack_only: { label: "A acheté le pack de prompts, pas l'accès complet", tone: "text-white/70" },
+    none: { label: "Aucun accès trouvé", tone: "text-white/40" },
+  };
+
   useEffect(() => {
     if (!token) return undefined;
     let cancelled = false;
@@ -3486,6 +3522,48 @@ function AdminLeadsPage() {
             </div>
           ))}
         </div>
+
+        <form onSubmit={runLookup} className="mt-6 rounded-2xl border border-white/10 bg-[#121214] p-4">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Pourquoi cet email a-t-il accès ?</p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            <input
+              type="email"
+              value={lookupEmail}
+              onChange={(e) => setLookupEmail(e.target.value)}
+              placeholder="client@exemple.com"
+              className="min-w-[220px] flex-1 rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2.5 text-sm outline-none transition focus:border-white/35 focus:ring-4 focus:ring-white/10"
+            />
+            <button type="submit" disabled={lookup.loading} className="rounded-xl bg-[#08080A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418] disabled:opacity-60">{lookup.loading ? "…" : "Chercher"}</button>
+          </div>
+          {lookup.error && <p className="mt-3 text-sm text-red-300">{lookup.error}</p>}
+          {lookup.data && (
+            <div className="mt-4 space-y-3 border-t border-white/[0.07] pt-4 text-sm">
+              <p className={`font-semibold ${LOOKUP_REASONS[lookup.data.reason]?.tone || "text-white/70"}`}>
+                {LOOKUP_REASONS[lookup.data.reason]?.label || lookup.data.reason} {lookup.data.hasAccess ? "· accès complet actif" : ""}
+              </p>
+              {lookup.data.redis && (
+                <div className="text-white/55">
+                  <p className="text-white/40">Enregistrement Redis (webhook)</p>
+                  <p>{lookup.data.redis.type || "?"} · {lookup.data.redis.kind || "?"} · {lookup.data.redis.status || "?"} · accordé {formatDate(lookup.data.redis.grantedAt) || "?"}</p>
+                </div>
+              )}
+              {lookup.data.whop.found && (
+                <div className="text-white/55">
+                  <p className="text-white/40">Adhésion Whop</p>
+                  <p>{lookup.data.whop.product || "?"} · statut {lookup.data.whop.status || "?"} · plan {lookup.data.whop.planKind || lookup.data.whop.planId || "inconnu"}{lookup.data.whop.renewalPeriodEnd ? ` · renouvelle le ${formatDate(lookup.data.whop.renewalPeriodEnd)}` : ""}</p>
+                </div>
+              )}
+              {!lookup.data.whop.configured && <p className="text-white/40">Clé API Whop non configurée — vérification limitée à Redis.</p>}
+              {lookup.data.whop.error && <p className="text-red-300/80">Whop: {lookup.data.whop.error}</p>}
+              {(lookup.data.packCredits > 0 || lookup.data.ownedPrompts.length > 0) && (
+                <p className="text-white/55">Pack: {lookup.data.packCredits} crédit(s) restant(s), {lookup.data.ownedPrompts.length} prompt(s) débloqué(s).</p>
+              )}
+              <p className={lookup.data.webhookSecretConfigured ? "text-white/40" : "font-semibold text-red-300"}>
+                {lookup.data.webhookSecretConfigured ? "Signature du webhook Whop vérifiée." : "⚠ WHOP_WEBHOOK_SECRET absent — le webhook accepte des requêtes non signées."}
+              </p>
+            </div>
+          )}
+        </form>
 
         <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#121214]">
           {state.leads.length === 0 && !state.loading ? (

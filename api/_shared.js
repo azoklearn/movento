@@ -1,4 +1,5 @@
 import { Redis } from "@upstash/redis";
+import crypto from "node:crypto";
 
 export const PROMPTS_REPO = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/prompts/";
 export const CUSTOM_PROMPTS_REPO = "https://raw.githubusercontent.com/azoklearn/movento/main/prompts/";
@@ -352,14 +353,14 @@ export async function redisClearAccess(normalizedEmail) {
 // the id silently falls back to Redis-only access checks.
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID || "biz_2CQPz7bDNhG3va";
 
-function whopConfigured() {
+export function whopConfigured() {
   return Boolean(process.env.WHOP_API_KEY && WHOP_COMPANY_ID);
 }
 
 // Whop's memberships endpoint has NO email filter, so we page through the
 // access-granting statuses and match the email ourselves. Pages are capped so a
 // large membership list can't hang the request.
-async function findWhopMembership(normalizedEmail) {
+export async function findWhopMembership(normalizedEmail) {
   if (!whopConfigured()) return null;
 
   let after = null;
@@ -551,6 +552,24 @@ export async function cancelWhopMembership(email) {
   }
 
   return { ok: true, renewalDate };
+}
+
+// Shared by every admin-only endpoint (/api/leads, /api/admin-lookup): fails
+// closed when ADMIN_TOKEN is not configured, rather than letting everyone in.
+export function isAdminAuthorized(req) {
+  const expected = process.env.ADMIN_TOKEN;
+  if (!expected) return false;
+
+  const header = String(req.headers?.authorization || "");
+  const provided = header.startsWith("Bearer ") ? header.slice(7) : String(req.query?.token || "");
+  if (!provided) return false;
+
+  // Same length before comparing: timingSafeEqual throws on a length mismatch,
+  // and the lengths themselves are not worth leaking.
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
 export function methodNotAllowed(res, allowed = "POST") {

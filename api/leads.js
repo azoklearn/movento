@@ -1,24 +1,5 @@
 import { Redis } from "@upstash/redis";
-import crypto from "node:crypto";
-
-// Reads the captured emails for the live view at /admin. This hands out
-// customer email addresses, so it fails closed: no ADMIN_TOKEN configured means
-// nobody gets in, rather than everybody.
-function authorized(req) {
-  const expected = process.env.ADMIN_TOKEN;
-  if (!expected) return false;
-
-  const header = String(req.headers?.authorization || "");
-  const provided = header.startsWith("Bearer ") ? header.slice(7) : String(req.query?.token || "");
-  if (!provided) return false;
-
-  // Same length before comparing: timingSafeEqual throws on a length mismatch,
-  // and the lengths themselves are not worth leaking.
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(a, b);
-}
+import { isAdminAuthorized } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -29,7 +10,7 @@ export default async function handler(req, res) {
   // Never cached: a stale list is the one thing this endpoint must not return.
   res.setHeader("Cache-Control", "no-store");
 
-  if (!authorized(req)) {
+  if (!isAdminAuthorized(req)) {
     return res.status(401).json({ error: "Non autorisé." });
   }
 
