@@ -512,10 +512,13 @@ export function whopConfigured() {
   return Boolean(process.env.WHOP_API_KEY && WHOP_COMPANY_ID);
 }
 
-// Whop's memberships endpoint has NO email filter, so we page through the
-// access-granting statuses and match the email ourselves. Pages are capped so a
-// large membership list can't hang the request.
-export async function findWhopMembership(normalizedEmail) {
+// Whop's memberships endpoint has NO email filter, so every lookup here pages
+// through the access-granting statuses and matches emails locally.
+//
+// `onPage` decides when to stop: returning a value ends the walk and that value
+// is what comes back. Pages are capped so a large membership list can't hang
+// the request.
+async function walkWhopMemberships(onPage) {
   if (!whopConfigured()) return null;
 
   let after = null;
@@ -532,16 +535,40 @@ export async function findWhopMembership(normalizedEmail) {
     }
 
     const body = await response.json();
-    const match = (body.data || []).find(
-      (m) => normalizeEmail(m.user?.email) === normalizedEmail && ACCESS_STATUSES.has(m.status)
-    );
-    if (match) return match;
+    const stop = onPage(body.data || []);
+    if (stop !== undefined) return stop;
 
     if (!body.page_info?.has_next_page) break;
     after = body.page_info.end_cursor;
   }
 
   return null;
+}
+
+export async function findWhopMembership(normalizedEmail) {
+  return walkWhopMemberships((rows) =>
+    rows.find((m) => normalizeEmail(m.user?.email) === normalizedEmail && ACCESS_STATUSES.has(m.status)),
+  );
+}
+
+// Every access-granting membership Whop knows about, keyed by email.
+//
+// One walk instead of one per address: the audit compares a whole list of
+// emails against Whop, and calling findWhopMembership per row would re-page the
+// entire membership list for each one.
+export async function fetchWhopMembershipsByEmail() {
+  const byEmail = new Map();
+  await walkWhopMemberships((rows) => {
+    for (const m of rows) {
+      const email = normalizeEmail(m.user?.email);
+      if (!email || !ACCESS_STATUSES.has(m.status)) continue;
+      // First one wins: the walk is newest-first, and a customer who rebought
+      // should be judged on the membership that is live now.
+      if (!byEmail.has(email)) byEmail.set(email, m);
+    }
+    return undefined; // never stop early — we want the whole list
+  });
+  return byEmail;
 }
 
 // Which of our plans a Whop membership was bought on, or null when the payload
@@ -737,4 +764,97 @@ export function isAdminAuthorized(req) {
 export function methodNotAllowed(res, allowed = "POST") {
   res.setHeader("Allow", allowed);
   return res.status(405).json({ error: "Méthode non autorisée.", errorEn: "Method not allowed." });
+}
+
+// ---------------------------------------------------------------------------
+// Payment audit.
+//
+// Answers "who actually paid" by comparing what our Redis says with what Whop
+// says. The two can disagree in both directions and each disagreement means
+// something different:
+//
+//   paid        — a live membership on a plan we sell. Real money.
+//   trial       — a membership that has not been billed yet. Access is
+//                 legitimate; the payment has simply not happened.
+//   past_due    — paid before, the renewal is failing now.
+//   canceling   — paid, running out at the end of the period.
+//   unpaid      — access on our side with NO membership behind it. Either the
+//                 membership was removed on Whop and our record outlived it,
+//                 or the record was never backed by a purchase at all. This is
+//                 the one worth looking at by hand.
+//   blocked     — reported first, since the block overrides everything else.
+//
+// A row can be "unpaid" for an innocent reason (a comp, a refund already
+// handled) — this classifies, it does not accuse.
+// ---------------------------------------------------------------------------
+export function classifyPayment(row, membership) {
+  if (row.blocked) return "blocked";
+  if (!membership) return "unpaid";
+
+  const kind = membershipPlanKind(membership);
+  if (membership.status === "trialing") return "trial";
+  if (membership.status === "past_due") return "past_due";
+  if (membership.status === "canceling") return "canceling";
+  if (kind === "pack") return "paid_pack";
+  return "paid";
+}
+
+// The access list, each row marked with what Whop says about the payment.
+// Falls back to the plain list — every row marked "unknown" — when no Whop API
+// key is configured, so the caller never mistakes "could not check" for "did
+// not pay".
+export async function auditAccessPayments(cap = 1000) {
+  const rows = await redisListAllAccess(cap);
+
+  if (!whopConfigured()) {
+    return { rows: rows.map((r) => ({ ...r, payment: "unknown" })), checked: false, error: null };
+  }
+
+  let byEmail;
+  try {
+    byEmail = await fetchWhopMembershipsByEmail();
+  } catch (error) {
+    console.error("Whop payment audit failed:", error);
+    return { rows: rows.map((r) => ({ ...r, payment: "unknown" })), checked: false, error: error.message };
+  }
+
+  const audited = rows.map((row) => {
+    const membership = byEmail.get(row.email) || null;
+    return {
+      ...row,
+      payment: classifyPayment(row, membership),
+      whopStatus: membership?.status || null,
+      whopPlanKind: membership ? membershipPlanKind(membership) : null,
+      whopProduct: membership?.product?.title || null,
+      renewalDate: membership?.renewal_period_end || null,
+    };
+  });
+
+  // Someone can be paying on Whop while having nothing on our side — a webhook
+  // that never landed. They are not in `rows` at all, so they would be invisible
+  // in an audit built only from our own records. That is the opposite failure
+  // from an unpaid grant and just as worth seeing.
+  const known = new Set(rows.map((r) => r.email));
+  for (const [email, membership] of byEmail) {
+    if (known.has(email)) continue;
+    audited.push({
+      email,
+      fullAccess: false,
+      plan: null,
+      kind: null,
+      type: null,
+      grantedAt: null,
+      credits: 0,
+      owned: 0,
+      blocked: false,
+      missingRecord: true,
+      payment: classifyPayment({ blocked: false }, membership),
+      whopStatus: membership.status || null,
+      whopPlanKind: membershipPlanKind(membership),
+      whopProduct: membership.product?.title || null,
+      renewalDate: membership.renewal_period_end || null,
+    });
+  }
+
+  return { rows: audited, checked: true, error: null };
 }

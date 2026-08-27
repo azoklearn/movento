@@ -3424,13 +3424,26 @@ function AdminLeadsPage() {
   // The full access list, and the block switch that goes with it. Blocking is
   // the durable one: revoking above only deletes our record, which a live Whop
   // membership rewrites on the next check.
-  const [access, setAccess] = useState({ loading: false, error: "", rows: [], blocked: [], loaded: false });
+  const [access, setAccess] = useState({ loading: false, error: "", rows: [], blocked: [], loaded: false, audited: false });
+
+  // What Whop says about each row's payment. "unpaid" is the one that matters:
+  // access on our side with no membership behind it.
+  const PAYMENT_LABELS = {
+    paid: { label: "payé", tone: "text-emerald-300" },
+    paid_pack: { label: "pack payé", tone: "text-emerald-300" },
+    trial: { label: "essai — pas encore payé", tone: "text-amber-300" },
+    past_due: { label: "impayé — renouvellement en échec", tone: "text-amber-300" },
+    canceling: { label: "payé — se termine bientôt", tone: "text-white/50" },
+    unpaid: { label: "aucun paiement trouvé", tone: "text-red-300" },
+    blocked: { label: "bloqué", tone: "text-white/40" },
+    unknown: { label: "non vérifié", tone: "text-white/40" },
+  };
   const [accessQuery, setAccessQuery] = useState("");
   const [busyEmail, setBusyEmail] = useState("");
   const [showAccess, setShowAccess] = useState(false);
 
-  async function callAccess(method, body) {
-    const response = await fetch(`${API_BASE_URL}/api/admin-access`, {
+  async function callAccess(method, body, audit) {
+    const response = await fetch(`${API_BASE_URL}/api/admin-access${audit ? "?audit=1" : ""}`, {
       method,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: body ? JSON.stringify(body) : undefined,
@@ -3441,11 +3454,18 @@ function AdminLeadsPage() {
     return data;
   }
 
-  async function loadAccess() {
+  async function loadAccess(audit = access.audited) {
     setAccess((a) => ({ ...a, loading: true, error: "" }));
     try {
-      const data = await callAccess("GET");
-      setAccess({ loading: false, error: "", rows: data.rows || [], blocked: data.blocked || [], loaded: true });
+      const data = await callAccess("GET", null, audit);
+      setAccess({
+        loading: false,
+        error: data.auditError ? `Whop: ${data.auditError}` : "",
+        rows: data.rows || [],
+        blocked: data.blocked || [],
+        loaded: true,
+        audited: Boolean(data.audited),
+      });
     } catch (error) {
       setAccess((a) => ({ ...a, loading: false, error: error.message }));
     }
@@ -3454,8 +3474,10 @@ function AdminLeadsPage() {
   async function toggleBlock(email, blocked) {
     setBusyEmail(email);
     try {
-      const data = await callAccess("POST", { email, action: blocked ? "unblock" : "block" });
-      setAccess({ loading: false, error: "", rows: data.rows || [], blocked: data.blocked || [], loaded: true });
+      // Carries the audit flag through, so blocking someone does not silently
+      // drop the payment column the list was just showing.
+      const data = await callAccess("POST", { email, action: blocked ? "unblock" : "block" }, access.audited);
+      setAccess({ loading: false, error: "", rows: data.rows || [], blocked: data.blocked || [], loaded: true, audited: Boolean(data.audited) });
       // Keep the single-email panel above honest if it is showing this address.
       // Re-read it rather than patching the fields by hand: unblocking restores
       // whatever access was underneath, and only the server knows what that is.
@@ -3726,8 +3748,28 @@ function AdminLeadsPage() {
                       placeholder="Filtrer par email…"
                       className="min-w-[200px] flex-1 rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2 text-sm outline-none transition focus:border-white/35"
                     />
-                    <button type="button" onClick={loadAccess} className="rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:text-[#EDE9E0]">Actualiser</button>
+                    <button type="button" onClick={() => loadAccess(true)} className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${access.audited ? "border border-white/10 bg-[#0A0A0B] text-white/60 hover:text-[#EDE9E0]" : "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white"}`}>
+                      {access.audited ? "Revérifier sur Whop" : "Vérifier les paiements"}
+                    </button>
+                    <button type="button" onClick={() => loadAccess()} className="rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:text-[#EDE9E0]">Actualiser</button>
                   </div>
+
+                  {/* Counts first: the question is "how many did not pay", and
+                      scanning a list of rows to answer it is the slow way. */}
+                  {access.audited && (
+                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                      {["paid", "paid_pack", "trial", "past_due", "canceling", "unpaid", "blocked"].map((key) => {
+                        const count = access.rows.filter((r) => r.payment === key).length;
+                        if (!count) return null;
+                        return <span key={key} className={PAYMENT_LABELS[key].tone}><span className="font-semibold">{count}</span> {PAYMENT_LABELS[key].label}</span>;
+                      })}
+                    </div>
+                  )}
+                  {access.audited && access.rows.some((r) => r.missingRecord) && (
+                    <p className="mt-2 text-xs text-amber-300/90">
+                      {access.rows.filter((r) => r.missingRecord).length} personne(s) paient sur Whop sans aucun accès enregistré ici — un webhook qui n'est jamais arrivé. Elles apparaissent en bas de la liste.
+                    </p>
+                  )}
 
                   {access.rows.length === 0 ? (
                     <p className="py-8 text-center text-sm text-white/40">Aucun accès enregistré.</p>
@@ -3740,9 +3782,12 @@ function AdminLeadsPage() {
                             <span className="min-w-0 flex-1">
                               <button type="button" onClick={() => { setLookupEmail(r.email); fetchLookup(r.email); }} title="Voir le détail" className={`block max-w-full truncate text-left text-sm font-medium transition hover:text-white/70 ${r.blocked ? "text-red-300 line-through" : "text-[#EDE9E0]"}`}>{r.email}</button>
                               <span className="block truncate text-xs text-white/40">
-                                {r.fullAccess ? `Accès complet${r.kind ? ` · ${r.kind}` : ""}${r.grantedAt ? ` · ${formatDate(r.grantedAt)}` : ""}` : "Pack"}
+                                {r.missingRecord ? "Aucun accès enregistré ici" : r.fullAccess ? `Accès complet${r.kind ? ` · ${r.kind}` : ""}${r.grantedAt ? ` · ${formatDate(r.grantedAt)}` : ""}` : "Pack"}
                                 {r.credits > 0 || r.owned > 0 ? ` · ${r.credits} crédit(s), ${r.owned} prompt(s)` : ""}
                                 {r.blocked ? " · bloqué" : ""}
+                                {r.payment && r.payment !== "unknown" && (
+                                  <> · <span className={PAYMENT_LABELS[r.payment]?.tone || "text-white/40"}>{PAYMENT_LABELS[r.payment]?.label || r.payment}</span>{r.whopProduct ? ` (${r.whopProduct})` : ""}</>
+                                )}
                               </span>
                             </span>
                             <button

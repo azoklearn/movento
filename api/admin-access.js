@@ -1,4 +1,5 @@
 import {
+  auditAccessPayments,
   isAdminAuthorized,
   normalizeEmail,
   redisBlockEmail,
@@ -45,10 +46,18 @@ export default async function handler(req, res) {
       console.log(`Access ${action}ed via admin:`, email);
     }
 
+    // ?audit=1 additionally asks Whop who actually paid. Opt-in because it
+    // walks the whole membership list, which the plain listing never needs.
+    const wantsAudit = String(req.query?.audit || "") === "1";
+    if (wantsAudit) {
+      const [{ rows, checked, error }, blocked] = await Promise.all([auditAccessPayments(), redisListBlocked()]);
+      return res.json({ rows, blocked, total: rows.length, audited: checked, auditError: error });
+    }
+
     // Returned after a POST too, so the caller never has to re-request the list
     // to see the result of what it just did.
     const [rows, blocked] = await Promise.all([redisListAllAccess(), redisListBlocked()]);
-    return res.json({ rows, blocked, total: rows.length });
+    return res.json({ rows, blocked, total: rows.length, audited: false, auditError: null });
   } catch (error) {
     console.error("Admin access listing failed:", error);
     return res.status(500).json({ error: "Lecture impossible." });
