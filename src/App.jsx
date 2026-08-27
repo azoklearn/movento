@@ -95,6 +95,7 @@ const prompts = [
   // Front of the gallery, hand-picked: the newest work first, then motion
   // previews, one per category, so the first screen shows range rather than
   // repetition.
+  { title: "Apogee Data Hero", category: "SaaS", type: "Hero", file: "Apogee_Data_Hero.md", demo: "https://celestial-apex.lovable.app/", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260815_191439_307f1c76-0696-4003-9186-fdd50bb30540.png&w=1280&q=85", tags: ["Data", "Glassmorphism", "Video"], gradient: "from-indigo-200 via-indigo-800 to-[#080A19]" },
   { title: "Mainframe A.R.I.A. Dark", category: "Agency", type: "Hero", file: "Mainframe_ARIA_Hero_Dark.md", demo: "https://moventoadz.vercel.app/", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd2ol7oe51mr4n9.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2F44eba8ce-fc5f-4fb4-bc19-de013c1d7404.png&w=1920&q=85", tags: ["Agency", "Scrub Video", "Typewriter"], gradient: "from-neutral-300 via-neutral-700 to-black" },
   { title: "SkyElite Private Jet", category: "Landing Page", type: "Hero", file: "SkyElite_Private_Jet_Hero.md", demo: "https://sky-zenith-hero.lovable.app", preview: "https://motionsites.ai/assets/hero-skyelite-preview-DHaZIgUv.gif", tags: ["Aviation", "Luxury", "Video"], gradient: "from-slate-100 via-slate-400 to-[#202A36]" },
   { title: "Angelo Élagage Nancy", category: "Landing Page", type: "Landing", file: "Angelo_Elagage_Nancy_Landing.md", demo: "https://angelo-self.vercel.app/", preview: "https://res.cloudinary.com/du0hbrmvw/image/upload/v1787706054/Capture_d_e%CC%81cran_2026-08-26_a%CC%80_02.59.26_q9ouvp.png", tags: ["Local Business", "Français", "SEO"], gradient: "from-lime-200 via-emerald-800 to-[#12241a]" },
@@ -334,6 +335,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Apogee_Data_Hero.md",
   "Mainframe_ARIA_Hero_Dark.md",
   "Angelo_Elagage_Nancy_Landing.md",
   "Jack_3D_Creator.md",
