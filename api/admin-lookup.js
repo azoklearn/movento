@@ -8,15 +8,17 @@ import {
   redisGetAccessRecord,
   redisGetOwnedPrompts,
   redisGetPromptCredits,
+  redisIsBlocked,
   whopConfigured,
 } from "./_shared.js";
 
 async function buildLookup(email) {
-  const [redisRecord, owned, credits, hasAccess] = await Promise.all([
+  const [redisRecord, owned, credits, hasAccess, blocked] = await Promise.all([
     redisGetAccessRecord(email),
     redisGetOwnedPrompts(email),
     redisGetPromptCredits(email),
     customerHasWhopAccess(email),
+    redisIsBlocked(email),
   ]);
 
   let membership = null;
@@ -34,7 +36,10 @@ async function buildLookup(email) {
   // The one-line answer to "how does he have access without paying" — every
   // other field here is what backs this up.
   let reason = "none";
-  if (redisRecord) reason = "redis_grant";
+  // Reported ahead of everything else because it overrides everything else:
+  // customerHasWhopAccess refuses a blocked email whatever the records below say.
+  if (blocked) reason = "blocked";
+  else if (redisRecord) reason = "redis_grant";
   else if (membership?.status === "trialing") reason = "whop_free_trial";
   else if (membership && membershipKind !== "pack") reason = "whop_membership";
   else if (credits > 0 || owned.length > 0) reason = "pack_only";
@@ -42,6 +47,7 @@ async function buildLookup(email) {
   return {
     email,
     hasAccess,
+    blocked,
     reason,
     redis: redisRecord
       ? {

@@ -315,6 +315,10 @@ export async function redisGetOwnedPrompts(normalizedEmail) {
 // Spends one credit on one prompt. Returns what happened so the caller can tell
 // "already yours" (no credit spent) from "no credit left" (nothing to spend).
 export async function redisClaimPrompt(normalizedEmail, file) {
+  // Checked here rather than only in the handler: this is the one function that
+  // turns a credit into a prompt, so a block cannot be spent around.
+  if (await redisIsBlocked(normalizedEmail)) return { ok: false, reason: "blocked", owned: [] };
+
   const owned = await redisGetOwnedPrompts(normalizedEmail);
   if (owned.includes(file)) return { ok: true, alreadyOwned: true, owned };
 
@@ -335,6 +339,7 @@ export async function redisClaimPrompt(normalizedEmail, file) {
 export async function customerOwnsPrompt(email, file) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail || !isSafePromptFile(file)) return false;
+  if (await redisIsBlocked(normalizedEmail)) return false;
   return (await redisGetOwnedPrompts(normalizedEmail)).includes(file);
 }
 
@@ -345,6 +350,156 @@ export async function redisClearAccess(normalizedEmail) {
   } catch {
     // Redis unavailable — nothing to clear.
   }
+}
+
+// ---------------------------------------------------------------------------
+// Blocked emails.
+//
+// Stronger than clearing the access record, and for a different problem.
+// redisClearAccess only deletes what the webhook wrote; a live Whop membership
+// re-grants itself through the fallback in customerHasWhopAccess the next time
+// that email is checked. A block is consulted BEFORE either source, so it holds
+// whatever Whop says — a chargeback, a shared login, an account that should
+// never have got in.
+//
+// One sorted set rather than a key per email: the check is a single ZSCORE, and
+// the admin list wants them ordered by when they were blocked.
+// ---------------------------------------------------------------------------
+const BLOCKED_KEY = "blocked";
+
+export async function redisIsBlocked(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return false;
+  try {
+    const redis = Redis.fromEnv();
+    return (await redis.zscore(BLOCKED_KEY, normalizedEmail)) !== null;
+  } catch {
+    // Fails OPEN, on purpose. A blocklist that cannot be read must not lock out
+    // every paying customer — the same call the rest of this file makes, where
+    // an unreachable Redis reads as "no record" rather than an error. A handful
+    // of blocked people getting through a Redis outage is the lesser problem.
+    return false;
+  }
+}
+
+export async function redisBlockEmail(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return false;
+  const redis = Redis.fromEnv();
+  await redis.zadd(BLOCKED_KEY, { score: Date.now(), member: normalizedEmail });
+  return true;
+}
+
+export async function redisUnblockEmail(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return false;
+  const redis = Redis.fromEnv();
+  await redis.zrem(BLOCKED_KEY, normalizedEmail);
+  return true;
+}
+
+export async function redisListBlocked(limit = 500) {
+  try {
+    const redis = Redis.fromEnv();
+    const entries = await redis.zrange(BLOCKED_KEY, 0, limit - 1, { rev: true, withScores: true });
+    const list = [];
+    for (let i = 0; i < entries.length; i += 2) {
+      const at = Number(entries[i + 1]);
+      list.push({ email: String(entries[i]), blockedAt: Number.isFinite(at) ? new Date(at).toISOString() : null });
+    }
+    return list;
+  } catch {
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Admin overview: every email with something on record.
+//
+// Scans the keyspace rather than reading an index. Every grant written before
+// today predates any index we could add, so an index would show a partial list
+// and quietly look complete — worse than a scan that is simply slower. At this
+// scale one bounded pass costs a few round trips.
+// ---------------------------------------------------------------------------
+async function scanKeys(redis, match, cap) {
+  const keys = [];
+  let cursor = "0";
+  // Page cap as well as a key cap: SCAN gives no guarantee about how much
+  // ground a single call covers, and a cursor that never comes back to "0"
+  // must not spin here.
+  for (let page = 0; page < 40; page++) {
+    const [next, batch] = await redis.scan(cursor, { match, count: 500 });
+    keys.push(...batch);
+    cursor = String(next);
+    if (cursor === "0" || keys.length >= cap) break;
+  }
+  return keys.slice(0, cap);
+}
+
+export async function redisListAllAccess(cap = 1000) {
+  const redis = Redis.fromEnv();
+  const [accessKeys, creditKeys, promptKeys, blocked] = await Promise.all([
+    scanKeys(redis, "access:*", cap),
+    scanKeys(redis, "credits:*", cap),
+    scanKeys(redis, "prompts:*", cap),
+    redisListBlocked(cap),
+  ]);
+
+  const rows = new Map();
+  const row = (email) => {
+    if (!rows.has(email)) {
+      rows.set(email, { email, fullAccess: false, plan: null, kind: null, type: null, grantedAt: null, credits: 0, owned: 0, blocked: false });
+    }
+    return rows.get(email);
+  };
+
+  const parse = (value) => {
+    if (!value) return null;
+    if (typeof value !== "string") return value;
+    try { return JSON.parse(value); } catch { return null; }
+  };
+
+  if (accessKeys.length) {
+    const values = await redis.mget(...accessKeys);
+    accessKeys.forEach((key, i) => {
+      const entry = row(key.slice("access:".length));
+      const record = parse(values[i]) || {};
+      entry.fullAccess = true;
+      entry.plan = record.plan || null;
+      entry.kind = record.kind || null;
+      entry.type = record.type || null;
+      entry.grantedAt = record.grantedAt || null;
+    });
+  }
+
+  if (creditKeys.length) {
+    const values = await redis.mget(...creditKeys);
+    creditKeys.forEach((key, i) => {
+      const count = Number(values[i]);
+      if (Number.isFinite(count) && count > 0) row(key.slice("credits:".length)).credits = Math.floor(count);
+    });
+  }
+
+  if (promptKeys.length) {
+    const values = await redis.mget(...promptKeys);
+    promptKeys.forEach((key, i) => {
+      const list = parse(values[i]);
+      if (Array.isArray(list) && list.length) row(key.slice("prompts:".length)).owned = list.length;
+    });
+  }
+
+  // A blocked email may have nothing else on record — blocked before it ever
+  // bought, or blocked and then cleared — and still has to appear in the list,
+  // or unblocking it from here would be impossible.
+  for (const { email } of blocked) row(email).blocked = true;
+
+  // Full access first, then the biggest pack holders, then most recent. The
+  // list is read to find someone, and those are the rows worth finding.
+  return [...rows.values()].sort((a, b) => {
+    if (a.fullAccess !== b.fullAccess) return a.fullAccess ? -1 : 1;
+    if (a.credits + a.owned !== b.credits + b.owned) return b.credits + b.owned - (a.credits + a.owned);
+    return String(b.grantedAt || "").localeCompare(String(a.grantedAt || ""));
+  });
 }
 
 // The company id is not a secret (it is the same one Whop puts in public
@@ -399,6 +554,10 @@ export async function customerHasWhopAccess(email) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return false;
 
+  // Before either source below, which is the whole point of a block: clearing
+  // the access record alone is undone by the Whop fallback further down.
+  if (await redisIsBlocked(normalizedEmail)) return false;
+
   // Fast path: the grant written by the Whop webhook at purchase. Never deleted
   // here, so a Whop API hiccup can't lock out paying customers.
   if (await redisGetAccess(normalizedEmail)) return true;
@@ -429,6 +588,9 @@ export async function customerHasWhopAccess(email) {
 export async function syncPackCreditsFromWhop(email) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail || !whopConfigured()) return 0;
+  // Same reasoning as customerHasWhopAccess: this reads Whop directly, so
+  // without the check a blocked email would be handed credits from there.
+  if (await redisIsBlocked(normalizedEmail)) return 0;
 
   let membership = null;
   try {

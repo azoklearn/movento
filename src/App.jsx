@@ -3365,11 +3365,7 @@ function AdminLeadsPage() {
   // the same email) fires. Same shape as the subscription page's cancel flow.
   const [revoke, setRevoke] = useState({ confirming: false, loading: false, error: "" });
 
-  async function runLookup(e) {
-    e.preventDefault();
-    const value = lookupEmail.trim();
-    if (!value) return;
-    setRevoke({ confirming: false, loading: false, error: "" });
+  async function fetchLookup(value) {
     setLookup({ loading: true, error: "", data: null });
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin-lookup?email=${encodeURIComponent(value)}`, {
@@ -3385,6 +3381,14 @@ function AdminLeadsPage() {
     } catch (error) {
       setLookup({ loading: false, error: error.message, data: null });
     }
+  }
+
+  async function runLookup(e) {
+    e.preventDefault();
+    const value = lookupEmail.trim();
+    if (!value) return;
+    setRevoke({ confirming: false, loading: false, error: "" });
+    await fetchLookup(value);
   }
 
   async function runRevoke() {
@@ -3409,12 +3413,59 @@ function AdminLeadsPage() {
   }
 
   const LOOKUP_REASONS = {
+    blocked: { label: "Bloqué — l'accès est refusé quoi que dise Whop", tone: "text-red-300" },
     redis_grant: { label: "Accès accordé via le webhook Whop", tone: "text-emerald-300" },
     whop_free_trial: { label: "Essai gratuit Whop en cours — pas encore facturé", tone: "text-amber-300" },
     whop_membership: { label: "Adhésion Whop active (achat ou ajout manuel)", tone: "text-emerald-300" },
     pack_only: { label: "A acheté le pack de prompts, pas l'accès complet", tone: "text-white/70" },
     none: { label: "Aucun accès trouvé", tone: "text-white/40" },
   };
+
+  // The full access list, and the block switch that goes with it. Blocking is
+  // the durable one: revoking above only deletes our record, which a live Whop
+  // membership rewrites on the next check.
+  const [access, setAccess] = useState({ loading: false, error: "", rows: [], blocked: [], loaded: false });
+  const [accessQuery, setAccessQuery] = useState("");
+  const [busyEmail, setBusyEmail] = useState("");
+  const [showAccess, setShowAccess] = useState(false);
+
+  async function callAccess(method, body) {
+    const response = await fetch(`${API_BASE_URL}/api/admin-access`, {
+      method,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 401) throw new Error("Token refusé.");
+    if (!response.ok) throw new Error(data.error || "Lecture impossible.");
+    return data;
+  }
+
+  async function loadAccess() {
+    setAccess((a) => ({ ...a, loading: true, error: "" }));
+    try {
+      const data = await callAccess("GET");
+      setAccess({ loading: false, error: "", rows: data.rows || [], blocked: data.blocked || [], loaded: true });
+    } catch (error) {
+      setAccess((a) => ({ ...a, loading: false, error: error.message }));
+    }
+  }
+
+  async function toggleBlock(email, blocked) {
+    setBusyEmail(email);
+    try {
+      const data = await callAccess("POST", { email, action: blocked ? "unblock" : "block" });
+      setAccess({ loading: false, error: "", rows: data.rows || [], blocked: data.blocked || [], loaded: true });
+      // Keep the single-email panel above honest if it is showing this address.
+      // Re-read it rather than patching the fields by hand: unblocking restores
+      // whatever access was underneath, and only the server knows what that is.
+      if (lookup.data?.email === email) await fetchLookup(email);
+    } catch (error) {
+      setAccess((a) => ({ ...a, error: error.message }));
+    } finally {
+      setBusyEmail("");
+    }
+  }
 
   useEffect(() => {
     if (!token) return undefined;
@@ -3589,6 +3640,25 @@ function AdminLeadsPage() {
 
               {lookup.data.revoked && <p className="font-semibold text-emerald-300">Accès retiré.</p>}
 
+              {/* The durable one. Offered whatever the records say — an email
+                  with nothing on file can still be blocked ahead of time, and a
+                  blocked one always needs a way back. */}
+              <div className="border-t border-white/[0.07] pt-3">
+                <button
+                  type="button"
+                  onClick={() => toggleBlock(lookup.data.email, lookup.data.blocked)}
+                  disabled={busyEmail === lookup.data.email}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${lookup.data.blocked ? "border border-white/15 bg-[#0A0A0B] text-white/70 hover:text-[#EDE9E0]" : "bg-red-500 text-white hover:bg-red-400"}`}
+                >
+                  {busyEmail === lookup.data.email ? "…" : lookup.data.blocked ? "Débloquer" : "Bloquer définitivement"}
+                </button>
+                <p className="mt-2 text-xs text-white/40">
+                  {lookup.data.blocked
+                    ? "Débloquer rend l'accès que cet email avait avant le blocage, s'il en avait un."
+                    : "Bloquer refuse l'accès avant même de consulter Whop — contrairement au retrait ci-dessous, une adhésion active ne le contourne pas."}
+                </p>
+              </div>
+
               {/* Deletes only our own record — never touches Whop. A live Whop
                   membership re-grants itself through the fallback this same
                   endpoint reads, the next time that email is checked, so this
@@ -3622,6 +3692,76 @@ function AdminLeadsPage() {
             </div>
           )}
         </form>
+
+        {/* Behind a toggle rather than always open: it scans the keyspace, so
+            it is the one thing on this page worth asking for explicitly instead
+            of running beside a list that refreshes every ten seconds. */}
+        <div className="mt-6 rounded-2xl border border-white/10 bg-[#121214] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">
+              Tous les accès{access.loaded ? ` · ${access.rows.length}` : ""}
+              {access.blocked.length ? ` · ${access.blocked.length} bloqué${access.blocked.length > 1 ? "s" : ""}` : ""}
+            </p>
+            <button
+              type="button"
+              onClick={() => { setShowAccess((v) => !v); if (!access.loaded) loadAccess(); }}
+              className="rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:text-[#EDE9E0]"
+            >
+              {showAccess ? "Masquer" : access.loaded ? "Afficher" : "Charger la liste"}
+            </button>
+          </div>
+
+          {showAccess && (
+            <div className="mt-4 border-t border-white/[0.07] pt-4">
+              {access.error && <p className="mb-3 text-sm text-red-300">{access.error}</p>}
+              {access.loading && <p className="text-sm text-white/40">Chargement…</p>}
+
+              {access.loaded && !access.loading && (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="search"
+                      value={accessQuery}
+                      onChange={(e) => setAccessQuery(e.target.value)}
+                      placeholder="Filtrer par email…"
+                      className="min-w-[200px] flex-1 rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2 text-sm outline-none transition focus:border-white/35"
+                    />
+                    <button type="button" onClick={loadAccess} className="rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:text-[#EDE9E0]">Actualiser</button>
+                  </div>
+
+                  {access.rows.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-white/40">Aucun accès enregistré.</p>
+                  ) : (
+                    <ul className="mt-3 divide-y divide-white/[0.07]">
+                      {access.rows
+                        .filter((r) => !accessQuery.trim() || r.email.toLowerCase().includes(accessQuery.trim().toLowerCase()))
+                        .map((r) => (
+                          <li key={r.email} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 py-3">
+                            <span className="min-w-0 flex-1">
+                              <button type="button" onClick={() => { setLookupEmail(r.email); fetchLookup(r.email); }} title="Voir le détail" className={`block max-w-full truncate text-left text-sm font-medium transition hover:text-white/70 ${r.blocked ? "text-red-300 line-through" : "text-[#EDE9E0]"}`}>{r.email}</button>
+                              <span className="block truncate text-xs text-white/40">
+                                {r.fullAccess ? `Accès complet${r.kind ? ` · ${r.kind}` : ""}${r.grantedAt ? ` · ${formatDate(r.grantedAt)}` : ""}` : "Pack"}
+                                {r.credits > 0 || r.owned > 0 ? ` · ${r.credits} crédit(s), ${r.owned} prompt(s)` : ""}
+                                {r.blocked ? " · bloqué" : ""}
+                              </span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => toggleBlock(r.email, r.blocked)}
+                              disabled={busyEmail === r.email}
+                              className={`flex-none rounded-full px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${r.blocked ? "border border-white/15 bg-[#0A0A0B] text-white/60 hover:text-[#EDE9E0]" : "border border-red-400/30 bg-red-400/[0.08] text-red-300 hover:bg-red-400/[0.16]"}`}
+                            >
+                              {busyEmail === r.email ? "…" : r.blocked ? "Débloquer" : "Bloquer"}
+                            </button>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#121214]">
           {state.leads.length === 0 && !state.loading ? (

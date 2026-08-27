@@ -1,4 +1,4 @@
-import { customerHasWhopAccess, methodNotAllowed, normalizeEmail, redisGetOwnedPrompts, redisGetPromptCredits, syncPackCreditsFromWhop } from "./_shared.js";
+import { customerHasWhopAccess, methodNotAllowed, normalizeEmail, redisGetOwnedPrompts, redisGetPromptCredits, redisIsBlocked, syncPackCreditsFromWhop } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -9,6 +9,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    // customerHasWhopAccess already refuses a blocked email, but the pack lists
+    // below are read straight from Redis. Without this they would still show
+    // credits, send the visitor to /choose, and only fail at the claim — so a
+    // blocked email is answered as if it had never bought anything.
+    if (await redisIsBlocked(email)) return res.json({ hasAccess: false, owned: [], credits: 0 });
+
     const hasAccess = await customerHasWhopAccess(email);
     // Someone with full access owns everything, so the per-prompt lists are only
     // worth reading for everyone else. `credits` lets the gallery offer the
