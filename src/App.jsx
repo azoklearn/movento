@@ -2229,8 +2229,8 @@ function TikTokPage() {
   const mailSubject = encodeURIComponent(t("Movento TikTok programme", "Programme TikTok Movento"));
   const mailBody = encodeURIComponent(
     t(
-      "Hi,\n\nI would like to join the Movento TikTok programme.\n\nMy TikTok account: @\n\nThanks!",
-      "Bonjour,\n\nJe souhaite rejoindre le programme TikTok Movento.\n\nMon compte TikTok : @\n\nMerci !",
+      "Hi,\n\nI would like to join the Movento TikTok programme.\n\nMy TikTok account: @\nFormat I want: editing / face cam / both\n\nThanks!",
+      "Bonjour,\n\nJe souhaite rejoindre le programme TikTok Movento.\n\nMon compte TikTok : @\nFormat souhaité : montage / face cam / les deux\n\nMerci !",
     ),
   );
   const mailto = `mailto:${SUPPORT_EMAIL}?subject=${mailSubject}&body=${mailBody}`;
@@ -2244,12 +2244,18 @@ function TikTokPage() {
       ),
     },
     {
-      title: t("Get the videos", "Reçois les vidéos"),
-      body: t("We supply the footage. You have nothing to film and nothing to write.", "On te fournit les vidéos. Tu n'as rien à filmer, rien à écrire."),
+      title: t("Pick your format", "Choisis ton format"),
+      body: t(
+        "Editing footage we supply, or filming yourself talking about Movento. Your call.",
+        "Monter les vidéos qu'on te fournit, ou te filmer en parlant de Movento. C'est toi qui choisis.",
+      ),
     },
     {
-      title: t("Edit and post", "Édite et poste"),
-      body: t("You edit them your way and post them on your own TikTok account.", "Tu les montes à ta façon et tu les postes sur ton propre compte TikTok."),
+      title: t("Film or edit", "Filme ou monte"),
+      body: t(
+        "We send the footage and the talking points. You post on your own TikTok account.",
+        "On t'envoie les vidéos et les points à dire. Tu postes sur ton propre compte TikTok.",
+      ),
     },
     {
       title: t("Get paid on views", "Sois payé aux vues"),
@@ -2257,11 +2263,14 @@ function TikTokPage() {
     },
   ];
 
+  // True of BOTH formats. "Your face" and "your voice" used to be here, and had
+  // to come out: they are only true of the editing track, and sitting under a
+  // face cam section they read as a contradiction.
   const noNeed = [
-    t("Your face", "Ton visage"),
-    t("Your voice", "Ta voix"),
-    t("Any equipment", "Du matériel"),
     t("An existing audience", "Une audience déjà faite"),
+    t("Any equipment beyond a phone", "Du matériel au-delà d'un téléphone"),
+    t("Editing experience", "De l'expérience en montage"),
+    t("Any money upfront", "De l'argent à avancer"),
   ];
 
   return (
@@ -2290,8 +2299,8 @@ function TikTokPage() {
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55">
           {t(
-            "We supply the videos. You edit them and post them on your account. You are paid on the views they make.",
-            "On te fournit les vidéos. Tu les édites et tu les postes sur ton compte. Tu es payé sur les vues qu'elles font.",
+            "We are looking for creators to post Movento videos — footage we supply, or face cam where you talk about the product yourself. You are paid on the views either way.",
+            "On cherche des créateurs pour poster des vidéos Movento — celles qu'on te fournit, ou du face cam où tu parles toi-même du produit. Tu es payé aux vues dans les deux cas.",
           )}
         </p>
 
@@ -2313,6 +2322,66 @@ function TikTokPage() {
       </section>
 
       <section className="relative z-10 mx-auto max-w-5xl px-6 pb-16 lg:px-8">
+        <h2 className="text-center text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("Two ways to take part", "Deux façons de participer")}</h2>
+        <p className="mx-auto mt-3 max-w-lg text-center text-sm leading-6 text-white/55">
+          {t("Same rate on both. Pick the one you are comfortable with — or do both.", "Même rémunération pour les deux. Prends celui où tu es à l'aise — ou fais les deux.")}
+        </p>
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          {/* Face cam first: it is the one being recruited for now, and the one
+              that needs explaining. Editing already works and speaks for itself. */}
+          <div className="rounded-[24px] border border-white/20 bg-[#141417] p-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.9)] md:p-7">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EDE9E0] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#0A0A0B]">
+              <Icon name="chat" className="h-3 w-3" /> {t("We are recruiting", "On recrute")}
+            </span>
+            <h3 className="mt-4 text-xl font-bold tracking-tight text-[#EDE9E0]">{t("Face cam", "Face cam")}</h3>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              {t(
+                "You film yourself and talk about Movento: what it is, what you built with it, why it is worth it. Your face, your voice, your words.",
+                "Tu te filmes et tu parles de Movento : ce que c'est, ce que tu as créé avec, pourquoi ça vaut le coup. Ton visage, ta voix, tes mots.",
+              )}
+            </p>
+            <ul className="mt-5 space-y-2.5">
+              {[
+                t("You appear on camera and speak", "Tu apparais à l'écran et tu parles"),
+                t("We send you the points to cover — you say them your way", "On t'envoie les points à aborder — tu les dis à ta façon"),
+                t("A phone is enough, no studio needed", "Un téléphone suffit, pas besoin de studio"),
+                t("You show what you actually built with the prompts", "Tu montres ce que tu as réellement créé avec les prompts"),
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2.5 text-sm leading-6 text-white/70">
+                  <Icon name="check" className="mt-1 h-4 w-4 flex-none text-emerald-300" /> {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-[24px] border border-white/10 bg-[#121214] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/70">
+              <Icon name="layers" className="h-3 w-3" /> {t("Also available", "Toujours possible")}
+            </span>
+            <h3 className="mt-4 text-xl font-bold tracking-tight text-[#EDE9E0]">{t("Editing only", "Montage seulement")}</h3>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              {t(
+                "We supply the footage. You edit it your way and post it. You never appear and you are never heard.",
+                "On te fournit les vidéos. Tu les montes à ta façon et tu les postes. Tu n'apparais jamais et on ne t'entend jamais.",
+              )}
+            </p>
+            <ul className="mt-5 space-y-2.5">
+              {[
+                t("No face, no voice", "Ni visage, ni voix"),
+                t("Nothing to film and nothing to write", "Rien à filmer, rien à écrire"),
+                t("No equipment beyond your phone", "Pas de matériel au-delà de ton téléphone"),
+                t("No existing audience needed", "Pas besoin d'audience déjà faite"),
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2.5 text-sm leading-6 text-white/70">
+                  <Icon name="check" className="mt-1 h-4 w-4 flex-none text-white/40" /> {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-16 lg:px-8">
         <h2 className="text-center text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("How it works", "Comment ça marche")}</h2>
         <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, i) => (
@@ -2327,11 +2396,11 @@ function TikTokPage() {
 
       <section className="relative z-10 mx-auto max-w-5xl px-6 pb-16 lg:px-8">
         <div className="rounded-[28px] border border-white/10 bg-[#121214] p-7 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-9">
-          <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("What you do not need", "Ce dont tu n'as pas besoin")}</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0] md:text-3xl">{t("What neither format needs", "Ce qu'aucun des deux formats ne demande")}</h2>
           <p className="mt-3 max-w-xl text-sm leading-6 text-white/55">
             {t(
-              "You never appear and you are never heard. Editing and posting is the whole job.",
-              "Tu n'apparais jamais et on ne t'entend jamais. Monter et publier, c'est tout le travail.",
+              "Whichever one you pick, none of this is required to start.",
+              "Quel que soit le format que tu choisis, rien de tout ça n'est nécessaire pour commencer.",
             )}
           </p>
           <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -2349,8 +2418,25 @@ function TikTokPage() {
         <div className="mt-7 space-y-6">
           {[
             {
+              q: t("What is the face cam format exactly?", "C'est quoi exactement le format face cam ?"),
+              a: t(
+                "You film yourself talking about Movento — what it is, what you built with it, what it is worth. We send you the points to cover and you say them in your own words. A phone is enough.",
+                "Tu te filmes en parlant de Movento — ce que c'est, ce que tu as créé avec, ce que ça vaut. On t'envoie les points à aborder et tu les dis avec tes mots. Un téléphone suffit.",
+              ),
+            },
+            {
+              q: t("Do I have to show my face?", "Suis-je obligé de montrer mon visage ?"),
+              a: t(
+                "Only if you pick the face cam format. The editing format still exists and asks for neither your face nor your voice — same rate.",
+                "Uniquement si tu choisis le format face cam. Le format montage existe toujours et ne demande ni ton visage ni ta voix — même rémunération.",
+              ),
+            },
+            {
               q: t("Who provides the videos?", "Qui fournit les vidéos ?"),
-              a: t("We do. You receive the footage and you only handle the editing and the posting.", "Nous. Tu reçois les vidéos et tu t'occupes uniquement du montage et de la publication."),
+              a: t(
+                "We do, for the editing format — you only handle the editing and the posting. For face cam you film it yourself, and we send the points to cover.",
+                "Nous, pour le format montage — tu t'occupes uniquement du montage et de la publication. Pour le face cam, tu filmes toi-même et on t'envoie les points à aborder.",
+              ),
             },
             {
               q: t("Do I need an existing audience?", "Faut-il déjà avoir une audience ?"),
