@@ -555,6 +555,15 @@ const PROMO_PERCENT = 10;
 // actually credits the buyer — announcing three and crediting one is the one
 // failure mode that costs trust.
 const PROMPT_PACK_ENABLED = false;
+
+// The "Voir le site en ligne" button in the prompt popup, which opens the built
+// demo (lovable.app, vercel.app…).
+//
+// OFF. Nothing is deleted: the `demo:` URL stays on every entry it was added
+// to, so the links survive and this is one word away from coming back. The
+// gallery's front block is still ordered by which prompts have one, which now
+// simply reads as a curation order.
+const SHOW_DEMO_LINKS = false;
 const PROMPT_PACK_SIZE = 3;
 const PROMPT_PACK_PRICE = 19.99;
 
@@ -1653,7 +1662,7 @@ export default function MoventoSite() {
                     {/* Deliberately not `link`, which REPLACES the copy action.
                         A demo is the finished site to look at before copying —
                         the prompt still has to end up on the clipboard. */}
-                    {previewItem.demo && (
+                    {SHOW_DEMO_LINKS && previewItem.demo && (
                       <a href={previewItem.demo} target="_blank" rel="noopener noreferrer" onClick={() => track("prompt_demo_opened", { prompt: previewItem.title, category: previewItem.category })} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/25 hover:text-[#EDE9E0]">
                         <Icon name="arrow" className="h-3 w-3 -rotate-45" /> {t("See the live site", "Voir le site en ligne")}
                       </a>
