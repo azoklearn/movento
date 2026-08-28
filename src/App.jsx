@@ -576,8 +576,9 @@ const PROMPT_PACK_PRICE = 19.99;
 const plans = [
   {
     id: "yearly",
-    // Back on sale beside lifetime.
-    hidden: false,
+    // Retired from the grid. Kept defined so existing yearly subscribers still
+    // resolve, and so bringing it back is one word.
+    hidden: true,
     name: t("Yearly", "Annuel"),
     price: eur(PRICE_YEARLY),
     period: t("/ yr", "/ an"),
@@ -1250,7 +1251,7 @@ async function copyTextToClipboard(text) {
 
 function runSelfTests() {
   console.assert(!validatePlanId("monthly"), "monthly is retired and should not be purchasable");
-  console.assert(validatePlanId("yearly"), "yearly is on sale again and must be purchasable");
+  console.assert(!validatePlanId("yearly"), "yearly is retired and should not be purchasable");
   console.assert(validatePlanId("lifetime"), "lifetime should be valid");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // Deliberately hidden from the plan grid, but still purchasable: the single
