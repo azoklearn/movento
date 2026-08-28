@@ -520,7 +520,7 @@ const FREE_PROMPT_FILES = new Set([]);
 // The three prices live here rather than inside the cards, because they refer
 // to each other: the annual card quotes the monthly one, and its headline is
 // the annual divided by twelve. Change a number here and every mention follows.
-const PRICE_LIFETIME = 89;
+const PRICE_LIFETIME = 31.99;
 // Struck-through anchor on the lifetime card and in the bottom banner. The
 // badge is computed from the pair, never typed, so it cannot claim a discount
 // the two numbers do not support.
@@ -542,12 +542,19 @@ const PROMO_PERCENT = 10;
 // prompt: the buyer pays once, then picks which prompts the purchase unlocks,
 // one at a time.
 //
-// The checkout link ships in api/_shared.js (Whop plan_duNdZcsNAOPSx), so the
-// option works as soon as this switch is on; WHOP_PACK_URL only overrides it.
-// PROMPT_PACK_SIZE must match the constant of the same name in api/_shared.js,
-// which is what actually credits the buyer — announcing three and crediting one
-// is the one failure mode that costs trust.
-const PROMPT_PACK_ENABLED = true;
+// RETIRED — no longer on sale, with lifetime dropped to a price the pack no
+// longer sits sensibly under. This switch only stops it being OFFERED: every
+// path that spends a credit already earned (the /choose screen, the "il te
+// reste N prompts" banner, the copy button) keys off promptCredits, not this,
+// so anyone holding an unspent pack keeps it. The API side is untouched on
+// purpose for the same reason.
+//
+// Turning it back on is one word. The checkout link ships in api/_shared.js
+// (Whop plan_duNdZcsNAOPSx); WHOP_PACK_URL only overrides it. PROMPT_PACK_SIZE
+// must match the constant of the same name in api/_shared.js, which is what
+// actually credits the buyer — announcing three and crediting one is the one
+// failure mode that costs trust.
+const PROMPT_PACK_ENABLED = false;
 const PROMPT_PACK_SIZE = 3;
 const PROMPT_PACK_PRICE = 19.99;
 
