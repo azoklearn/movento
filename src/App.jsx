@@ -522,7 +522,7 @@ const FREE_PROMPT_FILES = new Set([]);
 // The three prices live here rather than inside the cards, because they refer
 // to each other: the annual card quotes the monthly one, and its headline is
 // the annual divided by twelve. Change a number here and every mention follows.
-const PRICE_LIFETIME = 59.99;
+const PRICE_LIFETIME = 89;
 // Struck-through anchor on the lifetime card and in the bottom banner. The
 // badge is computed from the pair, never typed, so it cannot claim a discount
 // the two numbers do not support.
