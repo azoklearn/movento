@@ -522,7 +522,7 @@ const FREE_PROMPT_FILES = new Set([]);
 // The three prices live here rather than inside the cards, because they refer
 // to each other: the annual card quotes the monthly one, and its headline is
 // the annual divided by twelve. Change a number here and every mention follows.
-const PRICE_LIFETIME = 31.99;
+const PRICE_LIFETIME = 59.99;
 // Struck-through anchor on the lifetime card and in the bottom banner. The
 // badge is computed from the pair, never typed, so it cannot claim a discount
 // the two numbers do not support.
@@ -544,19 +544,21 @@ const PROMO_PERCENT = 10;
 // prompt: the buyer pays once, then picks which prompts the purchase unlocks,
 // one at a time.
 //
-// RETIRED — no longer on sale, with lifetime dropped to a price the pack no
-// longer sits sensibly under. This switch only stops it being OFFERED: every
-// path that spends a credit already earned (the /choose screen, the "il te
-// reste N prompts" banner, the copy button) keys off promptCredits, not this,
-// so anyone holding an unspent pack keeps it. The API side is untouched on
-// purpose for the same reason.
+// ON SALE, in the two places it has always been offered: the prompt popup,
+// beside the prompt the visitor was trying to copy, and the paywall trip. Never
+// the plan grid — a small price next to the catalogue price reads as a cheaper
+// catalogue.
 //
-// Turning it back on is one word. The checkout link ships in api/_shared.js
-// (Whop plan_duNdZcsNAOPSx); WHOP_PACK_URL only overrides it. PROMPT_PACK_SIZE
-// must match the constant of the same name in api/_shared.js, which is what
-// actually credits the buyer — announcing three and crediting one is the one
-// failure mode that costs trust.
-const PROMPT_PACK_ENABLED = false;
+// This switch only controls where it is OFFERED. Every path that spends a
+// credit already bought (the /choose screen, the "il te reste N prompts"
+// banner, the copy button) keys off promptCredits instead, so turning it off
+// never strands a buyer mid-pack.
+//
+// The checkout link ships in api/_shared.js (Whop plan_duNdZcsNAOPSx);
+// WHOP_PACK_URL only overrides it. PROMPT_PACK_SIZE must match the constant of
+// the same name in api/_shared.js, which is what actually credits the buyer —
+// announcing three and crediting one is the one failure mode that costs trust.
+const PROMPT_PACK_ENABLED = true;
 
 // The "Voir le site en ligne" button in the prompt popup, which opens the built
 // demo (lovable.app, vercel.app…).
