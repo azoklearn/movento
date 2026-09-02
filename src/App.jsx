@@ -95,6 +95,7 @@ const prompts = [
   // Front of the gallery, hand-picked: the newest work first, then motion
   // previews, one per category, so the first screen shows range rather than
   // repetition.
+  { title: "Cyber Ronin", category: "Landing Page", type: "Hero", file: "Cyber_Ronin_Spotlight_Hero.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/cyber_ronin_ai_robotics.mp4", tags: ["Cyberpunk", "Spotlight", "Video"], gradient: "from-amber-200 via-orange-700 to-[#1a0e06]" },
   { title: "SpaceEdu Planet Switcher", category: "Landing Page", type: "Hero", file: "SpaceEdu_Planet_Switcher_Hero.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260827_214822_d89eea51-6973-4221-bfdb-85e06b20c25e.png&w=1280&q=85", tags: ["Space", "Interactive", "Video"], gradient: "from-cyan-200 via-blue-800 to-[#04101f]" },
   { title: "Ducati Superleggera V4", category: "Landing Page", type: "Landing", file: "Ducati_Superleggera_Scroll_Scrub.md", preview: "https://res.cloudinary.com/dk2kai0as/video/upload/vc_h264:baseline:3.1,w_960,q_auto,ac_none/v1787947016/0828_zq63qm.mp4", tags: ["Scroll Scrub", "Cinematic", "Video"], gradient: "from-red-300 via-red-800 to-black" },
   { title: "Fastshot Composer", category: "SaaS", type: "Hero", file: "Fastshot_Composer_Hero.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260826_215009_c2ee8663-5c02-4c13-ad50-e578b76c7fb6.png&w=1920&q=85", tags: ["Composer", "Glassmorphism", "Video"], gradient: "from-orange-200 via-slate-600 to-[#0a0d12]" },
@@ -338,6 +339,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Cyber_Ronin_Spotlight_Hero.md",
   "SpaceEdu_Planet_Switcher_Hero.md",
   "Ducati_Superleggera_Scroll_Scrub.md",
   "Fastshot_Composer_Hero.md",
