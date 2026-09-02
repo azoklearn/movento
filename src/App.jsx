@@ -548,21 +548,20 @@ const PROMO_PERCENT = 10;
 // prompt: the buyer pays once, then picks which prompts the purchase unlocks,
 // one at a time.
 //
-// ON SALE, in the two places it has always been offered: the prompt popup,
-// beside the prompt the visitor was trying to copy, and the paywall trip. Never
-// the plan grid — a small price next to the catalogue price reads as a cheaper
-// catalogue.
+// OFF — not on sale anywhere: not the plan grid, not the prompt popup, not the
+// paywall trip.
 //
 // This switch only controls where it is OFFERED. Every path that spends a
 // credit already bought (the /choose screen, the "il te reste N prompts"
-// banner, the copy button) keys off promptCredits instead, so turning it off
-// never strands a buyer mid-pack.
+// banner, the copy button) keys off promptCredits instead, and the API side is
+// untouched, so anyone holding an unspent pack keeps it and can still claim.
 //
-// The checkout link ships in api/_shared.js (Whop plan_duNdZcsNAOPSx);
-// WHOP_PACK_URL only overrides it. PROMPT_PACK_SIZE must match the constant of
-// the same name in api/_shared.js, which is what actually credits the buyer —
-// announcing three and crediting one is the one failure mode that costs trust.
-const PROMPT_PACK_ENABLED = true;
+// Turning it back on is one word. The checkout link ships in api/_shared.js
+// (Whop plan_duNdZcsNAOPSx); WHOP_PACK_URL only overrides it. PROMPT_PACK_SIZE
+// must match the constant of the same name in api/_shared.js, which is what
+// actually credits the buyer — announcing three and crediting one is the one
+// failure mode that costs trust.
+const PROMPT_PACK_ENABLED = false;
 
 // The "Voir le site en ligne" button in the prompt popup, which opens the built
 // demo (lovable.app, vercel.app…).
@@ -640,10 +639,10 @@ const plans = [
   },
   {
     id: "monthly",
-    // Retired from the grid alongside the yearly plan: the offer is a single
-    // lifetime payment now. Kept defined so existing monthly subscribers still
-    // resolve, and so bringing it back is one word.
-    hidden: true,
+    // Back on sale beside lifetime: a subscription for anyone not ready to pay
+    // once. Keep in step with RETIRED_PLANS in api/_shared.js — a card here
+    // whose plan is retired there is a button the checkout refuses.
+    hidden: false,
     name: t("Monthly", "Mensuel"),
     price: eur(PRICE_MONTHLY),
     period: t("/ mo", "/ mois"),
@@ -945,7 +944,7 @@ function Reassurance({ className = "" }) {
     <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-white/40 ${className}`}>
       <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
       <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-500" /> {t("Instant access", "Accès immédiat")}</span>
-      <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-500" /> {t("No subscription", "Sans abonnement")}</span>
+      <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-500" /> {t("New prompts included", "Nouveaux prompts inclus")}</span>
     </div>
   );
 }
@@ -1257,7 +1256,7 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(!validatePlanId("monthly"), "monthly is retired and should not be purchasable");
+  console.assert(validatePlanId("monthly"), "monthly is on sale again and must be purchasable");
   console.assert(!validatePlanId("yearly"), "yearly is retired and should not be purchasable");
   console.assert(validatePlanId("lifetime"), "lifetime should be valid");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
@@ -1990,7 +1989,7 @@ export default function MoventoSite() {
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">{isSinglePlan ? t("One payment, forever", "Un paiement, à vie") : t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue, or just the prompts you need. No subscription either way.", "Tout le catalogue, ou seulement les prompts qu'il te faut. Sans abonnement dans les deux cas.")}</p>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue either way. One payment, or a subscription you stop whenever you like.", "Le catalogue entier dans les deux cas. Un paiement unique, ou un abonnement que tu arrêtes quand tu veux.")}</p>
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
           <div className="mt-5 flex items-center justify-center gap-2">
@@ -3334,7 +3333,7 @@ function PricingPage() {
             {isSinglePlan ? t("One payment,", "Un paiement,") : t("Choose your", "Choisissez votre")}{" "}
             <span className="text-white/45">{isSinglePlan ? t("forever", "à vie") : t("plan", "offre")}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue, or just the prompts you need. No subscription either way.", "Tout le catalogue, ou seulement les prompts qu'il te faut. Sans abonnement dans les deux cas.")}</p>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue either way. One payment, or a subscription you stop whenever you like.", "Le catalogue entier dans les deux cas. Un paiement unique, ou un abonnement que tu arrêtes quand tu veux.")}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
