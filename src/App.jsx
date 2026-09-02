@@ -680,6 +680,7 @@ const isSinglePlan = visiblePlans.length === 1;
 // grid.
 const packPlan = plans.find((plan) => plan.id === "pack");
 const lifetimePlan = plans.find((plan) => plan.id === "lifetime" && !plan.hidden);
+const monthlyPlan = plans.find((plan) => plan.id === "monthly" && !plan.hidden);
 
 // Pricing card used across every purchase surface (paywall modal, pricing
 // section, /pricing page). Laid out in four quiet bands — identity, price,
@@ -1688,15 +1689,12 @@ export default function MoventoSite() {
                     {copiedCard === previewItem.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : hasPremiumAccess || ownedPrompts.has(previewItem.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : promptCredits > 0 ? <><Icon name="gift" className="h-4 w-4" /> {t("Choose it", "Le choisir")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
                   </button>
                 </div>
-                {/* The cheaper way in, offered where the visitor is holding the
-                    one prompt they want. Only for a locked prompt: someone with
-                    full access, a free prompt, a prompt they already bought or
-                    an unspent purchase all have nothing to buy here. */}
                 {/* Two ways in, in the order the visitor should weigh them:
-                    everything first, the cheap way second. Same gate as before —
-                    full access, a free prompt, a prompt already bought and an
-                    unspent purchase all have nothing to sell here. */}
-                {!hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (lifetimePlan || (PROMPT_PACK_ENABLED && packPlan)) && (
+                    the one payment first, the subscription second. Only for a
+                    locked prompt: someone with full access, a free prompt, a
+                    prompt already bought or an unspent purchase all have
+                    nothing to buy here. */}
+                {!hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (lifetimePlan || monthlyPlan || (PROMPT_PACK_ENABLED && packPlan)) && (
                   <div className="space-y-2.5 border-t border-white/[0.07] px-5 pb-4 pt-4">
                     {lifetimePlan && (
                       <button
@@ -1717,6 +1715,27 @@ export default function MoventoSite() {
                         <span className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0A0A0B]">
                           {eur(PRICE_LIFETIME)}
                           <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                        </span>
+                      </button>
+                    )}
+                    {monthlyPlan && (
+                      <button
+                        onClick={() => { track("monthly_offer_clicked", { prompt: previewItem.title, category: previewItem.category, source: "prompt_popup" }); startCheckout(monthlyPlan); }}
+                        disabled={Boolean(checkoutPlan)}
+                        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-left transition hover:border-white/25 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#EDE9E0]">{t("Monthly access", "Accès mensuel")}</span>
+                            <span className="flex-none rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/45">{t("Flexible", "Flexible")}</span>
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-5 text-white/45">{t("The same full catalogue. Stop whenever you like.", "Le même catalogue complet. Tu arrêtes quand tu veux.")}</span>
+                        </span>
+                        {/* The period is part of the price here, not a detail:
+                            21,99€ sitting alone next to 89€ reads as the cheaper
+                            one-off rather than as a recurring charge. */}
+                        <span className="flex-none rounded-full bg-[#EDE9E0] px-4 py-2 text-sm font-bold text-[#0A0A0B]">
+                          {eur(PRICE_MONTHLY)}<span className="font-semibold text-[#0A0A0B]/55">{t("/mo", "/mois")}</span>
                         </span>
                       </button>
                     )}
