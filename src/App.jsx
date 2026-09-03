@@ -733,40 +733,38 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
       </button>
 
-      {/* Every feature, not the first four: the lifetime plan lists five and the
-          fifth used to be dropped silently. */}
-      <ul className="mt-6 space-y-3 sm:mt-8 sm:space-y-3.5 lg:mt-4 lg:grid lg:grid-cols-2 lg:gap-x-5 lg:gap-y-2 lg:space-y-0">
+      {/* One flowing list instead of a checklist plus one or two separate boxed
+          callouts underneath: fewer dividers, fewer distinct shapes on the
+          card, and no more empty void under the shorter plan when the grid
+          stretches every card to the tallest one's height. Perk and bonus
+          keep their colour — that is what still marks them as the reason to
+          pick this plan over the other — but they are rows in the same list,
+          spanning both columns at lg instead of a two-column short phrase. */}
+      <ul className="mt-6 space-y-3 sm:mt-8 sm:space-y-3.5 lg:mt-4 lg:grid lg:grid-cols-2 lg:gap-x-5 lg:gap-y-3 lg:space-y-0">
         {plan.features.map((feat) => (
           <li key={feat} className="flex items-start gap-2 text-[12.5px] leading-5 text-white/65 sm:gap-3 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5">
             <Icon name="check" className="mt-1 h-4 w-4 flex-none text-white/70" /> {feat}
           </li>
         ))}
+        {plan.perk && (
+          <li className="flex items-start gap-2 sm:gap-3 lg:col-span-2">
+            <Icon name="chat" className="mt-1 h-4 w-4 flex-none text-emerald-300" />
+            <span className="min-w-0">
+              <span className="block text-[12.5px] font-semibold leading-5 text-emerald-200 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5">{plan.perk}</span>
+              {plan.perkDesc && <span className="mt-0.5 block text-[12px] leading-5 text-white/45 sm:text-[13px] sm:leading-6 lg:text-xs lg:leading-[1.35]">{plan.perkDesc}</span>}
+            </span>
+          </li>
+        )}
+        {plan.bonus && (
+          <li className="flex items-start gap-2 sm:gap-3 lg:col-span-2">
+            <Icon name="gift" className="mt-1 h-4 w-4 flex-none text-amber-300" />
+            <span className="min-w-0">
+              <span className="block text-[12.5px] font-semibold leading-5 text-amber-200 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5">{plan.bonus}</span>
+              {plan.bonusDesc && <span className="mt-0.5 block text-[12px] leading-5 text-white/45 sm:text-[13px] sm:leading-6 lg:text-xs lg:leading-[1.35]">{plan.bonusDesc}</span>}
+            </span>
+          </li>
+        )}
       </ul>
-      {/* Both extras keep their colour — they are what separates the plans —
-          but they now read as continuations of the feature list rather than as
-          two boxes stacked at the bottom. */}
-      {plan.perk && (
-        <div className="mt-6 border-t border-dashed border-white/[0.14] pt-5 sm:mt-7 sm:pt-6 lg:mt-3 lg:pt-3">
-          <div className="flex items-start gap-3">
-            <Icon name="chat" className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-emerald-200">{plan.perk}</p>
-              {plan.perkDesc && <p className="mt-1 text-[13px] leading-6 lg:text-xs lg:leading-[1.35] text-emerald-100/60">{plan.perkDesc}</p>}
-            </div>
-          </div>
-        </div>
-      )}
-      {plan.bonus && (
-        <div className="mt-6 border-t border-dashed border-white/[0.14] pt-5 sm:mt-7 sm:pt-6 lg:mt-2.5 lg:border-t-0 lg:pt-0">
-          <div className="flex items-start gap-3">
-            <Icon name="gift" className="mt-0.5 h-4 w-4 flex-none text-amber-300" />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-amber-200">{plan.bonus}</p>
-              {plan.bonusDesc && <p className="mt-1 text-[13px] leading-6 lg:text-xs lg:leading-[1.35] text-amber-100/60">{plan.bonusDesc}</p>}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -2020,7 +2018,7 @@ export default function MoventoSite() {
           </div>
         </div>
 
-        <div className={`mx-auto mt-12 grid gap-3 sm:gap-5 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
+        <div className={`mx-auto mt-12 grid items-start gap-3 sm:gap-5 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
           {visiblePlans.map((plan) => (
             <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={startCheckout} />
           ))}
@@ -3372,7 +3370,7 @@ function PricingPage() {
         {/* One column, centred: the offer is the page. Proof lives further down
             so nothing competes with the cards at the moment of the decision. */}
         <div className="mt-14 lg:mt-4">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 gap-3 sm:gap-5 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 items-start gap-3 sm:gap-5 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
             {visiblePlans.map((plan) => (
               <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
             ))}
