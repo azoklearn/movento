@@ -1902,27 +1902,20 @@ export default function MoventoSite() {
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pt-12 pb-4 text-center lg:px-8 lg:pt-20">
         <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
-          {t("AI can code. It", "L'IA sait coder.")}
+          {t("Premium websites,", "Des sites premium,")}
           {/* Narrow screens otherwise strand the first word of the highlighted
               phrase at the end of the previous line. */}
           <br className="sm:hidden" />{" "}
-          <Highlight>{t("cannot design.", "Pas designer.")}</Highlight>
+          <Highlight>{t("one prompt away", "en un seul prompt")}</Highlight>
         </motion.h1>
         <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55 md:text-lg">
-          {t(
-            "Ask an AI for a website and you get the same one every time. Our prompts spell out the design instead — every font, colour, spacing and animation — so Lovable, v0, Bolt, Cursor or Claude builds something that looks designed, not generated.",
-            "Demande un site à une IA et tu obtiens toujours le même. Nos prompts décrivent le design à sa place — chaque police, couleur, espacement et animation — pour que Lovable, v0, Bolt, Cursor ou Claude sorte un site qui a l'air conçu, pas généré.",
-          )}
+          {t("Copy a prompt, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify, and ship a modern site in minutes. No code.", "Copie un prompt, colle-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify, et obtiens un site moderne en quelques minutes. Sans coder.")}
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.19 }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-6 py-3 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
           <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("See pricing", "Voir les tarifs")}</a>
         </motion.div>
       </section>
-
-      {/* Before the catalogue on purpose: the gallery only reads as valuable
-          once the visitor has been reminded what they get without it. */}
-      <DesignGap />
 
       <section id="prompts" className="relative z-10 mx-auto max-w-[1560px] px-6 pt-10 pb-24 lg:px-8 lg:pt-14">
         {hasPremiumAccess ? (
@@ -3440,84 +3433,6 @@ function formatDate(value) {
   const date = typeof value === "number" ? new Date(value * 1000) : new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", { year: "numeric", month: "long", day: "numeric" });
-}
-
-// The argument the catalogue rests on, placed between the hero and the gallery:
-// the visitor has almost certainly generated a site with an AI already and been
-// disappointed by it, and naming that out loud is what makes the prompts read as
-// a fix rather than as a pile of text files.
-//
-// Every claim in the right-hand column is a claim about what the prompt FILES
-// actually contain — exact values, described animations, named fonts — because
-// that is the part a bare "make me a landing page" cannot carry. Nothing here
-// promises a result we cannot point at; the gallery underneath is the evidence.
-function DesignGap() {
-  const problem = [
-    t("The same centred hero, every single time", "Le même hero centré, à chaque fois"),
-    t("A purple gradient nobody asked for", "Un dégradé violet que personne n'a demandé"),
-    t("Default system fonts, no hierarchy", "Des polices système, aucune hiérarchie"),
-    t("No motion, or motion that feels canned", "Zéro animation, ou des animations toutes faites"),
-    t("It works — and it screams \"made by AI\"", "Ça fonctionne — et ça crie « fait par une IA »"),
-  ];
-  const solution = [
-    t("Layouts a model never proposes on its own", "Des mises en page qu'un modèle ne propose jamais seul"),
-    t("Exact values: fonts, sizes, colours, radii", "Les valeurs exactes : polices, tailles, couleurs, rayons"),
-    t("Animations described down to the delay and the curve", "Les animations décrites jusqu'au délai et à la courbe"),
-    t("Responsive written in, not hoped for", "Le responsive écrit, pas espéré"),
-    t("A result that looks like a studio made it", "Un rendu qu'on croirait sorti d'un studio"),
-  ];
-
-  return (
-    <section className="relative z-10 mx-auto max-w-6xl px-6 pb-16 pt-6 lg:px-8 lg:pb-20">
-      <div className="mx-auto max-w-2xl text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
-          {t("The design gap", "Le problème du design IA")}
-        </span>
-        <h2 className="mt-5 text-3xl font-bold tracking-[-0.035em] text-[#EDE9E0] md:text-5xl">
-          {t("Why every AI site looks the same", "Pourquoi tous les sites IA se ressemblent")}
-        </h2>
-        <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">
-          {t(
-            "It is not the code that fails. A model writes clean code from a one-line brief — and then invents a design nobody chose.",
-            "Ce n'est pas le code qui coince. Un modèle écrit du code propre à partir d'une phrase — puis invente un design que personne n'a choisi.",
-          )}
-        </p>
-      </div>
-
-      <div className="mt-10 grid gap-4 md:grid-cols-2 md:gap-5">
-        <div className="rounded-[28px] border border-white/10 bg-[#101011] p-7 md:p-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/35">{t("A one-line prompt", "Un prompt en une ligne")}</p>
-          <p className="mt-3 text-lg font-semibold text-white/80">{t("\"Make me a landing page\"", "« Fais-moi une landing page »")}</p>
-          <ul className="mt-6 space-y-3">
-            {problem.map((item) => (
-              <li key={item} className="flex items-start gap-3 text-sm leading-6 text-white/45">
-                <Icon name="close" className="mt-0.5 h-4 w-4 flex-none text-white/25" /> {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="rounded-[28px] border border-white/25 bg-[#141417] p-7 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.9)] md:p-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">{t("A Movento prompt", "Un prompt Movento")}</p>
-          <p className="mt-3 text-lg font-semibold text-[#EDE9E0]">{t("Pages of design, written out", "Des pages de design, écrites noir sur blanc")}</p>
-          <ul className="mt-6 space-y-3">
-            {solution.map((item) => (
-              <li key={item} className="flex items-start gap-3 text-sm leading-6 text-white/75">
-                <Icon name="check" className="mt-0.5 h-4 w-4 flex-none text-emerald-300" /> {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <p className="mx-auto mt-8 max-w-xl text-center text-sm leading-6 text-white/45">
-        {t(
-          "Same tool, same model, same five minutes. The only thing that changes is what you paste in — and it is the difference between a page people close and a page that sells.",
-          "Le même outil, le même modèle, les mêmes cinq minutes. La seule chose qui change, c'est ce que tu colles — et c'est ce qui sépare une page qu'on ferme d'une page qui vend.",
-        )}
-      </p>
-    </section>
-  );
 }
 
 // Live view of the emails captured for the free prompts. Unlisted, gated by
