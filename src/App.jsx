@@ -3111,8 +3111,26 @@ function HeroDemo() {
 
 // Three steps, one visual each, one sentence each. This is the section a
 // first-time visitor needs before the catalogue means anything to them.
+// A real preview at thumbnail size: the clip or the still, whichever the card
+// has, over the wireframe so nothing is blank while it loads.
+function MediaTile({ item }) {
+  const [failed, setFailed] = useState(false);
+  const video = !failed && isVideoPreview(item.preview);
+  const image = !failed && isImagePreview(item.preview);
+  return (
+    <div className="absolute inset-0 bg-[#0B0B0D]">
+      <GeneratedPreview item={item} />
+      {video && <video src={item.preview} poster={posterFor(item.preview)} className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setFailed(true)} />}
+      {image && <img src={item.preview} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: item.previewPosition || "center" }} loading="lazy" decoding="async" onError={() => setFailed(true)} />}
+    </div>
+  );
+}
+
 function HowItWorks() {
-  const chooseItems = SHOWCASE_TITLES.map((title) => availablePrompts.find((p) => p.title === title)).filter(Boolean).slice(0, 4);
+  // Only cards with a real preview: a gradient tile would not show a design.
+  const chooseItems = [...SHOWCASE_TITLES.map((title) => availablePrompts.find((p) => p.title === title)), ...availablePrompts]
+    .filter((p, i, all) => p && all.indexOf(p) === i && (isVideoPreview(p.preview) || isImagePreview(p.preview)))
+    .slice(0, 4);
   const generated = pickDemo(STEP_DEMO_TITLES);
   const steps = [
     {
@@ -3121,9 +3139,9 @@ function HowItWorks() {
       visual: (
         <div className="grid h-full grid-cols-2 gap-2 p-3">
           {chooseItems.map((item, i) => (
-            <div key={item.file} className={`relative overflow-hidden rounded-xl border bg-[#0B0B0D] ${i === 0 ? "border-white/40 ring-2 ring-white/20" : "border-white/[0.08]"}`}>
-              <PreviewSkeleton item={item} />
-              {i === 0 && <span className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-[#EDE9E0] text-[#0A0A0B]"><Icon name="check" className="h-3 w-3" /></span>}
+            <div key={item.file} className={`relative overflow-hidden rounded-xl border bg-[#0B0B0D] ${i === 0 ? "border-white/40 ring-2 ring-white/20" : "border-white/[0.08] opacity-80"}`}>
+              <MediaTile item={item} />
+              {i === 0 && <span className="absolute right-2 top-2 z-10 grid h-5 w-5 place-items-center rounded-full bg-[#EDE9E0] text-[#0A0A0B]"><Icon name="check" className="h-3 w-3" /></span>}
             </div>
           ))}
         </div>
