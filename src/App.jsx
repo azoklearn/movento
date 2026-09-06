@@ -1963,10 +1963,6 @@ export default function MoventoSite() {
               <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-6 py-3 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
               <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("See pricing", "Voir les tarifs")}</a>
             </motion.div>
-            {/* The product, shown rather than described: a prompt on the left,
-                the site it produces on the right. Sits under the CTAs so the
-                first screen is still title → promise → button. */}
-            <HeroDemo />
           </section>
 
           <HowItWorks />
@@ -3068,10 +3064,9 @@ function PriceAnchor({ onPick }) {
 // four on a wide screen: enough to prove the range, not enough to become the page.
 const HOME_GALLERY_COUNT = 12;
 
-// The clips the home explains itself with. Named rather than "first with a
-// video" so a new catalogue entry cannot silently swap the hero's demo; each
-// falls through to the next if its card is ever removed.
-const HERO_DEMO_TITLES = ["Vanta Haute Horlogerie", "Ducati Superleggera V4", "Love Bag Hero", "Fiamma Pizzeria"];
+// The clip the "generate your site" step shows. Named rather than "first with
+// a video" so a new catalogue entry cannot silently swap it; each falls
+// through to the next if its card is ever removed.
 const STEP_DEMO_TITLES = ["Fiamma Pizzeria", "Baseline Tennis Club", "Vanta Haute Horlogerie", "Photographer Portfolio"];
 const pickDemo = (titles) => titles.map((title) => availablePrompts.find((p) => p.title === title && isVideoPreview(p.preview))).find(Boolean) || availablePrompts.find((p) => isVideoPreview(p.preview));
 
@@ -3136,35 +3131,6 @@ function BrowserFrame({ item, label }) {
         {!failed && <video src={item.preview} poster={posterFor(item.preview)} className="absolute inset-0 h-full w-full object-cover" autoPlay loop muted playsInline preload="metadata" onError={() => setFailed(true)} />}
       </div>
     </div>
-  );
-}
-
-// The site's pitch in one picture: the prompt on the left becomes the site on
-// the right. Real catalogue clip, so what it shows is what a buyer gets.
-function HeroDemo() {
-  const item = pickDemo(HERO_DEMO_TITLES);
-  if (!item) return null;
-  return (
-    <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="relative mx-auto mt-12 max-w-5xl md:mt-16">
-      <div className="pointer-events-none absolute -inset-x-10 -top-10 bottom-0 rounded-[48px] bg-white/[0.03] blur-3xl" />
-      <div className="relative grid gap-3 rounded-[28px] border border-white/10 bg-[#121214] p-3 shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9)] sm:p-4 md:grid-cols-[minmax(0,5fr)_auto_minmax(0,7fr)] md:items-stretch md:gap-4">
-        <div className="min-h-[220px] text-left md:min-h-0">
-          <PromptWindow />
-        </div>
-        <div className="flex items-center justify-center md:px-1">
-          <span className="grid h-10 w-10 place-items-center rounded-full border border-white/12 bg-[#08080A] text-white/70 max-md:rotate-90">
-            <Icon name="arrow" className="h-4 w-4" />
-          </span>
-        </div>
-        <div className="aspect-[1.35] md:aspect-auto">
-          <BrowserFrame item={item} />
-        </div>
-      </div>
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] text-white/40">
-        <span className="flex items-center gap-1.5"><Icon name="copy" className="h-3.5 w-3.5" /> {t("The prompt you copy", "Le prompt que tu copies")}</span>
-        <span className="flex items-center gap-1.5"><Icon name="sparkles" className="h-3.5 w-3.5" /> {t("The site the AI builds from it", "Le site que l'IA en sort")}</span>
-      </div>
-    </motion.div>
   );
 }
 
