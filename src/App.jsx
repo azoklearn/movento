@@ -685,6 +685,7 @@ const isSinglePlan = visiblePlans.length === 1;
 // grid.
 const packPlan = plans.find((plan) => plan.id === "pack");
 const lifetimePlan = plans.find((plan) => plan.id === "lifetime" && !plan.hidden);
+const yearlyPlan = plans.find((plan) => plan.id === "yearly" && !plan.hidden);
 const monthlyPlan = plans.find((plan) => plan.id === "monthly" && !plan.hidden);
 
 // Pricing card used across every purchase surface (paywall modal, pricing
@@ -1697,7 +1698,7 @@ export default function MoventoSite() {
                     locked prompt: someone with full access, a free prompt, a
                     prompt already bought or an unspent purchase all have
                     nothing to buy here. */}
-                {!hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (lifetimePlan || monthlyPlan || (PROMPT_PACK_ENABLED && packPlan)) && (
+                {!hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (lifetimePlan || yearlyPlan || monthlyPlan || (PROMPT_PACK_ENABLED && packPlan)) && (
                   <div className="space-y-2.5 border-t border-white/[0.07] px-5 pb-4 pt-4">
                     {lifetimePlan && (
                       <button
@@ -1718,6 +1719,24 @@ export default function MoventoSite() {
                         <span className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0A0A0B]">
                           {eur(PRICE_LIFETIME)}
                           <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                        </span>
+                      </button>
+                    )}
+                    {yearlyPlan && (
+                      <button
+                        onClick={() => { track("yearly_offer_clicked", { prompt: previewItem.title, category: previewItem.category, source: "prompt_popup" }); startCheckout(yearlyPlan); }}
+                        disabled={Boolean(checkoutPlan)}
+                        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-left transition hover:border-white/25 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#EDE9E0]">{t("Yearly access", "Accès annuel")}</span>
+                            <span className="flex-none rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/45">{t("Best value", "Meilleur rapport")}</span>
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-5 text-white/45">{t("The same full catalogue, billed once a year.", "Le même catalogue complet, facturé une fois par an.")}</span>
+                        </span>
+                        <span className="flex-none rounded-full bg-[#EDE9E0] px-4 py-2 text-sm font-bold text-[#0A0A0B]">
+                          {eur(PRICE_YEARLY)}<span className="font-semibold text-[#0A0A0B]/55">{t("/yr", "/an")}</span>
                         </span>
                       </button>
                     )}
