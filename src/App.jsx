@@ -823,7 +823,9 @@ function WhopCheckoutEmbed({ planId, prefillEmail, promoCode, onComplete }) {
       data-whop-checkout-on-complete={cbName}
       {...(prefillEmail ? { "data-whop-checkout-prefill-email": prefillEmail } : {})}
       {...promoAttrs}
-      className="min-h-[540px] w-full overflow-hidden rounded-2xl bg-white/[0.03]"
+      // No overflow clip and no height cap: the loader sizes the iframe to the
+      // form, and the layer around it scrolls, so the whole form is reachable.
+      className="min-h-[540px] w-full rounded-2xl bg-white/[0.03]"
     />
   );
 }
@@ -877,12 +879,20 @@ function CheckoutSuccess({ plan, prefillEmail, onUnlocked }) {
 // mount the embedded Whop checkout, then confirm access — never leaving the page.
 // Falls back to the hosted redirect only when no plan_xxx id is configured.
 function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
-  const [load, setLoad] = useState({ loading: true, planId: "", promoCode: "", error: "" });
+  const [load, setLoad] = useState({ loading: true, planId: "", promoCode: "", checkoutUrl: "", error: "" });
   const [done, setDone] = useState(false);
+
+  // The layer scrolls on its own; the page under it must not, or a swipe
+  // that overshoots the form drags the gallery instead.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
   useEffect(() => {
     let alive = true;
-    setLoad({ loading: true, planId: "", promoCode: "", error: "" });
+    setLoad({ loading: true, planId: "", promoCode: "", checkoutUrl: "", error: "" });
     (async () => {
       try {
         const r = await fetch(CHECKOUT_API_URL, {
@@ -897,29 +907,35 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         // available: the affiliate code rides on the URL (a=...), which is the
         // only path that credits the commission for certain.
         if (d.checkoutUrl && getRef()) { track("checkout_redirected", { plan: plan.id, ...refProps() }); window.location.assign(d.checkoutUrl); return; }
-        if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, promoCode: d.promoCode || "", error: "" }); return; }
+        if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, promoCode: d.promoCode || "", checkoutUrl: d.checkoutUrl || "", error: "" }); return; }
         // No embeddable plan id configured — gracefully use the hosted page.
         if (d.checkoutUrl) { window.location.assign(d.checkoutUrl); return; }
         throw new Error(t("Checkout is unavailable for this plan.", "Checkout indisponible pour cette offre."));
       } catch (e) {
-        if (alive) setLoad({ loading: false, planId: "", promoCode: "", error: getCheckoutErrorMessage(e) });
+        if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: "", error: getCheckoutErrorMessage(e) });
       }
     })();
     return () => { alive = false; };
   }, [plan.id]);
 
+  // A full-screen layer rather than a capped modal: Whop's form is taller than
+  // a phone screen, and a modal with its own scrollbar cropped it — the buyer
+  // had to scroll a box inside a box to reach the pay button. Here the layer
+  // is the page: it scrolls end to end and nothing is clipped.
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-center justify-center px-3 py-4 sm:px-4 sm:py-8" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
-      <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 16 }} transition={{ type: "spring", stiffness: 300, damping: 26 }} className="relative flex max-h-[94dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#121214] shadow-2xl shadow-black/60 sm:rounded-[32px]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-4 sm:px-6">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] overflow-y-auto overscroll-contain bg-[#0A0A0B]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_70%)]" />
+      <div className="sticky top-0 z-10 border-b border-white/[0.07] bg-[#0A0A0B]/90 backdrop-blur">
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-5 py-4 sm:px-6">
           <div>
             <p className="text-sm font-semibold text-[#EDE9E0]">{plan.name}</p>
             <p className="text-xs text-white/55">{plan.price} <span className="text-white/40">{plan.period}</span></p>
           </div>
-          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-[#121214] text-white/55 transition hover:border-white/25 hover:text-[#EDE9E0]"><Icon name="close" className="h-4 w-4" /></button>
+          <button onClick={onClose} aria-label={t("Close", "Fermer")} className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-[#121214] text-white/55 transition hover:border-white/25 hover:text-[#EDE9E0]"><Icon name="close" className="h-4 w-4" /></button>
         </div>
-        <div className="overflow-y-auto overscroll-contain p-4 sm:p-6">
+      </div>
+      <div className="relative mx-auto max-w-xl px-3 pb-16 pt-4 sm:px-4 sm:pt-6">
+        <div className="rounded-3xl border border-white/10 bg-[#121214] p-3 shadow-2xl shadow-black/60 sm:rounded-[32px] sm:p-5">
           {done ? (
             <CheckoutSuccess plan={plan} prefillEmail={prefillEmail} onUnlocked={onUnlocked} />
           ) : load.loading ? (
@@ -940,14 +956,19 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         {/* Stated, not silent: the buyer should see the discount is on before
             they read the total, and notice if it is not. */}
         {load.promoCode && !done && (
-          <div className="flex items-center justify-center gap-1.5 border-t border-emerald-400/20 bg-emerald-400/[0.06] px-5 py-2.5 text-[11px] font-semibold text-emerald-300">
+          <div className="mt-3 flex items-center justify-center gap-1.5 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.06] px-5 py-2.5 text-[11px] font-semibold text-emerald-300">
             <Icon name="check" className="h-3 w-3" /> {t(`Code ${load.promoCode} applied automatically`, `Code ${load.promoCode} appliqué automatiquement`)}
           </div>
         )}
-        <div className="flex items-center justify-center gap-1.5 border-t border-white/[0.07] px-5 py-3 text-[11px] text-white/40">
-          <Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}
+        <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[11px] text-white/40">
+          <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
+          {/* The way out if the embed ever misbehaves on a device: the same
+              plan, on Whop's own page, promo and affiliate already applied. */}
+          {load.checkoutUrl && !done && (
+            <a href={load.checkoutUrl} onClick={() => track("checkout_opened_on_whop", { plan: plan.id, ...refProps() })} className="underline underline-offset-4 transition hover:text-white/75">{t("Form not showing? Open it on Whop", "Le formulaire ne s'affiche pas ? Ouvrir sur Whop")}</a>
+          )}
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
