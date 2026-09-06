@@ -57,7 +57,8 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // is read straight out of it. A product-page link would only power the REDIRECT
 // flow, which is why both fallbacks below are checkout links.
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_pAiB9wlNdjRGF";
-const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
+// Whop product prod_W60TAMVZvHw5I.
+const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_Yj3NE8r5Jj0E1";
 // Full access, one payment (Whop product prod_YWF4xcOs3RFv9). Shipped here
 // rather than left to WHOP_LIFETIME_URL alone: without a checkout link the plan
 // id cannot be resolved, and the buyer was redirected to Whop instead of paying
@@ -129,7 +130,8 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-export const RETIRED_PLANS = new Set(["yearly"]);
+// Nothing retired right now — lifetime, yearly and monthly are all on sale.
+export const RETIRED_PLANS = new Set([]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a

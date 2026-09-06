@@ -532,12 +532,12 @@ const FREE_PROMPT_FILES = new Set([]);
 // The three prices live here rather than inside the cards, because they refer
 // to each other: the annual card quotes the monthly one, and its headline is
 // the annual divided by twelve. Change a number here and every mention follows.
-const PRICE_LIFETIME = 59.99;
+const PRICE_LIFETIME = 89;
 // Struck-through anchor on the lifetime card and in the bottom banner. The
 // badge is computed from the pair, never typed, so it cannot claim a discount
 // the two numbers do not support.
 const PRICE_LIFETIME_ANCHOR = 159;
-const PRICE_YEARLY = 99;
+const PRICE_YEARLY = 49;
 const PRICE_MONTHLY = 21.99;
 const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
 const YEARLY_PER_MONTH = (PRICE_YEARLY / 12).toFixed(2);
@@ -583,9 +583,8 @@ const PROMPT_PACK_PRICE = 19.99;
 const plans = [
   {
     id: "yearly",
-    // Retired from the grid. Kept defined so existing yearly subscribers still
-    // resolve, and so bringing it back is one word.
-    hidden: true,
+    // On sale beside lifetime and monthly.
+    hidden: false,
     name: t("Yearly", "Annuel"),
     price: eur(PRICE_YEARLY),
     period: t("/ yr", "/ an"),
@@ -1262,7 +1261,7 @@ async function copyTextToClipboard(text) {
 
 function runSelfTests() {
   console.assert(validatePlanId("monthly"), "monthly is on sale again and must be purchasable");
-  console.assert(!validatePlanId("yearly"), "yearly is retired and should not be purchasable");
+  console.assert(validatePlanId("yearly"), "yearly is on sale and must be purchasable");
   console.assert(validatePlanId("lifetime"), "lifetime should be valid");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // On sale in the grid while the kill switch is on, and off it entirely when
