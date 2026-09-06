@@ -345,6 +345,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Bloom_AI.md",
   "Terranova_Liquid_Glass_Landing.md",
   "Next_Layer_AI_Infrastructure_Hero.md",
   "Lumen_Index_Private_Banking_Hero.md",
