@@ -1316,10 +1316,14 @@ export default function MoventoSite() {
     setPreviewItem(item);
     if (item && typeof window !== "undefined") window.history.pushState({}, "", promptPath(item));
   };
+  // Read once, not on every render: opening a card pushes /prompt/<slug> onto
+  // the URL, and a flag recomputed from the pathname would swap the page body
+  // out from under the open popup.
+  const [isPromptsPage] = useState(() => typeof window !== "undefined" && window.location.pathname === "/prompts");
   const closePreview = () => {
     setPreviewItem(null);
     if (typeof window !== "undefined" && window.location.pathname.startsWith("/prompt/")) {
-      window.history.pushState({}, "", "/");
+      window.history.pushState({}, "", isPromptsPage ? "/prompts" : "/");
     }
   };
 
@@ -1847,12 +1851,12 @@ export default function MoventoSite() {
       <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
         <Logo />
         <nav className="hidden items-center gap-8 text-sm font-medium text-white/55 md:flex">
-          <a href="#prompts" className="transition hover:text-[#EDE9E0]">Prompts</a>
+          <a href="/prompts" className="transition hover:text-[#EDE9E0]">Prompts</a>
           <a href="/pricing" className="transition hover:text-[#EDE9E0]">{t("Pricing", "Tarifs")}</a>
           <a href="/tiktok" className="transition hover:text-[#EDE9E0]">{t("Monetize TikTok", "Monétise TikTok")}</a>
           <a href="/subscription" className="transition hover:text-[#EDE9E0]">{t("My subscription", "Mon abonnement")}</a>
-          <a href="#how" className="transition hover:text-[#EDE9E0]">{t("Guide", "Guide")}</a>
-          <a href="#faq" className="transition hover:text-[#EDE9E0]">FAQ</a>
+          <a href="/#how" className="transition hover:text-[#EDE9E0]">{t("Guide", "Guide")}</a>
+          <a href="/#faq" className="transition hover:text-[#EDE9E0]">FAQ</a>
         </nav>
         <div className="hidden items-center gap-3 md:flex">
           <LangSwitch />
@@ -1892,12 +1896,12 @@ export default function MoventoSite() {
 
                 <div className="flex flex-col gap-1 px-6 pt-24">
                   {[
-                    { href: "#prompts", label: "Prompts" },
+                    { href: "/prompts", label: "Prompts" },
                     { href: "/pricing", label: t("Pricing", "Tarifs") },
                     { href: "/tiktok", label: t("Monetize TikTok", "Monétise TikTok") },
                     { href: "/subscription", label: t("My subscription", "Mon abonnement") },
-                    { href: "#how", label: t("Guide", "Guide") },
-                    { href: "#faq", label: "FAQ" },
+                    { href: "/#how", label: t("Guide", "Guide") },
+                    { href: "/#faq", label: "FAQ" },
                   ].map((link, i) => (
                     <motion.a
                       key={link.label}
@@ -1929,24 +1933,54 @@ export default function MoventoSite() {
         </AnimatePresence>
       </header>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-12 pb-4 text-center lg:px-8 lg:pt-20">
-        <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
-          {t("Premium websites,", "Des sites premium,")}
-          {/* Narrow screens otherwise strand the first word of the highlighted
-              phrase at the end of the previous line. */}
-          <br className="sm:hidden" />{" "}
-          <Highlight>{t("one prompt away", "en un seul prompt")}</Highlight>
-        </motion.h1>
-        <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55 md:text-lg">
-          {t("Copy a prompt, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify, and ship a modern site in minutes. No code.", "Copie un prompt, colle-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify, et obtiens un site moderne en quelques minutes. Sans coder.")}
-        </motion.p>
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.19 }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-6 py-3 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
-          <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("See pricing", "Voir les tarifs")}</a>
-        </motion.div>
-      </section>
+      {isPromptsPage ? (
+        // The full catalogue lives here. The home shows a dozen cards and
+        // sends people over; this page is the wall of designs, nothing else.
+        <section className="relative z-10 mx-auto max-w-7xl px-6 pt-10 pb-2 text-center lg:px-8 lg:pt-16">
+          <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
+            {t(`${availablePrompts.length} prompts, `, `${availablePrompts.length} prompts, `)}
+            <br className="sm:hidden" />
+            <Highlight>{t(`${availablePrompts.length} sites`, `${availablePrompts.length} sites`)}</Highlight>
+          </motion.h1>
+          <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55 md:text-lg">
+            {t("Click a card to see the design move. Every prompt describes the whole site — fonts, colors, animations, section by section.", "Clique sur une carte pour voir le design bouger. Chaque prompt décrit le site en entier — polices, couleurs, animations, section par section.")}
+          </motion.p>
+        </section>
+      ) : (
+        <>
+          <section className="relative z-10 mx-auto max-w-7xl px-6 pt-12 pb-4 text-center lg:px-8 lg:pt-20">
+            <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
+              {t("Premium websites,", "Des sites premium,")}
+              {/* Narrow screens otherwise strand the first word of the highlighted
+                  phrase at the end of the previous line. */}
+              <br className="sm:hidden" />{" "}
+              <Highlight>{t("one prompt away", "en un seul prompt")}</Highlight>
+            </motion.h1>
+            <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55 md:text-lg">
+              {t("Copy a prompt, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify, and ship a modern site in minutes. No code.", "Copie un prompt, colle-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify, et obtiens un site moderne en quelques minutes. Sans coder.")}
+            </motion.p>
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.19 }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-6 py-3 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
+              <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("See pricing", "Voir les tarifs")}</a>
+            </motion.div>
+            {/* The product, shown rather than described: a prompt on the left,
+                the site it produces on the right. Sits under the CTAs so the
+                first screen is still title → promise → button. */}
+            <HeroDemo />
+          </section>
 
-      <section id="prompts" className="relative z-10 mx-auto max-w-[1560px] px-6 pt-10 pb-24 lg:px-8 lg:pt-14">
+          <HowItWorks />
+        </>
+      )}
+
+      <section id="prompts" className={`relative z-10 mx-auto px-6 lg:px-8 ${isPromptsPage ? "max-w-[1560px] pt-10 pb-24 lg:pt-14" : "max-w-7xl scroll-mt-24 pb-8 pt-4 lg:pb-12"}`}>
+        {!isPromptsPage && (
+          <div className="mb-10 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("The catalogue", "Le catalogue")}</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{t(`${availablePrompts.length} designs, ready to copy`, `${availablePrompts.length} designs prêts à copier`)}</h2>
+            <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">{t("A few of them below. Click one to see it move.", "En voici quelques-uns. Clique pour voir le design bouger.")}</p>
+          </div>
+        )}
         {hasPremiumAccess ? (
           <div className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.07] p-4 text-sm">
             <div className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400/[0.1]0 text-white"><Icon name="check" className="h-4 w-4" /></div>
@@ -1984,7 +2018,7 @@ export default function MoventoSite() {
         )}
         <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
           <AnimatePresence>
-            {filtered.map((item) => {
+            {(isPromptsPage ? filtered : filtered.slice(0, HOME_GALLERY_COUNT)).map((item) => {
               const isFree = FREE_PROMPT_FILES.has(item.file);
               const ownedAlone = ownedPrompts.has(item.file);
               const unlocked = hasPremiumAccess || isFree || ownedAlone;
@@ -2003,12 +2037,17 @@ export default function MoventoSite() {
             })}
           </AnimatePresence>
         </div>
+        {!isPromptsPage && (
+          <div className="mt-10 text-center">
+            <a href="/prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-7 py-3.5 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">
+              {t(`See all ${availablePrompts.length} prompts`, `Voir les ${availablePrompts.length} prompts`)} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
+            </a>
+          </div>
+        )}
       </section>
 
-      <section id="how" className="relative z-10 mx-auto max-w-7xl px-6 pb-24 lg:px-8">
-        <div className="overflow-hidden rounded-[36px] border border-white/10 bg-[#121214] p-8 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-12"><div className="grid gap-10 md:grid-cols-3">{[t("Choose a style", "Choisir un style"), t("Copy the prompt", "Copier le prompt"), t("Generate your site", "Générer votre site")].map((step, i) => <div key={step}><div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-[#08080A] text-sm font-bold text-white shadow-none">0{i + 1}</div><h3 className="text-xl font-semibold text-[#EDE9E0]">{step}</h3><p className="mt-3 text-sm leading-6 text-white/55">{i === 0 ? t("Browse previews and find a design direction that suits your offer.", "Parcourez les aperçus et trouvez une direction design adaptée à votre offre.") : i === 1 ? t("The prompt is loaded directly from the source to stay intact.", "Le prompt est chargé directement depuis la source pour rester intact.") : t("Paste it into your favorite AI tool and customize the result.", "Collez-le dans votre outil IA préféré et personnalisez le résultat.")}</p></div>)}</div></div>
-      </section>
-
+      {!isPromptsPage && (
+        <>
       {/* Right after "how it works": the visitor now knows the mechanic, this
           is what the mechanic is FOR. */}
       <BusinessLadder onPick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
@@ -2079,6 +2118,8 @@ export default function MoventoSite() {
           ))}
         </div>
       </section>
+        </>
+      )}
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-28 lg:px-8">
         <div className="relative overflow-hidden rounded-[40px] border border-white/10 bg-[#121214] px-8 py-16 text-center shadow-2xl shadow-black/40 md:py-20">
@@ -2955,11 +2996,180 @@ function PricingShowcase({ onPick }) {
         </div>
 
         <div className="mt-10 text-center">
-          <a href="/#prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">
+          <a href="/prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">
             {t("Browse the full catalog", "Voir tout le catalogue")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
           </a>
         </div>
       </div>
+    </section>
+  );
+}
+
+// How many cards the home shows before handing over to /prompts. Three rows of
+// four on a wide screen: enough to prove the range, not enough to become the page.
+const HOME_GALLERY_COUNT = 12;
+
+// The clips the home explains itself with. Named rather than "first with a
+// video" so a new catalogue entry cannot silently swap the hero's demo; each
+// falls through to the next if its card is ever removed.
+const HERO_DEMO_TITLES = ["Vanta Haute Horlogerie", "Ducati Superleggera V4", "Love Bag Hero", "Fiamma Pizzeria"];
+const STEP_DEMO_TITLES = ["Fiamma Pizzeria", "Baseline Tennis Club", "Vanta Haute Horlogerie", "Photographer Portfolio"];
+const pickDemo = (titles) => titles.map((title) => availablePrompts.find((p) => p.title === title && isVideoPreview(p.preview))).find(Boolean) || availablePrompts.find((p) => isVideoPreview(p.preview));
+
+// Illustrative lines in the shape of a real prompt — the actual prompts are
+// what is being sold, so nothing here is lifted from one.
+const DEMO_PROMPT_LINES = [
+  t("Build a full-screen hero for a luxury watch brand.", "Crée un hero plein écran pour une marque d'horlogerie de luxe."),
+  t("Font: Instrument Serif for titles, Inter for body.", "Police : Instrument Serif pour les titres, Inter pour le texte."),
+  t("Background: looping video, dark scrim at 40%.", "Fond : vidéo en boucle, voile sombre à 40 %."),
+  t("Nav: logo left, 4 links, white pill CTA right.", "Nav : logo à gauche, 4 liens, bouton pill blanc à droite."),
+  t("Entrance: staggered fade-up, 72ms between elements.", "Entrée : fade-up décalé, 72 ms entre les éléments."),
+  t("Mobile: hamburger, full-height menu, safe areas.", "Mobile : burger, menu plein écran, safe areas."),
+];
+
+// A window chrome with three dots, shared by the prompt panel and the browser
+// frames so the demo reads as "two apps side by side".
+function WindowChrome({ label, right = null }) {
+  return (
+    <div className="flex items-center gap-2 border-b border-white/[0.07] px-4 py-2.5">
+      <span className="flex gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-white/15" /><span className="h-2.5 w-2.5 rounded-full bg-white/15" /><span className="h-2.5 w-2.5 rounded-full bg-white/15" /></span>
+      <span className="ml-2 min-w-0 truncate text-[11px] font-medium text-white/40">{label}</span>
+      {right && <span className="ml-auto flex-none">{right}</span>}
+    </div>
+  );
+}
+
+function PromptWindow({ lines = DEMO_PROMPT_LINES, copied = false, compact = false }) {
+  const copiedPill = copied ? (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+      <Icon name="check" className="h-3 w-3" /> {t("Copied", "Copié")}
+    </span>
+  ) : null;
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0E0E10]">
+      <WindowChrome label="prompt.md" right={copiedPill} />
+      {/* The small copy in the steps card clips its lines; the hero panel has
+          the room to wrap them, and a wrapped line reads better than an
+          ellipsis three words in. */}
+      <div className={`flex-1 font-mono text-white/70 ${compact ? "px-4 py-3 text-[11px] leading-5" : "px-5 py-4 text-[12px] leading-6 sm:text-[13px] sm:leading-7"}`}>
+        {lines.map((line, i) => (
+          <p key={line} className="flex gap-3">
+            <span className="select-none text-white/20">{String(i + 1).padStart(2, "0")}</span>
+            <span className={`min-w-0 ${compact ? "truncate" : "break-words"}`}>{line}</span>
+          </p>
+        ))}
+        <p className="flex gap-3 text-white/25"><span className="select-none text-white/20">{String(lines.length + 1).padStart(2, "0")}</span><span className="motion-safe:animate-pulse">▍</span></p>
+      </div>
+    </div>
+  );
+}
+
+function BrowserFrame({ item, label }) {
+  const [failed, setFailed] = useState(false);
+  if (!item) return null;
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0E0E10]">
+      <WindowChrome label={label || `${slugify(item.title)}.site`} />
+      {/* The wireframe sits under the clip so the frame is never an empty
+          black box — before the video arrives, or if it never does. */}
+      <div className="relative flex-1 bg-[#0B0B0D]">
+        <div className="absolute inset-0"><GeneratedPreview item={item} /></div>
+        {!failed && <video src={item.preview} poster={posterFor(item.preview)} className="absolute inset-0 h-full w-full object-cover" autoPlay loop muted playsInline preload="metadata" onError={() => setFailed(true)} />}
+      </div>
+    </div>
+  );
+}
+
+// The site's pitch in one picture: the prompt on the left becomes the site on
+// the right. Real catalogue clip, so what it shows is what a buyer gets.
+function HeroDemo() {
+  const item = pickDemo(HERO_DEMO_TITLES);
+  if (!item) return null;
+  return (
+    <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="relative mx-auto mt-12 max-w-5xl md:mt-16">
+      <div className="pointer-events-none absolute -inset-x-10 -top-10 bottom-0 rounded-[48px] bg-white/[0.03] blur-3xl" />
+      <div className="relative grid gap-3 rounded-[28px] border border-white/10 bg-[#121214] p-3 shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9)] sm:p-4 md:grid-cols-[minmax(0,5fr)_auto_minmax(0,7fr)] md:items-stretch md:gap-4">
+        <div className="min-h-[220px] text-left md:min-h-0">
+          <PromptWindow />
+        </div>
+        <div className="flex items-center justify-center md:px-1">
+          <span className="grid h-10 w-10 place-items-center rounded-full border border-white/12 bg-[#08080A] text-white/70 max-md:rotate-90">
+            <Icon name="arrow" className="h-4 w-4" />
+          </span>
+        </div>
+        <div className="aspect-[1.35] md:aspect-auto">
+          <BrowserFrame item={item} />
+        </div>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] text-white/40">
+        <span className="flex items-center gap-1.5"><Icon name="copy" className="h-3.5 w-3.5" /> {t("The prompt you copy", "Le prompt que tu copies")}</span>
+        <span className="flex items-center gap-1.5"><Icon name="sparkles" className="h-3.5 w-3.5" /> {t("The site the AI builds from it", "Le site que l'IA en sort")}</span>
+      </div>
+    </motion.div>
+  );
+}
+
+// Three steps, one visual each, one sentence each. This is the section a
+// first-time visitor needs before the catalogue means anything to them.
+function HowItWorks() {
+  const chooseItems = SHOWCASE_TITLES.map((title) => availablePrompts.find((p) => p.title === title)).filter(Boolean).slice(0, 4);
+  const generated = pickDemo(STEP_DEMO_TITLES);
+  const steps = [
+    {
+      title: t("Pick a design", "Choisis un design"),
+      body: t(`Browse the ${availablePrompts.length} previews and take the one that fits your project.`, `Parcours les ${availablePrompts.length} aperçus et prends celui qui colle à ton projet.`),
+      visual: (
+        <div className="grid h-full grid-cols-2 gap-2 p-3">
+          {chooseItems.map((item, i) => (
+            <div key={item.file} className={`relative overflow-hidden rounded-xl border bg-[#0B0B0D] ${i === 0 ? "border-white/40 ring-2 ring-white/20" : "border-white/[0.08]"}`}>
+              <PreviewSkeleton item={item} />
+              {i === 0 && <span className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-[#EDE9E0] text-[#0A0A0B]"><Icon name="check" className="h-3 w-3" /></span>}
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: t("Copy the prompt", "Copie le prompt"),
+      body: t("One click. The prompt describes everything: fonts, colors, animations, sections.", "Un clic. Le prompt décrit tout : polices, couleurs, animations, sections."),
+      visual: <div className="h-full p-3"><PromptWindow compact copied /></div>,
+    },
+    {
+      title: t("Generate your site", "Génère ton site"),
+      body: t("Paste it into Lovable, Cursor or Claude. The site comes out complete — you change the words.", "Colle-le dans Lovable, Cursor ou Claude. Le site sort complet, tu changes les textes."),
+      visual: <div className="h-full p-3"><BrowserFrame item={generated} label={t("your-site.com", "ton-site.com")} /></div>,
+    },
+  ];
+
+  return (
+    <section id="how" className="relative z-10 mx-auto max-w-7xl scroll-mt-24 px-6 py-20 lg:px-8 lg:py-28">
+      <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("How it works", "Comment ça marche")}</p>
+        <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{t("Three steps, one site online", "Trois étapes, un site en ligne")}</h2>
+        <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{t("No code, no mockup, no designer.", "Pas de code, pas de maquette, pas de designer.")}</p>
+      </motion.div>
+
+      <ol className="mt-12 grid gap-5 md:grid-cols-3 md:gap-6">
+        {steps.map((step, i) => (
+          <motion.li
+            key={step.title}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-col overflow-hidden rounded-[26px] border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"
+          >
+            <div className="aspect-[1.35] border-b border-white/[0.07] bg-[#0E0E10]">{step.visual}</div>
+            <div className="p-6">
+              <div className="flex items-center gap-3">
+                <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-[#08080A] text-xs font-bold text-white">0{i + 1}</span>
+                <h3 className="text-lg font-semibold tracking-tight text-[#EDE9E0]">{step.title}</h3>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-white/55">{step.body}</p>
+            </div>
+          </motion.li>
+        ))}
+      </ol>
     </section>
   );
 }
