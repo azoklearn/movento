@@ -2075,6 +2075,10 @@ export default function MoventoSite() {
 
       <Testimonials />
 
+      {/* The number a visitor already has in their head — what a site costs —
+          set next to ours, right before they see the plans. */}
+      <PriceAnchor onPick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">{isSinglePlan ? t("One payment, forever", "Un paiement, à vie") : t("Choose your plan", "Choisissez votre offre")}</h2>
@@ -3005,6 +3009,61 @@ function PricingShowcase({ onPick }) {
   );
 }
 
+// What a one-off site goes for at a freelancer or a small agency — the range
+// the testimonials on this page land in (800, 900, 1 000 €). The lifetime
+// price is read from the constant so the comparison can never go stale.
+const SITE_PRICE_LOW = 800;
+const SITE_PRICE_HIGH = 2000;
+
+function PriceAnchor({ onPick }) {
+  const paysBack = Math.floor(SITE_PRICE_LOW / PRICE_LIFETIME);
+  const cta = onPick ? (
+    <button onClick={onPick} className="group mt-6 inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></button>
+  ) : (
+    <a href="/pricing" className="group mt-6 inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
+  );
+  return (
+    <section className="relative z-10 mx-auto max-w-5xl px-6 py-16 lg:px-8 lg:py-24">
+      <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("The math", "Le calcul")}</p>
+        <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{t("A website sells for €800 to €2,000", "Un site se vend entre 800 et 2 000 €")}</h2>
+        <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">{t("That is what a freelancer or a small agency charges for one showcase site. Movento costs less than the deposit.", "C'est ce qu'un freelance ou une petite agence facture pour un seul site vitrine. Movento coûte moins que l'acompte.")}</p>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} className="mt-12 grid items-stretch gap-3 md:grid-cols-[1fr_auto_1fr] md:gap-4">
+        <div className="flex flex-col rounded-[26px] border border-white/10 bg-white/[0.02] p-7 md:p-8">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">{t("One custom-made site", "Un site fait sur mesure")}</p>
+          <p className="mt-4 text-4xl font-bold tracking-[-0.03em] text-white/70 md:text-5xl">{t("€800 – €2,000", "800 – 2 000 €")}</p>
+          <ul className="mt-5 space-y-2 text-sm leading-6 text-white/45">
+            <li className="flex items-start gap-2"><Icon name="close" className="mt-1.5 h-3.5 w-3.5 flex-none text-white/30" /> {t("Per site, every time", "Par site, à chaque fois")}</li>
+            <li className="flex items-start gap-2"><Icon name="close" className="mt-1.5 h-3.5 w-3.5 flex-none text-white/30" /> {t("Two to six weeks of back-and-forth", "Deux à six semaines d'allers-retours")}</li>
+            <li className="flex items-start gap-2"><Icon name="close" className="mt-1.5 h-3.5 w-3.5 flex-none text-white/30" /> {t("One design, yours only once it is paid", "Un seul design, à toi une fois payé")}</li>
+          </ul>
+        </div>
+
+        <div className="flex items-center justify-center py-1 md:py-0">
+          <span className="grid h-10 w-10 place-items-center rounded-full border border-white/12 bg-[#08080A] text-[11px] font-bold uppercase tracking-wide text-white/60">vs</span>
+        </div>
+
+        <div className="relative flex flex-col overflow-hidden rounded-[26px] border border-white/25 bg-[#121214] p-7 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] md:p-8">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/[0.06] blur-3xl" />
+          <p className="relative text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">Movento</p>
+          <p className="relative mt-4 text-4xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{eur(PRICE_LIFETIME)} <span className="text-lg font-semibold text-white/45">{t("once", "une fois")}</span></p>
+          <ul className="relative mt-5 space-y-2 text-sm leading-6 text-white/65">
+            <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t(`All ${availablePrompts.length} designs, for life`, `Les ${availablePrompts.length} designs, à vie`)}</li>
+            <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t("A site in an afternoon, not in a month", "Un site dans l'après-midi, pas dans un mois")}</li>
+            <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t("Sell as many as you like", "Tu en vends autant que tu veux")}</li>
+          </ul>
+          <p className="relative mt-6 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-3 text-sm font-semibold leading-6 text-emerald-200">
+            {t(`Your first site sold pays for Movento ${paysBack} times over.`, `Ton premier site vendu rembourse Movento ${paysBack} fois.`)}
+          </p>
+          <div className="relative">{cta}</div>
+        </div>
+      </motion.div>
+    </section>
+  );
+}
+
 // How many cards the home shows before handing over to /prompts. Three rows of
 // four on a wide screen: enough to prove the range, not enough to become the page.
 const HOME_GALLERY_COUNT = 12;
@@ -3663,6 +3722,8 @@ function PricingPage() {
       <PromoPopup onPick={scrollToPlans} />
 
       <BusinessLadder onPick={scrollToPlans} />
+
+      <PriceAnchor onPick={scrollToPlans} />
 
       <PricingShowcase onPick={scrollToPlans} />
 
