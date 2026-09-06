@@ -95,6 +95,9 @@ const prompts = [
   // Front of the gallery, hand-picked: the newest work first, then motion
   // previews, one per category, so the first screen shows range rather than
   // repetition.
+  { title: "Terranova — Signals from the Deep Green", category: "Hero Section", type: "Hero", file: "Terranova_Liquid_Glass_Landing.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260816_131013_d9bf1472-1ae3-4faf-9da6-f0e1b47c9f07.png&w=1280&q=85", tags: ["Liquid Glass", "SVG Filter", "Video"], gradient: "from-white via-slate-300 to-[#c2ccd3]" },
+  { title: "The Next Layer of Intelligence", category: "AI / SaaS", type: "Hero", file: "Next_Layer_AI_Infrastructure_Hero.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260811_042402_7cde3e27-e8c9-46aa-b2e6-c93ef1bebe70.png&w=1280&q=85", tags: ["AI", "Cinematic", "Video"], gradient: "from-zinc-200 via-zinc-600 to-[#050505]" },
+  { title: "LŪMEN // ÍNDEX", category: "Fintech", type: "Hero", file: "Lumen_Index_Private_Banking_Hero.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260815_192259_f95cf2db-af6f-4b84-a678-20b074e50872.png&w=1280&q=85", tags: ["DeFi", "React", "Grid"], gradient: "from-sky-200 via-sky-700 to-black" },
   { title: "OceanPulse Conservation Hero", category: "Hero Section", type: "Hero", file: "OceanPulse_Conservation_Hero.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260901_013056_207d5cb7-5135-4cd6-8298-6443ff29a89c.png&w=1920&q=85", tags: ["Nonprofit", "Ocean", "Video"], gradient: "from-sky-200 via-cyan-800 to-[#0b2a3a]" },
   { title: "JungleMind AI Hero", category: "AI / SaaS", type: "Hero", file: "JungleMind_AI_Hero.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260901_011928_0d3bbce7-acfd-42b7-a0af-1340eb5113e7.png&w=1920&q=85", tags: ["AI", "Jungle", "Video"], gradient: "from-lime-200 via-emerald-800 to-[#0d1a0f]" },
   { title: "Heritage Grove Footer", category: "Component", type: "Component", file: "Heritage_Grove_Footer.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/heritage-grove-crafts.mp4", tags: ["Footer", "Ink Art", "Video"], gradient: "from-teal-200 via-teal-800 to-[#EAE3DE]" },
@@ -342,6 +345,9 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Terranova_Liquid_Glass_Landing.md",
+  "Next_Layer_AI_Infrastructure_Hero.md",
+  "Lumen_Index_Private_Banking_Hero.md",
   "OceanPulse_Conservation_Hero.md",
   "JungleMind_AI_Hero.md",
   "Heritage_Grove_Footer.md",
