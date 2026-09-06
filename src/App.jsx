@@ -1964,12 +1964,10 @@ export default function MoventoSite() {
               <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("See pricing", "Voir les tarifs")}</a>
             </motion.div>
           </section>
-
-          <HowItWorks />
         </>
       )}
 
-      <section id="prompts" className={`relative z-10 mx-auto px-6 lg:px-8 ${isPromptsPage ? "max-w-[1560px] pt-10 pb-24 lg:pt-14" : "max-w-7xl scroll-mt-24 pb-8 pt-4 lg:pb-12"}`}>
+      <section id="prompts" className={`relative z-10 mx-auto px-6 lg:px-8 ${isPromptsPage ? "max-w-[1560px] pt-10 pb-24 lg:pt-14" : "max-w-7xl scroll-mt-24 pb-8 pt-12 lg:pb-12 lg:pt-16"}`}>
         {!isPromptsPage && (
           <div className="mb-10 text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("The catalogue", "Le catalogue")}</p>
@@ -2044,6 +2042,11 @@ export default function MoventoSite() {
 
       {!isPromptsPage && (
         <>
+      {/* The designs come first — most visitors arrive from a video and
+          already know the mechanic; the explanation is for the ones who
+          don't, and it sits right under the cards. */}
+      <HowItWorks />
+
       {/* Right after "how it works": the visitor now knows the mechanic, this
           is what the mechanic is FOR. */}
       <BusinessLadder onPick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
