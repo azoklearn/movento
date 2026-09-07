@@ -2034,14 +2034,14 @@ export default function MoventoSite() {
         {/* Masonry, not a grid: each tile is as tall as its own preview, so the
             columns fall out of step with each other instead of lining up in
             rows of identical boxes. */}
-        <div className="columns-1 gap-4 sm:columns-2 sm:gap-5 lg:columns-3 lg:gap-6">
+        <div className="columns-2 gap-3 sm:gap-5 lg:columns-3 lg:gap-6 xl:columns-4">
           <AnimatePresence>
             {filtered.map((item) => {
               const isFree = FREE_PROMPT_FILES.has(item.file);
               const ownedAlone = ownedPrompts.has(item.file);
               const unlocked = hasPremiumAccess || isFree || ownedAlone;
               return (
-                <motion.div key={item.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative mb-4 break-inside-avoid sm:mb-5 lg:mb-6">
+                <motion.div key={item.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative mb-3 break-inside-avoid sm:mb-5 lg:mb-6">
                   <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={openPreview} badge={
                     // Icon only, no word: the state is in the glyph (lock,
                     // copy, gift, check) and the label lives in the tooltip.
