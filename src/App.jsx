@@ -1148,11 +1148,9 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
   const videoRef = useRef(null);
   const hasVideo = !previewFailed && isVideoPreview(item.preview);
   const hasImage = !previewFailed && isImagePreview(item.preview);
-  // Every preview is shown whole. "cover" crops whatever does not match the
-  // card's ratio, and what it crops is always the navbar and the footer of the
-  // design — the two parts a buyer looks at first. An item can still ask for
-  // previewFit: "cover" if its clip really is 1.35 and edge-to-edge.
-  const fitClass = item.previewFit === "cover" ? "object-cover" : "object-contain";
+  // Every preview is shown whole, at its own ratio: nothing is cropped, and
+  // the navbar and footer of the design — the two parts a buyer looks at
+  // first — are always in the tile.
   // Only drift the stills, and only while the card is actually on screen — an
   // off-screen animation still costs a compositor layer on every card.
   const driftClass = hasImage && visible && isStillPreview(item.preview) ? "mv-kenburns" : "";
@@ -1195,12 +1193,12 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
   };
 
   return (
-    <motion.div layout whileHover={{ y: -6 }} onClick={handleClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }} className="group relative cursor-pointer overflow-hidden rounded-[20px] border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition duration-300 hover:-translate-y-1 hover:border-white/25 hover:shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]">
-      {/* 1.35 is the measured ratio of the preview clips (11 of 12 land between
-          1.333 and 1.379), so with object-contain the letterbox is under 2% on
-          almost every card — and the odd 16:9 or portrait clip is shown whole
-          instead of being cropped. The bars pick up the card's own surface. */}
-      <div ref={containerRef} className="relative aspect-[1.35] overflow-hidden bg-[#0B0B0D]">
+    <motion.div whileHover={{ y: -6 }} onClick={handleClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }} className="group relative cursor-pointer">
+      {/* The tile takes the preview's own ratio: a 16:9 clip is a short tile,
+          a portrait one a tall tile, and none of them gets letterbox bars. The
+          1.35 fallback only holds the space until the media reports its size,
+          so the column does not jump as clips arrive. */}
+      <div ref={containerRef} className="relative overflow-hidden rounded-[18px] bg-[#0B0B0D] ring-1 ring-white/[0.06] transition duration-300 group-hover:ring-white/20 group-hover:shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]">
       {/* One <video> for every viewport. Phones used to get a separate path —
           the static poster instead of the clip, to save bandwidth — but with a
           poster missing for 88 of the 100 clips that path degraded to an empty
@@ -1208,9 +1206,9 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
           mobile. Streaming the on-screen clips costs data; showing nothing
           costs the sale. The IntersectionObserver above still keeps it to the
           two or three cards actually on screen. */}
-        {!inView ? <PreviewSkeleton item={item} /> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className={`h-full w-full ${fitClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`h-full w-full ${fitClass} ${driftClass} transition duration-500`} style={{ objectPosition: item.previewPosition || "center" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <GeneratedPreview item={item} />}
+        {!inView ? <div className="relative aspect-[1.35]"><PreviewSkeleton item={item} /></div> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className="block h-auto w-full transition duration-500" style={{ aspectRatio: "auto 1.35 / 1" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`block h-auto w-full ${driftClass} transition duration-500`} style={{ aspectRatio: "auto 1.35 / 1" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <div className="relative aspect-[1.35]"><GeneratedPreview item={item} /></div>}
       </div>
-      <div className="flex items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-3.5">
+      <div className="flex items-center justify-between gap-2 px-1 pb-1 pt-3 sm:gap-3 sm:px-1.5">
         <div className="min-w-0">
           <h3 className="truncate text-[13.5px] font-semibold tracking-tight text-[#EDE9E0] sm:text-[15px]">{item.title}</h3>
           <p className="mt-0.5 truncate text-[11px] text-white/40 sm:text-xs">{item.category}</p>
@@ -2033,21 +2031,34 @@ export default function MoventoSite() {
             </p>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
+        {/* Masonry, not a grid: each tile is as tall as its own preview, so the
+            columns fall out of step with each other instead of lining up in
+            rows of identical boxes. */}
+        <div className="columns-2 gap-3 sm:gap-5 lg:columns-3 lg:gap-6 xl:columns-4">
           <AnimatePresence>
             {(isPromptsPage ? filtered : filtered.slice(0, HOME_GALLERY_COUNT)).map((item) => {
               const isFree = FREE_PROMPT_FILES.has(item.file);
               const ownedAlone = ownedPrompts.has(item.file);
               const unlocked = hasPremiumAccess || isFree || ownedAlone;
               return (
-                <motion.div key={item.title} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
+                <motion.div key={item.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative mb-3 break-inside-avoid sm:mb-5 lg:mb-6">
                   <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={openPreview} badge={
-                    // Two cards per row on a phone leaves no space for a
-                    // labelled pill, so below sm the badge keeps the icon and
-                    // drops the word.
-                    <span className={`flex flex-none items-center gap-1.5 rounded-full px-2 py-2 text-xs font-semibold transition sm:px-3.5 ${copiedCard === item.title ? "bg-emerald-400/15 text-emerald-300" : copiedCard === "Error" ? "bg-red-400/15 text-red-300" : !unlocked ? "border border-white/10 bg-white/[0.04] text-white/60 group-hover:border-white/25 group-hover:bg-white/[0.1] group-hover:text-white" : isFree && !hasPremiumAccess ? "bg-emerald-400/[0.1] text-emerald-300 group-hover:bg-emerald-600 group-hover:text-white" : "border border-white/10 bg-white/[0.06] text-white/80 group-hover:border-white/25 group-hover:bg-white/[0.12] group-hover:text-white"}`}>
-                      {copiedCard === item.title ? <><Icon name="check" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copied", "Copié")}</span></> : copiedCard === "Error" ? <><Icon name="alert" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Error", "Erreur")}</span></> : !unlocked && promptCredits > 0 ? <><Icon name="gift" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Choose it", "Le choisir")}</span></> : !unlocked ? <><Icon name="lock" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Premium</span></> : isFree && !hasPremiumAccess ? <><Icon name="gift" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Free", "Gratuit")}</span></> : item.link ? <><Icon name="arrow" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Open", "Ouvrir")}</span></> : <><Icon name="copy" className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Copy", "Copier")}</span></>}
-                    </span>
+                    // Icon only, no word: the state is in the glyph (lock,
+                    // copy, gift, check) and the label lives in the tooltip.
+                    (() => {
+                      const state = copiedCard === item.title ? ["check", t("Copied", "Copié"), "bg-emerald-400/15 text-emerald-300"]
+                        : copiedCard === "Error" ? ["alert", t("Error", "Erreur"), "bg-red-400/15 text-red-300"]
+                        : !unlocked && promptCredits > 0 ? ["gift", t("Choose it", "Le choisir"), "text-emerald-300 group-hover:bg-emerald-400/15"]
+                        : !unlocked ? ["lock", "Premium", "text-white/45 group-hover:bg-white/[0.08] group-hover:text-white/80"]
+                        : isFree && !hasPremiumAccess ? ["gift", t("Free", "Gratuit"), "text-emerald-300 group-hover:bg-emerald-400/15"]
+                        : item.link ? ["arrow", t("Open", "Ouvrir"), "text-white/60 group-hover:bg-white/[0.08] group-hover:text-white"]
+                        : ["copy", t("Copy", "Copier"), "text-white/60 group-hover:bg-white/[0.08] group-hover:text-white"];
+                      return (
+                        <span title={state[1]} aria-label={state[1]} className={`grid h-8 w-8 flex-none place-items-center rounded-full transition ${state[2]}`}>
+                          <Icon name={state[0]} className="h-4 w-4" />
+                        </span>
+                      );
+                    })()
                   } />
                 </motion.div>
               );
