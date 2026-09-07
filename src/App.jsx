@@ -1988,12 +1988,12 @@ export default function MoventoSite() {
         </>
       )}
 
-      <section id="prompts" className={`relative z-10 mx-auto px-6 lg:px-8 ${isPromptsPage ? "max-w-[1560px] pt-10 pb-24 lg:pt-14" : "max-w-7xl scroll-mt-24 pb-8 pt-12 lg:pb-12 lg:pt-16"}`}>
+      <section id="prompts" className={`relative z-10 mx-auto max-w-[1560px] px-6 lg:px-8 ${isPromptsPage ? "pt-10 pb-24 lg:pt-14" : "scroll-mt-24 pb-8 pt-12 lg:pb-12 lg:pt-16"}`}>
         {!isPromptsPage && (
           <div className="mb-10 text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("The catalogue", "Le catalogue")}</p>
             <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{t(`${availablePrompts.length} designs, ready to copy`, `${availablePrompts.length} designs prêts à copier`)}</h2>
-            <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">{t("A few of them below. Click one to see it move.", "En voici quelques-uns. Clique pour voir le design bouger.")}</p>
+            <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">{t("Click one to see it move.", "Clique sur un design pour le voir bouger.")}</p>
           </div>
         )}
         {hasPremiumAccess ? (
@@ -2034,14 +2034,14 @@ export default function MoventoSite() {
         {/* Masonry, not a grid: each tile is as tall as its own preview, so the
             columns fall out of step with each other instead of lining up in
             rows of identical boxes. */}
-        <div className="columns-2 gap-3 sm:gap-5 lg:columns-3 lg:gap-6 xl:columns-4">
+        <div className="columns-1 gap-4 sm:columns-2 sm:gap-5 lg:columns-3 lg:gap-6">
           <AnimatePresence>
-            {(isPromptsPage ? filtered : filtered.slice(0, HOME_GALLERY_COUNT)).map((item) => {
+            {filtered.map((item) => {
               const isFree = FREE_PROMPT_FILES.has(item.file);
               const ownedAlone = ownedPrompts.has(item.file);
               const unlocked = hasPremiumAccess || isFree || ownedAlone;
               return (
-                <motion.div key={item.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative mb-3 break-inside-avoid sm:mb-5 lg:mb-6">
+                <motion.div key={item.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative mb-4 break-inside-avoid sm:mb-5 lg:mb-6">
                   <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={openPreview} badge={
                     // Icon only, no word: the state is in the glyph (lock,
                     // copy, gift, check) and the label lives in the tooltip.
@@ -2065,13 +2065,6 @@ export default function MoventoSite() {
             })}
           </AnimatePresence>
         </div>
-        {!isPromptsPage && (
-          <div className="mt-10 text-center">
-            <a href="/prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-7 py-3.5 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">
-              {t(`See all ${availablePrompts.length} prompts`, `Voir les ${availablePrompts.length} prompts`)} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
-            </a>
-          </div>
-        )}
       </section>
 
       {!isPromptsPage && (
@@ -3096,10 +3089,6 @@ function PriceAnchor({ onPick }) {
     </section>
   );
 }
-
-// How many cards the home shows before handing over to /prompts. Three rows of
-// four on a wide screen: enough to prove the range, not enough to become the page.
-const HOME_GALLERY_COUNT = 12;
 
 // The clip the "generate your site" step shows. Named rather than "first with
 // a video" so a new catalogue entry cannot silently swap it; each falls
