@@ -1271,13 +1271,19 @@ export default function MoventoSite() {
     confirmCheckoutSession();
   }, [isSuccessPage]);
 
+  // "all" | "new" | a category name. "new" is the top of the catalogue: entries
+  // are added at the front of `prompts`, so position is the only recency we have.
+  const [galleryFilter, setGalleryFilter] = useState("all");
   const filtered = useMemo(() => {
-    // availablePrompts is already in display order: live-demo cards first,
-    // then newest-first (new entries are added at the top of `prompts`).
-    return availablePrompts.filter((p) =>
-      `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase()),
-    );
-  }, [query]);
+    // availablePrompts is already in display order: newest first (new entries
+    // are added at the top of `prompts`).
+    const q = query.toLowerCase();
+    return availablePrompts.filter((p, i) => {
+      if (galleryFilter === "new" && i >= NEW_PROMPT_COUNT) return false;
+      if (galleryFilter !== "all" && galleryFilter !== "new" && p.category !== galleryFilter) return false;
+      return `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(q);
+    });
+  }, [query, galleryFilter]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
     // Emails never contain whitespace, so strip every whitespace/zero-width char
@@ -1879,6 +1885,27 @@ export default function MoventoSite() {
               <span className="text-emerald-200/70">{t(" — or pick any prompt below.", " — ou clique sur un prompt ci-dessous.")}</span>
             </p>
           </div>
+        )}
+        {/* One row of chips: everything, the latest additions, then the
+            categories that have enough cards to be worth a chip. Scrolls
+            sideways on a phone rather than wrapping into a wall of pills. */}
+        <div className="-mx-6 mb-6 flex gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mb-8 lg:-mx-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
+          {[["all", t("All", "Tous")], ["new", t("New", "Nouveautés")], ...GALLERY_CATEGORIES.map((c) => [c, c])].map(([key, label]) => {
+            const active = galleryFilter === key;
+            return (
+              <button
+                key={key}
+                onClick={() => { setGalleryFilter(key); track("gallery_filter", { filter: key }); }}
+                className={`flex flex-none items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-semibold transition ${active ? "border-[#EDE9E0] bg-[#EDE9E0] text-[#0A0A0B]" : "border-white/10 bg-white/[0.03] text-white/65 hover:border-white/25 hover:text-[#EDE9E0]"}`}
+              >
+                {key === "new" && <Icon name="sparkles" className="h-3.5 w-3.5" />}
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {filtered.length === 0 && (
+          <p className="py-16 text-center text-sm text-white/45">{t("Nothing here yet.", "Rien ici pour l'instant.")}</p>
         )}
         {/* Masonry, not a grid: each tile is as tall as its own preview, so the
             columns fall out of step with each other instead of lining up in
@@ -2883,6 +2910,16 @@ function PricingShowcase({ onPick }) {
     </section>
   );
 }
+
+// How many cards from the top of the catalogue count as "new": about the last
+// month of additions at the current pace.
+const NEW_PROMPT_COUNT = 24;
+// Category chips, most populated first, only those with enough cards that
+// picking one does not land on a near-empty page.
+const GALLERY_CATEGORIES = Object.entries(availablePrompts.reduce((acc, p) => ((acc[p.category] = (acc[p.category] || 0) + 1), acc), {}))
+  .filter(([, n]) => n >= 4)
+  .sort((a, b) => b[1] - a[1])
+  .map(([c]) => c);
 
 // What a one-off site goes for at a freelancer or a small agency — the range
 // the testimonials on this page land in (800, 900, 1 000 €). The lifetime
