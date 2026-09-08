@@ -656,10 +656,11 @@ const plans = [
   },
   {
     id: "monthly",
-    // Back on sale beside lifetime: a subscription for anyone not ready to pay
-    // once. Keep in step with RETIRED_PLANS in api/_shared.js — a card here
-    // whose plan is retired there is a button the checkout refuses.
-    hidden: false,
+    // Retired: lifetime is the only plan on sale. Kept defined so existing
+    // subscribers still resolve. Keep in step with RETIRED_PLANS in
+    // api/_shared.js — a card here whose plan is retired there is a button
+    // the checkout refuses.
+    hidden: true,
     name: t("Monthly", "Mensuel"),
     price: eur(PRICE_MONTHLY),
     period: t("/ mo", "/ mois"),
@@ -1160,7 +1161,7 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(validatePlanId("monthly"), "monthly is on sale again and must be purchasable");
+  console.assert(!validatePlanId("monthly"), "monthly is retired and should not be purchasable");
   console.assert(!validatePlanId("yearly"), "yearly is retired and should not be purchasable");
   console.assert(validatePlanId("lifetime"), "lifetime should be valid");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
@@ -3344,7 +3345,7 @@ function BusinessLadder({ onPick }) {
         "Copy a prompt, paste it into Lovable, Cursor or Claude, and a complete site comes out — fonts, animations, sections. You ship work you could not have coded.",
         "Tu copies un prompt, tu le colles dans Lovable, Cursor ou Claude, et un site complet en sort — polices, animations, sections. Tu livres un travail que tu n'aurais pas su coder.",
       ),
-      tag: t("In both plans", "Dans les deux offres"),
+      tag: isSinglePlan ? t("Included", "Inclus") : t("In both plans", "Dans les deux offres"),
       tone: "border-white/12 bg-white/[0.03]",
       accent: "text-white/45",
       icon: "sparkles",
@@ -3358,7 +3359,7 @@ function BusinessLadder({ onPick }) {
         "Building is half the job. The guide covers the other half: pricing a site, writing the offer, handling the client, delivering and getting paid.",
         "Créer, c'est la moitié du travail. Le guide couvre l'autre moitié : fixer un prix, rédiger l'offre, gérer le client, livrer et te faire payer.",
       ),
-      tag: t("Lifetime only", "Uniquement avec l'accès à vie"),
+      tag: isSinglePlan ? t("Included too", "Inclus aussi") : t("Lifetime only", "Uniquement avec l'accès à vie"),
       tone: "border-amber-400/25 bg-amber-400/[0.05]",
       accent: "text-amber-300/80",
       icon: "gift",
@@ -3425,7 +3426,7 @@ function BusinessLadder({ onPick }) {
         >
           {t("Get all three", "Prendre les trois")} <Icon name="arrow" className="h-4 w-4" />
         </button>
-        <p className="text-xs text-white/40">{t("The prompts come with both plans. The ebook only with lifetime.", "Les prompts sont dans les deux offres. L'ebook uniquement à vie.")}</p>
+        <p className="text-xs text-white/40">{isSinglePlan ? t("Prompts and ebook, one payment, for life.", "Les prompts et l'ebook, un paiement, à vie.") : t("The prompts come with both plans. The ebook only with lifetime.", "Les prompts sont dans les deux offres. L'ebook uniquement à vie.")}</p>
       </motion.div>
     </section>
   );
