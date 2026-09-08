@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { track } from "./analytics.js";
 import { getRef, refProps } from "./affiliate.js";
+import PROMPT_ADDED from "./prompt-added.json";
 
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
@@ -92,9 +93,8 @@ function LangSwitch({ className = "" }) {
 const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 
 const prompts = [
-  // Front of the gallery, hand-picked: the newest work first, then motion
-  // previews, one per category, so the first screen shows range rather than
-  // repetition.
+  // Display order is by git add date (see availablePrompts), newest first;
+  // this array's order only breaks ties. New entries still go at the top.
   { title: "Lavender Gaze Footer", category: "Component", type: "Component", file: "Studio_Gaze_Footer.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260908_075426_d8a1ca55-df38-472c-925d-36a9ba5d6226.png&w=1920&q=85", tags: ["Footer", "Eye Tracking", "Video"], gradient: "from-[#f0eefa] via-violet-300 to-[#dfe4f2]" },
   { title: "Built for Intelligent Performance", category: "AI / SaaS", type: "Hero", file: "Intelligent_Performance_Metric_Cards.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/intelligent_performance_saas_t.mp4", tags: ["Glass Cards", "LED Dots", "Video"], gradient: "from-rose-200 via-fuchsia-800 to-[#8c1320]" },
   { title: "Terranova — Signals from the Deep Green", category: "Hero Section", type: "Hero", file: "Terranova_Liquid_Glass_Landing.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260816_131013_d9bf1472-1ae3-4faf-9da6-f0e1b47c9f07.png&w=1280&q=85", tags: ["Liquid Glass", "SVG Filter", "Video"], gradient: "from-white via-slate-300 to-[#c2ccd3]" },
@@ -532,7 +532,16 @@ function isPromptAvailable(item) {
 // entries whose markdown was never added to the repo — they must not be
 // rendered, opened by URL, featured in the showcase, or counted in the copy
 // that promises how many prompts a buyer gets.
-const availablePrompts = prompts.filter(isPromptAvailable);
+// Newest first, by the day each prompt file landed in git (src/prompt-added.json,
+// regenerated with `node scripts/prompt-dates.mjs`). A hosted file not yet in
+// the map is newer than everything in it; a link-only entry (no file) has no
+// date and goes last; ties (the initial import) keep array order.
+const addedAt = (item) => PROMPT_ADDED[item.file] ?? (AVAILABLE_FILES.has(item.file) ? Infinity : 0);
+const availablePrompts = prompts
+  .map((item, i) => ({ item, i }))
+  .filter(({ item }) => isPromptAvailable(item))
+  .sort((a, b) => addedAt(b.item) - addedAt(a.item) || a.i - b.i)
+  .map(({ item }) => item);
 
 // Nothing is given away any more: every prompt sits behind the paywall.
 // Putting a filename back here re-opens that prompt, and it must be added to
@@ -1277,8 +1286,7 @@ export default function MoventoSite() {
   // are added at the front of `prompts`, so position is the only recency we have.
   const [galleryFilter, setGalleryFilter] = useState("all");
   const filtered = useMemo(() => {
-    // availablePrompts is already in display order: newest first (new entries
-    // are added at the top of `prompts`).
+    // availablePrompts is already in display order: newest first by git date.
     const q = query.toLowerCase();
     return availablePrompts.filter((p, i) => {
       if (galleryFilter === "new" && i >= NEW_PROMPT_COUNT) return false;
