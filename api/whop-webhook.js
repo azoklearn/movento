@@ -66,7 +66,8 @@ function planKindFrom(data) {
 function membershipTypeFrom(data) {
   const kind = planKindFrom(data);
   if (kind === "pack") return "pack";
-  if (kind) return kind === "lifetime" ? "lifetime" : "subscription";
+  // Coaching is lifetime access plus a service, paid once: same access type.
+  if (kind) return kind === "lifetime" || kind === "coaching" ? "lifetime" : "subscription";
   if (data.renewal_period_end) return "subscription";
   if (data.status === "completed") return "lifetime";
   return "unknown";

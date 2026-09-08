@@ -559,6 +559,11 @@ const PRICE_LIFETIME = 89;
 // badge is computed from the pair, never typed, so it cannot claim a discount
 // the two numbers do not support.
 const PRICE_LIFETIME_ANCHOR = 159;
+// Lifetime plus personal coaching up to the buyer's first sale. Off until the
+// Whop plan exists (WHOP_COACHING_URL / COACHING_FALLBACK_URL in api/_shared.js):
+// a card the checkout refuses is worse than no card.
+const PRICE_COACHING = 145;
+const COACHING_ENABLED = false;
 const PRICE_YEARLY = 49;
 const PRICE_MONTHLY = 21.99;
 const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
@@ -651,6 +656,22 @@ const plans = [
     features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
   },
   {
+    id: "coaching",
+    hidden: !COACHING_ENABLED,
+    name: t("Lifetime + coaching", "À vie + coaching"),
+    price: eur(PRICE_COACHING),
+    period: t("once", "une fois"),
+    badge: t("Coached to your first sale", "Jusqu'à ta première vente"),
+    description: t("Everything in lifetime, and I work with you until you have sold your first site.", "Tout l'accès à vie, et je t'accompagne jusqu'à ta première vente de site."),
+    cta: t("Get coached", "Me faire accompagner"),
+    featured: false,
+    perk: t("Personal coaching until your first sale", "Coaching personnalisé jusqu'à ta première vente"),
+    perkDesc: t("Your first site, your offer, your first client — we go through it together. One sale pays for it.", "Ton premier site, ton offre, ton premier client — on avance ensemble. Rentabilisé dès une vente."),
+    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
+    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
+    features: [t("Every prompt, for life", "Tous les prompts, à vie"), t("Personal coaching to build your sites", "Coaching personnalisé pour créer tes sites"), t("Support until your first sale", "Accompagnement jusqu'à ta première vente"), t("Direct support included", "Support direct inclus"), t("Pays for itself with one sale", "Rentabilisé en une vente")],
+  },
+  {
     id: "pack",
     // On sale in the plan grid, alongside lifetime and on the same terms as
     // every other surface that offers it — the popup and the paywall trip.
@@ -709,6 +730,7 @@ const isSinglePlan = visiblePlans.length === 1;
 // grid.
 const packPlan = plans.find((plan) => plan.id === "pack");
 const lifetimePlan = plans.find((plan) => plan.id === "lifetime" && !plan.hidden);
+const coachingPlan = plans.find((plan) => plan.id === "coaching" && !plan.hidden);
 const yearlyPlan = plans.find((plan) => plan.id === "yearly" && !plan.hidden);
 const monthlyPlan = plans.find((plan) => plan.id === "monthly" && !plan.hidden);
 
@@ -1175,6 +1197,7 @@ function runSelfTests() {
   console.assert(!validatePlanId("monthly"), "monthly is retired and should not be purchasable");
   console.assert(!validatePlanId("yearly"), "yearly is retired and should not be purchasable");
   console.assert(validatePlanId("lifetime"), "lifetime should be valid");
+  console.assert(validatePlanId("coaching") === COACHING_ENABLED, "coaching must be purchasable exactly when it is enabled");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // On sale in the grid while the kill switch is on, and off it entirely when
   // it is not — the card and the checkout must never disagree.
@@ -1621,6 +1644,22 @@ export default function MoventoSite() {
                         </span>
                       </button>
                     )}
+                    {coachingPlan && (
+                      <button
+                        onClick={() => { track("coaching_offer_clicked", { prompt: previewItem.title, category: previewItem.category, source: "prompt_popup" }); startCheckout(coachingPlan); }}
+                        disabled={Boolean(checkoutPlan)}
+                        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.05] px-4 py-3 text-left transition hover:border-amber-400/50 hover:bg-amber-400/[0.09] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#EDE9E0]">{t("Lifetime + coaching", "À vie + coaching")}</span>
+                            <span className="flex-none rounded-full border border-amber-400/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300/90">{t("First sale", "1re vente")}</span>
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-5 text-white/45">{t("Everything, plus I coach you until your first site is sold.", "Tout, plus je t'accompagne jusqu'à ta première vente.")}</span>
+                        </span>
+                        <span className="flex-none rounded-full bg-[#EDE9E0] px-4 py-2 text-sm font-bold text-[#0A0A0B]">{eur(PRICE_COACHING)}</span>
+                      </button>
+                    )}
                     {yearlyPlan && (
                       <button
                         onClick={() => { track("yearly_offer_clicked", { prompt: previewItem.title, category: previewItem.category, source: "prompt_popup" }); startCheckout(yearlyPlan); }}
@@ -1994,7 +2033,7 @@ export default function MoventoSite() {
       <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">{isSinglePlan ? t("One payment, forever", "Un paiement, à vie") : t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue either way. One payment, or a subscription you stop whenever you like.", "Le catalogue entier dans les deux cas. Un paiement unique, ou un abonnement que tu arrêtes quand tu veux.")}</p>
+          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue either way, one payment. On your own, or coached until your first sale.", "Le catalogue entier dans les deux cas, un seul paiement. Seul, ou accompagné jusqu'à ta première vente.")}</p>
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
           <div className="mt-5 flex items-center justify-center gap-2">
@@ -2078,7 +2117,7 @@ function earnedEbook(info) {
 // an unidentified plan must not be handed a private phone number we did not
 // sell them.
 function earnedSupport(info) {
-  return info?.kind === "lifetime" || info?.type === "lifetime";
+  return info?.kind === "lifetime" || info?.kind === "coaching" || info?.type === "lifetime";
 }
 
 // How a lifetime buyer reaches a human. Shown on /success and on "My
@@ -3406,7 +3445,7 @@ function BusinessLadder({ onPick }) {
         "Building is half the job. The guide covers the other half: pricing a site, writing the offer, handling the client, delivering and getting paid.",
         "Créer, c'est la moitié du travail. Le guide couvre l'autre moitié : fixer un prix, rédiger l'offre, gérer le client, livrer et te faire payer.",
       ),
-      tag: isSinglePlan ? t("Included too", "Inclus aussi") : t("Lifetime only", "Uniquement avec l'accès à vie"),
+      tag: isSinglePlan ? t("Included too", "Inclus aussi") : t("In both plans", "Dans les deux offres"),
       tone: "border-amber-400/25 bg-amber-400/[0.05]",
       accent: "text-amber-300/80",
       icon: "gift",
@@ -3473,7 +3512,7 @@ function BusinessLadder({ onPick }) {
         >
           {t("Get all three", "Prendre les trois")} <Icon name="arrow" className="h-4 w-4" />
         </button>
-        <p className="text-xs text-white/40">{isSinglePlan ? t("Prompts and ebook, one payment, for life.", "Les prompts et l'ebook, un paiement, à vie.") : t("The prompts come with both plans. The ebook only with lifetime.", "Les prompts sont dans les deux offres. L'ebook uniquement à vie.")}</p>
+        <p className="text-xs text-white/40">{isSinglePlan ? t("Prompts and ebook, one payment, for life.", "Les prompts et l'ebook, un paiement, à vie.") : t("Prompts and ebook in both plans. Coaching to your first sale with the coached plan.", "Prompts et ebook dans les deux offres. Le coaching jusqu'à ta première vente avec l'offre accompagnée.")}</p>
       </motion.div>
     </section>
   );
@@ -3540,7 +3579,7 @@ function PricingPage() {
             {isSinglePlan ? t("One payment,", "Un paiement,") : t("Choose your", "Choisissez votre")}{" "}
             <span className="text-white/45">{isSinglePlan ? t("forever", "à vie") : t("plan", "offre")}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue either way. One payment, or a subscription you stop whenever you like.", "Le catalogue entier dans les deux cas. Un paiement unique, ou un abonnement que tu arrêtes quand tu veux.")}</p>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue either way, one payment. On your own, or coached until your first sale.", "Le catalogue entier dans les deux cas, un seul paiement. Seul, ou accompagné jusqu'à ta première vente.")}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
