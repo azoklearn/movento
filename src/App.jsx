@@ -2074,7 +2074,7 @@ export default function MoventoSite() {
 
           {/* The whole explanation, in one video, right under the promise —
               then the catalogue. Nothing else on this page. */}
-          <section id="video" className="relative z-10 mx-auto max-w-4xl px-6 pb-2 pt-10 lg:px-8 lg:pt-14">
+          <section id="video" className="relative z-10 mx-auto max-w-6xl px-3 pb-2 pt-10 sm:px-6 lg:px-8 lg:pt-14">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
