@@ -584,8 +584,9 @@ const PROMO_PERCENT = 10;
 // banner, the copy button) keys off promptCredits instead, and the API side is
 // untouched, so anyone holding an unspent pack keeps it and can still claim.
 //
-// Turning it back on is one word. The checkout link ships in api/_shared.js
-// (Whop plan_duNdZcsNAOPSx); WHOP_PACK_URL only overrides it. PROMPT_PACK_SIZE
+// Turning it back on needs a new Whop plan first: its old one
+// (plan_duNdZcsNAOPSx) now sells lifetime, so PACK_FALLBACK_URL in
+// api/_shared.js is empty and WHOP_PACK_URL must be set. PROMPT_PACK_SIZE
 // must match the constant of the same name in api/_shared.js, which is what
 // actually credits the buyer — announcing three and crediting one is the one
 // failure mode that costs trust.
