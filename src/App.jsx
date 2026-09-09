@@ -9,7 +9,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ?
 const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_URL}/api/create-checkout-session`;
 // Walkthrough video shown under the three steps. TikTok's iframe embed is used
 // rather than their embed.js so the page pulls no third-party script.
-const TIKTOK_VIDEO_ID = "7670451978840968480";
+// The one explainer on the home: what Movento is, in a minute.
+const LOOM_EMBED_URL = "https://www.loom.com/embed/a2716b9b7b7641958e56d1559ebdee43";
 
 // Deadline of the launch offer, shown as a live countdown in the bottom banner
 // on /pricing. It MUST be a real, fixed date — an ISO string with an offset,
@@ -1965,8 +1966,6 @@ export default function MoventoSite() {
           <a href="/pricing" className="transition hover:text-[#EDE9E0]">{t("Pricing", "Tarifs")}</a>
           <a href="/tiktok" className="transition hover:text-[#EDE9E0]">{t("Monetize TikTok", "Monétise TikTok")}</a>
           <a href="/subscription" className="transition hover:text-[#EDE9E0]">{t("My subscription", "Mon abonnement")}</a>
-          <a href="/#how" className="transition hover:text-[#EDE9E0]">{t("Guide", "Guide")}</a>
-          <a href="/#faq" className="transition hover:text-[#EDE9E0]">FAQ</a>
         </nav>
         <div className="hidden items-center gap-3 md:flex">
           <LangSwitch />
@@ -2010,8 +2009,6 @@ export default function MoventoSite() {
                     { href: "/pricing", label: t("Pricing", "Tarifs") },
                     { href: "/tiktok", label: t("Monetize TikTok", "Monétise TikTok") },
                     { href: "/subscription", label: t("My subscription", "Mon abonnement") },
-                    { href: "/#how", label: t("Guide", "Guide") },
-                    { href: "/#faq", label: "FAQ" },
                   ].map((link, i) => (
                     <motion.a
                       key={link.label}
@@ -2072,6 +2069,34 @@ export default function MoventoSite() {
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.19 }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-6 py-3 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
               <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("See pricing", "Voir les tarifs")}</a>
+            </motion.div>
+          </section>
+
+          {/* The whole explanation, in one video, right under the promise —
+              then the catalogue. Nothing else on this page. */}
+          <section id="video" className="relative z-10 mx-auto max-w-4xl px-6 pb-2 pt-10 lg:px-8 lg:pt-14">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.26, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden rounded-[20px] border border-white/10 bg-[#0B0B0D] shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9)] sm:rounded-[28px]"
+            >
+              {/* 16:9 box rather than a fixed height: the player fills it at
+                  every width and never letterboxes itself on a phone. */}
+              <div className="relative aspect-video">
+                <iframe
+                  src={`${LOOM_EMBED_URL}?hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true`}
+                  title={t("What Movento is", "Movento, c'est quoi")}
+                  className="absolute inset-0 h-full w-full border-0"
+                  // Without it the frame paints white before the player is up,
+                  // which flashes on a black page.
+                  style={{ colorScheme: "dark" }}
+                  loading="lazy"
+                  allow="fullscreen; picture-in-picture; clipboard-write"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
             </motion.div>
           </section>
         </>
@@ -2174,103 +2199,6 @@ export default function MoventoSite() {
               );
             })}
           </AnimatePresence>
-        </div>
-      </section>
-
-      {!isPromptsPage && (
-        <>
-      {/* The designs come first — most visitors arrive from a video and
-          already know the mechanic; the explanation is for the ones who
-          don't, and it sits right under the cards. */}
-      <HowItWorks />
-
-      {/* Right after "how it works": the visitor now knows the mechanic, this
-          is what the mechanic is FOR. */}
-      <BusinessLadder onPick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
-
-      {/* The walkthrough sits after the catalogue, not before it: the designs are
-          what sell, and a vertical video between the hero and the gallery pushed
-          the prompts a full screen down on mobile. */}
-      <section id="video" className="relative z-10 mx-auto max-w-7xl px-6 pt-12 pb-4 text-center lg:px-8 lg:pt-16">
-        <h2 className="text-3xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-5xl">{t("What is Movento?", "Movento, c'est quoi ?")}</h2>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/55 md:mt-4 md:text-base md:leading-7">{t("A minute to see how it works, from the prompt to the finished site.", "Une minute pour voir comment ça marche, du prompt au site fini.")}</p>
-        <div className="mx-auto mt-6 w-full max-w-[325px] overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:mt-8">
-          <iframe
-            src={`https://www.tiktok.com/embed/v2/${TIKTOK_VIDEO_ID}`}
-            title={t("How Movento works", "Comment fonctionne Movento")}
-            // Height follows the viewport so the vertical video never overflows a
-            // phone screen, bounded so it stays watchable on short and tall ones.
-            className="block h-[78vh] max-h-[740px] min-h-[480px] w-full border-0"
-            loading="lazy"
-            allow="encrypted-media; picture-in-picture; fullscreen"
-            referrerPolicy="strict-origin-when-cross-origin"
-          />
-        </div>
-      </section>
-
-
-      <Testimonials />
-
-      {/* The number a visitor already has in their head — what a site costs —
-          set next to ours, right before they see the plans. */}
-      <PriceAnchor onPick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
-
-      <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 pt-10 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">{isSinglePlan ? t("One payment, forever", "Un paiement, à vie") : t("Choose your plan", "Choisissez votre offre")}</h2>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{isSinglePlan ? t("Access every premium prompt. Yours for good.", "Accède à tous les prompts premium. À toi pour de bon.") : t("The whole catalogue either way. One payment, or a subscription you stop whenever you like.", "Le catalogue entier dans les deux cas. Un paiement unique, ou un abonnement que tu arrêtes quand tu veux.")}</p>
-          {/* The rating is declared as AggregateRating in index.html; Google only
-              honours that markup when the same figure is visible on the page. */}
-          <div className="mt-5 flex items-center justify-center gap-2">
-            <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-4 w-4" />)}</span>
-            <span className="text-sm font-semibold text-[#EDE9E0]">{RATING_SCORE}/5</span>
-            <span className="text-sm text-white/40">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
-          </div>
-        </div>
-
-        <div className={`mx-auto mt-12 grid items-start gap-3 sm:gap-5 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
-          {visiblePlans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={startCheckout} />
-          ))}
-        </div>
-
-        <Reassurance className="mt-8" />
-      </section>
-
-      <section id="faq" className="relative z-10 mx-auto max-w-7xl px-6 pb-28 lg:px-8">
-        <div className="mb-14 max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/70">FAQ</p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-[#EDE9E0] md:text-5xl">{t("Questions, answered", "Vos questions, nos réponses")}</h2>
-        </div>
-        <div className="grid gap-x-12 gap-y-10 md:grid-cols-2">
-          {[
-            { q: t("How does it work?", "Comment ça marche ?"), a: t("Pick a prompt in the gallery, copy it in one click, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify. The AI generates the full site — you just customize the content.", "Choisissez un prompt dans la galerie, copiez-le en un clic, collez-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify. L'IA génère le site complet — il ne vous reste qu'à personnaliser le contenu.") },
-            { q: t("Which tools are supported?", "Quels outils sont compatibles ?"), a: t("Any AI tool that accepts a text prompt: Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... The prompts describe every detail (fonts, colors, animations) so the result stays faithful.", "Tous les outils IA qui acceptent un prompt texte : Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... Les prompts décrivent chaque détail (polices, couleurs, animations) pour un résultat fidèle.") },
-            { q: t("Is there anything to cancel?", "Y a-t-il quelque chose à résilier ?"), a: t("No. Access is a single payment, with no subscription and nothing billed again. An older monthly subscription can still be cancelled anytime from the My subscription page or directly on Whop.", "Non. L'accès est un paiement unique, sans abonnement et sans rien qui se représente. Un ancien abonnement mensuel reste résiliable à tout moment depuis la page Mon abonnement ou directement sur Whop.") },
-            { q: t("How do I access prompts after paying?", "Comment j'accède aux prompts après paiement ?"), a: t("The email you used at checkout is your access key. Enter it in the gallery on any device and every prompt unlocks instantly.", "L'email utilisé au paiement est votre clé d'accès. Entrez-le dans la galerie sur n'importe quel appareil et tous les prompts se débloquent instantanément.") },
-            { q: t("Is the catalog updated?", "Le catalogue est-il mis à jour ?"), a: t("Yes — new premium prompts are added regularly, and they're all included in your plan at no extra cost.", "Oui — de nouveaux prompts premium sont ajoutés régulièrement, et ils sont tous inclus dans votre accès sans surcoût.") },
-            { q: t("Can I use the sites commercially?", "Puis-je utiliser les sites commercialement ?"), a: t("Yes. The sites you generate from our prompts are yours — client projects, portfolios, product launches, anything.", "Oui. Les sites que vous générez à partir de nos prompts vous appartiennent — projets clients, portfolios, lancements de produits, tout est permis.") },
-          ].map((item) => (
-            <div key={item.q} className="border-t border-white/10 pt-6">
-              <h3 className="text-base font-semibold text-[#EDE9E0]">{item.q}</h3>
-              <p className="mt-3 max-w-lg text-sm leading-7 text-white/55">{item.a}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-        </>
-      )}
-
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-28 lg:px-8">
-        <div className="relative overflow-hidden rounded-[40px] border border-white/10 bg-[#121214] px-8 py-16 text-center shadow-2xl shadow-black/40 md:py-20">
-          <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-white/[0.06] blur-[100px]" />
-          <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "28px 28px" }} />
-          <h2 className="relative mx-auto max-w-2xl text-3xl font-bold tracking-tight text-[#EDE9E0] md:text-5xl">{t("Your next site is one prompt away.", "Votre prochain site est à un prompt près.")}</h2>
-          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-white/60 md:text-base">{t("One great prompt saves hours of design, integration and client back-and-forth.", "Un bon prompt vous économise des heures de design, d'intégration et d'allers-retours client.")}</p>
-          <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-8 py-3.5 text-sm font-bold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("See plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-            <span className="text-xs text-white/50">{t("One payment, lifetime access", "Un paiement, accès à vie")}</span>
-          </div>
         </div>
       </section>
 
@@ -3206,159 +3134,6 @@ function PriceAnchor({ onPick }) {
           <div className="relative">{cta}</div>
         </div>
       </motion.div>
-    </section>
-  );
-}
-
-// The clip the "generate your site" step shows. Named rather than "first with
-// a video" so a new catalogue entry cannot silently swap it; each falls
-// through to the next if its card is ever removed.
-const STEP_DEMO_TITLES = ["Fiamma Pizzeria", "Baseline Tennis Club", "Vanta Haute Horlogerie", "Photographer Portfolio"];
-const pickDemo = (titles) => titles.map((title) => availablePrompts.find((p) => p.title === title && isVideoPreview(p.preview))).find(Boolean) || availablePrompts.find((p) => isVideoPreview(p.preview));
-
-// Illustrative lines in the shape of a real prompt — the actual prompts are
-// what is being sold, so nothing here is lifted from one.
-const DEMO_PROMPT_LINES = [
-  t("Build a full-screen hero for a luxury watch brand.", "Crée un hero plein écran pour une marque d'horlogerie de luxe."),
-  t("Font: Instrument Serif for titles, Inter for body.", "Police : Instrument Serif pour les titres, Inter pour le texte."),
-  t("Background: looping video, dark scrim at 40%.", "Fond : vidéo en boucle, voile sombre à 40 %."),
-  t("Nav: logo left, 4 links, white pill CTA right.", "Nav : logo à gauche, 4 liens, bouton pill blanc à droite."),
-  t("Entrance: staggered fade-up, 72ms between elements.", "Entrée : fade-up décalé, 72 ms entre les éléments."),
-  t("Mobile: hamburger, full-height menu, safe areas.", "Mobile : burger, menu plein écran, safe areas."),
-];
-
-// A window chrome with three dots, shared by the prompt panel and the browser
-// frames so the demo reads as "two apps side by side".
-function WindowChrome({ label, right = null }) {
-  return (
-    <div className="flex items-center gap-2 border-b border-white/[0.07] px-4 py-2.5">
-      <span className="flex gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-white/15" /><span className="h-2.5 w-2.5 rounded-full bg-white/15" /><span className="h-2.5 w-2.5 rounded-full bg-white/15" /></span>
-      <span className="ml-2 min-w-0 truncate text-[11px] font-medium text-white/40">{label}</span>
-      {right && <span className="ml-auto flex-none">{right}</span>}
-    </div>
-  );
-}
-
-function PromptWindow({ lines = DEMO_PROMPT_LINES, copied = false, compact = false }) {
-  const copiedPill = copied ? (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
-      <Icon name="check" className="h-3 w-3" /> {t("Copied", "Copié")}
-    </span>
-  ) : null;
-  return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0E0E10]">
-      <WindowChrome label="prompt.md" right={copiedPill} />
-      {/* The small copy in the steps card clips its lines; the hero panel has
-          the room to wrap them, and a wrapped line reads better than an
-          ellipsis three words in. */}
-      <div className={`flex-1 font-mono text-white/70 ${compact ? "px-4 py-3 text-[11px] leading-5" : "px-5 py-4 text-[12px] leading-6 sm:text-[13px] sm:leading-7"}`}>
-        {lines.map((line, i) => (
-          <p key={line} className="flex gap-3">
-            <span className="select-none text-white/20">{String(i + 1).padStart(2, "0")}</span>
-            <span className={`min-w-0 ${compact ? "truncate" : "break-words"}`}>{line}</span>
-          </p>
-        ))}
-        <p className="flex gap-3 text-white/25"><span className="select-none text-white/20">{String(lines.length + 1).padStart(2, "0")}</span><span className="motion-safe:animate-pulse">▍</span></p>
-      </div>
-    </div>
-  );
-}
-
-function BrowserFrame({ item, label }) {
-  const [failed, setFailed] = useState(false);
-  if (!item) return null;
-  return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0E0E10]">
-      <WindowChrome label={label || `${slugify(item.title)}.site`} />
-      {/* The wireframe sits under the clip so the frame is never an empty
-          black box — before the video arrives, or if it never does. */}
-      <div className="relative flex-1 bg-[#0B0B0D]">
-        <div className="absolute inset-0"><GeneratedPreview item={item} /></div>
-        {!failed && <video src={item.preview} poster={posterFor(item.preview)} className="absolute inset-0 h-full w-full object-cover" autoPlay loop muted playsInline preload="metadata" onError={() => setFailed(true)} />}
-      </div>
-    </div>
-  );
-}
-
-// Three steps, one visual each, one sentence each. This is the section a
-// first-time visitor needs before the catalogue means anything to them.
-// A real preview at thumbnail size: the clip or the still, whichever the card
-// has, over the wireframe so nothing is blank while it loads.
-function MediaTile({ item }) {
-  const [failed, setFailed] = useState(false);
-  const video = !failed && isVideoPreview(item.preview);
-  const image = !failed && isImagePreview(item.preview);
-  return (
-    <div className="absolute inset-0 bg-[#0B0B0D]">
-      <GeneratedPreview item={item} />
-      {video && <video src={item.preview} poster={posterFor(item.preview)} className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: item.previewPosition || "center" }} autoPlay loop muted playsInline preload="metadata" onError={() => setFailed(true)} />}
-      {image && <img src={item.preview} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: item.previewPosition || "center" }} loading="lazy" decoding="async" onError={() => setFailed(true)} />}
-    </div>
-  );
-}
-
-function HowItWorks() {
-  // Only cards with a real preview: a gradient tile would not show a design.
-  const chooseItems = [...SHOWCASE_TITLES.map((title) => availablePrompts.find((p) => p.title === title)), ...availablePrompts]
-    .filter((p, i, all) => p && all.indexOf(p) === i && (isVideoPreview(p.preview) || isImagePreview(p.preview)))
-    .slice(0, 4);
-  const generated = pickDemo(STEP_DEMO_TITLES);
-  const steps = [
-    {
-      title: t("Pick a design", "Choisis un design"),
-      body: t(`Browse the ${availablePrompts.length} previews and take the one that fits your project.`, `Parcours les ${availablePrompts.length} aperçus et prends celui qui colle à ton projet.`),
-      visual: (
-        <div className="grid h-full grid-cols-2 gap-2 p-3">
-          {chooseItems.map((item, i) => (
-            <div key={item.file} className={`relative overflow-hidden rounded-xl border bg-[#0B0B0D] ${i === 0 ? "border-white/40 ring-2 ring-white/20" : "border-white/[0.08] opacity-80"}`}>
-              <MediaTile item={item} />
-              {i === 0 && <span className="absolute right-2 top-2 z-10 grid h-5 w-5 place-items-center rounded-full bg-[#EDE9E0] text-[#0A0A0B]"><Icon name="check" className="h-3 w-3" /></span>}
-            </div>
-          ))}
-        </div>
-      ),
-    },
-    {
-      title: t("Copy the prompt", "Copie le prompt"),
-      body: t("One click. The prompt describes everything: fonts, colors, animations, sections.", "Un clic. Le prompt décrit tout : polices, couleurs, animations, sections."),
-      visual: <div className="h-full p-3"><PromptWindow compact copied /></div>,
-    },
-    {
-      title: t("Generate your site", "Génère ton site"),
-      body: t("Paste it into Lovable, Cursor or Claude. The site comes out complete — you change the words.", "Colle-le dans Lovable, Cursor ou Claude. Le site sort complet, tu changes les textes."),
-      visual: <div className="h-full p-3"><BrowserFrame item={generated} label={t("your-site.com", "ton-site.com")} /></div>,
-    },
-  ];
-
-  return (
-    <section id="how" className="relative z-10 mx-auto max-w-7xl scroll-mt-24 px-6 py-20 lg:px-8 lg:py-28">
-      <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("How it works", "Comment ça marche")}</p>
-        <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{t("Three steps, one site online", "Trois étapes, un site en ligne")}</h2>
-        <p className="mx-auto mt-4 max-w-md text-base leading-7 text-white/55">{t("No code, no mockup, no designer.", "Pas de code, pas de maquette, pas de designer.")}</p>
-      </motion.div>
-
-      <ol className="mt-12 grid gap-5 md:grid-cols-3 md:gap-6">
-        {steps.map((step, i) => (
-          <motion.li
-            key={step.title}
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col overflow-hidden rounded-[26px] border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"
-          >
-            <div className="aspect-[1.35] border-b border-white/[0.07] bg-[#0E0E10]">{step.visual}</div>
-            <div className="p-6">
-              <div className="flex items-center gap-3">
-                <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-[#08080A] text-xs font-bold text-white">0{i + 1}</span>
-                <h3 className="text-lg font-semibold tracking-tight text-[#EDE9E0]">{step.title}</h3>
-              </div>
-              <p className="mt-3 text-sm leading-6 text-white/55">{step.body}</p>
-            </div>
-          </motion.li>
-        ))}
-      </ol>
     </section>
   );
 }

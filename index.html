@@ -48,9 +48,10 @@
     <link rel="dns-prefetch" href="https://www.vividsites.app" />
     <link rel="dns-prefetch" href="https://motionsites.ai" />
     <link rel="dns-prefetch" href="https://image.mux.com" />
-    <!-- Structured data. The FAQ entries mirror the questions actually rendered
-         in the #faq section — Google drops (and penalises) FAQ markup that does
-         not appear on the page, so the two must be kept in sync. -->
+    <!-- Structured data. Every claim here has to be visible on the page Google
+         renders — it drops (and penalises) markup that does not appear. The
+         FAQPage block went out with the FAQ section; the offer and the rating
+         are shown on /pricing, which is what the offer URL points at. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -92,41 +93,6 @@
               "priceCurrency": "EUR",
               "url": "https://movento.dev/pricing",
               "availability": "https://schema.org/InStock"
-            }
-          ]
-        },
-        {
-          "@type": "FAQPage",
-          "mainEntity": [
-            {
-              "@type": "Question",
-              "name": "Comment ça marche ?",
-              "acceptedAnswer": { "@type": "Answer", "text": "Choisissez un prompt dans la galerie, copiez-le en un clic, collez-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify. L'IA génère le site complet — il ne vous reste qu'à personnaliser le contenu." }
-            },
-            {
-              "@type": "Question",
-              "name": "Quels outils sont compatibles ?",
-              "acceptedAnswer": { "@type": "Answer", "text": "Tous les outils IA qui acceptent un prompt texte : Lovable, v0, Bolt, Cursor, Claude, Shopify, ChatGPT... Les prompts décrivent chaque détail (polices, couleurs, animations) pour un résultat fidèle." }
-            },
-            {
-              "@type": "Question",
-              "name": "Y a-t-il quelque chose à résilier ?",
-              "acceptedAnswer": { "@type": "Answer", "text": "Non. L'accès est un paiement unique, sans abonnement et sans rien qui se représente. Un ancien abonnement mensuel reste résiliable à tout moment depuis la page Mon abonnement ou directement sur Whop." }
-            },
-            {
-              "@type": "Question",
-              "name": "Comment j'accède aux prompts après paiement ?",
-              "acceptedAnswer": { "@type": "Answer", "text": "L'email utilisé au paiement est votre clé d'accès. Entrez-le dans la galerie sur n'importe quel appareil et tous les prompts se débloquent instantanément." }
-            },
-            {
-              "@type": "Question",
-              "name": "Le catalogue est-il mis à jour ?",
-              "acceptedAnswer": { "@type": "Answer", "text": "Oui — de nouveaux prompts premium sont ajoutés régulièrement, et ils sont tous inclus dans votre accès sans surcoût." }
-            },
-            {
-              "@type": "Question",
-              "name": "Puis-je utiliser les sites commercialement ?",
-              "acceptedAnswer": { "@type": "Answer", "text": "Oui. Les sites que vous générez à partir de nos prompts vous appartiennent — projets clients, portfolios, lancements de produits, tout est permis." }
             }
           ]
         }
