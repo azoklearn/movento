@@ -64,10 +64,6 @@ const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_Yj3NE8r5Jj0E1";
 // id cannot be resolved, and the buyer was redirected to Whop instead of paying
 // on the site like every other plan.
 const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
-// Lifetime plus personal coaching up to the buyer's first sale. No Whop plan
-// yet: set WHOP_COACHING_URL (a .../checkout/plan_xxx link) or paste the plan
-// here, and flip COACHING_ENABLED in src/App.jsx.
-const COACHING_FALLBACK_URL = "";
 // A pack of prompts, bought without the catalogue (Whop product
 // prod_zZlcqsSutlXvW). One purchase, PROMPT_PACK_SIZE prompts of your choice.
 const PACK_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
@@ -82,7 +78,6 @@ const fallbackUrls = {
   monthly: MONTHLY_FALLBACK_URL,
   yearly: YEARLY_FALLBACK_URL,
   lifetime: LIFETIME_FALLBACK_URL,
-  coaching: COACHING_FALLBACK_URL,
   pack: PACK_FALLBACK_URL,
 };
 
@@ -90,7 +85,6 @@ export const checkoutUrls = {
   monthly: process.env.WHOP_MONTHLY_URL || MONTHLY_FALLBACK_URL,
   yearly: process.env.WHOP_YEARLY_URL || YEARLY_FALLBACK_URL,
   lifetime: process.env.WHOP_LIFETIME_URL || LIFETIME_FALLBACK_URL,
-  coaching: process.env.WHOP_COACHING_URL || COACHING_FALLBACK_URL,
   // A pack of prompts. One Whop product covers the whole catalogue: the buyer
   // picks which prompts after paying, so there is nothing to create per prompt
   // and nothing to round-trip through checkout metadata.
@@ -106,7 +100,6 @@ const planIdEnv = {
   monthly: process.env.WHOP_MONTHLY_PLAN_ID,
   yearly: process.env.WHOP_YEARLY_PLAN_ID,
   lifetime: process.env.WHOP_LIFETIME_PLAN_ID,
-  coaching: process.env.WHOP_COACHING_PLAN_ID,
   pack: process.env.WHOP_PACK_PLAN_ID,
 };
 
@@ -145,7 +138,7 @@ export const RETIRED_PLANS = new Set(["yearly", "monthly"]);
 export function planKindFromPlanId(planId) {
   const id = String(planId || "").trim();
   if (!id) return null;
-  return ["monthly", "yearly", "lifetime", "coaching", "pack"].find((kind) => resolvePlanId(kind) === id) || null;
+  return ["monthly", "yearly", "lifetime", "pack"].find((kind) => resolvePlanId(kind) === id) || null;
 }
 
 // Whop credits an affiliate through the "a" query parameter. Carrying it onto the
