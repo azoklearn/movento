@@ -59,23 +59,14 @@ const WHOP_API = "https://api.whop.com/api/v1";
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_pAiB9wlNdjRGF";
 // Whop product prod_W60TAMVZvHw5I.
 const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_Yj3NE8r5Jj0E1";
-// Full access, one payment, 31.99€. This is the Whop plan that used to sell
-// the 3-prompt pack (product prod_zZlcqsSutlXvW), retitled and repriced on
-// Whop's side; the earlier lifetime plan is kept in LEGACY_PLAN_KINDS so its
-// buyers still resolve. Shipped here rather than left to WHOP_LIFETIME_URL
-// alone: without a checkout link the plan id cannot be resolved.
-const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
-// The pack has no Whop plan of its own any more (its plan became lifetime,
-// above). Empty so the shared id can only ever mean lifetime; the pack is off
-// in src/App.jsx too, and would need a new plan here to come back.
-const PACK_FALLBACK_URL = "";
-
-// Plans no longer sold on any link, keyed to the kind their buyers hold. The
-// access check and the ebook both go through planKindFromPlanId, so a lifetime
-// buyer from before the plan switch must keep resolving as "lifetime".
-const LEGACY_PLAN_KINDS = {
-  plan_jbsdSaI7sNSof: "lifetime",
-};
+// Full access, one payment (Whop product prod_YWF4xcOs3RFv9). Shipped here
+// rather than left to WHOP_LIFETIME_URL alone: without a checkout link the plan
+// id cannot be resolved, and the buyer was redirected to Whop instead of paying
+// on the site like every other plan.
+const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
+// A pack of prompts, bought without the catalogue (Whop product
+// prod_zZlcqsSutlXvW). One purchase, PROMPT_PACK_SIZE prompts of your choice.
+const PACK_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
 
 // How many prompts one pack unlocks. The webhook credits this many, and the
 // buyer spends them one prompt at a time.
@@ -147,7 +138,7 @@ export const RETIRED_PLANS = new Set(["yearly", "monthly"]);
 export function planKindFromPlanId(planId) {
   const id = String(planId || "").trim();
   if (!id) return null;
-  return ["monthly", "yearly", "lifetime", "pack"].find((kind) => resolvePlanId(kind) === id) || LEGACY_PLAN_KINDS[id] || null;
+  return ["monthly", "yearly", "lifetime", "pack"].find((kind) => resolvePlanId(kind) === id) || null;
 }
 
 // Whop credits an affiliate through the "a" query parameter. Carrying it onto the
