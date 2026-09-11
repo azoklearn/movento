@@ -96,6 +96,7 @@ const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 const prompts = [
   // Display order is by git add date (see availablePrompts), newest first;
   // this array's order only breaks ties. New entries still go at the top.
+  { title: "Cast & Render", category: "Landing Page", type: "Landing", file: "Cast_And_Render_Scroll_Scrub.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/cast-n-render.mp4", tags: ["Scroll Scrub", "Editorial", "3D"], gradient: "from-stone-100 via-stone-400 to-[#0d0c0b]" },
   { title: "Lavender Gaze Footer", category: "Component", type: "Component", file: "Studio_Gaze_Footer.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260908_075426_d8a1ca55-df38-472c-925d-36a9ba5d6226.png&w=1920&q=85", tags: ["Footer", "Eye Tracking", "Video"], gradient: "from-[#f0eefa] via-violet-300 to-[#dfe4f2]" },
   { title: "Built for Intelligent Performance", category: "AI / SaaS", type: "Hero", file: "Intelligent_Performance_Metric_Cards.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/intelligent_performance_saas_t.mp4", tags: ["Glass Cards", "LED Dots", "Video"], gradient: "from-rose-200 via-fuchsia-800 to-[#8c1320]" },
   { title: "Terranova — Signals from the Deep Green", category: "Hero Section", type: "Hero", file: "Terranova_Liquid_Glass_Landing.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260816_131013_d9bf1472-1ae3-4faf-9da6-f0e1b47c9f07.png&w=1280&q=85", tags: ["Liquid Glass", "SVG Filter", "Video"], gradient: "from-white via-slate-300 to-[#c2ccd3]" },
@@ -348,6 +349,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Cast_And_Render_Scroll_Scrub.md",
   "Studio_Gaze_Footer.md",
   "Intelligent_Performance_Metric_Cards.md",
   "Bloom_AI.md",
