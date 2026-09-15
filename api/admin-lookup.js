@@ -9,6 +9,8 @@ import {
   redisGetOwnedPrompts,
   redisGetPromptCredits,
   redisIsBlocked,
+  redisSetAccess,
+  redisUnblockEmail,
   whopConfigured,
 } from "./_shared.js";
 
@@ -83,13 +85,22 @@ async function buildLookup(email) {
 // customerHasWhopAccess itself reads: the Redis grant written by the webhook,
 // then the live Whop membership.
 //
-// POST — revokes it. This only ever deletes our own access:{email} record; it
-// never touches Whop. A live Whop membership (a trial included) re-grants
-// itself through the very fallback this endpoint reads from, the next time
-// that email is checked — so revoking here is the fix for a stray Redis
-// record, not a substitute for canceling the membership on Whop when one
-// exists. The response after a POST is a fresh lookup, so the caller sees
-// immediately whether anything is left to worry about.
+// POST { email, action } — "revoke" (the default) or "grant".
+//
+// revoke only ever deletes our own access:{email} record; it never touches
+// Whop. A live Whop membership (a trial included) re-grants itself through the
+// very fallback this endpoint reads from, the next time that email is checked
+// — so revoking here is the fix for a stray Redis record, not a substitute for
+// canceling the membership on Whop when one exists.
+//
+// grant writes the same record the Whop webhook writes for a lifetime
+// purchase, so the holder gets the catalogue and the bonus ebook without
+// paying — a gift, a refund made good, a tester. It also lifts a block on that
+// email: blocks are checked before anything else, so granting to a blocked
+// address would otherwise write a record that changes nothing.
+//
+// The response after a POST is a fresh lookup, so the caller sees immediately
+// what the account looks like now.
 //
 // Both ADMIN_TOKEN-gated like /api/leads — this hands out, and can end, a
 // customer's access.
@@ -110,14 +121,31 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Email requis." });
   }
 
+  const action = req.method === "POST" ? String(req.body?.action || "revoke") : null;
+  if (action && action !== "revoke" && action !== "grant") {
+    return res.status(400).json({ error: "Action invalide." });
+  }
+
   try {
-    if (req.method === "POST") {
+    if (action === "grant") {
+      await redisUnblockEmail(email);
+      await redisSetAccess(email, {
+        plan: "admin_grant",
+        kind: "lifetime",
+        type: "lifetime",
+        status: "active",
+        membershipId: null,
+        grantedAt: new Date().toISOString(),
+      });
+      console.log("Lifetime access granted via admin lookup:", email);
+    } else if (action === "revoke") {
       await redisClearAccess(email);
       console.log("Access revoked via admin lookup:", email);
     }
 
     const result = await buildLookup(email);
-    if (req.method === "POST") result.revoked = true;
+    if (action === "revoke") result.revoked = true;
+    if (action === "grant") result.granted = true;
     return res.json(result);
   } catch (error) {
     console.error("Admin lookup failed:", error);

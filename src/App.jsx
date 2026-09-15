@@ -3666,6 +3666,7 @@ function AdminLeadsPage() {
   // Two clicks to actually delete something: the first arms it, the second (on
   // the same email) fires. Same shape as the subscription page's cancel flow.
   const [revoke, setRevoke] = useState({ confirming: false, loading: false, error: "" });
+  const [grant, setGrant] = useState({ confirming: false, loading: false, error: "" });
 
   async function fetchLookup(value) {
     setLookup({ loading: true, error: "", data: null });
@@ -3690,6 +3691,7 @@ function AdminLeadsPage() {
     const value = lookupEmail.trim();
     if (!value) return;
     setRevoke({ confirming: false, loading: false, error: "" });
+    setGrant({ confirming: false, loading: false, error: "" });
     await fetchLookup(value);
   }
 
@@ -3703,7 +3705,7 @@ function AdminLeadsPage() {
       const response = await fetch(`${API_BASE_URL}/api/admin-lookup`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ email: lookup.data.email }),
+        body: JSON.stringify({ email: lookup.data.email, action: "revoke" }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Retrait impossible.");
@@ -3711,6 +3713,30 @@ function AdminLeadsPage() {
       setRevoke({ confirming: false, loading: false, error: "" });
     } catch (error) {
       setRevoke({ confirming: false, loading: false, error: error.message });
+    }
+  }
+
+  // Hands the catalogue and the ebook to an email that never paid — a gift, a
+  // tester, a refund made good. Two clicks like the revoke below, because it
+  // gives away the product.
+  async function runGrant() {
+    if (!grant.confirming) {
+      setGrant({ confirming: true, loading: false, error: "" });
+      return;
+    }
+    setGrant({ confirming: true, loading: true, error: "" });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin-lookup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ email: lookup.data.email, action: "grant" }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Attribution impossible.");
+      setLookup({ loading: false, error: "", data });
+      setGrant({ confirming: false, loading: false, error: "" });
+    } catch (error) {
+      setGrant({ confirming: false, loading: false, error: error.message });
     }
   }
 
@@ -3981,6 +4007,30 @@ function AdminLeadsPage() {
                     ? "Débloquer rend l'accès que cet email avait avant le blocage, s'il en avait un."
                     : "Bloquer refuse l'accès avant même de consulter Whop — contrairement au retrait ci-dessous, une adhésion active ne le contourne pas."}
                 </p>
+              </div>
+
+              {/* Gives the catalogue away, so it is shown whether or not a
+                  record exists — granting to an email with nothing on file is
+                  the whole point. Lifts a block too: a block is checked before
+                  everything else, so a grant on a blocked email would change
+                  nothing. */}
+              <div className="border-t border-white/[0.07] pt-3">
+                <button
+                  type="button"
+                  onClick={runGrant}
+                  disabled={grant.loading}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${grant.confirming ? "bg-emerald-500 text-white hover:bg-emerald-400" : "border border-emerald-400/30 bg-emerald-400/[0.08] text-emerald-300 hover:bg-emerald-400/[0.14]"}`}
+                >
+                  {grant.loading ? "…" : grant.confirming ? "Confirmer l'accès à vie" : "Donner l'accès à vie"}
+                </button>
+                {grant.confirming && !grant.loading && (
+                  <button type="button" onClick={() => setGrant({ confirming: false, loading: false, error: "" })} className="ml-2 text-sm text-white/40 hover:text-white/70">Annuler</button>
+                )}
+                <p className="mt-2 text-xs text-white/40">
+                  Tout le catalogue et l'ebook, gratuitement et sans passer par Whop{lookup.data.blocked ? " — et le blocage de cet email sera levé." : "."}
+                </p>
+                {lookup.data.granted && <p className="mt-2 text-sm font-semibold text-emerald-300">Accès à vie accordé.</p>}
+                {grant.error && <p className="mt-2 text-sm text-red-300">{grant.error}</p>}
               </div>
 
               {/* Deletes only our own record — never touches Whop. A live Whop
