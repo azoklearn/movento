@@ -595,13 +595,9 @@ const PROMO_PERCENT = 10;
 const PROMPT_PACK_ENABLED = false;
 
 // The "Voir le site en ligne" button in the prompt popup, which opens the built
-// demo (lovable.app, vercel.app…).
-//
-// OFF. Nothing is deleted: the `demo:` URL stays on every entry it was added
-// to, so the links survive and this is one word away from coming back. The
-// gallery's front block is still ordered by which prompts have one, which now
-// simply reads as a curation order.
-const SHOW_DEMO_LINKS = false;
+// demo (lovable.app, vercel.app…). Shown on the 38 entries that carry a `demo:`
+// URL; the rest of the popup is unchanged for every other prompt.
+const SHOW_DEMO_LINKS = true;
 const PROMPT_PACK_SIZE = 3;
 const PROMPT_PACK_PRICE = 19.99;
 
