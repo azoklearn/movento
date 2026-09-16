@@ -535,15 +535,25 @@ function isPromptAvailable(item) {
 // entries whose markdown was never added to the repo — they must not be
 // rendered, opened by URL, featured in the showcase, or counted in the copy
 // that promises how many prompts a buyer gets.
-// Newest first, by the day each prompt file landed in git (src/prompt-added.json,
-// regenerated with `node scripts/prompt-dates.mjs`). A hosted file not yet in
-// the map is newer than everything in it; a link-only entry (no file) has no
-// date and goes last; ties (the initial import) keep array order.
+// The "Voir le site en ligne" button in the prompt popup, which opens the built
+// demo (lovable.app, vercel.app…). Shown on the entries that carry a `demo:`
+// URL — and, below, what puts those entries first. Declared here rather than
+// with the other switches because the sort reads it as the module loads.
+const SHOW_DEMO_LINKS = true;
+
+// Prompts with a live demo first — a design you can click through sells better
+// than one you can only watch — then everything else. Inside each of the two
+// blocks: newest first, by the day the file landed in git
+// (src/prompt-added.json, regenerated with `node scripts/prompt-dates.mjs`). A
+// hosted file not yet in the map is newer than everything in it; a link-only
+// entry (no file) has no date and goes last of its block; ties (the initial
+// import) keep array order.
 const addedAt = (item) => PROMPT_ADDED[item.file] ?? (AVAILABLE_FILES.has(item.file) ? Infinity : 0);
+const hasDemo = (item) => (SHOW_DEMO_LINKS && item.demo ? 1 : 0);
 const availablePrompts = prompts
   .map((item, i) => ({ item, i }))
   .filter(({ item }) => isPromptAvailable(item))
-  .sort((a, b) => addedAt(b.item) - addedAt(a.item) || a.i - b.i)
+  .sort((a, b) => hasDemo(b.item) - hasDemo(a.item) || addedAt(b.item) - addedAt(a.item) || a.i - b.i)
   .map(({ item }) => item);
 
 // Nothing is given away any more: every prompt sits behind the paywall.
@@ -594,10 +604,6 @@ const PROMO_PERCENT = 10;
 // failure mode that costs trust.
 const PROMPT_PACK_ENABLED = false;
 
-// The "Voir le site en ligne" button in the prompt popup, which opens the built
-// demo (lovable.app, vercel.app…). Shown on the 38 entries that carry a `demo:`
-// URL; the rest of the popup is unchanged for every other prompt.
-const SHOW_DEMO_LINKS = true;
 const PROMPT_PACK_SIZE = 3;
 const PROMPT_PACK_PRICE = 19.99;
 
@@ -1487,6 +1493,17 @@ export default function MoventoSite() {
   // "all" | "new" | a category name. "new" is the top of the catalogue: entries
   // are added at the front of `prompts`, so position is the only recency we have.
   const [galleryFilter, setGalleryFilter] = useState("all");
+  // How many masonry columns to deal the cards into. Mirrors the Tailwind
+  // breakpoints the grid used to use (lg 1024, xl 1280); JS has to know the
+  // number because the cards are distributed in JS, not by CSS.
+  const columnsForWidth = () => (typeof window === "undefined" ? 2 : window.innerWidth >= 1280 ? 4 : window.innerWidth >= 1024 ? 3 : 2);
+  const [galleryColumns, setGalleryColumns] = useState(columnsForWidth);
+  useEffect(() => {
+    const sync = () => setGalleryColumns(columnsForWidth());
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
   const filtered = useMemo(() => {
     // availablePrompts is already in display order: newest first by git date.
     const q = query.toLowerCase();
@@ -2166,15 +2183,23 @@ export default function MoventoSite() {
         )}
         {/* Masonry, not a grid: each tile is as tall as its own preview, so the
             columns fall out of step with each other instead of lining up in
-            rows of identical boxes. */}
-        <div className="columns-2 gap-3 sm:gap-5 lg:columns-3 lg:gap-6 xl:columns-4">
+            rows of identical boxes.
+
+            Real columns rather than CSS `columns`, which fills the first column
+            top to bottom before starting the second — the first cards would
+            land down the left edge instead of across the top row. Dealing them
+            round-robin puts card 1, 2, 3, 4 on the first row, so the order
+            above is the order you read. */}
+        <div className="flex items-start gap-3 sm:gap-5 lg:gap-6">
+          {Array.from({ length: galleryColumns }, (_, col) => (
+          <div key={col} className="flex min-w-0 flex-1 flex-col gap-3 sm:gap-5 lg:gap-6">
           <AnimatePresence>
-            {filtered.map((item) => {
+            {filtered.filter((_, i) => i % galleryColumns === col).map((item) => {
               const isFree = FREE_PROMPT_FILES.has(item.file);
               const ownedAlone = ownedPrompts.has(item.file);
               const unlocked = hasPremiumAccess || isFree || ownedAlone;
               return (
-                <motion.div key={item.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative mb-3 break-inside-avoid sm:mb-5 lg:mb-6">
+                <motion.div key={item.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
                   <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={openPreview} badge={
                     // Icon only, no word: the state is in the glyph (lock,
                     // copy, gift, check) and the label lives in the tooltip.
@@ -2197,6 +2222,8 @@ export default function MoventoSite() {
               );
             })}
           </AnimatePresence>
+          </div>
+          ))}
         </div>
       </section>
 
