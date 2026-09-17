@@ -1909,94 +1909,33 @@ export default function MoventoSite() {
                     {copiedCard === previewItem.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : hasPremiumAccess || ownedPrompts.has(previewItem.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : promptCredits > 0 ? <><Icon name="gift" className="h-4 w-4" /> {t("Choose it", "Le choisir")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
                   </button>
                 </div>
-                {/* Two ways in, in the order the visitor should weigh them:
-                    the year first, the month second. Only for a
-                    locked prompt: someone with full access, a free prompt, a
-                    prompt already bought or an unspent purchase all have
-                    nothing to buy here. */}
-                {!hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (lifetimePlan || yearlyPlan || monthlyPlan || (PROMPT_PACK_ENABLED && packPlan)) && (
-                  <div className="space-y-2.5 border-t border-white/[0.07] px-5 pb-4 pt-4">
-                    {lifetimePlan && (
-                      <button
-                        onClick={() => { track("lifetime_offer_clicked", { prompt: previewItem.title, category: previewItem.category, source: "prompt_popup" }); startCheckout(lifetimePlan); }}
-                        disabled={Boolean(checkoutPlan)}
-                        // The launch banner's gradient, so the best offer reads
-                        // as the same thing the visitor has already seen selling
-                        // it at the bottom of every page.
-                        className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] px-4 py-3 text-left transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <span className="min-w-0">
-                          <span className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-white">{t("Unlock every prompt", "Débloquer tous les prompts")}</span>
-                            <span className="flex-none rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">{t("Best value", "Le plus avantageux")}</span>
-                          </span>
-                          <span className="mt-0.5 block text-xs leading-5 text-white/85">{t(`All ${availablePrompts.length} prompts + free ebook + 7/7 support.`, `Les ${availablePrompts.length} prompts + ebook offert + support 7j/7.`)}</span>
-                        </span>
-                        <span className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0A0A0B]">
-                          {eur(PRICE_LIFETIME)}
-                          <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-                        </span>
-                      </button>
-                    )}
-                    {yearlyPlan && (
-                      <button
-                        onClick={() => { track("yearly_offer_clicked", { prompt: previewItem.title, category: previewItem.category, source: "prompt_popup" }); startCheckout(yearlyPlan); }}
-                        disabled={Boolean(checkoutPlan)}
-                        // The bottom banner's gradient, so the offer being
-                        // pushed reads as the same thing the visitor has
-                        // already seen selling it at the foot of every page.
-                        className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] px-4 py-3 text-left transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <span className="min-w-0">
-                          <span className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-white">{t("Unlock every prompt", "Débloquer tous les prompts")}</span>
-                            <span className="flex-none rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">{t("Best value", "Le plus avantageux")}</span>
-                          </span>
-                          <span className="mt-0.5 block text-xs leading-5 text-white/85">{t(`All ${availablePrompts.length} prompts + free ebook + 7/7 support.`, `Les ${availablePrompts.length} prompts + ebook offert + support 7j/7.`)}</span>
-                        </span>
-                        <span className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0A0A0B]">
-                          {eur(PRICE_YEARLY)}<span className="font-semibold text-[#0A0A0B]/55">{t("/yr", "/an")}</span>
-                          <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-                        </span>
-                      </button>
-                    )}
-                    {monthlyPlan && (
-                      <button
-                        onClick={() => { track("monthly_offer_clicked", { prompt: previewItem.title, category: previewItem.category, source: "prompt_popup" }); startCheckout(monthlyPlan); }}
-                        disabled={Boolean(checkoutPlan)}
-                        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-left transition hover:border-white/25 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <span className="min-w-0">
-                          <span className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-[#EDE9E0]">{t("Monthly access", "Accès mensuel")}</span>
-                            <span className="flex-none rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/45">{t("Flexible", "Flexible")}</span>
-                          </span>
-                          <span className="mt-0.5 block text-xs leading-5 text-white/45">{t("The same full catalogue. Stop whenever you like.", "Le même catalogue complet. Tu arrêtes quand tu veux.")}</span>
-                        </span>
-                        {/* The period is part of the price here, not a detail:
-                            21,99€ sitting alone next to 89€ reads as the cheaper
-                            one-off rather than as a recurring charge. */}
-                        <span className="flex-none rounded-full bg-[#EDE9E0] px-4 py-2 text-sm font-bold text-[#0A0A0B]">
-                          {eur(PRICE_MONTHLY)}<span className="font-semibold text-[#0A0A0B]/55">{t("/mo", "/mois")}</span>
-                        </span>
-                      </button>
-                    )}
-                    {PROMPT_PACK_ENABLED && packPlan && (
-                      <button
-                        onClick={() => { track("prompt_pack_offer_clicked", { prompt: previewItem.title, category: previewItem.category }); startCheckout(packPlan); }}
-                        disabled={Boolean(checkoutPlan)}
-                        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-left transition hover:border-white/25 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <span className="min-w-0">
-                          <span className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-[#EDE9E0]">{t(`Pack of ${PROMPT_PACK_SIZE} prompts`, `Pack de ${PROMPT_PACK_SIZE} prompts`)}</span>
-                            <span className="flex-none rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/45">{t("Budget", "Éco")}</span>
-                          </span>
-                          <span className="mt-0.5 block text-xs leading-5 text-white/45">{t("This one and two more of your choice, yours forever.", "Celui-ci et deux autres de ton choix, à toi pour toujours.")}</span>
-                        </span>
-                        <span className="flex-none rounded-full bg-[#EDE9E0] px-4 py-2 text-sm font-bold text-[#0A0A0B]">{eur(PROMPT_PACK_PRICE)}</span>
-                      </button>
-                    )}
+                {/* One way out, no price. The offer lives on /pricing and
+                    nowhere else: quoting it here put a second, slightly
+                    different pricing surface in front of a buyer who then had
+                    to go to that page anyway. Only for a locked prompt —
+                    someone with full access, a free prompt, a prompt already
+                    bought or an unspent purchase has nothing to buy here. */}
+                {!hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (
+                  <div className="border-t border-white/[0.07] px-5 pb-4 pt-4">
+                    <button
+                      onClick={() => {
+                        track("paywall_shown", { prompt: previewItem.title, category: previewItem.category, source: "prompt_popup", ...refProps() });
+                        window.location.assign(`/pricing?from=${encodeURIComponent(slugify(previewItem.title))}`);
+                      }}
+                      // The launch banner's gradient, so the offer reads as the
+                      // same thing the visitor has already seen at the foot of
+                      // every page.
+                      className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] px-4 py-3 text-left transition hover:brightness-110"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold text-white">{t("Unlock every prompt", "Débloquer tous les prompts")}</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-white/85">{t(`All ${availablePrompts.length} prompts + free ebook + 7/7 support.`, `Les ${availablePrompts.length} prompts + ebook offert + support 7j/7.`)}</span>
+                      </span>
+                      <span className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0A0A0B]">
+                        {t("See the plans", "Voir les offres")}
+                        <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                      </span>
+                    </button>
                   </div>
                 )}
                 {/* The one moment the visitor actually needs the instructions:
