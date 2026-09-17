@@ -586,6 +586,9 @@ const YEARLY_PER_MONTH = (PRICE_YEARLY / 12).toFixed(2);
 const perDay = (amount, days) => (amount / days).toFixed(2);
 const YEARLY_PER_DAY = perDay(PRICE_YEARLY, 365);
 const MONTHLY_PER_DAY = perDay(PRICE_MONTHLY, 30.44);
+// What the annual gives away, in months, rounded down so the badge never
+// promises more than the two prices support.
+const YEARLY_FREE_MONTHS = Math.floor(12 - PRICE_YEARLY / PRICE_MONTHLY);
 const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
 
 // The discount announced on /pricing. It must match CHECKOUT_PROMO_CODE in
@@ -636,9 +639,9 @@ const plans = [
     // two prices side by side makes the case without asking to be believed.
     priceMonthly: eur(YEARLY_PER_MONTH),
     priceMonthlyPeriod: t("/ mo", "/ mois"),
+    strikePrice: eur(PRICE_MONTHLY),
     billedNote: t(`${eur(PRICE_YEARLY)} billed once a year`, `${eur(PRICE_YEARLY)} facturé une fois par an`),
-    perDay: t(`That is ${eur(YEARLY_PER_DAY)} a day`, `Soit ${eur(YEARLY_PER_DAY)} par jour`),
-    subPrice: t(`instead of ${eur(PRICE_MONTHLY)}/mo`, `au lieu de ${eur(PRICE_MONTHLY)}/mois`),
+    perDay: t(`that is ${eur(YEARLY_PER_DAY)} a day`, `soit ${eur(YEARLY_PER_DAY)} par jour`),
     badge: t("Best value", "Meilleur rapport"),
     description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
@@ -697,8 +700,8 @@ const plans = [
     name: t("Monthly", "Mensuel"),
     price: eur(PRICE_MONTHLY),
     period: t("/ mo", "/ mois"),
-    perDay: t(`That is ${eur(MONTHLY_PER_DAY)} a day`, `Soit ${eur(MONTHLY_PER_DAY)} par jour`),
-    subPrice: t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment"),
+    perDay: t(`that is ${eur(MONTHLY_PER_DAY)} a day`, `soit ${eur(MONTHLY_PER_DAY)} par jour`),
+    billedNote: t("billed every month", "facturé chaque mois"),
     badge: t("Flexible", "Flexible"),
     description: t("Full access to the catalog, billed monthly. Cancel anytime.", "Accès complet au catalogue, facturé chaque mois. Résiliez à tout moment."),
     cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
@@ -727,6 +730,11 @@ const planGridWidth = visiblePlans.length === 1 ? "max-w-sm lg:max-w-2xl" : visi
 // the best value of, so the comparison copy steps aside. Derived rather than
 // hardcoded: bringing a plan back out of hiding restores it on its own.
 const isSinglePlan = visiblePlans.length === 1;
+// The two subscriptions are one product at two billing periods, so the grid
+// shows the selected one and a switch swaps it, instead of two cards repeating
+// the same feature list. Only when those two are the whole grid: a third offer
+// on sale is a real comparison, and the side-by-side row is the shape for it.
+const hasBillingSwitch = visiblePlans.length === 2 && visiblePlans.every((plan) => plan.id === "monthly" || plan.id === "yearly");
 // Looked up by id rather than taken from visiblePlans: the popup and the
 // paywall trip offer it on their own, whether or not it is currently in the
 // grid.
@@ -735,14 +743,48 @@ const lifetimePlan = plans.find((plan) => plan.id === "lifetime" && !plan.hidden
 const yearlyPlan = plans.find((plan) => plan.id === "yearly" && !plan.hidden);
 const monthlyPlan = plans.find((plan) => plan.id === "monthly" && !plan.hidden);
 
+// Monthly / annual switch above the cards. The two plans are the same product
+// at two billing periods, so one card and a switch says it better than two
+// cards repeating the same feature list. Annual is the default: it is the one
+// worth selling, and a visitor who wants the other is one tap away.
+function BillingSwitch({ period, onChange }) {
+  const options = [
+    ["monthly", t("Monthly", "Mensuel"), null],
+    ["yearly", t("Annual", "Annuel"), YEARLY_FREE_MONTHS > 0 ? t(`${YEARLY_FREE_MONTHS} months free`, `${YEARLY_FREE_MONTHS} mois offerts`) : null],
+  ];
+  return (
+    <div className="mx-auto inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
+      {options.map(([key, label, badge]) => {
+        const active = period === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => { onChange(key); track("billing_period_switched", { period: key }); }}
+            aria-pressed={active}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-semibold transition sm:gap-2 sm:px-5 sm:text-sm ${active ? "bg-[#EDE9E0] text-[#0A0A0B]" : "text-white/60 hover:text-[#EDE9E0]"}`}
+          >
+            {label}
+            {badge && <span className={`whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:text-[11px] ${active ? "bg-[#0A0A0B]/10 text-[#0A0A0B]" : "bg-emerald-400/15 text-emerald-300"}`}>{badge}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // Pricing card used across every purchase surface (paywall modal, pricing
 // section, /pricing page). Laid out in four quiet bands — identity, price,
 // action, then what you get — separated by hairlines rather than by boxes, so
 // nothing is dropped to make it look calm.
-function PlanCard({ plan, onBuy, loading, featured }) {
+function PlanCard({ plan, onBuy, loading, featured, solo }) {
+  // Alone on screen either because it is the only plan on sale, or because the
+  // billing switch is showing one of two. Both mean the same thing to the
+  // layout: nothing to line up with, and no other card to be the best of.
+  const alone = solo || isSinglePlan;
   return (
     <div className={`relative flex flex-col rounded-[22px] px-4 pb-4 pt-9 transition sm:rounded-[28px] sm:p-8 lg:p-5 ${featured ? "border border-white/25 bg-[#141417] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]" : "border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"}`}>
-      {featured && !isSinglePlan && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{t("Best value", "Meilleur choix")}</span>}
+      {featured && !alone && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{t("Best value", "Meilleur choix")}</span>}
 
       <div className="flex items-start justify-between gap-1.5 sm:gap-3">
         <h3 className="text-base font-semibold tracking-tight text-[#EDE9E0] sm:text-xl">{plan.name}</h3>
@@ -753,7 +795,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
           lone card has nothing to line up with, and the reserve then only
           pushes the rest of it further down the screen — same below sm, where
           the cards stack and each one is on its own. */}
-      {plan.description && <p className={isSinglePlan ? "mt-2 text-[12.5px] leading-5 text-white/45 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5" : "mt-2 text-[12.5px] leading-5 text-white/45 sm:min-h-[4.5rem] sm:text-sm sm:leading-6 lg:min-h-[2.5rem] lg:text-[13px] lg:leading-5"}>{plan.description}</p>}
+      {plan.description && <p className={alone ? "mt-2 text-[12.5px] leading-5 text-white/45 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5" : "mt-2 text-[12.5px] leading-5 text-white/45 sm:min-h-[4.5rem] sm:text-sm sm:leading-6 lg:min-h-[2.5rem] lg:text-[13px] lg:leading-5"}>{plan.description}</p>}
 
       <div className="my-4 border-t border-dashed border-white/[0.14] sm:my-6 lg:my-4" />
 
@@ -765,15 +807,17 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       <div className="flex min-h-[3.25rem] flex-wrap items-end gap-x-1.5 gap-y-0.5 sm:min-h-0 sm:gap-x-2">
         <span className="text-[32px] font-bold leading-none tracking-[-0.05em] text-[#EDE9E0] sm:text-[52px] lg:text-[42px]">{plan.priceMonthly || plan.price}</span>
         <span className="pb-0.5 text-xs text-white/40 sm:pb-1 sm:text-sm">{plan.priceMonthly ? plan.priceMonthlyPeriod : plan.period}</span>
+        {/* The same plan paid by the month, struck through — the saving read at
+            a glance, next to the number it replaces. */}
+        {plan.strikePrice && <span className="pb-0.5 text-sm text-white/30 line-through sm:pb-1 sm:text-base">{plan.strikePrice}</span>}
       </div>
       {/* Same reasoning as the description: the plans carry a different number
           of price lines, and without a floor the buttons sit at different
           heights. Dropped for a lone card and below sm, same as above. */}
-      <div className={isSinglePlan ? "mt-3 space-y-1 lg:mt-2" : "mt-3 space-y-1 sm:min-h-[2.75rem] lg:mt-2 lg:min-h-[2rem]"}>
-        {plan.perDay && <p className="text-xs font-semibold text-[#EDE9E0]/80 sm:text-sm">{plan.perDay}</p>}
+      <div className={alone ? "mt-3 space-y-1 lg:mt-2" : "mt-3 space-y-1 sm:min-h-[2.75rem] lg:mt-2 lg:min-h-[2rem]"}>
+        {plan.perDay && <p className="text-xs font-semibold text-emerald-300 sm:text-sm">{plan.perDay}</p>}
         {plan.billedNote && <p className="text-xs text-white/45 sm:text-sm">{plan.billedNote}</p>}
         {plan.originalPrice && <p className="text-xs text-white/35 line-through sm:text-sm">{plan.originalPrice}</p>}
-        {plan.subPrice && <p className="text-xs font-medium text-emerald-300 sm:text-sm">{plan.subPrice}</p>}
       </div>
 
       <button
@@ -3532,6 +3576,9 @@ function BusinessLadder({ onPick }) {
 
 function PricingPage() {
   const [checkoutPlan, setCheckoutPlan] = useState(null);
+  // Annual first: it is the offer worth selling, and the monthly is one tap
+  // away for whoever wants it.
+  const [billingPeriod, setBillingPeriod] = useState("yearly");
   // The prompt the visitor was trying to copy, carried over in ?from= so the
   // page answers the click they actually made rather than starting from zero.
   const [fromPrompt] = useState(() => {
@@ -3562,6 +3609,7 @@ function PricingPage() {
   // Suppressed while the pack has its own card in the grid above: offering the
   // same thing twice on one screen reads as two different deals.
   const showPackOffer = Boolean(PROMPT_PACK_ENABLED && fromPrompt && packPlan && !visiblePlans.includes(packPlan));
+  const shownPlans = hasBillingSwitch ? visiblePlans.filter((plan) => plan.id === billingPeriod) : visiblePlans;
 
   return (
     <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
@@ -3627,9 +3675,14 @@ function PricingPage() {
         {/* One column, centred: the offer is the page. Proof lives further down
             so nothing competes with the cards at the moment of the decision. */}
         <div className="mt-14 lg:mt-4">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 items-start gap-3 sm:gap-5 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
-            {visiblePlans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
+          {hasBillingSwitch && (
+            <div className="mb-6 flex justify-center lg:mb-4">
+              <BillingSwitch period={billingPeriod} onChange={setBillingPeriod} />
+            </div>
+          )}
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 items-start gap-3 sm:gap-5 ${hasBillingSwitch ? "max-w-md grid-cols-1" : `${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}`}>
+            {shownPlans.map((plan) => (
+              <PlanCard key={plan.id} plan={plan} featured={plan.featured || hasBillingSwitch} solo={hasBillingSwitch} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
             ))}
           </motion.div>
           {/* Only when the visitor arrived from a specific prompt. Without one
