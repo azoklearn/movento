@@ -592,7 +592,6 @@ const PRICE_MONTHLY = 21.99;
 const PRICE_LIFETIME = 89;
 const PRICE_LIFETIME_ANCHOR = 159;
 const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
-const YEARLY_PER_MONTH = (PRICE_YEARLY / 12).toFixed(2);
 // What the annual gives away, in months, rounded down so the badge never
 // promises more than the two prices support.
 const YEARLY_FREE_MONTHS = Math.floor(12 - PRICE_YEARLY / PRICE_MONTHLY);
@@ -3020,8 +3019,11 @@ function PricingBanner({ onPick }) {
             <Icon name="clock" className="h-4 w-4" />
           </span>
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
-            {t("Every prompt", "Tous les prompts")} — <span className="font-bold">{eur(YEARLY_PER_MONTH)}</span>
-            {t("/mo billed yearly", "/mois facturé à l'année")}{tail ? ` — ${tail}` : ""}
+            {/* The annual price as the cards state it. The bar used to quote
+                the per-month equivalent, which on this page read against the
+                99€ on the card right above it. */}
+            {t("Every prompt", "Tous les prompts")} — <span className="font-bold">{eur(PRICE_YEARLY)}</span>
+            {t(" a year", " par an")}{tail ? ` — ${tail}` : ""}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
         </span>
