@@ -99,6 +99,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "KIMI — GRIDO1 Racing Systems", category: "Automotive", type: "Landing", file: "Kimi_Grido1_Racing_Systems.md", pinned: true, preview: "https://storage.getlayers.ai/templates/kimi-04a9449ab2-preview.mp4", tags: ["WebGL", "Three.js", "Sticky Stack"], gradient: "from-[#f7fafb] via-cyan-400 to-[#090a0b]" },
   { title: "MindAI — Where Mind Meets the Impossible", category: "AI / SaaS", type: "Hero", file: "MindAI_Scrub_Figure_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_185102_c835194f-77ee-4c60-9ad1-850716544d36.png&w=1920&q=85", tags: ["Mouse Scrub", "Video", "Editorial"], gradient: "from-[#f6eaf2] via-rose-300 to-[#1b1016]" },
   { title: "VEYRA — Electric, Inside Out", category: "Automotive", type: "Landing", file: "Veyra_Interactive_Car.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_221847_45bc580c-aeb2-40f8-a5ca-bc977261fa53.png&w=1920&q=85", tags: ["Interactive", "Hotspots", "Video"], gradient: "from-[#e1eaf0] via-[#6b879d] to-[#10190c]" },
   { title: "Vertex Shops — Streamline the Shop Process", category: "E-commerce", type: "Hero", file: "Vertex_Shops_Carousel_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_163540_9f0f8a66-ec5f-46f7-adf8-e094a211d489.png&w=1920&q=85", tags: ["3D Carousel", "Glow Button", "Dark"], gradient: "from-cyan-200 via-sky-700 to-[#020204]" },
@@ -356,6 +357,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Kimi_Grido1_Racing_Systems.md",
   "MindAI_Scrub_Figure_Hero.md",
   "Veyra_Interactive_Car.md",
   "Vertex_Shops_Carousel_Hero.md",
