@@ -56,7 +56,7 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // A .../checkout/plan_xxx link powers the on-site EMBEDDED checkout: the plan id
 // is read straight out of it. A product-page link would only power the REDIRECT
 // flow, which is why both fallbacks below are checkout links.
-// THE PRICE ON WHOP IS THE PRICE CHARGED. These two plans read 19.99 €/mo and
+// THE PRICE ON WHOP IS THE PRICE CHARGED. These two plans read 21.99 €/mo and
 // 99 €/yr on Whop, matching PRICE_MONTHLY and PRICE_YEARLY in src/App.jsx — the
 // site only quotes a price. Replacing a plan means changing the id here and
 // adding the old one to LEGACY_PLAN_KINDS below, so its subscribers keep

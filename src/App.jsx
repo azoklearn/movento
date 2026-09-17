@@ -573,7 +573,7 @@ const FREE_PROMPT_FILES = new Set([]);
 // THESE MUST MATCH THE WHOP PLANS the checkout opens (api/_shared.js). The
 // site only quotes a price; Whop is what charges it.
 const PRICE_YEARLY = 99;
-const PRICE_MONTHLY = 19.99;
+const PRICE_MONTHLY = 21.99;
 // Lifetime is no longer sold. The price stays defined because the card, the
 // ebook rule and the access checks still reference the plan for the people who
 // bought it.
