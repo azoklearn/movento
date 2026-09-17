@@ -56,13 +56,13 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // A .../checkout/plan_xxx link powers the on-site EMBEDDED checkout: the plan id
 // is read straight out of it. A product-page link would only power the REDIRECT
 // flow, which is why both fallbacks below are checkout links.
-// THE PRICE ON WHOP IS THE PRICE CHARGED. These two plans must read 19.99 €/mo
-// and 99 €/yr on Whop, matching PRICE_MONTHLY and PRICE_YEARLY in src/App.jsx —
-// the site only quotes a price. WHOP_MONTHLY_URL / WHOP_YEARLY_URL override
-// them if the plans are rebuilt rather than repriced.
-const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_pAiB9wlNdjRGF";
-// Whop product prod_W60TAMVZvHw5I.
-const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_Yj3NE8r5Jj0E1";
+// THE PRICE ON WHOP IS THE PRICE CHARGED. These two plans read 19.99 €/mo and
+// 99 €/yr on Whop, matching PRICE_MONTHLY and PRICE_YEARLY in src/App.jsx — the
+// site only quotes a price. Replacing a plan means changing the id here and
+// adding the old one to LEGACY_PLAN_KINDS below, so its subscribers keep
+// resolving. WHOP_MONTHLY_URL / WHOP_YEARLY_URL override these.
+const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_lg2xFDMH1crhQ";
+const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
 // Full access, one payment (Whop product prod_YWF4xcOs3RFv9). Shipped here
 // rather than left to WHOP_LIFETIME_URL alone: without a checkout link the plan
 // id cannot be resolved, and the buyer was redirected to Whop instead of paying
@@ -71,6 +71,16 @@ const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
 // A pack of prompts, bought without the catalogue (Whop product
 // prod_zZlcqsSutlXvW). One purchase, PROMPT_PACK_SIZE prompts of your choice.
 const PACK_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
+
+// Plans we no longer sell on, keyed to the kind their existing subscribers
+// hold. planKindFromPlanId answers from the live links above, so without this
+// a subscriber bought on a replaced plan would resolve to no kind at all —
+// they keep their access either way, but a past annual subscriber would lose
+// the bonus ebook that kind is what grants.
+const LEGACY_PLAN_KINDS = {
+  plan_pAiB9wlNdjRGF: "monthly",
+  plan_Yj3NE8r5Jj0E1: "yearly",
+};
 
 // How many prompts one pack unlocks. The webhook credits this many, and the
 // buyer spends them one prompt at a time.
@@ -142,7 +152,7 @@ export const RETIRED_PLANS = new Set(["lifetime"]);
 export function planKindFromPlanId(planId) {
   const id = String(planId || "").trim();
   if (!id) return null;
-  return ["monthly", "yearly", "lifetime", "pack"].find((kind) => resolvePlanId(kind) === id) || null;
+  return ["monthly", "yearly", "lifetime", "pack"].find((kind) => resolvePlanId(kind) === id) || LEGACY_PLAN_KINDS[id] || null;
 }
 
 // Whop credits an affiliate through the "a" query parameter. Carrying it onto the
