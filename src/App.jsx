@@ -96,6 +96,13 @@ const makePreview = (name, ext = "mp4") => `${VIDEO_ASSETS}${name}_0.${ext}`;
 const prompts = [
   // Display order is by git add date (see availablePrompts), newest first;
   // this array's order only breaks ties. New entries still go at the top.
+  // `pinned` overrides all of it and leads the gallery — for the prompts worth
+  // showing first whether or not they carry a demo link. Drop the flag once
+  // they are no longer the thing to open on.
+  { title: "MindAI — Where Mind Meets the Impossible", category: "AI / SaaS", type: "Hero", file: "MindAI_Scrub_Figure_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_185102_c835194f-77ee-4c60-9ad1-850716544d36.png&w=1920&q=85", tags: ["Mouse Scrub", "Video", "Editorial"], gradient: "from-[#f6eaf2] via-rose-300 to-[#1b1016]" },
+  { title: "VEYRA — Electric, Inside Out", category: "Automotive", type: "Landing", file: "Veyra_Interactive_Car.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_221847_45bc580c-aeb2-40f8-a5ca-bc977261fa53.png&w=1920&q=85", tags: ["Interactive", "Hotspots", "Video"], gradient: "from-[#e1eaf0] via-[#6b879d] to-[#10190c]" },
+  { title: "Vertex Shops — Streamline the Shop Process", category: "E-commerce", type: "Hero", file: "Vertex_Shops_Carousel_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_163540_9f0f8a66-ec5f-46f7-adf8-e094a211d489.png&w=1920&q=85", tags: ["3D Carousel", "Glow Button", "Dark"], gradient: "from-cyan-200 via-sky-700 to-[#020204]" },
+  { title: "Cordex — Scroll-Scrubbed Product Tour", category: "Landing Page", type: "Landing", file: "Cordex_Scroll_Scrub_Applications.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260909_105028_66cf7ffa-6285-4710-bae5-9302342bf925.png&w=1920&q=85", tags: ["Scroll Scrub", "Product", "Video"], gradient: "from-zinc-200 via-red-700 to-[#0a0a0b]" },
   { title: "Cast & Render", category: "Landing Page", type: "Landing", file: "Cast_And_Render_Scroll_Scrub.md", demo: "https://id-preview--f2a45470-143f-4948-9b91-203817c84d37.lovable.app/cast-and-render.html", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/cast-n-render.mp4", tags: ["Scroll Scrub", "Editorial", "3D"], gradient: "from-stone-100 via-stone-400 to-[#0d0c0b]" },
   { title: "Lavender Gaze Footer", category: "Component", type: "Component", file: "Studio_Gaze_Footer.md", preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260908_075426_d8a1ca55-df38-472c-925d-36a9ba5d6226.png&w=1920&q=85", tags: ["Footer", "Eye Tracking", "Video"], gradient: "from-[#f0eefa] via-violet-300 to-[#dfe4f2]" },
   { title: "Built for Intelligent Performance", category: "AI / SaaS", type: "Hero", file: "Intelligent_Performance_Metric_Cards.md", preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/intelligent_performance_saas_t.mp4", tags: ["Glass Cards", "LED Dots", "Video"], gradient: "from-rose-200 via-fuchsia-800 to-[#8c1320]" },
@@ -349,6 +356,10 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "MindAI_Scrub_Figure_Hero.md",
+  "Veyra_Interactive_Car.md",
+  "Vertex_Shops_Carousel_Hero.md",
+  "Cordex_Scroll_Scrub_Applications.md",
   "Cast_And_Render_Scroll_Scrub.md",
   "Studio_Gaze_Footer.md",
   "Intelligent_Performance_Metric_Cards.md",
@@ -550,10 +561,11 @@ const SHOW_DEMO_LINKS = true;
 // import) keep array order.
 const addedAt = (item) => PROMPT_ADDED[item.file] ?? (AVAILABLE_FILES.has(item.file) ? Infinity : 0);
 const hasDemo = (item) => (SHOW_DEMO_LINKS && item.demo ? 1 : 0);
+const isPinned = (item) => (item.pinned ? 1 : 0);
 const availablePrompts = prompts
   .map((item, i) => ({ item, i }))
   .filter(({ item }) => isPromptAvailable(item))
-  .sort((a, b) => hasDemo(b.item) - hasDemo(a.item) || addedAt(b.item) - addedAt(a.item) || a.i - b.i)
+  .sort((a, b) => isPinned(b.item) - isPinned(a.item) || hasDemo(b.item) - hasDemo(a.item) || addedAt(b.item) - addedAt(a.item) || a.i - b.i)
   .map(({ item }) => item);
 
 // Nothing is given away any more: every prompt sits behind the paywall.
