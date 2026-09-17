@@ -1,4 +1,4 @@
-import { appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutUrls, methodNotAllowed, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
+import { appendAffiliate, appendPromo, bestCheckoutUrl, checkoutUrls, methodNotAllowed, RETIRED_PLANS } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -13,15 +13,12 @@ export default async function handler(req, res) {
     });
   }
 
-  // planId (plan_xxx) drives the on-site EMBEDDED checkout — the client mounts the
-  // Whop checkout inline, no redirect. When only a product-page link is configured
-  // it stays null and the client falls back to redirecting to checkoutUrl.
-  //
-  // The promo rides on the URL for the redirect path and is handed to the client
-  // separately for the embedded one, so the buyer never has to type it.
+  // One URL, and everything the buyer must not have to type is already on it:
+  // the affiliate ref so the commission is credited, and the promo code so the
+  // discount is applied before they see the total. The site no longer mounts a
+  // checkout of its own — it sends them to this page and Whop returns them to
+  // /success.
   return res.json({
     checkoutUrl: appendPromo(appendAffiliate(bestCheckoutUrl(plan) || checkoutUrl, ref)),
-    planId: resolvePlanId(plan),
-    promoCode: CHECKOUT_PROMO_CODE || null,
   });
 }

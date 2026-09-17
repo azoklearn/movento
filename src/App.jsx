@@ -877,267 +877,47 @@ function PlanCard({ plan, onBuy, loading, featured, solo }) {
   );
 }
 
-// Mounts Whop's embedded checkout INLINE (no redirect). Whop's loader.js scans the
-// DOM (and observes mutations) for [data-whop-checkout-plan-id] and renders the
-// checkout in an iframe inside this div. skip-redirect + on-complete keep the user
-// on our page and let us react when payment succeeds.
-const WHOP_LOADER_SRC = "https://js.whop.com/static/checkout/loader.js";
-let whopCbSeq = 0;
+// Whop's own checkout page does the payment. The buyer leaves the site for it
+// and Whop sends them back to /success, where a single email field turns the
+// purchase into access on this device.
+//
+// There is no embedded checkout any more: the inline form was a second payment
+// surface to keep working — its own loader script, its own iframe watchdog, its
+// own fallback when an ad blocker ate the script — and it sat between the buyer
+// and the page that actually takes the money.
+//
+// Returns the URL to send the buyer to. The promo code and the affiliate ref
+// are already on it (see api/create-checkout-session.js), so nothing has to be
+// typed and the commission is credited.
+async function fetchCheckoutUrl(planId) {
+  const r = await fetch(CHECKOUT_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plan: planId, ref: getRef() }),
+  });
+  let d = {};
+  try { d = await r.json(); } catch { d = {}; }
+  if (!r.ok) throw new Error(apiError(d, t(`Payment server error (${r.status}).`, `Erreur serveur paiement (${r.status}).`)));
+  if (d.checkoutUrl) return d.checkoutUrl;
+  throw new Error(t("Checkout is unavailable for this plan.", "Checkout indisponible pour cette offre."));
+}
 
-// How long the loader gets to put its iframe on the page before the overlay
-// offers Whop's hosted page instead. Long enough for a slow phone connection,
-// short enough that a blocked script does not leave the buyer staring.
-const WHOP_EMBED_TIMEOUT_MS = 8000;
-
-function WhopCheckoutEmbed({ planId, prefillEmail, promoCode, onComplete, onState }) {
-  const cbName = useMemo(() => `moventoWhopComplete_${++whopCbSeq}`, []);
-  const onCompleteRef = useRef(onComplete);
-  const onStateRef = useRef(onState);
-  const hostRef = useRef(null);
-  onCompleteRef.current = onComplete;
-  onStateRef.current = onState;
-
-  useEffect(() => {
-    window[cbName] = (pid, receiptId) => onCompleteRef.current?.(pid, receiptId);
-    if (!document.querySelector(`script[src="${WHOP_LOADER_SRC}"]`)) {
-      const s = document.createElement("script");
-      s.src = WHOP_LOADER_SRC;
-      s.async = true;
-      s.defer = true;
-      document.head.appendChild(s);
-    }
-    return () => { try { delete window[cbName]; } catch { window[cbName] = undefined; } };
-  }, [cbName]);
-
-  // The loader says nothing back, so watch the host: the moment its iframe
-  // lands and loads, the form is on screen and the placeholder can go. If it
-  // never comes — blocked script, ad blocker, offline — say so instead of
-  // showing an empty box, and the overlay hands over to Whop's own page.
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    let settled = false;
-    const settle = (state) => { if (!settled) { settled = true; onStateRef.current?.(state); } };
-    const watchFrame = (frame) => {
-      // A frame that already painted (fast cache) never fires load again.
-      if (frame.contentDocument?.readyState === "complete" && frame.contentWindow?.length !== undefined) settle("ready");
-      frame.addEventListener("load", () => settle("ready"), { once: true });
-      // Belt and braces: an iframe on the page is the form, loaded or not.
-      setTimeout(() => settle("ready"), 1500);
-    };
-    const existing = host.querySelector("iframe");
-    if (existing) watchFrame(existing);
-    const observer = new MutationObserver(() => {
-      const frame = host.querySelector("iframe");
-      if (frame) { observer.disconnect(); watchFrame(frame); }
-    });
-    observer.observe(host, { childList: true, subtree: true });
-    const timer = setTimeout(() => settle("failed"), WHOP_EMBED_TIMEOUT_MS);
-    return () => { observer.disconnect(); clearTimeout(timer); };
-  }, [planId]);
-
-  // Whop has used both spellings for the promo attribute across versions of the
-  // loader. An attribute it does not read is inert; a missing one silently costs
-  // the buyer the discount, so both are set.
-  const promoAttrs = promoCode
-    ? { "data-whop-checkout-promo-code": promoCode, "data-whop-checkout-promocode": promoCode }
-    : {};
-
+// Shown only when the redirect to Whop could not be prepared — a payment
+// server that answered an error, or a plan with no checkout link. It is the
+// one thing the buyer has to be told, since the page otherwise just sits there.
+function CheckoutErrorNotice({ message, onDismiss }) {
+  if (!message) return null;
   return (
-    <div
-      key={planId}
-      ref={hostRef}
-      data-whop-checkout-plan-id={planId}
-      data-whop-checkout-theme="dark"
-      data-whop-checkout-theme-accent-color="blue"
-      data-whop-checkout-skip-redirect="true"
-      data-whop-checkout-on-complete={cbName}
-      {...(prefillEmail ? { "data-whop-checkout-prefill-email": prefillEmail } : {})}
-      {...promoAttrs}
-      // No overflow clip and no height cap: the loader sizes the iframe to the
-      // form, and the layer around it scrolls, so the whole form is reachable.
-      className="w-full"
-    />
+    <div role="alert" className="fixed inset-x-4 bottom-4 z-[80] mx-auto flex max-w-md items-start gap-3 rounded-2xl border border-red-400/25 bg-[#1a1113] p-4 text-sm leading-6 text-red-200 shadow-2xl shadow-black/60">
+      <Icon name="alert" className="mt-1 h-4 w-4 flex-none" />
+      <p className="min-w-0 flex-1">{message}</p>
+      <button onClick={onDismiss} aria-label={t("Close", "Fermer")} className="-mr-1 -mt-1 grid h-7 w-7 flex-none place-items-center rounded-full text-red-200/60 transition hover:text-red-100"><Icon name="close" className="h-3.5 w-3.5" /></button>
+    </div>
   );
 }
 
 const cleanEmail = (v) => String(v).replace(/[\s­​-‍⁠﻿]/g, "").toLowerCase();
 
-// Shown right after the embedded payment completes: the buyer's checkout email is
-// their access key, so we confirm access on this device with a single field.
-function CheckoutSuccess({ plan, prefillEmail, onUnlocked }) {
-  // A pack purchase never grants full access, so waiting for hasAccess would
-  // leave the buyer stuck on "activating" forever.
-  const pack = plan?.id === "pack";
-  const [email, setEmail] = useState(prefillEmail || "");
-  const [st, setSt] = useState({ loading: false, error: "" });
-
-  async function submit(e) {
-    e.preventDefault();
-    const norm = cleanEmail(email);
-    if (!norm) { setSt({ loading: false, error: t("Enter the email used at checkout.", "Entre l'email utilisé au paiement.") }); return; }
-    setSt({ loading: true, error: "" });
-    try {
-      const r = await fetch(`${API_BASE_URL}/api/verify-access`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: norm }),
-      });
-      const d = await r.json().catch(() => ({}));
-      const recognised = d.hasAccess || Number(d.credits) > 0 || (Array.isArray(d.owned) && d.owned.length > 0);
-      if (r.ok && recognised) { onUnlocked(norm, { pack: !d.hasAccess }); return; }
-      setSt({ loading: false, error: t("Access is activating — this can take a moment. Retry in a few seconds.", "L'accès s'active — cela peut prendre un instant. Réessaie dans quelques secondes.") });
-    } catch {
-      setSt({ loading: false, error: t("Unable to verify right now. Please retry.", "Vérification impossible pour le moment. Réessaie.") });
-    }
-  }
-
-  return (
-    <div className="py-4 text-center">
-      <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-400/[0.1]0 text-white"><Icon name="check" className="h-6 w-6" /></div>
-      <h3 className="text-xl font-semibold tracking-tight text-[#EDE9E0]">{t("Payment confirmed 🎉", "Paiement confirmé 🎉")}</h3>
-      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">{pack ? t(`Confirm the email you paid with, then pick your ${PROMPT_PACK_SIZE} prompts.`, `Confirme l'email utilisé au paiement, puis choisis tes ${PROMPT_PACK_SIZE} prompts.`) : t("Confirm the email you paid with to unlock the full catalog on this device.", "Confirme l'email utilisé au paiement pour débloquer tout le catalogue sur cet appareil.")}</p>
-      <form onSubmit={submit} className="mx-auto mt-5 flex max-w-sm flex-col gap-3 sm:flex-row">
-        <input autoFocus value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35 focus:ring-4 focus:ring-white/10" />
-        <button type="submit" disabled={st.loading} className="rounded-2xl bg-[#08080A] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.01] disabled:opacity-60">{st.loading ? t("Checking…", "Vérification…") : t("Unlock", "Débloquer")}</button>
-      </form>
-      {st.error && <p className="mx-auto mt-3 flex max-w-sm items-start gap-2 text-left text-xs leading-5 text-amber-300"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{st.error}</p>}
-    </div>
-  );
-}
-
-// Full-screen overlay that runs the whole purchase ON-SITE: fetch the plan id,
-// mount the embedded Whop checkout, then confirm access — never leaving the page.
-// Falls back to the hosted redirect only when no plan_xxx id is configured.
-function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
-  const [load, setLoad] = useState({ loading: true, planId: "", promoCode: "", checkoutUrl: "", error: "" });
-  const [done, setDone] = useState(false);
-  // "loading" until Whop's iframe is on the page, "ready" once it is, "failed"
-  // when it never came.
-  const [embed, setEmbed] = useState("loading");
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-
-  // The layer scrolls on its own; the page under it must not, or a swipe
-  // that overshoots the form drags the gallery instead. Escape closes, like
-  // every other overlay on the site.
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e) => { if (e.key === "Escape") onCloseRef.current?.(); };
-    window.addEventListener("keydown", onKey);
-    return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
-  }, []);
-
-  useEffect(() => {
-    if (embed === "failed") track("checkout_embed_failed", { plan: plan.id, ...refProps() });
-  }, [embed, plan.id]);
-
-  useEffect(() => {
-    let alive = true;
-    setLoad({ loading: true, planId: "", promoCode: "", checkoutUrl: "", error: "" });
-    (async () => {
-      try {
-        const r = await fetch(CHECKOUT_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: plan.id, ref: getRef() }),
-        });
-        let d = {};
-        try { d = await r.json(); } catch { d = {}; }
-        if (!r.ok) throw new Error(apiError(d, t(`Payment server error (${r.status}).`, `Erreur serveur paiement (${r.status}).`)));
-        // Referred visitors go to Whop's hosted checkout even when the embed is
-        // available: the affiliate code rides on the URL (a=...), which is the
-        // only path that credits the commission for certain.
-        if (d.checkoutUrl && getRef()) { track("checkout_redirected", { plan: plan.id, ...refProps() }); window.location.assign(d.checkoutUrl); return; }
-        if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, promoCode: d.promoCode || "", checkoutUrl: d.checkoutUrl || "", error: "" }); return; }
-        // No embeddable plan id configured — gracefully use the hosted page.
-        if (d.checkoutUrl) { window.location.assign(d.checkoutUrl); return; }
-        throw new Error(t("Checkout is unavailable for this plan.", "Checkout indisponible pour cette offre."));
-      } catch (e) {
-        if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: "", error: getCheckoutErrorMessage(e) });
-      }
-    })();
-    return () => { alive = false; };
-  }, [plan.id]);
-
-  // A full-screen layer rather than a capped modal: Whop's form is taller than
-  // a phone screen, and a modal with its own scrollbar cropped it — the buyer
-  // had to scroll a box inside a box to reach the pay button. Here the layer
-  // is the page: it scrolls end to end and nothing is clipped.
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="dialog" aria-modal="true" aria-label={t("Checkout", "Paiement")} className="fixed inset-0 z-[70] overflow-y-auto overscroll-contain bg-[#0A0A0B]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_70%)]" />
-      {/* Safe-area padding: on a notched phone the bar and the close button
-          must sit below the status bar, not under it. */}
-      <div className="sticky top-0 z-10 border-b border-white/[0.07] bg-[#0A0A0B]/90 backdrop-blur" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-        <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-[#EDE9E0]">{plan.name}</p>
-            <p className="text-xs text-white/55">{plan.price} <span className="text-white/40">{plan.period}</span></p>
-          </div>
-          <button onClick={onClose} aria-label={t("Close", "Fermer")} className="grid h-10 w-10 flex-none place-items-center rounded-full border border-white/10 bg-[#121214] text-white/55 transition hover:border-white/25 hover:text-[#EDE9E0]"><Icon name="close" className="h-4 w-4" /></button>
-        </div>
-      </div>
-      <div className="relative mx-auto max-w-xl px-2 pb-16 pt-3 sm:px-4 sm:pt-6" style={{ paddingBottom: "max(4rem, env(safe-area-inset-bottom))" }}>
-        {/* The form gets the full width on a phone (2px of rim, no card
-            padding) — Whop's fields are already narrow enough. */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214] p-1 shadow-2xl shadow-black/60 sm:rounded-[28px] sm:p-4">
-          {done ? (
-            <CheckoutSuccess plan={plan} prefillEmail={prefillEmail} onUnlocked={onUnlocked} />
-          ) : load.loading ? (
-            <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
-              <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/70" />
-              <p className="text-sm text-white/55">{t("Loading secure checkout…", "Chargement du paiement sécurisé…")}</p>
-            </div>
-          ) : load.error ? (
-            <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 px-4 text-center">
-              <div className="grid h-11 w-11 place-items-center rounded-full border border-red-400/25 bg-red-400/[0.08] text-red-300"><Icon name="alert" className="h-5 w-5" /></div>
-              <p className="max-w-sm text-sm leading-6 text-red-300">{load.error}</p>
-              <button onClick={() => setLoad((s) => ({ ...s }))} className="rounded-full bg-[#08080A] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418]">{t("Retry", "Réessayer")}</button>
-            </div>
-          ) : (
-            <div className={embed === "ready" ? "" : "min-h-[540px]"}>
-              <WhopCheckoutEmbed planId={load.planId} prefillEmail={prefillEmail} promoCode={load.promoCode} onState={setEmbed} onComplete={() => { track("checkout_completed", { plan: plan.id, ...refProps() }); setDone(true); }} />
-              {/* Over the host until the iframe is in: no empty box while the
-                  loader works, and a way out when it does not. */}
-              {embed === "loading" && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#121214] text-center">
-                  <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/70" />
-                  <p className="text-sm text-white/55">{t("Opening the secure checkout…", "Ouverture du paiement sécurisé…")}</p>
-                </div>
-              )}
-              {embed === "failed" && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#121214] px-6 text-center">
-                  <div className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/[0.05] text-white/70"><Icon name="shield" className="h-5 w-5" /></div>
-                  <p className="max-w-sm text-sm leading-6 text-white/65">{t("The checkout could not open here. Pay on Whop's secure page instead — same plan, same price.", "Le paiement n'a pas pu s'ouvrir ici. Paie sur la page sécurisée Whop — même offre, même prix.")}</p>
-                  {load.checkoutUrl && (
-                    <a href={load.checkoutUrl} onClick={() => track("checkout_opened_on_whop", { plan: plan.id, ...refProps() })} className="group inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Pay on Whop", "Payer sur Whop")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        {/* Stated, not silent: the buyer should see the discount is on before
-            they read the total, and notice if it is not. */}
-        {load.promoCode && !done && (
-          <div className="mt-3 flex items-center justify-center gap-1.5 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.06] px-5 py-2.5 text-[11px] font-semibold text-emerald-300">
-            <Icon name="check" className="h-3 w-3" /> {t(`Code ${load.promoCode} applied automatically`, `Code ${load.promoCode} appliqué automatiquement`)}
-          </div>
-        )}
-        <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[11px] text-white/40">
-          <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
-          {/* The way out if the embed ever misbehaves on a device: the same
-              plan, on Whop's own page, promo and affiliate already applied. */}
-          {load.checkoutUrl && !done && (
-            <a href={load.checkoutUrl} onClick={() => track("checkout_opened_on_whop", { plan: plan.id, ...refProps() })} className="underline underline-offset-4 transition hover:text-white/75">{t("Form not showing? Open it on Whop", "Le formulaire ne s'affiche pas ? Ouvrir sur Whop")}</a>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 // Reassurance strip shown next to the buy buttons. Every claim here must stay true.
 function Reassurance({ className = "" }) {
@@ -1485,7 +1265,8 @@ export default function MoventoSite() {
   const [ownedPrompts, setOwnedPrompts] = useState(() => new Set());
   const [promptCredits, setPromptCredits] = useState(0);
   const [accessStatus, setAccessStatus] = useState({ loading: false, message: "", error: "" });
-  const [checkoutPlan, setCheckoutPlan] = useState(null); // plan being purchased in the embedded overlay
+  const [checkoutPlan, setCheckoutPlan] = useState(null); // plan whose Whop checkout is being opened
+  const [checkoutError, setCheckoutError] = useState("");
   const [leadEmail, setLeadEmail] = useState(getStoredLeadEmail);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [pendingFreeItem, setPendingFreeItem] = useState(null);
@@ -1789,29 +1570,23 @@ export default function MoventoSite() {
     }
   }
 
-  // Opens the on-site embedded checkout overlay (no redirect). The overlay itself
-  // fetches the plan id and mounts the Whop checkout inline.
-  function startCheckout(plan) {
+  // Sends the buyer to Whop's checkout page. checkoutPlan is only what the
+  // buttons read to show they are working, until the redirect takes over.
+  async function startCheckout(plan) {
+    if (checkoutPlan) return;
     track("checkout_started", { plan: plan.id, ...refProps() });
     setCheckoutPlan(plan);
+    setCheckoutError("");
+    try {
+      const url = await fetchCheckoutUrl(plan.id);
+      track("checkout_redirected", { plan: plan.id, ...refProps() });
+      window.location.assign(url);
+    } catch (e) {
+      setCheckoutPlan(null);
+      setCheckoutError(getCheckoutErrorMessage(e));
+    }
   }
 
-  // Called once the buyer confirms their access email after paying inline.
-  function handleUnlocked(email, info = {}) {
-    window.localStorage.setItem("movento_access_email", email);
-    setAccessEmail(email);
-    setCheckoutPlan(null);
-    setPaywallItem(null);
-    // A pack buyer must not be marked as having the catalogue, and has nothing
-    // unlocked yet — take them to the screen where they pick their prompts.
-    if (info.pack) {
-      track("pack_purchased");
-      window.location.assign("/choose");
-      return;
-    }
-    setHasPremiumAccess(true);
-    track("access_unlocked");
-  }
 
   if (isAdminPage) return <AdminLeadsPage />;
   if (isMentionsPage) return <MentionsLegales />;
@@ -1843,14 +1618,7 @@ export default function MoventoSite() {
             </motion.div>
           </motion.div>
         )}
-        {checkoutPlan && (
-          <CheckoutOverlay
-            plan={checkoutPlan}
-            prefillEmail={leadEmail || accessEmail}
-            onClose={() => setCheckoutPlan(null)}
-            onUnlocked={handleUnlocked}
-          />
-        )}
+        <CheckoutErrorNotice message={checkoutError} onDismiss={() => setCheckoutError("")} />
         {showUnlockModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowUnlockModal(false)}>
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -3526,7 +3294,8 @@ function BusinessLadder({ onPick }) {
 }
 
 function PricingPage() {
-  const [checkoutPlan, setCheckoutPlan] = useState(null);
+  const [checkoutPlan, setCheckoutPlan] = useState(null); // plan whose Whop checkout is being opened
+  const [checkoutError, setCheckoutError] = useState("");
   // Annual first: it is the offer worth selling, and the monthly is one tap
   // away for whoever wants it.
   const [billingPeriod, setBillingPeriod] = useState("yearly");
@@ -3538,22 +3307,19 @@ function PricingPage() {
     return slug ? availablePrompts.find((p) => slugify(p.title) === slug.toLowerCase()) || null : null;
   });
 
-  function onUnlocked(email, info = {}) {
-    window.localStorage.setItem("movento_access_email", email);
-    // A pack buyer has nothing unlocked yet — the catalogue would be a wall of
-    // locked cards. Send them where the purchase is actually spent.
-    if (info.pack) {
-      track("pack_purchased");
-      window.location.assign("/choose");
-      return;
-    }
-    track("access_unlocked");
-    window.location.assign("/#prompts");
-  }
-
-  function startCheckout(plan, source) {
+  async function startCheckout(plan, source) {
+    if (checkoutPlan) return;
     track("checkout_started", { plan: plan.id, source, ...refProps() });
     setCheckoutPlan(plan);
+    setCheckoutError("");
+    try {
+      const url = await fetchCheckoutUrl(plan.id);
+      track("checkout_redirected", { plan: plan.id, source, ...refProps() });
+      window.location.assign(url);
+    } catch (e) {
+      setCheckoutPlan(null);
+      setCheckoutError(getCheckoutErrorMessage(e));
+    }
   }
 
   const scrollToPlans = () => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3564,16 +3330,7 @@ function PricingPage() {
 
   return (
     <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
-      <AnimatePresence>
-        {checkoutPlan && (
-          <CheckoutOverlay
-            plan={checkoutPlan}
-            prefillEmail={getStoredLeadEmail() || getStoredAccessEmail()}
-            onClose={() => setCheckoutPlan(null)}
-            onUnlocked={onUnlocked}
-          />
-        )}
-      </AnimatePresence>
+      <CheckoutErrorNotice message={checkoutError} onDismiss={() => setCheckoutError("")} />
 
       {/* Backdrop: two colour washes plus a faint dot grid that fades out before
           the plan cards, so the cards read as paper on a surface instead of
