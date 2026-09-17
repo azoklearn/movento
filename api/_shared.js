@@ -56,6 +56,10 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // A .../checkout/plan_xxx link powers the on-site EMBEDDED checkout: the plan id
 // is read straight out of it. A product-page link would only power the REDIRECT
 // flow, which is why both fallbacks below are checkout links.
+// THE PRICE ON WHOP IS THE PRICE CHARGED. These two plans must read 19.99 €/mo
+// and 99 €/yr on Whop, matching PRICE_MONTHLY and PRICE_YEARLY in src/App.jsx —
+// the site only quotes a price. WHOP_MONTHLY_URL / WHOP_YEARLY_URL override
+// them if the plans are rebuilt rather than repriced.
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_pAiB9wlNdjRGF";
 // Whop product prod_W60TAMVZvHw5I.
 const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_Yj3NE8r5Jj0E1";
@@ -130,7 +134,7 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-export const RETIRED_PLANS = new Set(["yearly", "monthly"]);
+export const RETIRED_PLANS = new Set(["lifetime"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a
