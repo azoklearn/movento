@@ -56,18 +56,19 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // A .../checkout/plan_xxx link powers the on-site EMBEDDED checkout: the plan id
 // is read straight out of it. A product-page link would only power the REDIRECT
 // flow, which is why both fallbacks below are checkout links.
-// THE PRICE ON WHOP IS THE PRICE CHARGED. These two plans read 21.99 €/mo and
-// 99 €/yr on Whop, matching PRICE_MONTHLY and PRICE_YEARLY in src/App.jsx — the
-// site only quotes a price. Replacing a plan means changing the id here and
-// adding the old one to LEGACY_PLAN_KINDS below, so its subscribers keep
-// resolving. WHOP_MONTHLY_URL / WHOP_YEARLY_URL override these.
+// THE PRICE ON WHOP IS THE PRICE CHARGED. The site only quotes a price.
+// Replacing a plan means changing the id here and adding the old one to
+// LEGACY_PLAN_KINDS below, so its subscribers keep resolving.
+//
+// Full access, one payment, 89 € on Whop — matching PRICE_LIFETIME in
+// src/App.jsx (Whop product prod_YWF4xcOs3RFv9). WHOP_LIFETIME_URL overrides it.
+const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
+// The two subscriptions, no longer on sale (see RETIRED_PLANS). They stay here
+// because an existing subscriber's plan_xxx is resolved through these links —
+// that is what keeps their kind, and with it their access and their ebook.
+// WHOP_MONTHLY_URL / WHOP_YEARLY_URL override them.
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_lg2xFDMH1crhQ";
 const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
-// Full access, one payment (Whop product prod_YWF4xcOs3RFv9). Shipped here
-// rather than left to WHOP_LIFETIME_URL alone: without a checkout link the plan
-// id cannot be resolved, and the buyer was redirected to Whop instead of paying
-// on the site like every other plan.
-const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
 // A pack of prompts, bought without the catalogue (Whop product
 // prod_zZlcqsSutlXvW). One purchase, PROMPT_PACK_SIZE prompts of your choice.
 const PACK_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
@@ -144,7 +145,7 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-export const RETIRED_PLANS = new Set(["lifetime"]);
+export const RETIRED_PLANS = new Set(["monthly", "yearly"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a

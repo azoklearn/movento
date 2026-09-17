@@ -573,28 +573,20 @@ const availablePrompts = prompts
 // the same set in api/_shared.js, which is what actually enforces access.
 const FREE_PROMPT_FILES = new Set([]);
 
-// Order here is the order every pricing grid renders in, so the annual plan
-// leads: the catalogue is copyable, so a subscriber who stays a month takes
-// everything with them — the annual is what makes a customer worth keeping,
-// and the monthly reads as the alternative to it.
-//
-// The prices live here rather than inside the cards, because they refer to
-// each other: the annual card quotes the monthly one, and its headline is the
-// annual divided by twelve. Change a number here and every mention follows.
+// Order here is the order every pricing grid renders in. Lifetime is what is
+// sold: one payment, no subscription to keep or to cancel.
 //
 // THESE MUST MATCH THE WHOP PLANS the checkout opens (api/_shared.js). The
 // site only quotes a price; Whop is what charges it.
-const PRICE_YEARLY = 99;
-const PRICE_MONTHLY = 21.99;
-// Lifetime is no longer sold. The price stays defined because the card, the
-// ebook rule and the access checks still reference the plan for the people who
-// bought it.
 const PRICE_LIFETIME = 89;
 const PRICE_LIFETIME_ANCHOR = 159;
+// The subscriptions are no longer sold. Their prices stay defined because the
+// cards, the ebook rule and the access checks still reference the plans for
+// the people who are on them — they keep their access and keep being billed
+// by Whop; the site simply stops offering them to anyone new.
+const PRICE_YEARLY = 99;
+const PRICE_MONTHLY = 21.99;
 const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
-// What the annual gives away, in months, rounded down so the badge never
-// promises more than the two prices support.
-const YEARLY_FREE_MONTHS = Math.floor(12 - PRICE_YEARLY / PRICE_MONTHLY);
 const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
 
 // The discount announced on /pricing. It must match CHECKOUT_PROMO_CODE in
@@ -629,19 +621,14 @@ const PROMPT_PACK_PRICE = 19.99;
 const plans = [
   {
     id: "yearly",
-    // The offer to push. Keep in step with RETIRED_PLANS in api/_shared.js — a
-    // card here whose plan is retired there is a button the checkout refuses.
-    hidden: false,
+    // No longer sold. Kept defined so existing annual subscribers still resolve
+    // — that is what keeps their access, their ebook and their support. Mirrored
+    // by RETIRED_PLANS in api/_shared.js, which refuses a new checkout on it.
+    hidden: true,
     name: t("Yearly", "Annuel"),
     price: eur(PRICE_YEARLY),
     period: t("/ yr", "/ an"),
     billedNote: t("billed once a year", "facturé une fois par an"),
-    // The whole case for the annual, in one line and one figure: what the two
-    // prices side by side already say, said out loud. Derived from them, so it
-    // cannot promise more than they support — and no percentage, which against
-    // this monthly computes past 60% and reads as an inflated monthly rather
-    // than a generous annual.
-    discountBadge: YEARLY_FREE_MONTHS > 0 ? t(`${YEARLY_FREE_MONTHS} months free`, `${YEARLY_FREE_MONTHS} mois offerts`) : null,
     badge: t("Best value", "Meilleur rapport"),
     description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
@@ -656,10 +643,10 @@ const plans = [
   },
   {
     id: "lifetime",
-    // No longer sold. Kept defined so existing lifetime buyers still resolve —
-    // that is what keeps their access and their ebook. Mirrored by
-    // RETIRED_PLANS in api/_shared.js, which refuses a new checkout on it.
-    hidden: true,
+    // The one offer on sale. Keep in step with RETIRED_PLANS in
+    // api/_shared.js — a card here whose plan is retired there is a button the
+    // checkout refuses.
+    hidden: false,
     name: t("Lifetime", "À vie"),
     price: eur(PRICE_LIFETIME),
     originalPrice: eur(PRICE_LIFETIME_ANCHOR),
@@ -669,7 +656,7 @@ const plans = [
     description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
     cta: t("Get lifetime access", "Obtenir l'accès à vie"),
     featured: true,
-    // What lifetime has that the subscription does not, stated plainly.
+    // Included, and stated plainly rather than buried in the feature list.
     perk: t("Direct support included", "Support direct inclus"),
     perkDesc: t("A question, a prompt that will not behave, a second look at your site — write and a real person answers.", "Une question, un prompt qui ne veut pas, un avis sur ton site — tu écris et une vraie personne te répond."),
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
@@ -693,10 +680,10 @@ const plans = [
   },
   {
     id: "monthly",
-    // On sale beside the annual. Keep in step with RETIRED_PLANS in
-    // api/_shared.js — a card here whose plan is retired there is a button
-    // the checkout refuses.
-    hidden: false,
+    // No longer sold. Kept defined for the same reason as the annual above:
+    // the people already on it must keep resolving. Mirrored by RETIRED_PLANS
+    // in api/_shared.js.
+    hidden: true,
     name: t("Monthly", "Mensuel"),
     price: eur(PRICE_MONTHLY),
     period: t("/ mo", "/ mois"),
@@ -1182,11 +1169,14 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(validatePlanId("monthly"), "monthly is on sale and must be purchasable");
-  console.assert(validatePlanId("yearly"), "yearly is on sale and must be purchasable");
-  console.assert(!validatePlanId("lifetime"), "lifetime is retired and should not be purchasable");
-  console.assert(earnedEbook({ kind: "yearly" }) && !earnedEbook({ kind: "monthly" }), "the ebook comes with the annual plan only");
-  console.assert(earnedEbook({ kind: "lifetime" }), "past lifetime buyers keep the ebook");
+  console.assert(validatePlanId("lifetime"), "lifetime is on sale and must be purchasable");
+  console.assert(!validatePlanId("monthly"), "monthly is retired and should not be purchasable");
+  console.assert(!validatePlanId("yearly"), "yearly is retired and should not be purchasable");
+  console.assert(earnedEbook({ kind: "lifetime" }), "the ebook comes with lifetime");
+  // Retired does not mean cut off: the people already on a subscription keep
+  // everything their plan granted them.
+  console.assert(earnedEbook({ kind: "yearly" }) && !earnedEbook({ kind: "monthly" }), "annual subscribers keep the ebook, monthly ones never had it");
+  console.assert(earnedSupport({ kind: "lifetime" }) && earnedSupport({ kind: "yearly" }), "lifetime and past annual subscribers get direct support");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // On sale in the grid while the kill switch is on, and off it entirely when
   // it is not — the card and the checkout must never disagree.
@@ -2852,7 +2842,9 @@ const SITE_PRICE_LOW = 800;
 const SITE_PRICE_HIGH = 2000;
 
 function PriceAnchor({ onPick }) {
-  const paysBack = Math.floor(SITE_PRICE_LOW / PRICE_YEARLY);
+  // How many times over the cheapest site a freelancer would quote covers
+  // Movento. Floored, so the claim is never rounded up.
+  const paysBack = Math.floor(SITE_PRICE_LOW / PRICE_LIFETIME);
   const cta = onPick ? (
     <button onClick={onPick} className="group mt-6 inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></button>
   ) : (
@@ -2863,7 +2855,7 @@ function PriceAnchor({ onPick }) {
       <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("The math", "Le calcul")}</p>
         <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{t("A website sells for €800 to €2,000", "Un site se vend entre 800 et 2 000 €")}</h2>
-        <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">{t("That is what a freelancer or a small agency charges for one showcase site. A year of Movento costs less than the deposit.", "C'est ce qu'un freelance ou une petite agence facture pour un seul site vitrine. Un an de Movento coûte moins que l'acompte.")}</p>
+        <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">{t("That is what a freelancer or a small agency charges for one showcase site. Movento costs less than the deposit, once.", "C'est ce qu'un freelance ou une petite agence facture pour un seul site vitrine. Movento coûte moins que l'acompte, une seule fois.")}</p>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} className="mt-12 grid items-stretch gap-3 md:grid-cols-[1fr_auto_1fr] md:gap-4">
@@ -2884,14 +2876,14 @@ function PriceAnchor({ onPick }) {
         <div className="relative flex flex-col overflow-hidden rounded-[26px] border border-white/25 bg-[#121214] p-7 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] md:p-8">
           <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/[0.06] blur-3xl" />
           <p className="relative text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">Movento</p>
-          <p className="relative mt-4 text-4xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{eur(PRICE_YEARLY)} <span className="text-lg font-semibold text-white/45">{t("a year", "par an")}</span></p>
+          <p className="relative mt-4 text-4xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{eur(PRICE_LIFETIME)} <span className="text-lg font-semibold text-white/45">{t("once", "une fois")}</span></p>
           <ul className="relative mt-5 space-y-2 text-sm leading-6 text-white/65">
             <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t(`All ${availablePrompts.length} designs, and every new one`, `Les ${availablePrompts.length} designs, et tous les nouveaux`)}</li>
             <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t("A site in an afternoon, not in a month", "Un site dans l'après-midi, pas dans un mois")}</li>
             <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t("Sell as many as you like", "Tu en vends autant que tu veux")}</li>
           </ul>
           <p className="relative mt-6 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-3 text-sm font-semibold leading-6 text-emerald-200">
-            {t(`Your first site sold pays for ${paysBack} years of Movento.`, `Ton premier site vendu paie ${paysBack} ans de Movento.`)}
+            {t(`Your first site sold pays Movento back ${paysBack} times over.`, `Ton premier site vendu rembourse Movento ${paysBack} fois.`)}
           </p>
           <div className="relative">{cta}</div>
         </div>
@@ -3019,11 +3011,9 @@ function PricingBanner({ onPick }) {
             <Icon name="clock" className="h-4 w-4" />
           </span>
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
-            {/* The annual price as the cards state it. The bar used to quote
-                the per-month equivalent, which on this page read against the
-                99€ on the card right above it. */}
-            {t("Every prompt", "Tous les prompts")} — <span className="font-bold">{eur(PRICE_YEARLY)}</span>
-            {t(" a year", " par an")}{tail ? ` — ${tail}` : ""}
+            {/* The price exactly as the card above it states it. */}
+            {t("Every prompt", "Tous les prompts")} — <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
+            {t(" once and for all", " à vie")}{tail ? ` — ${tail}` : ""}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
         </span>
