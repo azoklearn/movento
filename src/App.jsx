@@ -581,6 +581,11 @@ const PRICE_LIFETIME = 89;
 const PRICE_LIFETIME_ANCHOR = 159;
 const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
 const YEARLY_PER_MONTH = (PRICE_YEARLY / 12).toFixed(2);
+// The smallest way to read each price. 365 and 30.44 (a mean month) rather
+// than 360 and 30, so the figure is the real one and not a flattering round.
+const perDay = (amount, days) => (amount / days).toFixed(2);
+const YEARLY_PER_DAY = perDay(PRICE_YEARLY, 365);
+const MONTHLY_PER_DAY = perDay(PRICE_MONTHLY, 30.44);
 const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
 
 // The discount announced on /pricing. It must match CHECKOUT_PROMO_CODE in
@@ -632,6 +637,7 @@ const plans = [
     priceMonthly: eur(YEARLY_PER_MONTH),
     priceMonthlyPeriod: t("/ mo", "/ mois"),
     billedNote: t(`${eur(PRICE_YEARLY)} billed once a year`, `${eur(PRICE_YEARLY)} facturé une fois par an`),
+    perDay: t(`That is ${eur(YEARLY_PER_DAY)} a day`, `Soit ${eur(YEARLY_PER_DAY)} par jour`),
     subPrice: t(`instead of ${eur(PRICE_MONTHLY)}/mo`, `au lieu de ${eur(PRICE_MONTHLY)}/mois`),
     badge: t("Best value", "Meilleur rapport"),
     description: t("Build premium AI websites all year long.", "Créez des sites premium toute l'année."),
@@ -691,6 +697,7 @@ const plans = [
     name: t("Monthly", "Mensuel"),
     price: eur(PRICE_MONTHLY),
     period: t("/ mo", "/ mois"),
+    perDay: t(`That is ${eur(MONTHLY_PER_DAY)} a day`, `Soit ${eur(MONTHLY_PER_DAY)} par jour`),
     subPrice: t("No commitment — cancel anytime", "Sans engagement — résiliable à tout moment"),
     badge: t("Flexible", "Flexible"),
     description: t("Full access to the catalog, billed monthly. Cancel anytime.", "Accès complet au catalogue, facturé chaque mois. Résiliez à tout moment."),
@@ -763,6 +770,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
           of price lines, and without a floor the buttons sit at different
           heights. Dropped for a lone card and below sm, same as above. */}
       <div className={isSinglePlan ? "mt-3 space-y-1 lg:mt-2" : "mt-3 space-y-1 sm:min-h-[2.75rem] lg:mt-2 lg:min-h-[2rem]"}>
+        {plan.perDay && <p className="text-xs font-semibold text-[#EDE9E0]/80 sm:text-sm">{plan.perDay}</p>}
         {plan.billedNote && <p className="text-xs text-white/45 sm:text-sm">{plan.billedNote}</p>}
         {plan.originalPrice && <p className="text-xs text-white/35 line-through sm:text-sm">{plan.originalPrice}</p>}
         {plan.subPrice && <p className="text-xs font-medium text-emerald-300 sm:text-sm">{plan.subPrice}</p>}
