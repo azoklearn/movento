@@ -664,8 +664,9 @@ const PROMPT_PACK_SIZE = 3;
 const PROMPT_PACK_PRICE = 19.99;
 
 // What every term includes, so each card states the whole offer rather than a
-// price alone. The terms differ by what they add on top — the marketing videos,
-// the launch plan, the agent, the follow-up — and never by what they take away.
+// price alone. All three carry the same list: the catalogue is one product at
+// three durations, and the only things a longer term adds are the bonus ebook
+// and the direct support, which ride on `bonus` and `perk` rather than here.
 const BASE_FEATURES = [
   t("Full Movento catalog", "Catalogue Movento complet"),
   t("Ready-to-launch site ideas", "Idées de sites prêtes à lancer"),
@@ -705,7 +706,7 @@ const plans = [
     badge: t("Most chosen", "Le plus choisi"),
     cta: t("Choose 3 months", "Choisir 3 mois"),
     featured: true,
-    features: [...BASE_FEATURES, t("30 marketing videos", "30 vidéos marketing")],
+    features: BASE_FEATURES,
     // Its Whop product is sold as "Abonnement 3 Mois + EBOOK", so the promise is
     // already made where the buyer pays. EBOOK_KINDS is what honours it.
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
@@ -722,13 +723,7 @@ const plans = [
     billedNote: t("renewed every year", "renouvelé chaque année"),
     cta: t("Choose 12 months", "Choisir 12 mois"),
     featured: false,
-    features: [
-      ...BASE_FEATURES,
-      t("Unlimited marketing videos", "Vidéos marketing illimitées"),
-      t("Launch plan, A to Z", "Plan de lancement de A à Z"),
-      t("Your own AI agent", "Agent IA dédié"),
-      t("One-to-one follow-up", "Suivi personnalisé"),
-    ],
+    features: BASE_FEATURES,
     // Tied to the term rather than to the product, so it stays on the card that
     // carries it and nowhere else. SUPPORT_KINDS is what honours it.
     perk: t("Direct support included", "Support direct inclus"),
@@ -910,10 +905,10 @@ function PlanCard({ plan, onBuy, loading, featured }) {
           keep their colour — that is what still marks them as the reason to
           pick this plan over the other — but they are rows in the same list,
           spanning both columns at lg instead of a two-column short phrase. */}
-      {/* The three terms share BASE_FEATURES, which is the point: what a card
-          adds under it is exactly what the longer term buys. Three columns of
-          the same six lines reads as repetition until the seventh line differs
-          — so the ladder has to be visible for the repetition to be worth it. */}
+      {/* The three terms share BASE_FEATURES and differ only by the coloured
+          rows under it. Repeating the list on each card is the point: a buyer
+          reads one card, not three, and a short term that listed nothing would
+          read as a lesser catalogue rather than a shorter one. */}
       {/* One column at every width. Two columns fitted the short phrases the
           cards used to carry; these wrap onto two and three lines, and a grid
           row is as tall as its tallest cell, so the list opened gaps between
