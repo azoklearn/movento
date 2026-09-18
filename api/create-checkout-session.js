@@ -1,4 +1,4 @@
-import { appendAffiliate, appendPromo, bestCheckoutUrl, checkoutUrls, methodNotAllowed, RETIRED_PLANS } from "./_shared.js";
+import { appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutUrls, methodNotAllowed, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -16,12 +16,20 @@ export default async function handler(req, res) {
     });
   }
 
-  // One URL, and everything the buyer must not have to type is already on it:
-  // the affiliate ref so the commission is credited, and the promo code so the
-  // discount is applied before they see the total. The site no longer mounts a
-  // checkout of its own — it sends them to this page and Whop returns them to
-  // /success.
+  // planId (plan_xxx) drives the on-site EMBEDDED checkout: the client mounts
+  // Whop's form inline and the buyer never leaves movento.dev. It stays null
+  // when only a product-page link is configured, and the client then falls back
+  // to redirecting to checkoutUrl.
+  //
+  // checkoutUrl is still returned either way — it is the escape hatch the
+  // overlay offers when the embed cannot load, and the path a referred visitor
+  // takes, since the affiliate code only credits from the URL.
+  //
+  // The promo rides on that URL for the redirect and is handed over separately
+  // for the embed, so the discount applies without the buyer typing anything.
   return res.json({
     checkoutUrl: appendPromo(appendAffiliate(bestCheckoutUrl(plan) || checkoutUrl, ref)),
+    planId: resolvePlanId(plan),
+    promoCode: CHECKOUT_PROMO_CODE || null,
   });
 }
