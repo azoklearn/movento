@@ -146,3 +146,154 @@ a[href]:active {
       drop-shadow(0 0 44px rgba(176, 196, 255, 0.2));
   }
 }
+
+/* ── The glass pricing card ────────────────────────────────────────────────
+   A near-black surface lit from three directions: a wash falling from the top
+   edge, a hairline along it, and a wide bloom rising off the foot. Three
+   separate light sources rather than one border, which is what stops it
+   reading as a flat rectangle with a stroke round it. */
+.mv-glass {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(130% 100% at 50% 0%, rgb(196 208 226 / 0.2) 0%, rgb(196 208 226 / 0.06) 32%, transparent 64%),
+    #131218;
+  box-shadow:
+    inset 0 1px 1px 0 rgb(255 255 255 / 0.08),
+    inset 0 -90px 140px -60px rgb(150 170 180 / 0.42);
+}
+
+/* ── The travelling border light ──────────────────────────────────────────
+   Two soft lamps orbiting the element's own perimeter, seen only through a
+   1.5px ring. The ring is a mask rather than a border: a border would be one
+   flat colour, and what makes this read as light is that the brightness moves.
+
+   The lamps are positioned by `translate` in container units, so the orbit is
+   the element's own rectangle whatever size it is, and the property animated
+   is one the compositor owns — no layout, no repaint, at any card size. That
+   is why the wrapper is a size container; `left`/`top` percentages would have
+   done the same path and re-painted a 468px gradient every frame. */
+.mv-glow {
+  container-type: size;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  padding: 1.5px;
+  border-radius: inherit;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+.mv-glow-blob {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* Sized against the element it rings, not in pixels: a lamp that is right on
+     a 375-wide card is a pinprick on a 672-wide one. 58% of the longer side is
+     the proportion the reference uses on both its card and its button, which
+     is why one number serves a 888-tall card and a 41-tall pill. */
+  width: var(--mv-glow-size, 58cqmax);
+  height: var(--mv-glow-size, 58cqmax);
+  margin: calc(var(--mv-glow-size, 58cqmax) / -2);
+  border-radius: 50%;
+  /* The core is tiny and the falloff long — a lamp, not a disc. */
+  /* color-mix rather than `rgb(from …)`: one unsupported colour invalidates the
+     whole gradient, and with it the glow, and relative colour syntax only
+     landed in Safari 18. */
+  background: radial-gradient(circle,
+    var(--mv-glow-color, #e8eaef) 0%,
+    var(--mv-glow-color, #e8eaef) 5%,
+    color-mix(in srgb, var(--mv-glow-color, #e8eaef) 70%, transparent) 16%,
+    color-mix(in srgb, var(--mv-glow-color, #e8eaef) 22%, transparent) 34%,
+    transparent 58%);
+  opacity: var(--mv-glow-opacity, 1);
+  animation: mv-glow-orbit var(--mv-glow-duration, 9s) linear infinite;
+  will-change: translate;
+}
+
+/* The second lamp runs the same loop half a turn behind, so the ring is never
+   dark on more than one side at a time. */
+.mv-glow-blob:nth-child(2) {
+  animation-delay: calc(var(--mv-glow-duration, 9s) / -2);
+}
+
+@keyframes mv-glow-orbit {
+  0%   { translate: 0cqw 0cqh; }
+  25%  { translate: 100cqw 0cqh; }
+  50%  { translate: 100cqw 100cqh; }
+  75%  { translate: 0cqw 100cqh; }
+  100% { translate: 0cqw 0cqh; }
+}
+
+/* ── The glass call to action ─────────────────────────────────────────────
+   The same surface as the card, warmed from below and cooled from one side by
+   the two hues the launch banner already runs between — so the button belongs
+   to the page rather than to a component library. */
+.mv-cta {
+  position: relative;
+  isolation: isolate;
+  background: rgb(255 255 255 / 0.08);
+  box-shadow:
+    inset 0 1px 1px 0 rgb(255 255 255 / 0.18),
+    inset 0 -16px 28px -16px rgb(239 111 92 / 0.5),
+    inset 16px 0 28px -18px rgb(95 111 242 / 0.45);
+  transition: background 250ms cubic-bezier(0.2, 0, 0, 1), box-shadow 250ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* A gradient border, masked to its own 1px ring: bright where the light would
+   catch the top-left of a raised edge, gone by the middle, back at the far
+   corner. Static — the orbiting lamps above are what moves. */
+.mv-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(140deg,
+    rgb(255 255 255 / 0.72) 0%,
+    rgb(255 255 255 / 0.1) 38%,
+    rgb(255 255 255 / 0) 60%,
+    rgb(255 255 255 / 0.4) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.mv-cta:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.13);
+  box-shadow:
+    inset 0 1px 1px 0 rgb(255 255 255 / 0.24),
+    inset 0 -18px 30px -16px rgb(239 111 92 / 0.65),
+    inset 18px 0 30px -18px rgb(95 111 242 / 0.6);
+}
+
+/* ── The badge on the card's name row ────────────────────────────────────── */
+.mv-chip {
+  border: 1px solid rgb(239 111 92 / 0.35);
+  background:
+    radial-gradient(140% 220% at 100% 50%, rgb(239 111 92 / 0.12) 0%, transparent 65%),
+    radial-gradient(140% 220% at 0% 50%, rgb(239 111 92 / 0.2) 0%, transparent 65%),
+    rgb(15 13 20 / 0.82);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    0 4px 14px -10px rgb(239 111 92 / 0.45);
+}
+
+/* The two reach figures, lit by the same warm→cool ramp as the button. */
+.mv-figure {
+  background-image: linear-gradient(90deg, #bcc0ca -1%, #feeae1 42%, #c0cef2 102%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The lamps stop where they started — the ring keeps its light, it just
+     stops travelling. */
+  .mv-glow-blob { animation: none; }
+}

@@ -99,7 +99,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
-  { title: "KIMI — GRIDO1 Racing Systems", category: "Automotive", type: "Landing", file: "Kimi_Grido1_Racing_Systems.md", pinned: true, preview: "https://storage.getlayers.ai/templates/kimi-04a9449ab2-preview.mp4", tags: ["WebGL", "Three.js", "Sticky Stack"], gradient: "from-[#f7fafb] via-cyan-400 to-[#090a0b]" },
+  { title: "KIMI — GRIDO1 Racing Systems", category: "Automotive", type: "Landing", file: "Kimi_Grido1_Racing_Systems.md", pinned: true, demo: "https://sitemovento.vercel.app/", preview: "https://storage.getlayers.ai/templates/kimi-04a9449ab2-preview.mp4", tags: ["WebGL", "Three.js", "Sticky Stack"], gradient: "from-[#f7fafb] via-cyan-400 to-[#090a0b]" },
   { title: "MindAI — Where Mind Meets the Impossible", category: "AI / SaaS", type: "Hero", file: "MindAI_Scrub_Figure_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_185102_c835194f-77ee-4c60-9ad1-850716544d36.png&w=1920&q=85", tags: ["Mouse Scrub", "Video", "Editorial"], gradient: "from-[#f6eaf2] via-rose-300 to-[#1b1016]" },
   { title: "VEYRA — Electric, Inside Out", category: "Automotive", type: "Landing", file: "Veyra_Interactive_Car.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_221847_45bc580c-aeb2-40f8-a5ca-bc977261fa53.png&w=1920&q=85", tags: ["Interactive", "Hotspots", "Video"], gradient: "from-[#e1eaf0] via-[#6b879d] to-[#10190c]" },
   { title: "Vertex Shops — Streamline the Shop Process", category: "E-commerce", type: "Hero", file: "Vertex_Shops_Carousel_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_163540_9f0f8a66-ec5f-46f7-adf8-e094a211d489.png&w=1920&q=85", tags: ["3D Carousel", "Glow Button", "Dark"], gradient: "from-cyan-200 via-sky-700 to-[#020204]" },
@@ -734,45 +734,55 @@ function PlanCard({ plan, onBuy, loading, featured }) {
   // Nothing to line up with, and no other card to be the best of.
   const alone = isSinglePlan;
   return (
-    <div className={`relative flex flex-col rounded-[22px] px-4 pb-4 pt-9 transition sm:rounded-[28px] sm:p-8 lg:p-5 ${featured ? "border border-white/25 bg-[#141417] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]" : "border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]"}`}>
+    <div className="mv-glass relative flex flex-col rounded-xl px-5 pb-5 pt-9 sm:p-6 lg:p-[23px]">
+      {/* The travelling light along the card's own edge. Two lamps, half a turn
+          apart, seen through a 1.5px ring — see .mv-glow. */}
+      <span className="mv-glow" aria-hidden="true">
+        <span className="mv-glow-blob" />
+        <span className="mv-glow-blob" />
+      </span>
       {featured && !alone && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{t("Best value", "Meilleur choix")}</span>}
 
-      <div className="flex items-start justify-between gap-1.5 sm:gap-3">
-        <h3 className="text-base font-semibold tracking-tight text-[#EDE9E0] sm:text-xl">{plan.name}</h3>
-        {plan.discountBadge && <span className="mt-0.5 flex-none rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-[10px] font-semibold leading-4 text-emerald-300 sm:mt-1 sm:px-2.5 sm:text-[11px]">{plan.discountBadge}</span>}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <h3 className="text-base font-semibold tracking-tight text-[#EDE9E0] sm:text-lg">{plan.name}</h3>
+        {plan.discountBadge && <span className="mv-chip flex-none rounded-full px-2 py-[3px] text-[11px] font-semibold leading-[1.5] text-[#EDE9E0]">{plan.discountBadge}</span>}
       </div>
       {/* Reserved height for the longest description in the grid, so the rule,
           the price and the button land on the same line across the cards. A
           lone card has nothing to line up with, and the reserve then only
           pushes the rest of it further down the screen — same below sm, where
           the cards stack and each one is on its own. */}
-      {plan.description && <p className={alone ? "mt-2 text-[12.5px] leading-5 text-white/45 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5" : "mt-2 text-[12.5px] leading-5 text-white/45 sm:min-h-[4.5rem] sm:text-sm sm:leading-6 lg:min-h-[2.5rem] lg:text-[13px] lg:leading-5"}>{plan.description}</p>}
+      {plan.description && <p className={alone ? "mt-1.5 text-[12.5px] leading-6 text-white/55 sm:text-[13px]" : "mt-1.5 text-[12.5px] leading-6 text-white/55 sm:min-h-[4.5rem] sm:text-[13px] lg:min-h-[2.5rem]"}>{plan.description}</p>}
 
-      <div className="my-4 border-t border-dashed border-white/[0.14] sm:my-6 lg:my-4" />
-
-      {/* Each plan shows the price it is actually billed at — 21,99€ a month
-          beside 99€ a year — and nothing converted. Side by side the two
-          figures make the comparison themselves; the badge by the name names
-          what the year saves. */}
+      {/* Both prices on one baseline, the old one first and struck: read left
+          to right it is the discount, in the order a reader takes it. Stacking
+          them made the 159€ a footnote nobody weighed against the 89€. */}
       {/* Wraps on purpose: at 320px the period label sat 14px past the card and
           pushed the page into horizontal scroll. */}
-      <div className="flex min-h-[3.25rem] flex-wrap items-end gap-x-1.5 gap-y-0.5 sm:min-h-0 sm:gap-x-2">
-        <span className="text-[32px] font-bold leading-none tracking-[-0.05em] text-[#EDE9E0] sm:text-[52px] lg:text-[42px]">{plan.price}</span>
-        <span className="pb-0.5 text-xs text-white/40 sm:pb-1 sm:text-sm">{plan.period}</span>
+      <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        {plan.originalPrice && <span className="text-lg leading-none text-white/35 line-through">{plan.originalPrice}</span>}
+        <span className="text-[32px] font-bold leading-none tracking-[-0.03em] text-[#EDE9E0] sm:text-[40px]">{plan.price}</span>
+        <span className="text-xs text-white/40 sm:text-sm">{plan.period}</span>
       </div>
       {/* Same reasoning as the description: the plans carry a different number
           of price lines, and without a floor the buttons sit at different
           heights. Dropped for a lone card and below sm, same as above. */}
-      <div className={alone ? "mt-3 space-y-1 lg:mt-2" : "mt-3 space-y-1 sm:min-h-[1.5rem] lg:mt-2"}>
-        {plan.billedNote && <p className="text-xs text-white/45 sm:text-sm">{plan.billedNote}</p>}
-        {plan.originalPrice && <p className="text-xs text-white/35 line-through sm:text-sm">{plan.originalPrice}</p>}
+      <div className={alone ? "mt-1.5" : "mt-1.5 sm:min-h-[1.5rem]"}>
+        {plan.billedNote && <p className="text-xs text-white/40 sm:text-[13px]">{plan.billedNote}</p>}
       </div>
 
       <button
         onClick={() => onBuy(plan)}
         disabled={loading}
-        className={`group mt-5 flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-3 text-[13px] font-bold sm:mt-7 sm:gap-2 sm:px-5 sm:py-3.5 sm:text-sm lg:mt-4 lg:py-3 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 ${featured ? "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white" : "border border-white/15 bg-transparent text-[#EDE9E0] hover:border-white/35 hover:bg-white/[0.05]"}`}
+        style={{ "--mv-glow-color": "#ffa582", "--mv-glow-duration": "6s", "--mv-glow-opacity": 0.85 }}
+        className="mv-cta group mt-5 flex w-full items-center justify-center gap-1.5 rounded-full px-4 py-3 text-[13px] font-semibold text-[#EDE9E0] sm:mt-6 sm:gap-2 sm:py-3.5 sm:text-sm disabled:cursor-not-allowed disabled:opacity-60"
       >
+        {/* Its own pair of lamps, warm this time — the same device as the card
+            at a quarter the size, which is what ties the two together. */}
+        <span className="mv-glow" aria-hidden="true">
+          <span className="mv-glow-blob" />
+          <span className="mv-glow-blob" />
+        </span>
         {loading ? t("Loading…", "Chargement…") : plan.cta}
         <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
       </button>
@@ -784,10 +794,10 @@ function PlanCard({ plan, onBuy, loading, featured }) {
           keep their colour — that is what still marks them as the reason to
           pick this plan over the other — but they are rows in the same list,
           spanning both columns at lg instead of a two-column short phrase. */}
-      <ul className="mt-6 space-y-3 sm:mt-8 sm:space-y-3.5 lg:mt-4 lg:grid lg:grid-cols-2 lg:gap-x-5 lg:gap-y-3 lg:space-y-0">
+      <ul className="mt-5 space-y-2.5 sm:mt-6 lg:grid lg:grid-cols-2 lg:gap-x-5 lg:gap-y-2.5 lg:space-y-0">
         {plan.features.map((feat) => (
-          <li key={feat} className="flex items-start gap-2 text-[12.5px] leading-5 text-white/65 sm:gap-3 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5">
-            <Icon name="check" className="mt-1 h-4 w-4 flex-none text-white/70" /> {feat}
+          <li key={feat} className="flex items-center gap-2 text-[12.5px] leading-6 text-white/65 sm:gap-2.5 sm:text-[13px]">
+            <Icon name="tick" className="h-[13px] w-[13px] flex-none text-[#EDE9E0]" /> {feat}
           </li>
         ))}
         {plan.perk && (
@@ -885,6 +895,9 @@ function Icon({ name, className = "h-4 w-4" }) {
   if (name === "search") children = <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>;
   if (name === "copy") children = <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>;
   if (name === "check") children = <path d="M20 6 9 17l-5-5" />;
+  // The plan card's own tick: drawn in a 16 box at 1.8 rather than 24 at 2, so
+  // it stays a hairline beside 13px copy instead of a bold mark.
+  if (name === "tick") return <svg {...common} viewBox="0 0 16 16" strokeWidth={1.8}><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg>;
   if (name === "sparkles") children = <><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z" /></>;
   if (name === "play") children = <path d="M8 5v14l11-7z" />;
   if (name === "arrow") children = <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>;
