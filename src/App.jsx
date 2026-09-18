@@ -601,15 +601,21 @@ const discountOf = (id) => {
 const BEST_DISCOUNT = Math.max(...PLAN_TERMS.map((term) => discountOf(term.id)));
 // The one the page pushes: "Le plus choisi", the banner's figure, the anchor's.
 const FEATURED_TERM = termOf("m3");
-// The terms the bonus ebook and the direct support come with — the
-// twelve-month one, and the retired plans that were sold carrying them. A
-// short term never had either.
+// What each term is owed beyond the catalogue. Keep identical to EBOOK_KINDS
+// and SUPPORT_KINDS in api/_shared.js, which decide what gets stored.
 //
-// Declared here rather than beside earnedEbook, which is where it reads best:
+// The ebook reaches the three-month term because that is what its Whop product
+// is called — "Abonnement 3 Mois + EBOOK". The promise is made on the checkout
+// page the buyer pays on, so it is owed whatever the card here says. The direct
+// support is promised nowhere but the twelve-month card, and goes nowhere else.
+// Both lists carry the retired plans that were sold carrying them.
+//
+// Declared here rather than beside earnedEbook, which is where they read best:
 // runSelfTests calls that function at module level, and a const declared
 // further down the file is still in its temporal dead zone by then — which
 // throws before the first render and takes the whole page with it.
-const EXTRAS_KINDS = new Set(["m12", "lifetime", "yearly"]);
+const EBOOK_KINDS = new Set(["m3", "m12", "lifetime", "yearly"]);
+const SUPPORT_KINDS = new Set(["m12", "lifetime", "yearly"]);
 
 // Retired. Their prices stay defined because the cards, the ebook rule and the
 // access checks still reference the plans for the people who are on them —
@@ -1274,12 +1280,13 @@ function runSelfTests() {
   console.assert(["monthly", "yearly", "lifetime"].every((id) => !validatePlanId(id)), "the old plans are retired and should not be purchasable");
   console.assert(discountOf("m1") === 50 && discountOf("m3") === 60 && discountOf("m12") === 53, "the chips must read −50, −60 and −53");
   console.assert(BEST_DISCOUNT === 60, "the page leads with the best of the three");
-  console.assert(earnedEbook({ kind: "m12" }) && !earnedEbook({ kind: "m1" }) && !earnedEbook({ kind: "m3" }), "the ebook comes with the twelve-month term only");
+  console.assert(earnedEbook({ kind: "m3" }) && earnedEbook({ kind: "m12" }) && !earnedEbook({ kind: "m1" }), "the ebook comes with the three- and twelve-month terms, as their Whop products promise");
   console.assert(earnedEbook({}), "an unidentified plan must not lose the ebook");
   // Retired does not mean cut off: the people already on a subscription keep
   // everything their plan granted them.
   console.assert(earnedEbook({ kind: "yearly" }) && !earnedEbook({ kind: "monthly" }), "annual subscribers keep the ebook, monthly ones never had it");
-  console.assert(earnedSupport({ kind: "m12" }) && earnedSupport({ kind: "lifetime" }) && earnedSupport({ kind: "yearly" }), "support follows the same terms");
+  console.assert(earnedSupport({ kind: "m12" }) && earnedSupport({ kind: "lifetime" }) && earnedSupport({ kind: "yearly" }), "support follows the twelve-month term and the plans sold with it");
+  console.assert(!earnedSupport({ kind: "m1" }) && !earnedSupport({ kind: "m3" }), "the short terms never bought the support");
   console.assert(!earnedSupport({}), "support must never be handed to an unidentified plan");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // On sale in the grid while the kill switch is on, and off it entirely when
@@ -2073,24 +2080,23 @@ export default function MoventoSite() {
   );
 }
 
-// The ebook ships with the annual plan, not the monthly one — the same rule
-// the cards advertise — and with the lifetime that is no longer sold, since
-// its buyers were promised it. A plan we failed to identify still gets it:
-// refusing a paid-for bonus because a lookup came back empty is the worse
-// mistake.
+// The ebook ships with the three- and twelve-month terms, not the one-month
+// one, and with the retired plans whose buyers were promised it. A plan we
+// failed to identify still gets it: refusing a paid-for bonus because a lookup
+// came back empty is the worse mistake.
 function earnedEbook(info) {
   if (info?.type === "lifetime") return true;
   // Unidentified is not the same as excluded: a paying customer must never be
   // denied by a lookup that merely failed to name their plan.
   if (!info?.kind) return true;
-  return EXTRAS_KINDS.has(info.kind);
+  return EBOOK_KINDS.has(info.kind);
 }
 
-// Direct support follows the same terms. Unlike the ebook this does NOT fail
-// open: an unidentified plan must not be handed a private phone number we did
-// not sell them.
+// Direct support comes with the twelve-month term alone. Unlike the ebook this
+// does NOT fail open: an unidentified plan must not be handed a private phone
+// number we did not sell them.
 function earnedSupport(info) {
-  return info?.type === "lifetime" || EXTRAS_KINDS.has(info?.kind);
+  return info?.type === "lifetime" || SUPPORT_KINDS.has(info?.kind);
 }
 
 // How a lifetime buyer reaches a human. Shown on /success and on "My

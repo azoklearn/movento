@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { normalizeEmail, planKindFromPlanId, PROMPT_PACK_SIZE, redisAddPromptCredit, redisClearAccess, redisGetAccessRecord, redisSetAccess } from "./_shared.js";
+import { mergeKind, normalizeEmail, planKindFromPlanId, PROMPT_PACK_SIZE, redisAddPromptCredit, redisClearAccess, redisGetAccessRecord, redisSetAccess } from "./_shared.js";
 
 export const config = { api: { bodyParser: false } };
 
@@ -123,12 +123,15 @@ export default async function handler(req, res) {
         return res.json({ received: true });
       }
 
-      // The exact plan ("monthly" | "yearly" | "lifetime") decides whether the
-      // buyer earned the bonus ebook, which "subscription" alone cannot tell.
+      // The exact plan ("m1" | "m3" | "m12" | "lifetime" | …) decides whether
+      // the buyer earned the bonus ebook and the direct support, which
+      // "subscription" alone cannot tell. mergeKind is what keeps a renewing
+      // 99 €/yr subscriber from being re-read as "m3": their plan was re-priced
+      // under them, so the id now names a lesser term than the one they bought.
       const kind = planKindFrom(data);
       await redisSetAccess(email, {
         plan: data.plan?.id || data.product?.title || "unknown",
-        kind: kind || previous?.kind || null,
+        kind: mergeKind(previous?.kind, kind),
         // Never downgrade a known type: membership.activated identifies the plan,
         // the payment.succeeded that follows it usually cannot, and losing the
         // type here would cost a lifetime buyer their bonus ebook.
