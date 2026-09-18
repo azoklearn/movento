@@ -60,19 +60,29 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // Replacing a plan means changing the id here and adding the old one to
 // LEGACY_PLAN_KINDS below, so its subscribers keep resolving.
 //
-// ┌─────────────────────────────────────────────────────────────────────────┐
-// │ THE THREE TERMS ON SALE. Paste the Whop checkout links here — the        │
-// │ https://whop.com/checkout/plan_xxx form, one per term.                   │
-// │                                                                         │
-// │ They must read 18.99 €, 29.99 € and 69.99 € on Whop, matching            │
-// │ PLAN_TERMS in src/App.jsx. Left empty, create-checkout-session refuses   │
-// │ the plan outright rather than sending a buyer to a dead page — which is  │
-// │ why an empty string here is a safe state and a wrong link is not.        │
-// │ WHOP_M1_URL / WHOP_M3_URL / WHOP_M12_URL override them.                  │
-// └─────────────────────────────────────────────────────────────────────────┘
-const M1_FALLBACK_URL = "";
-const M3_FALLBACK_URL = "";
-const M12_FALLBACK_URL = "";
+// The three terms on sale. They must read 18.99 €, 29.99 € and 69.99 € on
+// Whop, matching PLAN_TERMS in src/App.jsx — the site only quotes a price.
+// WHOP_M1_URL / WHOP_M3_URL / WHOP_M12_URL override them.
+//
+// These are **product pages**, not `/checkout/plan_xxx` links, so no plan id
+// can be read out of them — and a plan id is the only thing that tells a
+// purchase apart at the webhook. Until WHOP_M1_PLAN_ID / _M3_ / _M12_ are set
+// (or these become checkout links), `planKindFromPlanId` answers null for every
+// new buyer, and with it:
+//
+//   · the bonus ebook is granted to all three terms, not the twelve-month one
+//     — earnedEbook fails open, which is the right way to be wrong: denying it
+//     to someone who paid for it is the worse error;
+//   · the direct-support block is shown to none of them — earnedSupport fails
+//     closed, and must, since it hands out a private contact.
+//
+// Access itself is unaffected: the webhook grants it whether or not it can name
+// the plan, and every existing customer's id still resolves through the links
+// below. The slugs are the names the products were duplicated from, not what
+// they are now.
+const M1_FALLBACK_URL = "https://whop.com/movento/abonnement-mensuel-m-copy-a2/";
+const M3_FALLBACK_URL = "https://whop.com/movento/abonnement-annuel-ebook-90/";
+const M12_FALLBACK_URL = "https://whop.com/movento/coaching-creation-sites-premiere-vente/";
 
 // No longer on sale (see RETIRED_PLANS). They stay here because an existing
 // subscriber's plan_xxx is resolved through these links — that is what keeps
