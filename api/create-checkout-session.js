@@ -9,7 +9,10 @@ export default async function handler(req, res) {
   if (!checkoutUrl) {
     return res.status(400).json({
       error: "Plan invalide ou lien de checkout Whop manquant.",
-      validPlans: Object.keys(checkoutUrls).filter((id) => !RETIRED_PLANS.has(id)),
+      // Only what a caller could actually buy: a plan whose link is still
+      // waiting to be configured is as unbuyable as a retired one, and
+      // listing it would send whoever read this error straight back into a 400.
+      validPlans: Object.keys(checkoutUrls).filter((id) => checkoutUrls[id] && !RETIRED_PLANS.has(id)),
     });
   }
 

@@ -60,13 +60,24 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // Replacing a plan means changing the id here and adding the old one to
 // LEGACY_PLAN_KINDS below, so its subscribers keep resolving.
 //
-// Full access, one payment, 89 € on Whop — matching PRICE_LIFETIME in
-// src/App.jsx (Whop product prod_YWF4xcOs3RFv9). WHOP_LIFETIME_URL overrides it.
+// ┌─────────────────────────────────────────────────────────────────────────┐
+// │ THE THREE TERMS ON SALE. Paste the Whop checkout links here — the        │
+// │ https://whop.com/checkout/plan_xxx form, one per term.                   │
+// │                                                                         │
+// │ They must read 18.99 €, 29.99 € and 69.99 € on Whop, matching            │
+// │ PLAN_TERMS in src/App.jsx. Left empty, create-checkout-session refuses   │
+// │ the plan outright rather than sending a buyer to a dead page — which is  │
+// │ why an empty string here is a safe state and a wrong link is not.        │
+// │ WHOP_M1_URL / WHOP_M3_URL / WHOP_M12_URL override them.                  │
+// └─────────────────────────────────────────────────────────────────────────┘
+const M1_FALLBACK_URL = "";
+const M3_FALLBACK_URL = "";
+const M12_FALLBACK_URL = "";
+
+// No longer on sale (see RETIRED_PLANS). They stay here because an existing
+// subscriber's plan_xxx is resolved through these links — that is what keeps
+// their kind, and with it their access, their ebook and their support.
 const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
-// The two subscriptions, no longer on sale (see RETIRED_PLANS). They stay here
-// because an existing subscriber's plan_xxx is resolved through these links —
-// that is what keeps their kind, and with it their access and their ebook.
-// WHOP_MONTHLY_URL / WHOP_YEARLY_URL override them.
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_lg2xFDMH1crhQ";
 const YEARLY_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
 // A pack of prompts, bought without the catalogue (Whop product
@@ -90,6 +101,9 @@ export const PROMPT_PACK_SIZE = 3;
 // The links we ship with. An env var overrides them, but see resolvePlanId: a
 // product-page env var must not cost us the embedded checkout these provide.
 const fallbackUrls = {
+  m1: M1_FALLBACK_URL,
+  m3: M3_FALLBACK_URL,
+  m12: M12_FALLBACK_URL,
   monthly: MONTHLY_FALLBACK_URL,
   yearly: YEARLY_FALLBACK_URL,
   lifetime: LIFETIME_FALLBACK_URL,
@@ -97,6 +111,9 @@ const fallbackUrls = {
 };
 
 export const checkoutUrls = {
+  m1: process.env.WHOP_M1_URL || M1_FALLBACK_URL,
+  m3: process.env.WHOP_M3_URL || M3_FALLBACK_URL,
+  m12: process.env.WHOP_M12_URL || M12_FALLBACK_URL,
   monthly: process.env.WHOP_MONTHLY_URL || MONTHLY_FALLBACK_URL,
   yearly: process.env.WHOP_YEARLY_URL || YEARLY_FALLBACK_URL,
   lifetime: process.env.WHOP_LIFETIME_URL || LIFETIME_FALLBACK_URL,
@@ -112,6 +129,9 @@ export const checkoutUrls = {
 // (we extract the id from it below). If neither is available, the client falls
 // back to the hosted redirect flow.
 const planIdEnv = {
+  m1: process.env.WHOP_M1_PLAN_ID,
+  m3: process.env.WHOP_M3_PLAN_ID,
+  m12: process.env.WHOP_M12_PLAN_ID,
   monthly: process.env.WHOP_MONTHLY_PLAN_ID,
   yearly: process.env.WHOP_YEARLY_PLAN_ID,
   lifetime: process.env.WHOP_LIFETIME_PLAN_ID,
@@ -145,7 +165,7 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-export const RETIRED_PLANS = new Set(["monthly", "yearly"]);
+export const RETIRED_PLANS = new Set(["monthly", "yearly", "lifetime"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a
@@ -153,7 +173,7 @@ export const RETIRED_PLANS = new Set(["monthly", "yearly"]);
 export function planKindFromPlanId(planId) {
   const id = String(planId || "").trim();
   if (!id) return null;
-  return ["monthly", "yearly", "lifetime", "pack"].find((kind) => resolvePlanId(kind) === id) || LEGACY_PLAN_KINDS[id] || null;
+  return ["m1", "m3", "m12", "monthly", "yearly", "lifetime", "pack"].find((kind) => resolvePlanId(kind) === id) || LEGACY_PLAN_KINDS[id] || null;
 }
 
 // Whop credits an affiliate through the "a" query parameter. Carrying it onto the
