@@ -663,6 +663,18 @@ const PROMPT_PACK_ENABLED = false;
 const PROMPT_PACK_SIZE = 3;
 const PROMPT_PACK_PRICE = 19.99;
 
+// What every term includes, so each card states the whole offer rather than a
+// price alone. The terms differ by what they add on top — the marketing videos,
+// the launch plan, the agent, the follow-up — and never by what they take away.
+const BASE_FEATURES = [
+  t("Full Movento catalog", "Catalogue Movento complet"),
+  t("Ready-to-launch site ideas", "Idées de sites prêtes à lancer"),
+  t("Prompt + site ready to deploy", "Prompt + site prêt à déployer"),
+  t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"),
+  t("New prompts added continuously", "Nouveaux prompts en continu"),
+  t("Cancel anytime", "Résiliation à tout moment"),
+];
+
 const plans = [
   {
     id: "m1",
@@ -675,8 +687,10 @@ const plans = [
     discountBadge: `−${discountOf("m1")} %`,
     period: t("/ mo", "/ mois"),
     perDay: perDayOf("m1"),
+    billedNote: t("renewed every month", "renouvelé chaque mois"),
     cta: t("Choose 1 month", "Choisir 1 mois"),
     featured: false,
+    features: BASE_FEATURES,
   },
   {
     id: "m3",
@@ -687,9 +701,14 @@ const plans = [
     discountBadge: `−${discountOf("m3")} %`,
     period: t("/ 3 mo", "/ 3 mois"),
     perDay: perDayOf("m3"),
+    billedNote: t("renewed every 3 months", "renouvelé tous les 3 mois"),
     badge: t("Most chosen", "Le plus choisi"),
     cta: t("Choose 3 months", "Choisir 3 mois"),
     featured: true,
+    features: [...BASE_FEATURES, t("30 marketing videos", "30 vidéos marketing")],
+    // Its Whop product is sold as "Abonnement 3 Mois + EBOOK", so the promise is
+    // already made where the buyer pays. EBOOK_KINDS is what honours it.
+    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
   },
   {
     id: "m12",
@@ -700,10 +719,18 @@ const plans = [
     discountBadge: `−${discountOf("m12")} %`,
     period: t("/ yr", "/ an"),
     perDay: perDayOf("m12"),
+    billedNote: t("renewed every year", "renouvelé chaque année"),
     cta: t("Choose 12 months", "Choisir 12 mois"),
     featured: false,
-    // The only two promises that are tied to the term rather than to the
-    // product, so they stay on the card that carries them and nowhere else.
+    features: [
+      ...BASE_FEATURES,
+      t("Unlimited marketing videos", "Vidéos marketing illimitées"),
+      t("Launch plan, A to Z", "Plan de lancement de A à Z"),
+      t("Your own AI agent", "Agent IA dédié"),
+      t("One-to-one follow-up", "Suivi personnalisé"),
+    ],
+    // Tied to the term rather than to the product, so it stays on the card that
+    // carries it and nowhere else. SUPPORT_KINDS is what honours it.
     perk: t("Direct support included", "Support direct inclus"),
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
   },
@@ -883,17 +910,22 @@ function PlanCard({ plan, onBuy, loading, featured }) {
           keep their colour — that is what still marks them as the reason to
           pick this plan over the other — but they are rows in the same list,
           spanning both columns at lg instead of a two-column short phrase. */}
-      {/* Optional: the three terms are one product at three durations, so the
-          shared feature list would be the same three columns of the same
-          sentences. Only what is genuinely tied to the term is on a card. */}
-      <ul className="mt-5 space-y-2.5 sm:mt-6 lg:grid lg:grid-cols-2 lg:gap-x-5 lg:gap-y-2.5 lg:space-y-0">
+      {/* The three terms share BASE_FEATURES, which is the point: what a card
+          adds under it is exactly what the longer term buys. Three columns of
+          the same six lines reads as repetition until the seventh line differs
+          — so the ladder has to be visible for the repetition to be worth it. */}
+      {/* One column at every width. Two columns fitted the short phrases the
+          cards used to carry; these wrap onto two and three lines, and a grid
+          row is as tall as its tallest cell, so the list opened gaps between
+          every pair. One column is also the shorter of the two here. */}
+      <ul className="mt-5 space-y-2.5 sm:mt-6">
         {(plan.features || []).map((feat) => (
-          <li key={feat} className="flex items-center gap-2 text-[12.5px] leading-6 text-white/65 sm:gap-2.5 sm:text-[13px]">
-            <Icon name="tick" className="h-[13px] w-[13px] flex-none text-[#EDE9E0]" /> {feat}
+          <li key={feat} className="flex items-start gap-2 text-[12.5px] leading-6 text-white/65 sm:gap-2.5 sm:text-[13px]">
+            <Icon name="tick" className="mt-[5px] h-[13px] w-[13px] flex-none text-[#EDE9E0]" /> {feat}
           </li>
         ))}
         {plan.perk && (
-          <li className="flex items-start gap-2 sm:gap-3 lg:col-span-2">
+          <li className="flex items-start gap-2 sm:gap-3">
             <Icon name="chat" className="mt-1 h-4 w-4 flex-none text-emerald-300" />
             <span className="min-w-0">
               <span className="block text-[12.5px] font-semibold leading-5 text-emerald-200 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5">{plan.perk}</span>
@@ -902,7 +934,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
           </li>
         )}
         {plan.bonus && (
-          <li className="flex items-start gap-2 sm:gap-3 lg:col-span-2">
+          <li className="flex items-start gap-2 sm:gap-3">
             <Icon name="gift" className="mt-1 h-4 w-4 flex-none text-amber-300" />
             <span className="min-w-0">
               <span className="block text-[12.5px] font-semibold leading-5 text-amber-200 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5">{plan.bonus}</span>
