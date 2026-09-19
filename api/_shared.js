@@ -64,7 +64,7 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // the retired quarter — the ids are what every buyer's record is keyed on, so
 // they outlive the names the cards give them.
 //
-// THEY MUST READ 19.99 €, 99.99 € AND 149.99 € ON WHOP, matching PLAN_TERMS
+// THEY MUST READ 18.99 €, 99.99 € AND 149.99 € ON WHOP, matching PLAN_TERMS
 // and PRICE_LIFETIME in src/App.jsx. The site only quotes a price; Whop is
 // what charges it, and a card that quotes one figure while Whop takes another
 // is the one failure here that reaches a buyer's bank statement.

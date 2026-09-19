@@ -604,9 +604,9 @@ const FREE_PROMPT_FILES = new Set([]);
 // of its own. That is the comparison a buyer makes anyway, and it is one they
 // can check on the card beside it.
 const PLAN_TERMS = [
-  { id: "m1", price: 19.99, anchor: 39.99, days: 30, banner: t("a month", "le mois") },
+  { id: "m1", price: 18.99, anchor: 39.99, days: 30, banner: t("a month", "le mois") },
   { id: "m3", price: 29.99, anchor: 74.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois") },
-  { id: "m12", price: 99.99, anchor: 12 * 19.99, days: 365, banner: t("for a year", "l'année") },
+  { id: "m12", price: 99.99, anchor: 12 * 18.99, days: 365, banner: t("for a year", "l'année") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
@@ -1577,8 +1577,8 @@ function runSelfTests() {
   console.assert(FEATURED_TERM.id === "m12" && plans.find((plan) => plan.id === "m12").featured, "the year is the one the page pushes, on its card and in the bar alike");
   console.assert(PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
   console.assert(termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
-  console.assert(discountOf("m1") === 50 && discountOf("m12") === 58 && LIFETIME_DISCOUNT === 50, "the chips must read −50, −58 and −50");
-  console.assert(BEST_DISCOUNT === 58, "the page leads with the best discount still on sale");
+  console.assert(discountOf("m1") === 53 && discountOf("m12") === 56 && LIFETIME_DISCOUNT === 50, "the chips must read −53, −56 and −50");
+  console.assert(BEST_DISCOUNT === 56, "the page leads with the best discount still on sale");
   console.assert(earnedEbook({ kind: "m12" }) && earnedEbook({ kind: "lifetime" }) && !earnedEbook({ kind: "m1" }), "the ebook comes with the year and with lifetime, not with the month");
   console.assert(earnedEbook({ kind: "m3" }), "the retired quarter was sold as \"+ EBOOK\" and its buyers keep it");
   console.assert(earnedEbook({}), "an unidentified plan must not lose the ebook");
