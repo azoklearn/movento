@@ -79,9 +79,10 @@ const M12_FALLBACK_URL = "https://whop.com/checkout/plan_DmP1j9cCTGTOe";
 const MONTHLY_FALLBACK_URL = M1_FALLBACK_URL;
 const YEARLY_FALLBACK_URL = M3_FALLBACK_URL;
 
-// No longer on sale (see RETIRED_PLANS), and unlike the two above it was never
-// re-priced: its id still belongs to it alone, which is what keeps a lifetime
-// buyer's kind, their access, their ebook and their support.
+// On sale again, beside the three terms. Unlike the two above it was never
+// re-priced, so its id still belongs to it alone — which is what keeps every
+// lifetime buyer, old and new, resolving to their kind, their access, their
+// ebook and their support.
 const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
 // A pack of prompts, bought without the catalogue (Whop product
 // prod_zZlcqsSutlXvW). One purchase, PROMPT_PACK_SIZE prompts of your choice.
@@ -168,7 +169,7 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-export const RETIRED_PLANS = new Set(["monthly", "yearly", "lifetime"]);
+export const RETIRED_PLANS = new Set(["monthly", "yearly"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a

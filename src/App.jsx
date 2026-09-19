@@ -663,18 +663,20 @@ const PROMPT_PACK_ENABLED = false;
 const PROMPT_PACK_SIZE = 3;
 const PROMPT_PACK_PRICE = 19.99;
 
-// What every term includes, so each card states the whole offer rather than a
-// price alone. All three carry the same list: the catalogue is one product at
-// three durations, and the only things a longer term adds are the bonus ebook
-// and the direct support, which ride on `bonus` and `perk` rather than here.
-const BASE_FEATURES = [
+// What the catalogue gives whoever holds it, on any plan. Every card states
+// the whole offer rather than a price alone, so this is repeated on all of
+// them and what a card adds under it is exactly what the plan buys.
+const CATALOGUE_FEATURES = [
   t("Full Movento catalog", "Catalogue Movento complet"),
   t("Ready-to-launch site ideas", "Idées de sites prêtes à lancer"),
   t("Prompt + site ready to deploy", "Prompt + site prêt à déployer"),
   t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"),
   t("New prompts added continuously", "Nouveaux prompts en continu"),
-  t("Cancel anytime", "Résiliation à tout moment"),
 ];
+
+// The subscriptions renew, so they can be stopped. Lifetime is paid once and
+// has nothing to cancel, which is why it does not share this list.
+const BASE_FEATURES = [...CATALOGUE_FEATURES, t("Cancel anytime", "Résiliation à tout moment")];
 
 const plans = [
   {
@@ -753,24 +755,26 @@ const plans = [
   },
   {
     id: "lifetime",
-    // No longer sold. Kept defined so existing lifetime buyers still resolve —
-    // that is what keeps their access, their ebook and their support.
-    hidden: true,
+    // Back on sale beside the three terms. Keep in step with RETIRED_PLANS in
+    // api/_shared.js, which would refuse the checkout while this is false.
+    hidden: false,
     name: t("Lifetime", "À vie"),
     price: eur(PRICE_LIFETIME),
     originalPrice: eur(PRICE_LIFETIME_ANCHOR),
-    discountBadge: `-${LIFETIME_DISCOUNT}%`,
+    discountBadge: `−${LIFETIME_DISCOUNT} %`,
     period: t("forever", "à vie"),
-    badge: t("One shot", "Une fois pour toutes"),
-    description: t("Unlock unlimited web creation, once and for all.", "Débloquez la création web sans limites, une fois pour toutes."),
-    cta: t("Get lifetime access", "Obtenir l'accès à vie"),
-    featured: true,
-    // Included, and stated plainly rather than buried in the feature list.
+    // No per-day figure: the term it would divide by is the rest of your life.
+    // The line the other cards use for their renewal says so instead.
+    billedNote: t("one payment, never again", "un seul paiement, jamais renouvelé"),
+    cta: t("Get lifetime access", "Prendre l'accès à vie"),
+    // Only one ribbon per row, and it belongs to the term the page pushes.
+    featured: false,
+    features: [...CATALOGUE_FEATURES, t("Paid once, yours for life", "Payé une fois, à toi à vie")],
+    // Stated plainly rather than buried in the list above. The descriptions the
+    // card used to carry are gone: they were most of its height, and beside
+    // three shorter cards that read as a mistake rather than as generosity.
     perk: t("Direct support included", "Support direct inclus"),
-    perkDesc: t("A question, a prompt that will not behave, a second look at your site — write and a real person answers.", "Une question, un prompt qui ne veut pas, un avis sur ton site — tu écris et une vraie personne te répond."),
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
-    bonusDesc: t("Learn to build your site, sell it, land clients and manage it — A to Z.", "Apprends à créer ton site, le vendre, trouver des clients et le gérer — de A à Z."),
-    features: [t("High-value prompts", "Prompts à forte valeur ajoutée"), t("Unlimited lifetime access", "Accès illimité à vie"), t("Considerable savings vs agencies", "Économies considérables vs agences"), t("Professional-grade design & UX", "Création professionnelle"), t("Continuous learning & updates", "Apprentissage continu")],
   },
   {
     id: "pack",
@@ -815,16 +819,32 @@ const visiblePlans = plans.filter((plan) => !plan.hidden);
 // (lifetime carries five features plus support and the ebook, the pack three
 // lines), and at 375px the pair rendered as two narrow columns with the CTA
 // broken over three lines and a hand's depth of empty card beside it.
-const planGridBase = visiblePlans.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1";
+// Four plans pair off at sm rather than running one under the other: 2x2 keeps
+// the whole grid on a tablet screen, and the row only becomes four wide at lg.
+const planGridBase = visiblePlans.length === 2 || visiblePlans.length === 4 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1";
 const planGridMd = visiblePlans.length === 1 ? "md:grid-cols-1" : visiblePlans.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
-const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
+const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.length === 2 ? "lg:grid-cols-2" : visiblePlans.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3";
 // Two cards stretched over the three-card width read as oversized banners, so
-// the row narrows with the number of plans on sale.
-const planGridWidth = visiblePlans.length === 1 ? "max-w-sm lg:max-w-2xl" : visiblePlans.length === 2 ? "max-w-3xl lg:max-w-5xl" : "max-w-5xl";
+// the row narrows with the number of plans on sale — and widens for a fourth,
+// which at max-w-5xl would have left four columns too narrow for their prices.
+const planGridWidth = visiblePlans.length === 1 ? "max-w-sm lg:max-w-2xl" : visiblePlans.length === 2 ? "max-w-3xl lg:max-w-5xl" : visiblePlans.length === 4 ? "max-w-3xl lg:max-w-7xl" : "max-w-5xl";
 // With one offer on sale there is nothing to choose between and nothing to be
 // the best value of, so the comparison copy steps aside. Derived rather than
 // hardcoded: bringing a plan back out of hiding restores it on its own.
 const isSinglePlan = visiblePlans.length === 1;
+
+// Which plans on sale carry the bonus ebook. The ladder used to say "annual
+// only", which stopped being true the day the annual was retired — a label
+// that names a plan has to be derived from the plans, or it goes stale the
+// next time the line-up changes.
+const plansWithoutEbook = visiblePlans.filter((plan) => !EBOOK_KINDS.has(plan.id));
+const ebookExceptions = plansWithoutEbook.map((plan) => plan.name).join(", ");
+const EBOOK_TAG = plansWithoutEbook.length === 0
+  ? t("Included too", "Inclus aussi")
+  : t(`Every plan but ${ebookExceptions}`, `Toutes les offres sauf ${ebookExceptions}`);
+const EBOOK_NOTE = plansWithoutEbook.length === 0
+  ? t("The prompts and the ebook come with every plan.", "Les prompts et l'ebook sont dans toutes les offres.")
+  : t(`The prompts come with every plan. The ebook with all but ${ebookExceptions}.`, `Les prompts sont dans toutes les offres. L'ebook dans toutes sauf ${ebookExceptions}.`);
 // Looked up by id rather than taken from visiblePlans: the popup and the
 // paywall trip offer it on their own, whether or not it is currently in the
 // grid.
@@ -867,14 +887,14 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       {/* Wraps on purpose: at 320px the period label sat 14px past the card and
           pushed the page into horizontal scroll. */}
       <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        {plan.originalPrice && <span className="text-base leading-none text-white/35 line-through sm:text-lg lg:text-[15px]">{plan.originalPrice}</span>}
-        <span className="text-[32px] font-bold leading-none tracking-[-0.03em] text-[#EDE9E0] sm:text-[40px] lg:text-[34px]">{plan.price}</span>
+        {plan.originalPrice && <span className="text-base leading-none text-white/35 line-through sm:text-lg lg:text-[14px]">{plan.originalPrice}</span>}
+        <span className="text-[32px] font-bold leading-none tracking-[-0.03em] text-[#EDE9E0] sm:text-[40px] lg:text-[30px]">{plan.price}</span>
         <span className="text-xs text-white/40 sm:text-sm">{plan.period}</span>
       </div>
       {/* Same reasoning as the description: the plans carry a different number
           of price lines, and without a floor the buttons sit at different
           heights. Dropped for a lone card and below sm, same as above. */}
-      <div className={alone ? "mt-1.5" : "mt-1.5 sm:min-h-[1.5rem]"}>
+      <div className={alone ? "mt-1.5" : "mt-1.5 sm:min-h-[2.5rem]"}>
         {/* The same price said the smallest way it can be said. Cream rather
             than the muted grey the billing line uses: it is an argument, not a
             detail. */}
@@ -1524,8 +1544,8 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(["m1", "m3", "m12"].every(validatePlanId), "the three terms are on sale and must be purchasable");
-  console.assert(["monthly", "yearly", "lifetime"].every((id) => !validatePlanId(id)), "the old plans are retired and should not be purchasable");
+  console.assert(["m1", "m3", "m12", "lifetime"].every(validatePlanId), "the three terms and lifetime are on sale and must be purchasable");
+  console.assert(["monthly", "yearly"].every((id) => !validatePlanId(id)), "the two old subscriptions are retired and should not be purchasable");
   console.assert(discountOf("m1") === 50 && discountOf("m3") === 60 && discountOf("m12") === 53, "the chips must read −50, −60 and −53");
   console.assert(BEST_DISCOUNT === 60, "the page leads with the best of the three");
   console.assert(earnedEbook({ kind: "m3" }) && earnedEbook({ kind: "m12" }) && !earnedEbook({ kind: "m1" }), "the ebook comes with the three- and twelve-month terms, as their Whop products promise");
@@ -1533,7 +1553,8 @@ function runSelfTests() {
   // Retired does not mean cut off: the people already on a subscription keep
   // everything their plan granted them.
   console.assert(earnedEbook({ kind: "yearly" }) && !earnedEbook({ kind: "monthly" }), "annual subscribers keep the ebook, monthly ones never had it");
-  console.assert(earnedSupport({ kind: "m12" }) && earnedSupport({ kind: "lifetime" }) && earnedSupport({ kind: "yearly" }), "support follows the twelve-month term and the plans sold with it");
+  console.assert(earnedSupport({ kind: "m12" }) && earnedSupport({ kind: "lifetime" }) && earnedSupport({ kind: "yearly" }), "support follows the twelve-month term, lifetime, and the plans sold with it");
+  console.assert(plansWithoutEbook.every((plan) => !EBOOK_KINDS.has(plan.id)) && !plansWithoutEbook.some((plan) => plan.id === "lifetime"), "the ladder must not tell a lifetime buyer the ebook is not theirs");
   console.assert(!earnedSupport({ kind: "m1" }) && !earnedSupport({ kind: "m3" }), "the short terms never bought the support");
   console.assert(!earnedSupport({}), "support must never be handed to an unidentified plan");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
@@ -3522,7 +3543,7 @@ function BusinessLadder({ onPick }) {
         "Copy a prompt, paste it into Lovable, Cursor or Claude, and a complete site comes out — fonts, animations, sections. You ship work you could not have coded.",
         "Tu copies un prompt, tu le colles dans Lovable, Cursor ou Claude, et un site complet en sort — polices, animations, sections. Tu livres un travail que tu n'aurais pas su coder.",
       ),
-      tag: isSinglePlan ? t("Included", "Inclus") : t("In both plans", "Dans les deux offres"),
+      tag: isSinglePlan ? t("Included", "Inclus") : t("In every plan", "Dans toutes les offres"),
       tone: "border-white/12 bg-white/[0.03]",
       accent: "text-white/45",
       icon: "sparkles",
@@ -3536,7 +3557,7 @@ function BusinessLadder({ onPick }) {
         "Building is half the job. The guide covers the other half: pricing a site, writing the offer, handling the client, delivering and getting paid.",
         "Créer, c'est la moitié du travail. Le guide couvre l'autre moitié : fixer un prix, rédiger l'offre, gérer le client, livrer et te faire payer.",
       ),
-      tag: isSinglePlan ? t("Included too", "Inclus aussi") : t("Annual only", "Uniquement avec l'annuel"),
+      tag: EBOOK_TAG,
       tone: "border-amber-400/25 bg-amber-400/[0.05]",
       accent: "text-amber-300/80",
       icon: "gift",
@@ -3603,7 +3624,7 @@ function BusinessLadder({ onPick }) {
         >
           {t("Get all three", "Prendre les trois")} <Icon name="arrow" className="h-4 w-4" />
         </button>
-        <p className="text-xs text-white/40">{isSinglePlan ? t("Prompts and ebook, one payment, for life.", "Les prompts et l'ebook, un paiement, à vie.") : t("The prompts come with both plans. The ebook only with the annual.", "Les prompts sont dans les deux offres. L'ebook uniquement avec l'annuel.")}</p>
+        <p className="text-xs text-white/40">{isSinglePlan ? t("Prompts and ebook, one payment, for life.", "Les prompts et l'ebook, un paiement, à vie.") : EBOOK_NOTE}</p>
       </motion.div>
     </section>
   );
@@ -3693,7 +3714,7 @@ function PricingPage() {
           <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
             {t("Choose your", "Choisis ton")} <span className="text-white/45">{t("plan.", "plan.")}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{t(`The same ${availablePrompts.length} premium prompts in all three, and every one added next. The longer the term, the less a day costs.`, `Les mêmes ${availablePrompts.length} prompts premium dans les trois, et tous ceux à venir. Plus la durée est longue, moins la journée coûte.`)}</p>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. The longer the term, the less a day costs.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Plus la durée est longue, moins la journée coûte.`)}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
