@@ -586,21 +586,30 @@ const FREE_PROMPT_FILES = new Set([]);
 // `days` is what the per-day figure divides by, per term rather than one mean
 // month: 30, 90 and 365 are the counts the offer was written against, and
 // deriving 3 months from a 30.44-day mean would move a figure that is quoted.
+//
+// `retired` is the single place a term goes off sale: the card reads it for its
+// `hidden`, and the headline discount skips it so the page cannot lead with a
+// reduction no button offers. Its price stays defined — people are still on it,
+// and their renewals still have to resolve. Mirror it in RETIRED_PLANS
+// (api/_shared.js), which is what refuses a new checkout on it.
+//
+// `banner` is how the sticky bar names the term, which is not its card's
+// period: "for a year" reads where "/ yr" does not.
 const PLAN_TERMS = [
-  { id: "m1", price: 18.99, anchor: 37.97, days: 30 },
-  { id: "m3", price: 29.99, anchor: 74.97, days: 90 },
-  { id: "m12", price: 69.99, anchor: 149.97, days: 365 },
+  { id: "m1", price: 18.99, anchor: 37.97, days: 30, retired: true, banner: t("for a month", "le mois") },
+  { id: "m3", price: 29.99, anchor: 74.97, days: 90, banner: t("for 3 months", "les 3 mois") },
+  { id: "m12", price: 69.99, anchor: 149.97, days: 365, banner: t("for a year", "l'année") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
   const term = termOf(id);
   return Math.round((1 - term.price / term.anchor) * 100);
 };
-// The figure the page leads with — the best of the three, so the banner can
-// never promise a reduction no card actually offers.
-const BEST_DISCOUNT = Math.max(...PLAN_TERMS.map((term) => discountOf(term.id)));
+// The figure the page leads with — the best of the terms still on sale, so the
+// banner can never promise a reduction no card actually offers.
+const BEST_DISCOUNT = Math.max(...PLAN_TERMS.filter((term) => !term.retired).map((term) => discountOf(term.id)));
 // The one the page pushes: "Le plus choisi", the banner's figure, the anchor's.
-const FEATURED_TERM = termOf("m3");
+const FEATURED_TERM = termOf("m12");
 // What each term is owed beyond the catalogue. Keep identical to EBOOK_KINDS
 // and SUPPORT_KINDS in api/_shared.js, which decide what gets stored.
 //
@@ -681,9 +690,11 @@ const BASE_FEATURES = [...CATALOGUE_FEATURES, t("Cancel anytime", "Résiliation 
 const plans = [
   {
     id: "m1",
-    // On sale. Keep in step with RETIRED_PLANS in api/_shared.js — a card here
-    // whose plan is retired there is a button the checkout refuses.
-    hidden: false,
+    // Off sale, from the term's own `retired` flag so the card and the headline
+    // discount can never disagree. Keep in step with RETIRED_PLANS in
+    // api/_shared.js — a card shown here whose plan is retired there is a
+    // button the checkout refuses.
+    hidden: Boolean(termOf("m1").retired),
     name: t("1 month", "1 mois"),
     price: eur(termOf("m1").price),
     originalPrice: eur(termOf("m1").anchor),
@@ -705,9 +716,8 @@ const plans = [
     period: t("/ 3 mo", "/ 3 mois"),
     perDay: perDayOf("m3"),
     billedNote: t("renewed every 3 months", "renouvelé tous les 3 mois"),
-    badge: t("Most chosen", "Le plus choisi"),
     cta: t("Choose 3 months", "Choisir 3 mois"),
-    featured: true,
+    featured: false,
     features: BASE_FEATURES,
     // Its Whop product is sold as "Abonnement 3 Mois + EBOOK", so the promise is
     // already made where the buyer pays. EBOOK_KINDS is what honours it.
@@ -723,8 +733,9 @@ const plans = [
     period: t("/ yr", "/ an"),
     perDay: perDayOf("m12"),
     billedNote: t("renewed every year", "renouvelé chaque année"),
+    badge: t("Most chosen", "Le plus choisi"),
     cta: t("Choose 12 months", "Choisir 12 mois"),
-    featured: false,
+    featured: true,
     features: BASE_FEATURES,
     // Tied to the term rather than to the product, so it stays on the card that
     // carries it and nowhere else. SUPPORT_KINDS is what honours it.
@@ -1544,10 +1555,11 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(["m1", "m3", "m12", "lifetime"].every(validatePlanId), "the three terms and lifetime are on sale and must be purchasable");
-  console.assert(["monthly", "yearly"].every((id) => !validatePlanId(id)), "the two old subscriptions are retired and should not be purchasable");
+  console.assert(["m3", "m12", "lifetime"].every(validatePlanId), "three months, twelve months and lifetime are on sale and must be purchasable");
+  console.assert(["m1", "monthly", "yearly"].every((id) => !validatePlanId(id)), "the one-month term and the two old subscriptions are retired and should not be purchasable");
+  console.assert(FEATURED_TERM.id === "m12" && plans.find((plan) => plan.id === "m12").featured, "the year is the one the page pushes, on its card and in the bar alike");
   console.assert(discountOf("m1") === 50 && discountOf("m3") === 60 && discountOf("m12") === 53, "the chips must read −50, −60 and −53");
-  console.assert(BEST_DISCOUNT === 60, "the page leads with the best of the three");
+  console.assert(BEST_DISCOUNT === 60, "the page leads with the best discount still on sale");
   console.assert(earnedEbook({ kind: "m3" }) && earnedEbook({ kind: "m12" }) && !earnedEbook({ kind: "m1" }), "the ebook comes with the three- and twelve-month terms, as their Whop products promise");
   console.assert(earnedEbook({}), "an unidentified plan must not lose the ebook");
   // Retired does not mean cut off: the people already on a subscription keep
@@ -3410,7 +3422,7 @@ function PricingBanner({ onPick }) {
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
             {/* The term the page pushes, priced exactly as its card states it. */}
             {t("Every prompt", "Tous les prompts")} — <span className="font-bold">{eur(FEATURED_TERM.price)}</span>
-            {t(" for 3 months", " les 3 mois")}{tail ? ` — ${tail}` : ""}
+            {` ${FEATURED_TERM.banner}`}{tail ? ` — ${tail}` : ""}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
         </span>
