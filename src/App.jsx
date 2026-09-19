@@ -595,10 +595,18 @@ const FREE_PROMPT_FILES = new Set([]);
 //
 // `banner` is how the sticky bar names the term, which is not its card's
 // period: "for a year" reads where "/ yr" does not.
+//
+// The ids are the ones written into every buyer's record, so they stay as they
+// are however the offer is renamed: "m1" is the monthly plan and "m12" the
+// annual one, and a subscriber stored under either keeps resolving.
+//
+// The annual is anchored at twelve times the monthly rather than at a number
+// of its own. That is the comparison a buyer makes anyway, and it is one they
+// can check on the card beside it.
 const PLAN_TERMS = [
-  { id: "m1", price: 18.99, anchor: 37.97, days: 30, retired: true, banner: t("for a month", "le mois") },
-  { id: "m3", price: 29.99, anchor: 74.97, days: 90, banner: t("for 3 months", "les 3 mois") },
-  { id: "m12", price: 69.99, anchor: 149.97, days: 365, banner: t("for a year", "l'année") },
+  { id: "m1", price: 19.99, anchor: 39.99, days: 30, banner: t("a month", "le mois") },
+  { id: "m3", price: 29.99, anchor: 74.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois") },
+  { id: "m12", price: 99.99, anchor: 12 * 19.99, days: 365, banner: t("for a year", "l'année") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
@@ -630,8 +638,11 @@ const SUPPORT_KINDS = new Set(["m12", "lifetime", "yearly"]);
 // access checks still reference the plans for the people who are on them —
 // they keep their access and keep being billed by Whop; the site simply stops
 // offering them to anyone new.
-const PRICE_LIFETIME = 89;
-const PRICE_LIFETIME_ANCHOR = 159;
+// A year and a half of the annual plan. Below that it is cheaper to buy the
+// catalogue forever than to rent it for a year, and the subscriptions beside
+// it stop meaning anything.
+const PRICE_LIFETIME = 149.99;
+const PRICE_LIFETIME_ANCHOR = 299.99;
 const PRICE_YEARLY = 99;
 const PRICE_MONTHLY = 21.99;
 const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
@@ -690,25 +701,31 @@ const BASE_FEATURES = [...CATALOGUE_FEATURES, t("Cancel anytime", "Résiliation 
 const plans = [
   {
     id: "m1",
-    // Off sale, from the term's own `retired` flag so the card and the headline
+    // Hidden from the term's own `retired` flag so the card and the headline
     // discount can never disagree. Keep in step with RETIRED_PLANS in
     // api/_shared.js — a card shown here whose plan is retired there is a
     // button the checkout refuses.
     hidden: Boolean(termOf("m1").retired),
-    name: t("1 month", "1 mois"),
+    name: t("Monthly", "Mensuel"),
     price: eur(termOf("m1").price),
     originalPrice: eur(termOf("m1").anchor),
     discountBadge: `−${discountOf("m1")} %`,
     period: t("/ mo", "/ mois"),
     perDay: perDayOf("m1"),
     billedNote: t("renewed every month", "renouvelé chaque mois"),
-    cta: t("Choose 1 month", "Choisir 1 mois"),
+    cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
     featured: false,
+    // No ebook and no support: they are the reason to take the year instead,
+    // and a monthly plan that carried them would leave it nothing to sell.
     features: BASE_FEATURES,
   },
   {
     id: "m3",
-    hidden: false,
+    // Off sale: a quarter is nobody's unit of commitment, and it sat between
+    // the month and the year taking buyers from both. Its price and its plan
+    // id stay defined — people bought it, and their renewals still have to
+    // name the plan they are on, which is what keeps them their ebook.
+    hidden: Boolean(termOf("m3").retired),
     name: t("3 months", "3 mois"),
     price: eur(termOf("m3").price),
     originalPrice: eur(termOf("m3").anchor),
@@ -726,7 +743,7 @@ const plans = [
   {
     id: "m12",
     hidden: false,
-    name: t("12 months", "12 mois"),
+    name: t("Annual", "Annuel"),
     price: eur(termOf("m12").price),
     originalPrice: eur(termOf("m12").anchor),
     discountBadge: `−${discountOf("m12")} %`,
@@ -734,7 +751,7 @@ const plans = [
     perDay: perDayOf("m12"),
     billedNote: t("renewed every year", "renouvelé chaque année"),
     badge: t("Most chosen", "Le plus choisi"),
-    cta: t("Choose 12 months", "Choisir 12 mois"),
+    cta: t("Get the annual plan", "Prendre l'offre annuelle"),
     featured: true,
     features: BASE_FEATURES,
     // Tied to the term rather than to the product, so it stays on the card that
@@ -1555,12 +1572,15 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(["m3", "m12", "lifetime"].every(validatePlanId), "three months, twelve months and lifetime are on sale and must be purchasable");
-  console.assert(["m1", "monthly", "yearly"].every((id) => !validatePlanId(id)), "the one-month term and the two old subscriptions are retired and should not be purchasable");
+  console.assert(["m1", "m12", "lifetime"].every(validatePlanId), "monthly, annual and lifetime are on sale and must be purchasable");
+  console.assert(["m3", "monthly", "yearly"].every((id) => !validatePlanId(id)), "the quarter and the two old subscriptions are retired and should not be purchasable");
   console.assert(FEATURED_TERM.id === "m12" && plans.find((plan) => plan.id === "m12").featured, "the year is the one the page pushes, on its card and in the bar alike");
-  console.assert(discountOf("m1") === 50 && discountOf("m3") === 60 && discountOf("m12") === 53, "the chips must read −50, −60 and −53");
-  console.assert(BEST_DISCOUNT === 60, "the page leads with the best discount still on sale");
-  console.assert(earnedEbook({ kind: "m3" }) && earnedEbook({ kind: "m12" }) && !earnedEbook({ kind: "m1" }), "the ebook comes with the three- and twelve-month terms, as their Whop products promise");
+  console.assert(PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
+  console.assert(termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
+  console.assert(discountOf("m1") === 50 && discountOf("m12") === 58 && LIFETIME_DISCOUNT === 50, "the chips must read −50, −58 and −50");
+  console.assert(BEST_DISCOUNT === 58, "the page leads with the best discount still on sale");
+  console.assert(earnedEbook({ kind: "m12" }) && earnedEbook({ kind: "lifetime" }) && !earnedEbook({ kind: "m1" }), "the ebook comes with the year and with lifetime, not with the month");
+  console.assert(earnedEbook({ kind: "m3" }), "the retired quarter was sold as \"+ EBOOK\" and its buyers keep it");
   console.assert(earnedEbook({}), "an unidentified plan must not lose the ebook");
   // Retired does not mean cut off: the people already on a subscription keep
   // everything their plan granted them.

@@ -60,8 +60,14 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // Replacing a plan means changing the id here and adding the old one to
 // LEGACY_PLAN_KINDS below, so its subscribers keep resolving.
 //
-// The three terms on sale. They must read 18.99 €, 29.99 € and 69.99 € on
-// Whop, matching PLAN_TERMS in src/App.jsx — the site only quotes a price.
+// The plans behind the cards. m1 is the monthly one, m12 the annual, and m3
+// the retired quarter — the ids are what every buyer's record is keyed on, so
+// they outlive the names the cards give them.
+//
+// THEY MUST READ 19.99 €, 99.99 € AND 149.99 € ON WHOP, matching PLAN_TERMS
+// and PRICE_LIFETIME in src/App.jsx. The site only quotes a price; Whop is
+// what charges it, and a card that quotes one figure while Whop takes another
+// is the one failure here that reaches a buyer's bank statement.
 // WHOP_M1_URL / WHOP_M3_URL / WHOP_M12_URL override them.
 const M1_FALLBACK_URL = "https://whop.com/checkout/plan_lg2xFDMH1crhQ";
 const M3_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
@@ -169,7 +175,7 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-export const RETIRED_PLANS = new Set(["m1", "monthly", "yearly"]);
+export const RETIRED_PLANS = new Set(["m3", "monthly", "yearly"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a
