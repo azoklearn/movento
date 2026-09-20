@@ -64,7 +64,7 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // the retired quarter — the ids are what every buyer's record is keyed on, so
 // they outlive the names the cards give them.
 //
-// THEY MUST READ 18.99 €, 99.99 € AND 149.99 € ON WHOP, matching PLAN_TERMS
+// THEY MUST READ 99.99 € AND 149.99 € ON WHOP, matching PLAN_TERMS
 // and PRICE_LIFETIME in src/App.jsx. The site only quotes a price; Whop is
 // what charges it, and a card that quotes one figure while Whop takes another
 // is the one failure here that reaches a buyer's bank statement.
@@ -175,7 +175,7 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-export const RETIRED_PLANS = new Set(["m3", "monthly", "yearly"]);
+export const RETIRED_PLANS = new Set(["m1", "m3", "monthly", "yearly"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a

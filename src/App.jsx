@@ -601,10 +601,12 @@ const FREE_PROMPT_FILES = new Set([]);
 // annual one, and a subscriber stored under either keeps resolving.
 //
 // The annual is anchored at twelve times the monthly rather than at a number
-// of its own. That is the comparison a buyer makes anyway, and it is one they
-// can check on the card beside it.
+// of its own: the comparison a buyer makes anyway. Note that it stopped being
+// one they can check on the page when the monthly card came off sale — it is
+// still what a year costs the subscribers who are on it, but a visitor now has
+// to take 227.88 on trust. Replace it with a flat anchor if that matters.
 const PLAN_TERMS = [
-  { id: "m1", price: 18.99, anchor: 39.99, days: 30, banner: t("a month", "le mois") },
+  { id: "m1", price: 18.99, anchor: 39.99, days: 30, retired: true, banner: t("a month", "le mois") },
   { id: "m3", price: 29.99, anchor: 74.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois") },
   { id: "m12", price: 99.99, anchor: 12 * 18.99, days: 365, banner: t("for a year", "l'année") },
 ];
@@ -1572,12 +1574,12 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(["m1", "m12", "lifetime"].every(validatePlanId), "monthly, annual and lifetime are on sale and must be purchasable");
-  console.assert(["m3", "monthly", "yearly"].every((id) => !validatePlanId(id)), "the quarter and the two old subscriptions are retired and should not be purchasable");
+  console.assert(["m12", "lifetime"].every(validatePlanId), "annual and lifetime are on sale and must be purchasable");
+  console.assert(["m1", "m3", "monthly", "yearly"].every((id) => !validatePlanId(id)), "the month, the quarter and the two old subscriptions are retired and should not be purchasable");
   console.assert(FEATURED_TERM.id === "m12" && plans.find((plan) => plan.id === "m12").featured, "the year is the one the page pushes, on its card and in the bar alike");
   console.assert(PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
   console.assert(termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
-  console.assert(discountOf("m1") === 53 && discountOf("m12") === 56 && LIFETIME_DISCOUNT === 50, "the chips must read −53, −56 and −50");
+  console.assert(discountOf("m12") === 56 && LIFETIME_DISCOUNT === 50, "the chips must read −56 and −50");
   console.assert(BEST_DISCOUNT === 56, "the page leads with the best discount still on sale");
   console.assert(earnedEbook({ kind: "m12" }) && earnedEbook({ kind: "lifetime" }) && !earnedEbook({ kind: "m1" }), "the ebook comes with the year and with lifetime, not with the month");
   console.assert(earnedEbook({ kind: "m3" }), "the retired quarter was sold as \"+ EBOOK\" and its buyers keep it");
@@ -3746,7 +3748,10 @@ function PricingPage() {
           <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
             {t("Choose your", "Choisis ton")} <span className="text-white/45">{t("plan.", "plan.")}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. The longer the term, the less a day costs.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Plus la durée est longue, moins la journée coûte.`)}</p>
+          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{/* "The longer the term, the less a day costs" had three terms to prove it
+              against. With a subscription and a one-off left, the choice is no
+              longer a length — it is whether you rent the catalogue or keep it. */}
+          {t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it by the year, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le à l'année, ou garde-le pour toujours.`)}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
