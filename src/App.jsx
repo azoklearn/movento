@@ -7,11 +7,6 @@ import PROMPT_ADDED from "./prompt-added.json";
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
 const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_URL}/api/create-checkout-session`;
-// Walkthrough video shown under the three steps. TikTok's iframe embed is used
-// rather than their embed.js so the page pulls no third-party script.
-// The one explainer on the home: what Movento is, in a minute.
-const LOOM_EMBED_URL = "https://www.loom.com/embed/a2716b9b7b7641958e56d1559ebdee43";
-
 // Deadline of the launch offer, shown as a live countdown in the bottom banner
 // on /pricing. It MUST be a real, fixed date — an ISO string with an offset,
 // e.g. "2026-08-31T23:59:59+02:00". Leave it null and the banner falls back to
@@ -2221,52 +2216,25 @@ export default function MoventoSite() {
           </motion.p>
         </section>
       ) : (
-        <>
-          <section className="relative z-10 mx-auto max-w-7xl px-6 pt-12 pb-4 text-center lg:px-8 lg:pt-20">
-            <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
-              {t("Premium websites,", "Des sites premium,")}
-              {/* Narrow screens otherwise strand the first word of the highlighted
-                  phrase at the end of the previous line. */}
-              <br className="sm:hidden" />{" "}
-              <Highlight>{t("one prompt away", "en un seul prompt")}</Highlight>
-            </motion.h1>
-            <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55 md:text-lg">
-              {t("Copy a prompt, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify, and ship a modern site in minutes. No code.", "Copie un prompt, colle-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify, et obtiens un site moderne en quelques minutes. Sans coder.")}
-            </motion.p>
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.19 }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-6 py-3 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
-              <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("See pricing", "Voir les tarifs")}</a>
-            </motion.div>
-          </section>
-
-          {/* The whole explanation, in one video, right under the promise —
-              then the catalogue. Nothing else on this page. */}
-          <section id="video" className="relative z-10 mx-auto max-w-6xl px-3 pb-2 pt-10 sm:px-6 lg:px-8 lg:pt-14">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.26, ease: [0.22, 1, 0.36, 1] }}
-              className="overflow-hidden rounded-[20px] border border-white/10 bg-[#0B0B0D] shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9)] sm:rounded-[28px]"
-            >
-              {/* 16:9 box rather than a fixed height: the player fills it at
-                  every width and never letterboxes itself on a phone. */}
-              <div className="relative aspect-video">
-                <iframe
-                  src={`${LOOM_EMBED_URL}?hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true`}
-                  title={t("What Movento is", "Movento, c'est quoi")}
-                  className="absolute inset-0 h-full w-full border-0"
-                  // Without it the frame paints white before the player is up,
-                  // which flashes on a black page.
-                  style={{ colorScheme: "dark" }}
-                  loading="lazy"
-                  allow="fullscreen; picture-in-picture; clipboard-write"
-                  allowFullScreen
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
-              </div>
-            </motion.div>
-          </section>
-        </>
+        // The promise, then the catalogue. The explainer video that used to sit
+        // between them is gone: it asked for a minute before the visitor had
+        // seen a single design, and the designs are the argument.
+        <section className="relative z-10 mx-auto max-w-7xl px-6 pb-10 pt-12 text-center lg:px-8 lg:pb-12 lg:pt-20">
+          <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
+            {t("Premium websites,", "Des sites premium,")}
+            {/* Narrow screens otherwise strand the first word of the highlighted
+                phrase at the end of the previous line. */}
+            <br className="sm:hidden" />{" "}
+            <Highlight>{t("one prompt away", "en un seul prompt")}</Highlight>
+          </motion.h1>
+          <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55 md:text-lg">
+            {t("Copy a prompt, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify, and ship a modern site in minutes. No code.", "Copie un prompt, colle-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify, et obtiens un site moderne en quelques minutes. Sans coder.")}
+          </motion.p>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.19 }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-6 py-3 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
+            <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("See pricing", "Voir les tarifs")}</a>
+          </motion.div>
+        </section>
       )}
 
       <section id="prompts" className={`relative z-10 mx-auto max-w-[1560px] px-6 lg:px-8 ${isPromptsPage ? "pt-10 pb-24 lg:pt-14" : "scroll-mt-24 pb-8 pt-12 lg:pb-12 lg:pt-16"}`}>
