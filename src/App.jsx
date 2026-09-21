@@ -94,6 +94,8 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Cubic — Spatial Scroll Glass Cards", category: "SaaS", type: "Landing", file: "Glass_Menu_Spatial_Scroll.md", pinned: true, preview: "https://admin.lafys.com/api/media/file/Cubic12.mp4", tags: ["Spatial Scroll", "Glass", "Magic Border"], gradient: "from-[#24FF95] via-[#4C6DFF] to-[#0a0d15]" },
+  { title: "Geptral — Preserving Nature", category: "Landing Page", type: "Landing", file: "Geptral_Nature_Driven_Landing.md", pinned: true, preview: "https://admin.lafys.com/api/media/file/giptrac_kwvrPePT.mp4", tags: ["Three.js", "Drag Collage", "Cinematic"], gradient: "from-[#f2e7dd] via-[#DE7D4D] to-[#1b1b1b]" },
   { title: "KIMI — GRIDO1 Racing Systems", category: "Automotive", type: "Landing", file: "Kimi_Grido1_Racing_Systems.md", pinned: true, demo: "https://sitemovento.vercel.app/", preview: "https://storage.getlayers.ai/templates/kimi-04a9449ab2-preview.mp4", tags: ["WebGL", "Three.js", "Sticky Stack"], gradient: "from-[#f7fafb] via-cyan-400 to-[#090a0b]" },
   { title: "MindAI — Where Mind Meets the Impossible", category: "AI / SaaS", type: "Hero", file: "MindAI_Scrub_Figure_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_185102_c835194f-77ee-4c60-9ad1-850716544d36.png&w=1920&q=85", tags: ["Mouse Scrub", "Video", "Editorial"], gradient: "from-[#f6eaf2] via-rose-300 to-[#1b1016]" },
   { title: "VEYRA — Electric, Inside Out", category: "Automotive", type: "Landing", file: "Veyra_Interactive_Car.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260912_221847_45bc580c-aeb2-40f8-a5ca-bc977261fa53.png&w=1920&q=85", tags: ["Interactive", "Hotspots", "Video"], gradient: "from-[#e1eaf0] via-[#6b879d] to-[#10190c]" },
@@ -352,6 +354,8 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Glass_Menu_Spatial_Scroll.md",
+  "Geptral_Nature_Driven_Landing.md",
   "Kimi_Grido1_Racing_Systems.md",
   "MindAI_Scrub_Figure_Hero.md",
   "Veyra_Interactive_Car.md",
@@ -549,20 +553,30 @@ function isPromptAvailable(item) {
 // with the other switches because the sort reads it as the module loads.
 const SHOW_DEMO_LINKS = true;
 
-// Prompts with a live demo first — a design you can click through sells better
-// than one you can only watch — then everything else. Inside each of the two
-// blocks: newest first, by the day the file landed in git
-// (src/prompt-added.json, regenerated with `node scripts/prompt-dates.mjs`). A
-// hosted file not yet in the map is newer than everything in it; a link-only
-// entry (no file) has no date and goes last of its block; ties (the initial
-// import) keep array order.
+// Pinned prompts lead the gallery in the order they are written in `prompts`
+// above — nothing reorders them, which is the point: "put this one first" has
+// to mean first, and a pinned prompt with no demo yet would otherwise fall in
+// behind every pinned one that has one.
+//
+// Everything under them sorts itself. Prompts with a live demo first — a design
+// you can click through sells better than one you can only watch — then
+// everything else. Inside each of those two blocks: newest first, by the day
+// the file landed in git (src/prompt-added.json, regenerated with
+// `node scripts/prompt-dates.mjs`). A hosted file not yet in the map is newer
+// than everything in it; a link-only entry (no file) has no date and goes last
+// of its block; ties (the initial import) keep array order.
 const addedAt = (item) => PROMPT_ADDED[item.file] ?? (AVAILABLE_FILES.has(item.file) ? Infinity : 0);
 const hasDemo = (item) => (SHOW_DEMO_LINKS && item.demo ? 1 : 0);
 const isPinned = (item) => (item.pinned ? 1 : 0);
 const availablePrompts = prompts
   .map((item, i) => ({ item, i }))
   .filter(({ item }) => isPromptAvailable(item))
-  .sort((a, b) => isPinned(b.item) - isPinned(a.item) || hasDemo(b.item) - hasDemo(a.item) || addedAt(b.item) - addedAt(a.item) || a.i - b.i)
+  .sort(
+    (a, b) =>
+      isPinned(b.item) - isPinned(a.item) ||
+      (isPinned(a.item) ? 0 : hasDemo(b.item) - hasDemo(a.item) || addedAt(b.item) - addedAt(a.item)) ||
+      a.i - b.i,
+  )
   .map(({ item }) => item);
 
 // Nothing is given away any more: every prompt sits behind the paywall.
