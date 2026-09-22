@@ -94,6 +94,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Planet Jumping — Space Portal", category: "Landing Page", type: "Landing", file: "Planet_Jumping_Space_Portal.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260914_124045_18663f83-33f3-40f6-821e-40c2a71e41a6.png&w=1920&q=85", tags: ["Canvas Portal", "Fake 3D", "Cinematic"], gradient: "from-[#efe0d2] via-[#b4502e] to-[#090807]" },
   { title: "Cubic — Spatial Scroll Glass Cards", category: "SaaS", type: "Landing", file: "Glass_Menu_Spatial_Scroll.md", pinned: true, preview: "https://admin.lafys.com/api/media/file/Cubic12.mp4", tags: ["Spatial Scroll", "Glass", "Magic Border"], gradient: "from-[#24FF95] via-[#4C6DFF] to-[#0a0d15]" },
   { title: "Geptral — Preserving Nature", category: "Landing Page", type: "Landing", file: "Geptral_Nature_Driven_Landing.md", pinned: true, preview: "https://admin.lafys.com/api/media/file/giptrac_kwvrPePT.mp4", tags: ["Three.js", "Drag Collage", "Cinematic"], gradient: "from-[#f2e7dd] via-[#DE7D4D] to-[#1b1b1b]" },
   { title: "KIMI — GRIDO1 Racing Systems", category: "Automotive", type: "Landing", file: "Kimi_Grido1_Racing_Systems.md", pinned: true, demo: "https://sitemovento.vercel.app/", preview: "https://storage.getlayers.ai/templates/kimi-04a9449ab2-preview.mp4", tags: ["WebGL", "Three.js", "Sticky Stack"], gradient: "from-[#f7fafb] via-cyan-400 to-[#090a0b]" },
@@ -354,6 +355,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Planet_Jumping_Space_Portal.md",
   "Glass_Menu_Spatial_Scroll.md",
   "Geptral_Nature_Driven_Landing.md",
   "Kimi_Grido1_Racing_Systems.md",
