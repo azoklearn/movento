@@ -619,18 +619,33 @@ const FREE_PROMPT_FILES = new Set([]);
 const PLAN_TERMS = [
   { id: "m1", price: 18.99, anchor: 39.99, days: 30, retired: true, banner: t("a month", "le mois") },
   { id: "m3", price: 29.99, anchor: 74.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois") },
-  { id: "m12", price: 99.99, anchor: 12 * 18.99, days: 365, banner: t("for a year", "l'année") },
+  { id: "m12", price: 99.99, anchor: 12 * 18.99, days: 365, retired: true, banner: t("for a year", "l'année") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
   const term = termOf(id);
   return Math.round((1 - term.price / term.anchor) * 100);
 };
-// The figure the page leads with — the best of the terms still on sale, so the
-// banner can never promise a reduction no card actually offers.
-const BEST_DISCOUNT = Math.max(...PLAN_TERMS.filter((term) => !term.retired).map((term) => discountOf(term.id)));
-// The one the page pushes: "Le plus choisi", the banner's figure, the anchor's.
-const FEATURED_TERM = termOf("m12");
+// Lifetime's two numbers. Declared here rather than beside the retired prices
+// further down, where they read better: the headline discount and the featured
+// offer both need them, and a const declared below them is still in its
+// temporal dead zone when runSelfTests runs at module level.
+const PRICE_LIFETIME = 29.9;
+const PRICE_LIFETIME_ANCHOR = 59.9;
+const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
+
+// The figure the page leads with — the best of everything a button actually
+// offers, lifetime included, so the banner can never promise a reduction no
+// card gives. Lifetime is always in the running because it is never retired.
+const LIVE_TERMS = PLAN_TERMS.filter((term) => !term.retired);
+const BEST_DISCOUNT = Math.max(LIFETIME_DISCOUNT, ...LIVE_TERMS.map((term) => discountOf(term.id)));
+
+// What the sticky bar quotes and what the price anchor divides by: the term the
+// page pushes while one is on sale, and the lifetime once none is. FEATURED_TERM
+// is null in that case rather than pointing at a retired plan — nothing should
+// have to guess which of the plans nobody can buy is the "featured" one.
+const FEATURED_TERM = LIVE_TERMS.find((term) => term.id === "m12") || LIVE_TERMS[0] || null;
+const FEATURED_OFFER = FEATURED_TERM || { price: PRICE_LIFETIME, banner: t("for life", "à vie") };
 // What each term is owed beyond the catalogue. Keep identical to EBOOK_KINDS
 // and SUPPORT_KINDS in api/_shared.js, which decide what gets stored.
 //
@@ -651,15 +666,15 @@ const SUPPORT_KINDS = new Set(["m12", "lifetime", "yearly"]);
 // access checks still reference the plans for the people who are on them —
 // they keep their access and keep being billed by Whop; the site simply stops
 // offering them to anyone new.
-// A year and a half of the annual plan. Below that it is cheaper to buy the
-// catalogue forever than to rent it for a year, and the subscriptions beside
-// it stop meaning anything.
-const PRICE_LIFETIME = 149.99;
-const PRICE_LIFETIME_ANCHOR = 299.99;
 const PRICE_YEARLY = 99;
 const PRICE_MONTHLY = 21.99;
-const eur = (n) => t(`${n}€`, `${String(n).replace(".", ",")}€`);
-const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
+// A price the way an invoice writes it: two decimals when the figure has any,
+// none when it is round. 29.9 has to read "29,90€" — a price a digit short
+// reads as a typo, which is the last thing a buy button should look like.
+const eur = (n) => {
+  const s = Number.isInteger(Number(n)) ? String(Number(n)) : Number(n).toFixed(2);
+  return t(`${s}€`, `${s.replace(".", ",")}€`);
+};
 // "soit 0,63€ par jour" — the smallest way to read a price, and the reason a
 // three-month term reads as cheaper than a monthly one at a glance.
 const perDayOf = (id) => {
@@ -755,7 +770,9 @@ const plans = [
   },
   {
     id: "m12",
-    hidden: false,
+    // Off sale, from the term's own flag like the two above it — one place
+    // retires a term, and nothing on the page can disagree with it.
+    hidden: Boolean(termOf("m12").retired),
     name: t("Annual", "Annuel"),
     price: eur(termOf("m12").price),
     originalPrice: eur(termOf("m12").anchor),
@@ -1585,13 +1602,15 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(["m12", "lifetime"].every(validatePlanId), "annual and lifetime are on sale and must be purchasable");
-  console.assert(["m1", "m3", "monthly", "yearly"].every((id) => !validatePlanId(id)), "the month, the quarter and the two old subscriptions are retired and should not be purchasable");
-  console.assert(FEATURED_TERM.id === "m12" && plans.find((plan) => plan.id === "m12").featured, "the year is the one the page pushes, on its card and in the bar alike");
-  console.assert(PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
-  console.assert(termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
-  console.assert(discountOf("m12") === 56 && LIFETIME_DISCOUNT === 50, "the chips must read −56 and −50");
-  console.assert(BEST_DISCOUNT === 56, "the page leads with the best discount still on sale");
+  console.assert(validatePlanId("lifetime"), "lifetime is the offer and must be purchasable");
+  console.assert(["m1", "m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every subscription is retired and none should be purchasable");
+  console.assert(FEATURED_TERM === null && FEATURED_OFFER.price === PRICE_LIFETIME, "with no term on sale the bar and the anchor quote the lifetime");
+  // Only while something is billed by the term: a one-off has nothing to be
+  // cheaper than, and the rule would read as a failure rather than as moot.
+  console.assert(!LIVE_TERMS.length || PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
+  console.assert(!LIVE_TERMS.length || termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
+  console.assert(LIFETIME_DISCOUNT === 50, "the chip must read −50");
+  console.assert(BEST_DISCOUNT === 50, "the page leads with the best discount still on sale");
   console.assert(earnedEbook({ kind: "m12" }) && earnedEbook({ kind: "lifetime" }) && !earnedEbook({ kind: "m1" }), "the ebook comes with the year and with lifetime, not with the month");
   console.assert(earnedEbook({ kind: "m3" }), "the retired quarter was sold as \"+ EBOOK\" and its buyers keep it");
   console.assert(earnedEbook({}), "an unidentified plan must not lose the ebook");
@@ -3256,10 +3275,15 @@ const SITE_PRICE_LOW = 800;
 const SITE_PRICE_HIGH = 2000;
 
 function PriceAnchor({ onPick }) {
-  // How many times over the cheapest site a freelancer would quote covers a
-  // year of Movento. Floored, so the claim is never rounded up.
-  const yearly = termOf("m12");
-  const paysBack = Math.floor(SITE_PRICE_LOW / yearly.price);
+  // How many times over the cheapest site a freelancer would quote covers what
+  // Movento costs. Floored, so the claim is never rounded up.
+  const paysBack = Math.floor(SITE_PRICE_LOW / FEATURED_OFFER.price);
+  // "N years of Movento" only parses while Movento is billed by the year. Paid
+  // once, the same division says something better: how many times over the
+  // first sale covers it.
+  const paybackLine = FEATURED_TERM
+    ? t(`Your first site sold pays for ${paysBack} years of Movento.`, `Ton premier site vendu paie ${paysBack} ans de Movento.`)
+    : t(`Your first site sold pays for Movento ${paysBack} times over.`, `Ton premier site vendu rembourse Movento ${paysBack} fois.`);
   const cta = onPick ? (
     <button onClick={onPick} className="group mt-6 inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></button>
   ) : (
@@ -3291,14 +3315,14 @@ function PriceAnchor({ onPick }) {
         <div className="relative flex flex-col overflow-hidden rounded-[26px] border border-white/25 bg-[#121214] p-7 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] md:p-8">
           <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/[0.06] blur-3xl" />
           <p className="relative text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">Movento</p>
-          <p className="relative mt-4 text-4xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{eur(yearly.price)} <span className="text-lg font-semibold text-white/45">{t("a year", "par an")}</span></p>
+          <p className="relative mt-4 text-4xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{eur(FEATURED_OFFER.price)} <span className="text-lg font-semibold text-white/45">{FEATURED_OFFER.banner}</span></p>
           <ul className="relative mt-5 space-y-2 text-sm leading-6 text-white/65">
             <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t(`All ${availablePrompts.length} designs, and every new one`, `Les ${availablePrompts.length} designs, et tous les nouveaux`)}</li>
             <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t("A site in an afternoon, not in a month", "Un site dans l'après-midi, pas dans un mois")}</li>
             <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t("Sell as many as you like", "Tu en vends autant que tu veux")}</li>
           </ul>
           <p className="relative mt-6 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-3 text-sm font-semibold leading-6 text-emerald-200">
-            {t(`Your first site sold pays for ${paysBack} years of Movento.`, `Ton premier site vendu paie ${paysBack} ans de Movento.`)}
+            {paybackLine}
           </p>
           <div className="relative">{cta}</div>
         </div>
@@ -3427,8 +3451,8 @@ function PricingBanner({ onPick }) {
           </span>
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
             {/* The term the page pushes, priced exactly as its card states it. */}
-            {t("Every prompt", "Tous les prompts")} — <span className="font-bold">{eur(FEATURED_TERM.price)}</span>
-            {` ${FEATURED_TERM.banner}`}{tail ? ` — ${tail}` : ""}
+            {t("Every prompt", "Tous les prompts")} — <span className="font-bold">{eur(FEATURED_OFFER.price)}</span>
+            {` ${FEATURED_OFFER.banner}`}{tail ? ` — ${tail}` : ""}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
         </span>
@@ -3730,12 +3754,18 @@ function PricingPage() {
             {t("Your discount is reserved", "Ta réduction est réservée")}
           </span>
           <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
-            {t("Choose your", "Choisis ton")} <span className="text-white/45">{t("plan.", "plan.")}</span>
+            {/* Nothing to choose between with one offer on sale, so the
+                headline stops asking and states what is being sold. */}
+            {isSinglePlan
+              ? <>{t("All of Movento,", "Tout Movento,")} <span className="text-white/45">{t("for life.", "à vie.")}</span></>
+              : <>{t("Choose your", "Choisis ton")} <span className="text-white/45">{t("plan.", "plan.")}</span></>}
           </h1>
           <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{/* "The longer the term, the less a day costs" had three terms to prove it
               against. With a subscription and a one-off left, the choice is no
               longer a length — it is whether you rent the catalogue or keep it. */}
-          {t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it by the year, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le à l'année, ou garde-le pour toujours.`)}</p>
+          {isSinglePlan
+            ? t(`All ${availablePrompts.length} premium prompts and every one added next. One payment, no subscription, no renewal.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Un seul paiement, pas d'abonnement, pas de renouvellement.`)
+            : t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it by the year, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le à l'année, ou garde-le pour toujours.`)}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
