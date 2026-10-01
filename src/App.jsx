@@ -17,23 +17,26 @@ const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_UR
 // it costs more than the urgency is worth.
 const LAUNCH_OFFER_ENDS_AT = null;
 
-// Where lifetime buyers reach a human. Shown on the success page only, to the
-// plan that was actually sold direct support.
-// WhatsApp in international format, no +, no spaces — wa.me rejects anything
-// else. 07 66 87 39 15 (FR) becomes 33766873915.
-const SUPPORT_WHATSAPP = "33766873915";
-const SUPPORT_HANDLE = "WhatsApp";
-// Prefilled so the first message already identifies the buyer's plan.
+// Support address, shown wherever a visitor is told to write to us.
+const SUPPORT_EMAIL = "movento.dev@gmail.com";
+// Where buyers who were sold direct support reach a human. It used to be a
+// personal WhatsApp number, which put a phone number in the hands of every
+// lifetime buyer; the same promise is kept over email, which can be answered
+// from anywhere and handed to someone else without changing the offer.
+//
+// Subject and body are prefilled so the first message already says which plan
+// is writing, and the address is shown under the button as well: a mailto does
+// nothing on a machine with no mail client configured.
 const supportUrl = () =>
-  `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(
+  `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+    t("Movento — support", "Movento — support"),
+  )}&body=${encodeURIComponent(
     t("Hi! I have Movento lifetime access and I have a question.", "Salut ! J'ai l'accès à vie Movento et j'ai une question."),
   )}`;
 // Free bonus ebook handed to buyers on the post-payment page.
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
 // Customer rating, kept in one place: it is shown on the page AND declared as
 // AggregateRating in index.html, and Google drops the markup if the two disagree.
-// Support address, shown wherever a visitor is told to write to us.
-const SUPPORT_EMAIL = "movento.dev@gmail.com";
 const RATING_SCORE = "4.8";
 const RATING_COUNT = 120;
 
@@ -1334,6 +1337,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   if (name === "download") children = <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></>;
   if (name === "chat") children = <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4.1-1L3 20l1.1-4.6A8.4 8.4 0 0 1 3 11.4a8.4 8.4 0 0 1 8.5-8.4h.5a8.4 8.4 0 0 1 9 8.5z" />;
   if (name === "clock") children = <><circle cx="12" cy="12" r="9" /><path d="M12 7.2V12l3.2 2" /></>;
+  if (name === "mail") children = <><rect x="3" y="5" width="18" height="14" rx="2.2" /><path d="m3.6 6.6 7.3 5.3a2 2 0 0 0 2.2 0l7.3-5.3" /></>;
 
   return <svg {...common}>{children}</svg>;
 }
@@ -2428,7 +2432,7 @@ function SupportCard({ className = "" }) {
   return (
     <div className={`rounded-[28px] border border-emerald-400/25 bg-emerald-400/[0.06] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7 ${className}`}>
       <div className="flex items-center gap-3">
-        <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="chat" className="h-4 w-4" /></span>
+        <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="mail" className="h-4 w-4" /></span>
         <h2 className="text-lg font-semibold text-[#EDE9E0]">{t("Your direct support", "Ton support direct")}</h2>
       </div>
       <p className="mt-3 text-sm leading-6 text-white/60">
@@ -2439,13 +2443,14 @@ function SupportCard({ className = "" }) {
       </p>
       <a
         href={supportUrl()}
-        target="_blank"
-        rel="noopener noreferrer"
         onClick={() => track("support_opened", { ...refProps() })}
         className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3 text-sm font-bold text-[#04150d] transition hover:bg-emerald-300 hover:scale-[1.02]"
       >
-        <Icon name="chat" className="h-4 w-4" /> {t(`Message me on ${SUPPORT_HANDLE}`, `M'écrire sur ${SUPPORT_HANDLE}`)}
+        <Icon name="mail" className="h-4 w-4" /> {t("Email me", "M'écrire par email")}
       </a>
+      {/* Written out as well as linked: a mailto opens nothing on a machine
+          with no mail client, and the address still has to be copyable. */}
+      <p className="mt-3 text-xs text-white/40">{SUPPORT_EMAIL}</p>
     </div>
   );
 }
