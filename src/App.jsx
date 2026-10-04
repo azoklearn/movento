@@ -100,6 +100,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Halden — Morphing Dropdown Hero", category: "Landing Page", type: "Hero", file: "Halden_Morphing_Dropdown_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260928_184144_d838d2e6-7531-4e1e-8499-7606127942ef.png&w=1280&q=85", tags: ["Morphing Menu", "Travel", "Glass"], gradient: "from-[#9ad9dd] via-[#2f6b73] to-[#0b1013]" },
   { title: "Design World — Glass Cuboid Hero", category: "Landing Page", type: "Hero", file: "Design_World_Glass_Cuboid_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260930_010011_68268ffc-ca74-4686-97ce-3f8ddfb1215d.png&w=1280&q=85", tags: ["Three.js", "Dispersion", "Drag Rotate"], gradient: "from-[#e9e9e9] via-[#4f6b9c] to-black" },
   { title: "Stratum — We Raise the Spirit of Each Street", category: "Landing Page", type: "Hero", file: "Stratum_Chapter_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260929_080114_067e2a77-6596-4635-906e-b00a55a20f4a.png&w=1920&q=85", tags: ["Chapter Video", "Decode Labels", "Cinematic"], gradient: "from-[#e8d1cb] via-[#3d5378] to-[#04070d]" },
   { title: "Planet Jumping — Space Portal", category: "Landing Page", type: "Landing", file: "Planet_Jumping_Space_Portal.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260914_124045_18663f83-33f3-40f6-821e-40c2a71e41a6.png&w=1920&q=85", tags: ["Canvas Portal", "Fake 3D", "Cinematic"], gradient: "from-[#efe0d2] via-[#b4502e] to-[#090807]" },
@@ -363,6 +364,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Halden_Morphing_Dropdown_Hero.md",
   "Design_World_Glass_Cuboid_Hero.md",
   "Stratum_Chapter_Hero.md",
   "Planet_Jumping_Space_Portal.md",
