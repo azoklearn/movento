@@ -97,6 +97,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Feather Atlas — 3D Bird Field Guide", category: "Landing Page", type: "Hero", file: "Feather_Atlas_3D_Bird_Guide.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261004_105730_10a54951-d439-4e1b-9776-2b9e54fdd1b1.png&w=1280&q=85", tags: ["Three.js", "GLB Models", "Editorial"], gradient: "from-[#f6f1e7] via-[#4d5a3d] to-[#14170f]" },
   { title: "Axion Studio", category: "Agency", type: "Landing", file: "Axion_Studio.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/hero%20sections/animated%20(27).webp", tags: ["Agency", "Shader", "Clean"], gradient: "from-neutral-200 via-orange-400 to-neutral-900" },
   { title: "Prisma Studio", category: "Agency", type: "Landing", file: "Prisma_Studio.md", pinned: true, preview: "https://motionsites.ai/assets/hero-prisma-preview-D4QeI0Bn.gif", previewPosition: "top", tags: ["Studio", "Cinematic", "Video"], gradient: "from-stone-300 via-neutral-600 to-black" },
   { title: "MicroVisuals Hero", category: "AI / SaaS", type: "Hero", file: "MicroVisuals_Hero.md", pinned: true, preview: "https://image.mux.com/i9kUFJpB6GrWoe2UXRZG4lIP02g00LGulS1GTVrMMwZI00/animated.webp?width=640&fps=15", tags: ["AI", "Glass", "Serif"], gradient: "from-zinc-200 via-slate-500 to-black" },
@@ -361,6 +362,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Feather_Atlas_3D_Bird_Guide.md",
   "Halden_Morphing_Dropdown_Hero.md",
   "Design_World_Glass_Cuboid_Hero.md",
   "Stratum_Chapter_Hero.md",
