@@ -2247,9 +2247,11 @@ export default function MoventoSite() {
         </AnimatePresence>
       </header>
 
-      {isPromptsPage ? (
-        // The full catalogue lives here. The home shows a dozen cards and
-        // sends people over; this page is the wall of designs, nothing else.
+      {/* The home opens straight on the grid — no promise, no buttons, no
+          heading above it. The designs are the argument, so nothing stands
+          between the header and the first card. /prompts keeps its own title,
+          which is the one page that still introduces itself. */}
+      {isPromptsPage && (
         <section className="relative z-10 mx-auto max-w-7xl px-6 pt-10 pb-2 text-center lg:px-8 lg:pt-16">
           <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
             {t(`${availablePrompts.length} prompts, `, `${availablePrompts.length} prompts, `)}
@@ -2260,35 +2262,13 @@ export default function MoventoSite() {
             {t("Click a card to see the design move. Every prompt describes the whole site — fonts, colors, animations, section by section.", "Clique sur une carte pour voir le design bouger. Chaque prompt décrit le site en entier — polices, couleurs, animations, section par section.")}
           </motion.p>
         </section>
-      ) : (
-        // The promise, then the catalogue. The explainer video that used to sit
-        // between them is gone: it asked for a minute before the visitor had
-        // seen a single design, and the designs are the argument.
-        <section className="relative z-10 mx-auto max-w-7xl px-6 pb-10 pt-12 text-center lg:px-8 lg:pb-12 lg:pt-20">
-          <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
-            {t("Premium websites,", "Des sites premium,")}
-            {/* Narrow screens otherwise strand the first word of the highlighted
-                phrase at the end of the previous line. */}
-            <br className="sm:hidden" />{" "}
-            <Highlight>{t("one prompt away", "en un seul prompt")}</Highlight>
-          </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55 md:text-lg">
-            {t("Copy a prompt, paste it into Lovable, v0, Bolt, Cursor, Claude or Shopify, and ship a modern site in minutes. No code.", "Copie un prompt, colle-le dans Lovable, v0, Bolt, Cursor, Claude ou Shopify, et obtiens un site moderne en quelques minutes. Sans coder.")}
-          </motion.p>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.19 }} className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a href="#prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#08080A] px-6 py-3 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Browse the prompts", "Voir les prompts")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
-            <a href="/pricing" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("See pricing", "Voir les tarifs")}</a>
-          </motion.div>
-        </section>
       )}
 
-      <section id="prompts" className={`relative z-10 mx-auto max-w-[1560px] px-6 lg:px-8 ${isPromptsPage ? "pt-10 pb-24 lg:pt-14" : "scroll-mt-24 pb-8 pt-12 lg:pb-12 lg:pt-16"}`}>
+      <section id="prompts" className={`relative z-10 mx-auto max-w-[1560px] px-6 lg:px-8 ${isPromptsPage ? "pt-10 pb-24 lg:pt-14" : "scroll-mt-24 pb-8 pt-10 lg:pb-12 lg:pt-14"}`}>
+        {/* The page still has to say what it is to a crawler and a screen
+            reader, which the visible heading used to do. */}
         {!isPromptsPage && (
-          <div className="mb-10 text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("The catalogue", "Le catalogue")}</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{t(`${availablePrompts.length} designs, ready to copy`, `${availablePrompts.length} designs prêts à copier`)}</h2>
-            <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">{t("Click one to see it move.", "Clique sur un design pour le voir bouger.")}</p>
-          </div>
+          <h1 className="sr-only">{t(`Movento — ${availablePrompts.length} premium website prompts, ready to copy`, `Movento — ${availablePrompts.length} prompts de sites premium, prêts à copier`)}</h1>
         )}
         {hasPremiumAccess ? (
           <div className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.07] p-4 text-sm">
