@@ -1743,10 +1743,14 @@ export default function MoventoSite() {
   // "all" | "new" | a category name. "new" is the top of the catalogue: entries
   // are added at the front of `prompts`, so position is the only recency we have.
   const [galleryFilter, setGalleryFilter] = useState("all");
-  // How many masonry columns to deal the cards into. Mirrors the Tailwind
-  // breakpoints the grid used to use (lg 1024, xl 1280); JS has to know the
-  // number because the cards are distributed in JS, not by CSS.
-  const columnsForWidth = () => (typeof window === "undefined" ? 2 : window.innerWidth >= 1280 ? 4 : window.innerWidth >= 1024 ? 3 : 2);
+  // How many masonry columns to deal the cards into. JS has to know the number
+  // because the cards are distributed in JS, not by CSS.
+  //
+  // Five across from 1280 up, against a row that now runs the full width of the
+  // window: at 1280 that is a 224px card, which still holds a title, a category
+  // and the lock, and every wider screen only makes it roomier.
+  const columnsForWidth = () =>
+    typeof window === "undefined" ? 2 : window.innerWidth >= 1280 ? 5 : window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 2;
   const [galleryColumns, setGalleryColumns] = useState(columnsForWidth);
   useEffect(() => {
     const sync = () => setGalleryColumns(columnsForWidth());
@@ -2266,7 +2270,9 @@ export default function MoventoSite() {
         </section>
       )}
 
-      <section id="prompts" className={`relative z-10 mx-auto max-w-[1560px] px-6 lg:px-8 ${isPromptsPage ? "pt-10 pb-24 lg:pt-14" : "scroll-mt-24 pb-8 pt-10 lg:pb-12 lg:pt-14"}`}>
+      {/* Full width, no max: the gallery is the page, and a capped row left a
+          band of empty background down each side on anything above 1560. */}
+      <section id="prompts" className={`relative z-10 mx-auto px-6 lg:px-8 ${isPromptsPage ? "pt-10 pb-24 lg:pt-14" : "scroll-mt-24 pb-8 pt-10 lg:pb-12 lg:pt-14"}`}>
         {/* The page still has to say what it is to a crawler and a screen
             reader, which the visible heading used to do. */}
         {!isPromptsPage && (
