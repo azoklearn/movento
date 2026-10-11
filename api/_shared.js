@@ -60,13 +60,13 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // Replacing a plan means changing the id here and adding the old one to
 // LEGACY_PLAN_KINDS below, so its subscribers keep resolving.
 //
-// The subscription plans. The monthly term is the only thing on sale now; the
-// others stay fully configured because the ids are what every buyer's record is
-// keyed on, and a subscriber whose plan stopped resolving would lose the ebook
-// and the support they still pay for.
+// The subscription plans. Only the monthly term is on sale, beside the lifetime
+// further down; the others stay fully configured because the ids are what every
+// buyer's record is keyed on, and a subscriber whose plan stopped resolving
+// would lose the ebook and the support they still pay for.
 //
-// M1 MUST READ 29.90 € PER MONTH ON WHOP, matching PLAN_TERMS["m1"].price in
-// src/App.jsx.
+// M1 MUST READ 29.90 € PER MONTH AND LIFETIME 179 € ON WHOP, matching
+// PLAN_TERMS["m1"].price and PRICE_LIFETIME in src/App.jsx.
 // The site only quotes a price; Whop is what charges it, and a card that quotes
 // one figure while Whop takes another is the one failure here that reaches a
 // buyer's bank statement.
@@ -103,10 +103,10 @@ const M12_FALLBACK_URL = "https://whop.com/checkout/plan_DmP1j9cCTGTOe";
 const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_lg2xFDMH1crhQ";
 const YEARLY_FALLBACK_URL = M3_FALLBACK_URL;
 
-// Off sale — the monthly term replaced it. Unlike the plans above it was never
-// re-priced, so its id still belongs to it alone, which is what keeps every
-// lifetime buyer resolving to their kind, their access, their ebook and their
-// support. It is paid for; "for life" has to keep meaning what it said.
+// On sale beside the monthly term. Unlike the plans above it was never
+// re-priced onto a different offer, so its id still belongs to it alone, which
+// is what keeps every lifetime buyer — at any price it has been sold for —
+// resolving to their kind, their access, their ebook and their support.
 const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
 // A pack of prompts, bought without the catalogue (Whop product
 // prod_zZlcqsSutlXvW). One purchase, PROMPT_PACK_SIZE prompts of your choice.
@@ -193,7 +193,7 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-export const RETIRED_PLANS = new Set(["m3", "m12", "monthly", "yearly", "lifetime"]);
+export const RETIRED_PLANS = new Set(["m3", "m12", "monthly", "yearly"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a

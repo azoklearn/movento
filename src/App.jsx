@@ -648,21 +648,25 @@ const discountOf = (id) => {
   const term = termOf(id);
   return Math.round((1 - term.price / term.anchor) * 100);
 };
-// Lifetime. Off sale — the monthly term replaced it — but every number stays
-// defined: its card is only hidden, and the people who bought it keep resolving
-// through it. Declared up here rather than beside the other retired prices
-// further down because the headline discount reads it, and a const declared
-// below it is still in its temporal dead zone when runSelfTests runs at module
-// level.
+// Lifetime, on sale beside the month. Declared up here rather than beside the
+// retired prices further down because the headline discount reads it, and a
+// const declared below it is still in its temporal dead zone when runSelfTests
+// runs at module level.
 //
 // One flag retires it, the way `retired` does for a term: the card, the
 // headline discount and the featured offer all read it, so none of them can
 // disagree about whether it is for sale. Mirror it in RETIRED_PLANS
 // (api/_shared.js), which is what refuses a checkout on it.
-const LIFETIME_RETIRED = true;
-const PRICE_LIFETIME = 29.9;
-const PRICE_LIFETIME_ANCHOR = 59.9;
+const LIFETIME_RETIRED = false;
+const PRICE_LIFETIME = 179;
+// A year of the subscription — a real figure a visitor can check against the
+// card beside it, not a reference price invented to print a bigger reduction.
+// Rounded because 29.9 * 12 is 358.79999999999995 in binary floating point.
+const PRICE_LIFETIME_ANCHOR = Math.round(termOf("m1").price * 12 * 100) / 100;
 const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
+// How long on the subscription costs what lifetime costs once. Ceiling, not
+// round: it is the month you cross the figure, so the claim is never early.
+const LIFETIME_MONTHS = Math.ceil(PRICE_LIFETIME / termOf("m1").price);
 
 // The figure the page leads with — the best of everything a button actually
 // offers, so it can never promise a reduction no card gives. Lifetime counts
@@ -859,10 +863,10 @@ const plans = [
   },
   {
     id: "lifetime",
-    // Off sale, from LIFETIME_RETIRED like the terms are from their own flag —
+    // On sale, from LIFETIME_RETIRED like the terms are from their own flag —
     // one place retires an offer, and the card, the headline discount and the
-    // featured offer cannot disagree about it. Kept defined so every lifetime
-    // buyer still resolves. Mirrored by RETIRED_PLANS in api/_shared.js.
+    // featured offer cannot disagree about it. Mirrored by RETIRED_PLANS in
+    // api/_shared.js, which would refuse the checkout while this is hidden.
     hidden: LIFETIME_RETIRED,
     name: t("Lifetime", "À vie"),
     price: eur(PRICE_LIFETIME),
@@ -873,9 +877,15 @@ const plans = [
     // The line the other cards use for their renewal says so instead.
     billedNote: t("one payment, never again", "un seul paiement, jamais renouvelé"),
     cta: t("Get lifetime access", "Prendre l'accès à vie"),
-    // Only one ribbon per row, and it belongs to the term the page pushes.
-    featured: false,
-    features: [...CATALOGUE_FEATURES, t("Paid once, yours for life", "Payé une fois, à toi à vie")],
+    // Only one ribbon per row. It is the lifetime's: of the two offers it is
+    // the one worth steering a buyer to, and "best value" is arithmetic anyone
+    // can check against the card beside it — unlike "most chosen", which would
+    // be a claim about other buyers that nothing here measures.
+    badge: t("Best value", "Meilleur rapport"),
+    featured: true,
+    // The comparison stated as a line of its own, derived from both prices so
+    // it cannot outlive either of them.
+    features: [...CATALOGUE_FEATURES, t(`Cheaper from month ${LIFETIME_MONTHS}`, `Rentable dès le ${LIFETIME_MONTHS}e mois`), t("Paid once, yours for life", "Payé une fois, à toi à vie")],
     // Stated plainly rather than buried in the list above. The descriptions the
     // card used to carry are gone: they were most of its height, and beside
     // three shorter cards that read as a mistake rather than as generosity.
@@ -1656,16 +1666,20 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(validatePlanId("m1"), "the monthly term is the offer and must be purchasable");
-  console.assert(["m3", "m12", "monthly", "yearly", "lifetime"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
+  console.assert(validatePlanId("m1") && validatePlanId("lifetime"), "the month and the lifetime are the two offers and must be purchasable");
+  console.assert(["m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
   console.assert(FEATURED_TERM === termOf("m1") && FEATURED_OFFER.price === termOf("m1").price, "the bar and the anchor quote the only term on sale");
   // Each comparison holds only while both sides are on sale: a retired plan has
   // nothing to be cheaper or dearer than, and the rule would read as a failure
   // rather than as moot.
   console.assert(LIFETIME_RETIRED || termOf("m12").retired || PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
   console.assert(termOf("m12").retired || termOf("m1").retired || termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
-  console.assert(BEST_DISCOUNT === discountOf("m1") && BEST_DISCOUNT === 25, "the page leads with the best discount still on sale");
-  console.assert(!LIFETIME_RETIRED || !visiblePlans.some((plan) => plan.id === "lifetime"), "a retired lifetime must not leave a card behind");
+  console.assert(BEST_DISCOUNT === LIFETIME_DISCOUNT && BEST_DISCOUNT === 50, "the page leads with the best discount still on sale");
+  console.assert(LIFETIME_RETIRED !== visiblePlans.some((plan) => plan.id === "lifetime"), "the lifetime card must be shown exactly when the lifetime is on sale");
+  // The whole pitch of the lifetime: dearer than one month, cheaper than the
+  // year of months it is struck against. Either way round it would be a lie.
+  console.assert(PRICE_LIFETIME > termOf("m1").price && PRICE_LIFETIME < PRICE_LIFETIME_ANCHOR, "lifetime must cost more than a month and less than a year of them");
+  console.assert(LIFETIME_MONTHS * termOf("m1").price >= PRICE_LIFETIME && (LIFETIME_MONTHS - 1) * termOf("m1").price < PRICE_LIFETIME, "the month the lifetime becomes the cheaper option must be the first one that passes its price");
   // A card may not promise an extra its kind is not granted: the card is the
   // promise, EBOOK_KINDS and SUPPORT_KINDS are what keep it, and the two going
   // out of step is the one failure here a buyer finds out about after paying.
@@ -3825,7 +3839,7 @@ function PricingPage() {
             ? soloTerm
               ? t(`All ${availablePrompts.length} premium prompts and every one added next. Cancel whenever you like, no commitment.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Résiliation quand tu veux, sans engagement.`)
               : t(`All ${availablePrompts.length} premium prompts and every one added next. One payment, no subscription, no renewal.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Un seul paiement, pas d'abonnement, pas de renouvellement.`)
-            : t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it by the year, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le à l'année, ou garde-le pour toujours.`)}</p>
+            : t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it by the month, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le au mois, ou garde-le pour toujours.`)}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
