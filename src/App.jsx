@@ -24,14 +24,15 @@ const SUPPORT_EMAIL = "movento.dev@gmail.com";
 // lifetime buyer; the same promise is kept over email, which can be answered
 // from anywhere and handed to someone else without changing the offer.
 //
-// Subject and body are prefilled so the first message already says which plan
-// is writing, and the address is shown under the button as well: a mailto does
-// nothing on a machine with no mail client configured.
+// Subject and body are prefilled so the first message is not a blank one, and
+// the address is shown under the button as well: a mailto does nothing on a
+// machine with no mail client configured. The body names no plan — it used to
+// say "lifetime access", which stopped being what the reader had bought.
 const supportUrl = () =>
   `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
     t("Movento — support", "Movento — support"),
   )}&body=${encodeURIComponent(
-    t("Hi! I have Movento lifetime access and I have a question.", "Salut ! J'ai l'accès à vie Movento et j'ai une question."),
+    t("Hi! I have Movento access and I have a question.", "Salut ! J'ai un accès Movento et j'ai une question."),
   )}`;
 // Free bonus ebook handed to buyers on the post-payment page.
 const EBOOK_URL = "https://drive.google.com/file/d/1Rudbr82oNNV1TJ8okGjozPybSxIvAmPs/view?usp=sharing";
@@ -622,56 +623,85 @@ const FREE_PROMPT_FILES = new Set([]);
 // are however the offer is renamed: "m1" is the monthly plan and "m12" the
 // annual one, and a subscriber stored under either keeps resolving.
 //
-// The annual is anchored at twelve times the monthly rather than at a number
-// of its own: the comparison a buyer makes anyway. Note that it stopped being
-// one they can check on the page when the monthly card came off sale — it is
-// still what a year costs the subscribers who are on it, but a visitor now has
-// to take 227.88 on trust. Replace it with a flat anchor if that matters.
+// The annual was anchored at twelve times a 18.99 € month — the comparison a
+// buyer makes anyway. It is written out as 227.88 now rather than computed: the
+// month has been re-priced since, and an anchor that drifts with a live price
+// stops being the number the annual's buyers were shown.
+//
+// `every` is how the headline finishes "All of Movento, …" when the term is the
+// only offer on sale. `banner` names it as a price's unit ("le mois"), which is
+// what a figure needs; this names it as a rhythm, which is what a sentence
+// needs. Both are per-term so that the copy follows the line-up instead of
+// being rewritten by hand every time it changes — that is exactly what went
+// stale when the single offer stopped being the lifetime.
+//
+// A retired term's anchor is frozen at the figure its buyers actually saw
+// (m12's 227.88 was twelve times a 18.99 month, which the month no longer
+// costs). Live anchors are the plan's own regular price, nothing invented.
 const PLAN_TERMS = [
-  { id: "m1", price: 18.99, anchor: 39.99, days: 30, retired: true, banner: t("a month", "le mois") },
-  { id: "m3", price: 29.99, anchor: 74.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois") },
-  { id: "m12", price: 99.99, anchor: 12 * 18.99, days: 365, retired: true, banner: t("for a year", "l'année") },
+  { id: "m1", price: 29.9, anchor: 39.99, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
+  { id: "m3", price: 29.99, anchor: 74.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
+  { id: "m12", price: 99.99, anchor: 227.88, days: 365, retired: true, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
   const term = termOf(id);
   return Math.round((1 - term.price / term.anchor) * 100);
 };
-// Lifetime's two numbers. Declared here rather than beside the retired prices
-// further down, where they read better: the headline discount and the featured
-// offer both need them, and a const declared below them is still in its
-// temporal dead zone when runSelfTests runs at module level.
+// Lifetime. Off sale — the monthly term replaced it — but every number stays
+// defined: its card is only hidden, and the people who bought it keep resolving
+// through it. Declared up here rather than beside the other retired prices
+// further down because the headline discount reads it, and a const declared
+// below it is still in its temporal dead zone when runSelfTests runs at module
+// level.
+//
+// One flag retires it, the way `retired` does for a term: the card, the
+// headline discount and the featured offer all read it, so none of them can
+// disagree about whether it is for sale. Mirror it in RETIRED_PLANS
+// (api/_shared.js), which is what refuses a checkout on it.
+const LIFETIME_RETIRED = true;
 const PRICE_LIFETIME = 29.9;
 const PRICE_LIFETIME_ANCHOR = 59.9;
 const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
 
 // The figure the page leads with — the best of everything a button actually
-// offers, lifetime included, so the banner can never promise a reduction no
-// card gives. Lifetime is always in the running because it is never retired.
+// offers, so it can never promise a reduction no card gives. Lifetime counts
+// only while it is on sale; it used to be spread in unconditionally, which was
+// right while it was the one offer and wrong the moment it was not.
 const LIVE_TERMS = PLAN_TERMS.filter((term) => !term.retired);
-const BEST_DISCOUNT = Math.max(LIFETIME_DISCOUNT, ...LIVE_TERMS.map((term) => discountOf(term.id)));
+const LIVE_DISCOUNTS = [...LIVE_TERMS.map((term) => discountOf(term.id)), ...(LIFETIME_RETIRED ? [] : [LIFETIME_DISCOUNT])];
+// Math.max of nothing is -Infinity, so the list is counted before it is spread:
+// with nothing on sale the chip has to read 0, not minus infinity.
+const BEST_DISCOUNT = LIVE_DISCOUNTS.length ? Math.max(...LIVE_DISCOUNTS) : 0;
 
 // What the sticky bar quotes and what the price anchor divides by: the term the
 // page pushes while one is on sale, and the lifetime once none is. FEATURED_TERM
 // is null in that case rather than pointing at a retired plan — nothing should
 // have to guess which of the plans nobody can buy is the "featured" one.
 const FEATURED_TERM = LIVE_TERMS.find((term) => term.id === "m12") || LIVE_TERMS[0] || null;
+// Falls back to the lifetime only because something has to be quoted when no
+// term is on sale. While the lifetime is retired too, nothing is for sale at
+// all and the sticky bar is moot.
 const FEATURED_OFFER = FEATURED_TERM || { price: PRICE_LIFETIME, banner: t("for life", "à vie") };
 // What each term is owed beyond the catalogue. Keep identical to EBOOK_KINDS
 // and SUPPORT_KINDS in api/_shared.js, which decide what gets stored.
 //
-// The ebook reaches the three-month term because that is what its Whop product
-// is called — "Abonnement 3 Mois + EBOOK". The promise is made on the checkout
-// page the buyer pays on, so it is owed whatever the card here says. The direct
-// support is promised nowhere but the twelve-month card, and goes nowhere else.
-// Both lists carry the retired plans that were sold carrying them.
+// The monthly term carries both: it is the only offer on sale, its card promises
+// them in as many words, and it bills on the Whop product sold as "Abonnement
+// 3 Mois + EBOOK" — a promise made on the page the buyer pays on. It is also
+// what makes mergeKind (api/_shared.js) safe, since every past buyer of that
+// plan now resolves to "m1".
+//
+// The three-month term keeps the ebook for the same reason. Both lists carry
+// the retired plans that were sold carrying them: retiring an offer never takes
+// an extra back off the people who paid for it.
 //
 // Declared here rather than beside earnedEbook, which is where they read best:
 // runSelfTests calls that function at module level, and a const declared
 // further down the file is still in its temporal dead zone by then — which
 // throws before the first render and takes the whole page with it.
-const EBOOK_KINDS = new Set(["m3", "m12", "lifetime", "yearly"]);
-const SUPPORT_KINDS = new Set(["m12", "lifetime", "yearly"]);
+const EBOOK_KINDS = new Set(["m1", "m3", "m12", "lifetime", "yearly"]);
+const SUPPORT_KINDS = new Set(["m1", "m12", "lifetime", "yearly"]);
 
 // Retired. Their prices stay defined because the cards, the ebook rule and the
 // access checks still reference the plans for the people who are on them —
@@ -754,9 +784,14 @@ const plans = [
     billedNote: t("renewed every month", "renouvelé chaque mois"),
     cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
     featured: false,
-    // No ebook and no support: they are the reason to take the year instead,
-    // and a monthly plan that carried them would leave it nothing to sell.
     features: BASE_FEATURES,
+    // Both used to be withheld here, to leave the annual something to sell.
+    // With the month as the only offer there is nothing to hold them back for,
+    // and its Whop product was sold carrying the ebook. EBOOK_KINDS and
+    // SUPPORT_KINDS are what honour them — a card may not promise either
+    // without its id in those sets, and a self-test below enforces that.
+    perk: t("Direct support included", "Support direct inclus"),
+    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
   },
   {
     id: "m3",
@@ -824,9 +859,11 @@ const plans = [
   },
   {
     id: "lifetime",
-    // Back on sale beside the three terms. Keep in step with RETIRED_PLANS in
-    // api/_shared.js, which would refuse the checkout while this is false.
-    hidden: false,
+    // Off sale, from LIFETIME_RETIRED like the terms are from their own flag —
+    // one place retires an offer, and the card, the headline discount and the
+    // featured offer cannot disagree about it. Kept defined so every lifetime
+    // buyer still resolves. Mirrored by RETIRED_PLANS in api/_shared.js.
+    hidden: LIFETIME_RETIRED,
     name: t("Lifetime", "À vie"),
     price: eur(PRICE_LIFETIME),
     originalPrice: eur(PRICE_LIFETIME_ANCHOR),
@@ -901,6 +938,11 @@ const planGridWidth = visiblePlans.length === 1 ? "max-w-sm lg:max-w-2xl" : visi
 // the best value of, so the comparison copy steps aside. Derived rather than
 // hardcoded: bringing a plan back out of hiding restores it on its own.
 const isSinglePlan = visiblePlans.length === 1;
+// The term the one offer runs on, when the one offer is a subscription. The
+// copy that speaks for "the offer" reads this instead of restating it: the
+// headline said "for life." in so many words, which was true for exactly as
+// long as the lifetime was the single offer.
+const soloTerm = isSinglePlan ? termOf(visiblePlans[0].id) : null;
 
 // Which plans on sale carry the bonus ebook. The ladder used to say "annual
 // only", which stopped being true the day the annual was retired — a label
@@ -1614,24 +1656,30 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(validatePlanId("lifetime"), "lifetime is the offer and must be purchasable");
-  console.assert(["m1", "m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every subscription is retired and none should be purchasable");
-  console.assert(FEATURED_TERM === null && FEATURED_OFFER.price === PRICE_LIFETIME, "with no term on sale the bar and the anchor quote the lifetime");
-  // Only while something is billed by the term: a one-off has nothing to be
-  // cheaper than, and the rule would read as a failure rather than as moot.
-  console.assert(!LIVE_TERMS.length || PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
-  console.assert(!LIVE_TERMS.length || termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
-  console.assert(LIFETIME_DISCOUNT === 50, "the chip must read −50");
-  console.assert(BEST_DISCOUNT === 50, "the page leads with the best discount still on sale");
-  console.assert(earnedEbook({ kind: "m12" }) && earnedEbook({ kind: "lifetime" }) && !earnedEbook({ kind: "m1" }), "the ebook comes with the year and with lifetime, not with the month");
+  console.assert(validatePlanId("m1"), "the monthly term is the offer and must be purchasable");
+  console.assert(["m3", "m12", "monthly", "yearly", "lifetime"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
+  console.assert(FEATURED_TERM === termOf("m1") && FEATURED_OFFER.price === termOf("m1").price, "the bar and the anchor quote the only term on sale");
+  // Each comparison holds only while both sides are on sale: a retired plan has
+  // nothing to be cheaper or dearer than, and the rule would read as a failure
+  // rather than as moot.
+  console.assert(LIFETIME_RETIRED || termOf("m12").retired || PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
+  console.assert(termOf("m12").retired || termOf("m1").retired || termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
+  console.assert(BEST_DISCOUNT === discountOf("m1") && BEST_DISCOUNT === 25, "the page leads with the best discount still on sale");
+  console.assert(!LIFETIME_RETIRED || !visiblePlans.some((plan) => plan.id === "lifetime"), "a retired lifetime must not leave a card behind");
+  // A card may not promise an extra its kind is not granted: the card is the
+  // promise, EBOOK_KINDS and SUPPORT_KINDS are what keep it, and the two going
+  // out of step is the one failure here a buyer finds out about after paying.
+  console.assert(visiblePlans.every((plan) => !plan.bonus || EBOOK_KINDS.has(plan.id)), "no card may offer the ebook unless its kind is granted it");
+  console.assert(visiblePlans.every((plan) => !plan.perk || SUPPORT_KINDS.has(plan.id)), "no card may offer support unless its kind is granted it");
+  console.assert(earnedEbook({ kind: "m1" }) && earnedEbook({ kind: "m12" }) && earnedEbook({ kind: "lifetime" }), "the ebook comes with the month on sale, and with the terms that carried it");
   console.assert(earnedEbook({ kind: "m3" }), "the retired quarter was sold as \"+ EBOOK\" and its buyers keep it");
   console.assert(earnedEbook({}), "an unidentified plan must not lose the ebook");
   // Retired does not mean cut off: the people already on a subscription keep
   // everything their plan granted them.
-  console.assert(earnedEbook({ kind: "yearly" }) && !earnedEbook({ kind: "monthly" }), "annual subscribers keep the ebook, monthly ones never had it");
-  console.assert(earnedSupport({ kind: "m12" }) && earnedSupport({ kind: "lifetime" }) && earnedSupport({ kind: "yearly" }), "support follows the twelve-month term, lifetime, and the plans sold with it");
-  console.assert(plansWithoutEbook.every((plan) => !EBOOK_KINDS.has(plan.id)) && !plansWithoutEbook.some((plan) => plan.id === "lifetime"), "the ladder must not tell a lifetime buyer the ebook is not theirs");
-  console.assert(!earnedSupport({ kind: "m1" }) && !earnedSupport({ kind: "m3" }), "the short terms never bought the support");
+  console.assert(earnedEbook({ kind: "yearly" }) && !earnedEbook({ kind: "monthly" }), "annual subscribers keep the ebook, the retired 21.99 monthly never had it");
+  console.assert(earnedSupport({ kind: "m1" }) && earnedSupport({ kind: "m12" }) && earnedSupport({ kind: "lifetime" }) && earnedSupport({ kind: "yearly" }), "support follows the month on sale, the twelve-month term, lifetime, and the plans sold with it");
+  console.assert(plansWithoutEbook.every((plan) => !EBOOK_KINDS.has(plan.id)), "the ladder must not tell a buyer the ebook is not theirs");
+  console.assert(!earnedSupport({ kind: "m3" }) && !earnedSupport({ kind: "monthly" }), "the plans that never bought the support must not be handed it");
   console.assert(!earnedSupport({}), "support must never be handed to an unidentified plan");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // On sale in the grid while the kill switch is on, and off it entirely when
@@ -2397,10 +2445,10 @@ export default function MoventoSite() {
   );
 }
 
-// The ebook ships with the three- and twelve-month terms, not the one-month
-// one, and with the retired plans whose buyers were promised it. A plan we
-// failed to identify still gets it: refusing a paid-for bonus because a lookup
-// came back empty is the worse mistake.
+// The ebook ships with every term on sale and with the retired plans whose
+// buyers were promised it — see EBOOK_KINDS. A plan we failed to identify still
+// gets it: refusing a paid-for bonus because a lookup came back empty is the
+// worse mistake.
 function earnedEbook(info) {
   if (info?.type === "lifetime") return true;
   // Unidentified is not the same as excluded: a paying customer must never be
@@ -2409,15 +2457,15 @@ function earnedEbook(info) {
   return EBOOK_KINDS.has(info.kind);
 }
 
-// Direct support comes with the twelve-month term alone. Unlike the ebook this
-// does NOT fail open: an unidentified plan must not be handed a private phone
-// number we did not sell them.
+// Direct support follows SUPPORT_KINDS. Unlike the ebook it does NOT fail open:
+// an unidentified plan must not be handed support we did not sell them.
 function earnedSupport(info) {
   return info?.type === "lifetime" || SUPPORT_KINDS.has(info?.kind);
 }
 
-// How a lifetime buyer reaches a human. Shown on /success and on "My
-// subscription", so closing the success tab does not cost them the link.
+// How a buyer who was sold direct support reaches a human. Shown on /success
+// and on "My subscription", so closing the success tab does not cost them the
+// link.
 function SupportCard({ className = "" }) {
   return (
     <div className={`rounded-[28px] border border-emerald-400/25 bg-emerald-400/[0.06] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7 ${className}`}>
@@ -2471,11 +2519,11 @@ function EbookCard({ className = "" }) {
 function SuccessPage() {
   const [email, setEmail] = useState(getStoredAccessEmail);
   const [status, setStatus] = useState({ loading: false, ok: false, error: "" });
-  // The bonus ebook ships with lifetime, not with the monthly plan.
-  // Unknown plans get it: a paying customer must never be denied by a lookup
-  // that merely failed to identify their plan.
+  // Which plans the bonus ebook ships with is EBOOK_KINDS' business, not this
+  // page's. Unknown plans get it: a paying customer must never be denied by a
+  // lookup that merely failed to identify their plan.
   const [ebookEarned, setEbookEarned] = useState(true);
-  // Direct support is a lifetime perk, so an unidentified plan does NOT get the
+  // Support follows SUPPORT_KINDS, and an unidentified plan does NOT get the
   // contact block — promising support we did not sell is the worse mistake here.
   const [supportEarned, setSupportEarned] = useState(false);
 
@@ -2572,7 +2620,7 @@ function SuccessPage() {
           )}
         </div>
 
-        {/* Bonus ebook — lifetime only */}
+        {/* Bonus ebook — on the plans EBOOK_KINDS grants it to */}
         {status.ok && ebookEarned && <EbookCard className="mt-4" />}
 
         {status.ok && supportEarned && <SupportCard className="mt-4" />}
@@ -3274,9 +3322,13 @@ const SITE_PRICE_LOW = 800;
 const SITE_PRICE_HIGH = 2000;
 
 function PriceAnchor({ onPick }) {
+  // What a year on the featured term costs — not what the term costs, which is
+  // only the same thing when the term is a year. At 29,90 € a month the raw
+  // division reads 26, and the sentence below would call it 26 years.
+  const yearOfFeatured = FEATURED_TERM ? (FEATURED_TERM.price * 365) / FEATURED_TERM.days : FEATURED_OFFER.price;
   // How many times over the cheapest site a freelancer would quote covers what
   // Movento costs. Floored, so the claim is never rounded up.
-  const paysBack = Math.floor(SITE_PRICE_LOW / FEATURED_OFFER.price);
+  const paysBack = Math.floor(SITE_PRICE_LOW / yearOfFeatured);
   // "N years of Movento" only parses while Movento is billed by the year. Paid
   // once, the same division says something better: how many times over the
   // first sale covers it.
@@ -3293,7 +3345,10 @@ function PriceAnchor({ onPick }) {
       <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("The math", "Le calcul")}</p>
         <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0] md:text-5xl">{t("A website sells for €800 to €2,000", "Un site se vend entre 800 et 2 000 €")}</h2>
-        <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">{t("That is what a freelancer or a small agency charges for one showcase site. A whole year of Movento costs less than the deposit.", "C'est ce qu'un freelance ou une petite agence facture pour un seul site vitrine. Une année entière de Movento coûte moins que l'acompte.")}</p>
+        {/* No arithmetic against the deposit any more: that held while a year of
+            Movento was 99 €, and quietly stopped holding when the term changed.
+            What is left is true at any price the page can quote. */}
+        <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">{t("That is what a freelancer or a small agency charges for one showcase site. Movento costs a fraction of it, and you can deliver as many as you like.", "C'est ce qu'un freelance ou une petite agence facture pour un seul site vitrine. Movento coûte une fraction de ce prix, et tu en livres autant que tu veux.")}</p>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} className="mt-12 grid items-stretch gap-3 md:grid-cols-[1fr_auto_1fr] md:gap-4">
@@ -3665,7 +3720,10 @@ function BusinessLadder({ onPick }) {
         >
           {t("Get all three", "Prendre les trois")} <Icon name="arrow" className="h-4 w-4" />
         </button>
-        <p className="text-xs text-white/40">{isSinglePlan ? t("Prompts and ebook, one payment, for life.", "Les prompts et l'ebook, un paiement, à vie.") : EBOOK_NOTE}</p>
+        {/* Phrased without naming a term: EBOOK_NOTE lists the plans that go
+            without the ebook, which reads as a comparison when there is only
+            one plan to compare. */}
+        <p className="text-xs text-white/40">{isSinglePlan ? t("The prompts and the ebook, both included.", "Les prompts et l'ebook, les deux inclus.") : EBOOK_NOTE}</p>
       </motion.div>
     </section>
   );
@@ -3756,14 +3814,17 @@ function PricingPage() {
             {/* Nothing to choose between with one offer on sale, so the
                 headline stops asking and states what is being sold. */}
             {isSinglePlan
-              ? <>{t("All of Movento,", "Tout Movento,")} <span className="text-white/45">{t("for life.", "à vie.")}</span></>
+              ? <>{t("All of Movento,", "Tout Movento,")} <span className="text-white/45">{soloTerm ? soloTerm.every : t("for life.", "à vie.")}</span></>
               : <>{t("Choose your", "Choisis ton")} <span className="text-white/45">{t("plan.", "plan.")}</span></>}
           </h1>
           <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{/* "The longer the term, the less a day costs" had three terms to prove it
-              against. With a subscription and a one-off left, the choice is no
-              longer a length — it is whether you rent the catalogue or keep it. */}
+              against. With one offer left there is no comparison to draw, so
+              the line states what you get and what you are committing to —
+              which is the next question a single price raises. */}
           {isSinglePlan
-            ? t(`All ${availablePrompts.length} premium prompts and every one added next. One payment, no subscription, no renewal.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Un seul paiement, pas d'abonnement, pas de renouvellement.`)
+            ? soloTerm
+              ? t(`All ${availablePrompts.length} premium prompts and every one added next. Cancel whenever you like, no commitment.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Résiliation quand tu veux, sans engagement.`)
+              : t(`All ${availablePrompts.length} premium prompts and every one added next. One payment, no subscription, no renewal.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Un seul paiement, pas d'abonnement, pas de renouvellement.`)
             : t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it by the year, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le à l'année, ou garde-le pour toujours.`)}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">

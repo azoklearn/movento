@@ -60,36 +60,53 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // Replacing a plan means changing the id here and adding the old one to
 // LEGACY_PLAN_KINDS below, so its subscribers keep resolving.
 //
-// The subscription plans. All three are retired now — lifetime is the only
-// thing on sale — but they stay fully configured because the ids are what
-// every buyer's record is keyed on, and a subscriber whose plan stopped
-// resolving would lose the ebook and the support they still pay for.
+// The subscription plans. The monthly term is the only thing on sale now; the
+// others stay fully configured because the ids are what every buyer's record is
+// keyed on, and a subscriber whose plan stopped resolving would lose the ebook
+// and the support they still pay for.
 //
-// LIFETIME MUST READ 29.90 € ON WHOP, matching PRICE_LIFETIME in src/App.jsx.
+// M1 MUST READ 29.90 € PER MONTH ON WHOP, matching PLAN_TERMS["m1"].price in
+// src/App.jsx.
 // The site only quotes a price; Whop is what charges it, and a card that quotes
 // one figure while Whop takes another is the one failure here that reaches a
 // buyer's bank statement.
 // WHOP_M1_URL / WHOP_M3_URL / WHOP_M12_URL override them.
-const M1_FALLBACK_URL = "https://whop.com/checkout/plan_lg2xFDMH1crhQ";
+//
+// The monthly term sells on plan_rP9Yq4HOSgHCZ (product prod_AcMsyhJLA93OO) —
+// the plan that sold the three-month term, and the annual before that, re-priced
+// in place rather than created fresh. So m3 and yearly below still point at this
+// same id, because that is the plan their buyers are billed on.
+// planKindFromPlanId answers "m1" for all three (m1 comes first in its list);
+// mergeKind is what stops that costing anyone the ebook or the support, and it
+// only works because m1 is in EBOOK_KINDS and SUPPORT_KINDS below.
+const M1_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
 const M3_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
 const M12_FALLBACK_URL = "https://whop.com/checkout/plan_DmP1j9cCTGTOe";
 
-// The one- and three-month terms were not new Whop plans: the monthly (21.99 €)
-// and annual (99 €) plans were re-priced in place and now sell 1 and 3 months.
-// So these two ids no longer say what a past buyer bought — a 99 €/yr
-// subscriber's renewal resolves to "m3" today, and would cost them the ebook
-// and the support they have been paying for. mergeKind below is what stops
-// that; there is nothing left in the payload to tell them apart.
+// The terms were never new Whop plans: the monthly (21.99 €) and annual (99 €)
+// plans were re-priced in place, and the three-month plan has since been
+// re-priced again into today's monthly. So these ids do not say what a past
+// buyer bought — a 99 €/yr subscriber's renewal resolves to "m1" today, and
+// would cost them the ebook and the support they have been paying for.
+// mergeKind below is what stops that; there is nothing left in the payload to
+// tell them apart.
+//
+// plan_lg2xFDMH1crhQ is the 18.99 €/month plan the monthly term sold on until
+// it moved. It is kept here, under "monthly", rather than dropped: the people
+// on it are still billed by Whop every month and still have to resolve. A
+// record already stored as "m1" stays "m1" through mergeKind and so gains the
+// ebook and the support m1 now carries — generous rather than wrong, and the
+// payload holds nothing that could tell those buyers from today's.
 //
 // They stay listed so a hand-made request for a retired plan still lands on
 // RETIRED_PLANS rather than an unconfigured plan.
-const MONTHLY_FALLBACK_URL = M1_FALLBACK_URL;
+const MONTHLY_FALLBACK_URL = "https://whop.com/checkout/plan_lg2xFDMH1crhQ";
 const YEARLY_FALLBACK_URL = M3_FALLBACK_URL;
 
-// On sale again, beside the three terms. Unlike the two above it was never
-// re-priced, so its id still belongs to it alone — which is what keeps every
-// lifetime buyer, old and new, resolving to their kind, their access, their
-// ebook and their support.
+// Off sale — the monthly term replaced it. Unlike the plans above it was never
+// re-priced, so its id still belongs to it alone, which is what keeps every
+// lifetime buyer resolving to their kind, their access, their ebook and their
+// support. It is paid for; "for life" has to keep meaning what it said.
 const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
 // A pack of prompts, bought without the catalogue (Whop product
 // prod_zZlcqsSutlXvW). One purchase, PROMPT_PACK_SIZE prompts of your choice.
@@ -176,7 +193,7 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-export const RETIRED_PLANS = new Set(["m1", "m3", "m12", "monthly", "yearly"]);
+export const RETIRED_PLANS = new Set(["m3", "m12", "monthly", "yearly", "lifetime"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a
@@ -190,19 +207,18 @@ export function planKindFromPlanId(planId) {
 // What each kind is owed beyond the catalogue. Keep identical to EBOOK_KINDS and
 // SUPPORT_KINDS in src/App.jsx: those decide what the account page shows, these
 // decide what we are willing to store.
-const EBOOK_KINDS = new Set(["m3", "m12", "lifetime", "yearly"]);
-const SUPPORT_KINDS = new Set(["m12", "lifetime", "yearly"]);
+const EBOOK_KINDS = new Set(["m1", "m3", "m12", "lifetime", "yearly"]);
+const SUPPORT_KINDS = new Set(["m1", "m12", "lifetime", "yearly"]);
 
 // The kind to keep when a fresh lookup disagrees with the record we already
 // hold. Normally the fresh answer wins; it does not when it would take an extra
 // away from someone who already had it.
 //
-// This is not defensive programming, it is the monthly and annual plans being
-// re-priced into the one- and three-month terms: plan_rP9Yq4HOSgHCZ said
-// "yearly" to every buyer before today and says "m3" to every buyer after, and
-// a renewal carries nothing else to tell the two apart. A genuine downgrade is
-// not lost — Whop deactivates the old membership first, which clears the record
-// outright.
+// This is not defensive programming, it is one Whop plan having sold three
+// different offers: plan_rP9Yq4HOSgHCZ said "yearly", then "m3", and says "m1"
+// to every buyer from now on, and a renewal carries nothing else to tell them
+// apart. A genuine downgrade is not lost — Whop deactivates the old membership
+// first, which clears the record outright.
 export function mergeKind(previous, next) {
   if (!next) return previous || null;
   if (!previous || previous === next) return next;

@@ -89,11 +89,19 @@
           "offers": [
             {
               "@type": "Offer",
-              "name": "À vie",
+              "name": "Mensuel",
               "price": "29.90",
               "priceCurrency": "EUR",
               "url": "https://movento.dev/pricing",
-              "availability": "https://schema.org/InStock"
+              "availability": "https://schema.org/InStock",
+              "priceSpecification": {
+                "@type": "UnitPriceSpecification",
+                "price": "29.90",
+                "priceCurrency": "EUR",
+                "billingDuration": 1,
+                "billingIncrement": 1,
+                "unitCode": "MON"
+              }
             }
           ]
         }
