@@ -65,7 +65,7 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // buyer's record is keyed on, and a subscriber whose plan stopped resolving
 // would lose the ebook and the support they still pay for.
 //
-// M1 MUST READ 29.90 € PER MONTH AND LIFETIME 179 € ON WHOP, matching
+// M1 MUST READ 29.90 € PER MONTH AND LIFETIME 89 € ON WHOP, matching
 // PLAN_TERMS["m1"].price and PRICE_LIFETIME in src/App.jsx.
 // The site only quotes a price; Whop is what charges it, and a card that quotes
 // one figure while Whop takes another is the one failure here that reaches a

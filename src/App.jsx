@@ -658,7 +658,7 @@ const discountOf = (id) => {
 // disagree about whether it is for sale. Mirror it in RETIRED_PLANS
 // (api/_shared.js), which is what refuses a checkout on it.
 const LIFETIME_RETIRED = false;
-const PRICE_LIFETIME = 179;
+const PRICE_LIFETIME = 89;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
 // Rounded because 29.9 * 12 is 358.79999999999995 in binary floating point.
@@ -1674,7 +1674,7 @@ function runSelfTests() {
   // rather than as moot.
   console.assert(LIFETIME_RETIRED || termOf("m12").retired || PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
   console.assert(termOf("m12").retired || termOf("m1").retired || termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
-  console.assert(BEST_DISCOUNT === LIFETIME_DISCOUNT && BEST_DISCOUNT === 50, "the page leads with the best discount still on sale");
+  console.assert(BEST_DISCOUNT === LIFETIME_DISCOUNT && BEST_DISCOUNT === 75, "the page leads with the best discount still on sale");
   console.assert(LIFETIME_RETIRED !== visiblePlans.some((plan) => plan.id === "lifetime"), "the lifetime card must be shown exactly when the lifetime is on sale");
   // The whole pitch of the lifetime: dearer than one month, cheaper than the
   // year of months it is struck against. Either way round it would be a lie.
