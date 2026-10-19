@@ -567,6 +567,20 @@ function isPromptAvailable(item) {
 // with the other switches because the sort reads it as the module loads.
 const SHOW_DEMO_LINKS = true;
 
+// Whose popup shows the demo as the LIVE SITE in an iframe instead of as a
+// clip. Everyone keeps the "see the live site" link; this only changes what the
+// popup renders above it, for the addresses listed here.
+//
+// A Set rather than one string so a second address costs nothing. Matching is
+// done by canSeeLivePreviews, declared next to cleanEmail further down because
+// it normalises through it.
+//
+// This is a display preference, NOT a security boundary: the demo URLs are
+// already public on every one of those popups, and anyone can put an address in
+// their own browser storage. Nothing private is gated on it, and nothing
+// private should be.
+const LIVE_PREVIEW_EMAILS = new Set(["barbelinnoan@gmail.com"]);
+
 // Pinned prompts lead the gallery in the order they are written in `prompts`
 // above — nothing reorders them, which is the point: "put this one first" has
 // to mean first, and a pinned prompt with no demo yet would otherwise fall in
@@ -1169,6 +1183,11 @@ function WhopCheckoutEmbed({ planId, prefillEmail, promoCode, onComplete, onStat
 
 const cleanEmail = (v) => String(v).replace(/[\s­​-‍⁠﻿]/g, "").toLowerCase();
 
+// Whether this address is one of the LIVE_PREVIEW_EMAILS (declared up with
+// SHOW_DEMO_LINKS). Normalised the same way every other address on the site is,
+// so a capital or a stray space does not quietly turn the feature off.
+const canSeeLivePreviews = (email) => Boolean(email) && LIVE_PREVIEW_EMAILS.has(cleanEmail(email));
+
 // Shown right after the embedded payment completes: the buyer's checkout email is
 // their access key, so we confirm access on this device with a single field.
 function CheckoutSuccess({ plan, prefillEmail, onUnlocked }) {
@@ -1495,6 +1514,104 @@ function posterFor(previewUrl) {
   return `/posters/${base}.jpg`;
 }
 
+// The popup's media slot, at the ratio every preview is rendered at.
+const PREVIEW_RATIO = 1.35;
+// The width the live site is laid out at before being scaled down. These are
+// desktop designs: an iframe given the popup's own ~500px gets the mobile
+// breakpoint, which is not the design anyone opened the card to look at. So the
+// site is rendered wide and shrunk, the way a thumbnail is made.
+const LIVE_PREVIEW_WIDTH = 1440;
+
+// A demo shown as the running site rather than as a clip. Only reached for the
+// addresses in LIVE_PREVIEW_EMAILS, and only inside the popup — the gallery
+// holds 189 cards, and 189 third-party iframes is not a page.
+function LiveSitePreview({ item }) {
+  const hostRef = useRef(null);
+  // null until measured: rendering the iframe before the factor is known would
+  // flash the site at full width across the popup.
+  const [scale, setScale] = useState(null);
+
+  // The popup is as wide as the viewport lets it be, so the factor is measured
+  // rather than assumed, and measured again whenever that width changes.
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return undefined;
+    const measure = () => setScale(host.clientWidth / LIVE_PREVIEW_WIDTH);
+    measure();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={hostRef} className="relative w-full flex-none overflow-hidden bg-[#0B0B0D]" style={{ aspectRatio: String(PREVIEW_RATIO) }}>
+      {scale !== null && (
+        <iframe
+          key={item.demo}
+          src={item.demo}
+          title={`${item.title} — ${t("live site", "site en ligne")}`}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          // Our own builds, but third-party origins all the same: let them run
+          // and be clicked, and keep them off this page. allow-same-origin is
+          // about the framed site's own origin, not ours.
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          className="absolute left-0 top-0 border-0"
+          style={{ width: LIVE_PREVIEW_WIDTH, height: LIVE_PREVIEW_WIDTH / PREVIEW_RATIO, transform: `scale(${scale})`, transformOrigin: "top left" }}
+        />
+      )}
+    </div>
+  );
+}
+
+// What sits above the title in the popup: the clip, or — for the addresses that
+// get them — the live site, with one tap back to the clip. The switch is not a
+// nicety: a site that sends X-Frame-Options or a frame-ancestors policy frames
+// as a blank box, and nothing cross-origin lets us detect that from here. The
+// clip is always one click away, and the link under the title always opens the
+// real thing in a tab.
+function PromptPopupMedia({ item, live }) {
+  const [mode, setMode] = useState(live ? "live" : "clip");
+
+  if (mode === "live") {
+    return (
+      <div className="relative flex-none">
+        <LiveSitePreview item={item} />
+        <button
+          onClick={() => setMode("clip")}
+          className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-black/85"
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {t("Live — show the clip", "En direct — voir le clip")}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex-none">
+      {isVideoPreview(item.preview) ? (
+        <video key={item.file} src={item.preview} poster={posterFor(item.preview)} autoPlay loop muted playsInline className="w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: String(PREVIEW_RATIO), objectPosition: item.previewPosition || "center" }} />
+      ) : isImagePreview(item.preview) ? (
+        <img key={item.file} src={item.preview} alt={`${item.title} preview`} className="w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: String(PREVIEW_RATIO), objectPosition: item.previewPosition || "center" }} />
+      ) : (
+        <div className="relative w-full flex-none overflow-hidden bg-[#0B0B0D]" style={{ aspectRatio: String(PREVIEW_RATIO) }}><GeneratedPreview item={item} /></div>
+      )}
+      {live && (
+        <button
+          onClick={() => setMode("live")}
+          className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-black/85"
+        >
+          <Icon name="arrow" className="h-3 w-3 -rotate-45" /> {t("Show the live site", "Voir en direct")}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function GeneratedPreview({ item }) {
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -1695,6 +1812,9 @@ function runSelfTests() {
   console.assert(plansWithoutEbook.every((plan) => !EBOOK_KINDS.has(plan.id)), "the ladder must not tell a buyer the ebook is not theirs");
   console.assert(!earnedSupport({ kind: "m3" }) && !earnedSupport({ kind: "monthly" }), "the plans that never bought the support must not be handed it");
   console.assert(!earnedSupport({}), "support must never be handed to an unidentified plan");
+  console.assert(canSeeLivePreviews("barbelinnoan@gmail.com") && canSeeLivePreviews(" Barbelinnoan@Gmail.COM "), "the live-preview address must match however it happens to be typed");
+  console.assert(!canSeeLivePreviews("") && !canSeeLivePreviews(null) && !canSeeLivePreviews(undefined) && !canSeeLivePreviews("someone@else.com"), "no other address, and no empty one, gets the live previews");
+  console.assert(prompts.filter((item) => item.demo).every((item) => /^https:\/\//.test(item.demo)), "every demo must be an https URL, or the iframe is blocked as mixed content");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // On sale in the grid while the kill switch is on, and off it entirely when
   // it is not — the card and the checkout must never disagree.
@@ -2115,15 +2235,16 @@ export default function MoventoSite() {
             <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#121214] shadow-2xl shadow-black/60" onClick={(e) => e.stopPropagation()}>
               <button onClick={closePreview} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur transition hover:bg-black/80"><Icon name="close" className="h-4 w-4" /></button>
-              {/* The popup now opens for every card, so it has to render whatever
-                  the preview happens to be — clip, animated image, or nothing. */}
-              {isVideoPreview(previewItem.preview) ? (
-                <video key={previewItem.file} src={previewItem.preview} poster={posterFor(previewItem.preview)} autoPlay loop muted playsInline className="w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: "1.35", objectPosition: previewItem.previewPosition || "center" }} />
-              ) : isImagePreview(previewItem.preview) ? (
-                <img key={previewItem.file} src={previewItem.preview} alt={`${previewItem.title} preview`} className="w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: "1.35", objectPosition: previewItem.previewPosition || "center" }} />
-              ) : (
-                <div className="relative w-full flex-none overflow-hidden bg-[#0B0B0D]" style={{ aspectRatio: "1.35" }}><GeneratedPreview item={previewItem} /></div>
-              )}
+              {/* The popup opens for every card, so it renders whatever the
+                  preview happens to be — clip, animated image, or nothing — and
+                  the live site itself for the addresses that get it. Keyed on
+                  the file so opening another prompt starts from its own
+                  default rather than inheriting the last one's mode. */}
+              <PromptPopupMedia
+                key={previewItem.file}
+                item={previewItem}
+                live={SHOW_DEMO_LINKS && Boolean(previewItem.demo) && canSeeLivePreviews(accessEmail)}
+              />
               {/* Everything under the media scrolls: four steps plus the title
                   row overflow a short phone in landscape, and the popup itself
                   is clipped to 92dvh. */}
