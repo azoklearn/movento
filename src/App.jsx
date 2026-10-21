@@ -609,10 +609,22 @@ const availablePrompts = prompts
   )
   .map(({ item }) => item);
 
-// Nothing is given away any more: every prompt sits behind the paywall.
-// Putting a filename back here re-opens that prompt, and it must be added to
-// the same set in api/_shared.js, which is what actually enforces access.
-const FREE_PROMPT_FILES = new Set([]);
+// The prompts given away for an email. Adding a filename here re-opens that
+// prompt, and it must be added to the same set in api/_shared.js, which is what
+// actually enforces access — this set only unlocks the copy button.
+const FREE_PROMPT_FILES = new Set(["Kimi_Grido1_Racing_Systems.md"]);
+
+// What the free-prompt popup offers, looked up rather than named: change what
+// is free above and the popup follows, instead of advertising a prompt that is
+// no longer given away. Filtered by availability too — a free prompt whose
+// markdown is not in the repo would be a popup promising a 404.
+const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file) && isPromptAvailable(item));
+
+// Once a session, not once a visitor: sessionStorage, so closing the tab gives
+// a returning visitor the offer again, while reloading in the same visit does
+// not pester them. Separate from PROMO_POPUP_KEY — the two popups live on
+// different pages and must not switch each other off.
+const FREE_POPUP_KEY = "movento_free_prompt_popup_seen";
 
 // One product at three terms. Each carries only its own two numbers — what it
 // is charged and what it is discounted from — and everything the page says
@@ -1817,6 +1829,11 @@ function runSelfTests() {
   console.assert(canSeeLivePreviews("barbelinnoan@gmail.com") && canSeeLivePreviews(" Barbelinnoan@Gmail.COM "), "the live-preview address must match however it happens to be typed");
   console.assert(!canSeeLivePreviews("") && !canSeeLivePreviews(null) && !canSeeLivePreviews(undefined) && !canSeeLivePreviews("someone@else.com"), "no other address, and no empty one, gets the live previews");
   console.assert(prompts.filter((item) => item.demo).every((item) => /^https:\/\//.test(item.demo)), "every demo must be an https URL, or the iframe is blocked as mixed content");
+  // The popup names whatever is free, so the two have to agree. Not compared
+  // against api/_shared.js here — that set is not imported — so the mirror is
+  // checked by a script before each commit instead.
+  console.assert(freePromptItems.length === 1 && freePromptItems[0].file === "Kimi_Grido1_Racing_Systems.md", "one prompt is given away, and it is the one the popup offers");
+  console.assert(freePromptItems.every((item) => isPromptAvailable(item) && item.title), "a free prompt with no markdown or no title would be a popup promising a 404");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // On sale in the grid while the kill switch is on, and off it entirely when
   // it is not — the card and the checkout must never disagree.
@@ -1846,11 +1863,43 @@ export default function MoventoSite() {
   const [leadEmail, setLeadEmail] = useState(getStoredLeadEmail);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [pendingFreeItem, setPendingFreeItem] = useState(null);
+  // Why the lead form is open: "gate" when the visitor asked for a free prompt
+  // and has to leave an address first, "offer" when the site opened it on its
+  // own to give one away. Same form, same submit, different words.
+  const [leadModalReason, setLeadModalReason] = useState("gate");
   const [leadEmailInput, setLeadEmailInput] = useState("");
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [previewItem, setPreviewItem] = useState(null); // prompt preview popup
+
+  // The free prompt, offered unprompted. Shown once a session, after a beat, to
+  // a visitor who has given us nothing yet — not to someone who already left an
+  // address, already has access, or is mid-checkout. There is nothing to offer
+  // if no prompt is free, which is why freePromptItems gates the whole thing.
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const offer = freePromptItems[0];
+    if (!offer || hasPremiumAccess || leadEmail || accessEmail) return undefined;
+    try {
+      if (window.sessionStorage.getItem(FREE_POPUP_KEY)) return undefined;
+    } catch {
+      /* private mode: show it, it just will not be remembered */
+    }
+    const id = window.setTimeout(() => {
+      // Re-checked inside the timer: the visitor may have unlocked, bought or
+      // opened another modal during the delay, and talking over any of those is
+      // worse than not offering at all.
+      if (showLeadModal || showUnlockModal || checkoutPlan || hasPremiumAccess || leadEmail || accessEmail) return;
+      setPendingFreeItem(offer);
+      setLeadModalReason("offer");
+      setShowLeadModal(true);
+      track("free_prompt_popup_shown", { prompt: offer.title, ...refProps() });
+      try { window.sessionStorage.setItem(FREE_POPUP_KEY, "1"); } catch { /* ignore */ }
+    }, 3200);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPremiumAccess, leadEmail, accessEmail]);
 
   // Each prompt still has its own /prompt/<slug> address, so the URL bar can be
   // shared even without a copy button. Opening the popup pushes that URL and
@@ -2113,6 +2162,7 @@ export default function MoventoSite() {
       // stacked is a dead end — the lead form sits under the preview.
       closePreview();
       setPendingFreeItem(item);
+      setLeadModalReason("gate");
       setShowLeadModal(true);
       return;
     }
@@ -2187,18 +2237,38 @@ export default function MoventoSite() {
     <main className="min-h-screen overflow-hidden bg-[#0A0A0B] text-[#EDE9E0]">
       <AnimatePresence>
         {showLeadModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowLeadModal(false)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => { if (leadModalReason === "offer") track("free_prompt_popup_dismissed", { prompt: pendingFreeItem?.title, ...refProps() }); setShowLeadModal(false); }}>
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-[#121214] p-8 shadow-2xl shadow-black/60" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setShowLeadModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-[#121214] text-white/40 transition hover:text-[#EDE9E0]"><Icon name="close" className="h-4 w-4" /></button>
               <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-[#EDE9E0] shadow-none"><Icon name="sparkles" className="h-5 w-5" /></div>
-              <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0]">{t("Access free prompts", "Accéder aux prompts gratuits")}</h2>
-              <p className="mt-2 text-sm leading-6 text-white/55">{t("Enter your email to copy free prompts. No spam, ever.", "Entrez votre email pour copier les prompts gratuits. Jamais de spam.")}</p>
+              {leadModalReason === "offer" ? (
+                <>
+                  <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0]">{t("1 free prompt to try", "1 prompt gratuit pour tester")}</h2>
+                  {/* Names the prompt rather than saying "a prompt": the offer
+                      is worth more when you can see what it is, and the title
+                      comes from the entry so it cannot name the wrong one. */}
+                  <p className="mt-2 text-sm leading-6 text-white/55">
+                    {t("Enter your email and ", "Entre ton email et ")}
+                    <span className="text-white/80">{pendingFreeItem?.title}</span>
+                    {t(" is yours — the whole prompt, free, nothing to pay.", " est à toi — le prompt entier, gratuit, rien à payer.")}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0]">{t("Access free prompts", "Accéder aux prompts gratuits")}</h2>
+                  <p className="mt-2 text-sm leading-6 text-white/55">{t("Enter your email to copy free prompts. No spam, ever.", "Entrez votre email pour copier les prompts gratuits. Jamais de spam.")}</p>
+                </>
+              )}
               <form onSubmit={submitLeadEmail} className="mt-6 flex flex-col gap-3">
                 <input autoFocus value={leadEmailInput} onChange={(e) => setLeadEmailInput(e.target.value)} type="email" required placeholder="you@example.com" className="w-full rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35 focus:ring-4 focus:ring-white/10" />
-                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-[#08080A] py-3 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? t("Just a moment...", "Un instant...") : t("Copy free prompt →", "Copier le prompt gratuit →")}</button>
+                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-[#08080A] py-3 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? t("Just a moment...", "Un instant...") : leadModalReason === "offer" ? t("Unlock the free prompt →", "Débloquer le prompt gratuit →") : t("Copy free prompt →", "Copier le prompt gratuit →")}</button>
               </form>
-              <p className="mt-4 text-center text-xs text-white/40">{t("Your data will never be shared.", "Vos données ne seront jamais partagées.")}</p>
+              <p className="mt-4 text-center text-xs text-white/40">
+                {leadModalReason === "offer"
+                  ? t("We keep your email to send you new Movento prompts. Never shared.", "On garde ton email pour t'envoyer les nouveaux prompts Movento. Jamais partagé.")
+                  : t("Your data will never be shared.", "Vos données ne seront jamais partagées.")}
+              </p>
               <div className="mt-5 border-t border-white/[0.07] pt-4 text-center">
                 <button onClick={() => { setShowLeadModal(false); setShowUnlockModal(true); }} className="text-xs text-white/40 transition hover:text-white/75">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
               </div>
