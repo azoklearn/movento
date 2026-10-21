@@ -1515,11 +1515,46 @@ const proxiedPreview = (url) => {
   }
 };
 
-const isVideoPreview = (url) => hasPreviewExt(url, [".mp4", ".webm", ".mov"]) || hasPreviewExt(proxiedPreview(url), [".mp4", ".webm", ".mov"]);
-const isImagePreview = (url) => hasPreviewExt(url, [".png", ".jpg", ".jpeg", ".gif", ".webp"]) || hasPreviewExt(proxiedPreview(url), [".png", ".jpg", ".jpeg", ".gif", ".webp"]);
+// A resizing proxy also says what it CONVERTS to, and that is not what it was
+// given: every higgs URL carries "output=webp" over a .png source and returns
+// an ANIMATED webp. So the output parameter is read on its own, and it outranks
+// both extensions below.
+const proxyOutputExt = (url) => {
+  const q = url ? url.indexOf("?") : -1;
+  if (q < 0) return "";
+  try {
+    const out = new URLSearchParams(url.slice(q + 1)).get("output");
+    return out ? `.${out.trim().toLowerCase()}` : "";
+  } catch {
+    return "";
+  }
+};
+
+const PREVIEW_EXTS = [".mp4", ".webm", ".mov", ".png", ".jpg", ".jpeg", ".gif", ".webp"];
+
+// The extension of the file a preview URL actually DELIVERS, from the three
+// places it can be stated, most authoritative first:
+//   1. the proxy's own "output" — what it converts to;
+//   2. the URL's own extension — when nothing is proxied;
+//   3. the extension of the original file, unwrapped from the proxy's "url".
+//
+// The order is the fix: read bottom-up, the 30 higgs previews came out as .png
+// and counted as stills, so each one got a nine-second Ken Burns pan laid over
+// a clip that was already moving. They are animated webp and now say so.
+const deliveredExt = (url) => {
+  const converted = proxyOutputExt(url);
+  if (converted) return PREVIEW_EXTS.includes(converted) ? converted : "";
+  const own = PREVIEW_EXTS.find((ext) => hasPreviewExt(url, [ext]));
+  if (own) return own;
+  const source = proxiedPreview(url);
+  return PREVIEW_EXTS.find((ext) => hasPreviewExt(source, [ext])) || "";
+};
+
+const isVideoPreview = (url) => [".mp4", ".webm", ".mov"].includes(deliveredExt(url));
+const isImagePreview = (url) => [".png", ".jpg", ".jpeg", ".gif", ".webp"].includes(deliveredExt(url));
 // .gif and .webp are deliberately absent: those two carry their own animation,
 // and drifting a clip that is already moving reads as a glitch.
-const isStillPreview = (url) => hasPreviewExt(url, [".png", ".jpg", ".jpeg"]) || hasPreviewExt(proxiedPreview(url), [".png", ".jpg", ".jpeg"]);
+const isStillPreview = (url) => [".png", ".jpg", ".jpeg"].includes(deliveredExt(url));
 
 function posterFor(previewUrl) {
   // Name the poster after the real file, not after the proxy's option string.
@@ -1834,6 +1869,15 @@ function runSelfTests() {
   // checked by a script before each commit instead.
   console.assert(freePromptItems.length === 1 && freePromptItems[0].file === "Kimi_Grido1_Racing_Systems.md", "one prompt is given away, and it is the one the popup offers");
   console.assert(freePromptItems.every((item) => isPromptAvailable(item) && item.title), "a free prompt with no markdown or no title would be a popup promising a 404");
+  // A proxy that converts decides the format. Read from the source extension
+  // instead, these count as stills and get a Ken Burns pan over their own
+  // motion — which is exactly what happened to all 30 higgs previews.
+  const higgsPreview = "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fexample.net%2Fa.png&w=1280&q=85";
+  console.assert(deliveredExt(higgsPreview) === ".webp", "a converting proxy's output outranks the source extension");
+  console.assert(isImagePreview(higgsPreview) && !isStillPreview(higgsPreview) && !isVideoPreview(higgsPreview), "an animated webp is an image that must be left to animate itself");
+  console.assert(deliveredExt("https://cdn.example/clip.mp4?tag=29") === ".mp4", "a query string must not hide a real extension");
+  console.assert(isStillPreview("https://cdn.example/shot.png") && isStillPreview("https://images.example/?output=png&url=https%3A%2F%2Fe.net%2Fa.webp"), "a genuine still still drifts, whichever way it is stated");
+  console.assert(prompts.every((item) => !item.preview || isVideoPreview(item.preview) || isImagePreview(item.preview)), "every preview must classify, or its card falls back to the gradient");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // On sale in the grid while the kill switch is on, and off it entirely when
   // it is not — the card and the checkout must never disagree.
