@@ -1550,11 +1550,23 @@ const deliveredExt = (url) => {
   return PREVIEW_EXTS.find((ext) => hasPreviewExt(source, [ext])) || "";
 };
 
+// Which element the card mounts — a <video> or an <img>. That IS the container's
+// business, so both read deliveredExt.
 const isVideoPreview = (url) => [".mp4", ".webm", ".mov"].includes(deliveredExt(url));
 const isImagePreview = (url) => [".png", ".jpg", ".jpeg", ".gif", ".webp"].includes(deliveredExt(url));
-// .gif and .webp are deliberately absent: those two carry their own animation,
-// and drifting a clip that is already moving reads as a glitch.
-const isStillPreview = (url) => [".png", ".jpg", ".jpeg"].includes(deliveredExt(url));
+
+// Whether the preview MOVES, which the container does not settle: a .webp holds
+// either one frame or an animation, and nothing in the URL says which. So this
+// one reads the SOURCE and not deliveredExt — a converting proxy changes the
+// container and cannot invent frames, so a .png handed to output=webp comes
+// back a still webp however the file is now named.
+//
+// Classifying by the container is exactly the mistake that took the drift off
+// the 30 higgs previews: their source is a .png, the proxy labels them .webp,
+// and the card left them sitting there with no motion at all. .gif stays out
+// because a gif genuinely carries its own animation, and drifting something
+// already moving reads as a glitch.
+const isStillPreview = (url) => hasPreviewExt(url, [".png", ".jpg", ".jpeg"]) || hasPreviewExt(proxiedPreview(url), [".png", ".jpg", ".jpeg"]);
 
 function posterFor(previewUrl) {
   // Name the poster after the real file, not after the proxy's option string.
@@ -1869,14 +1881,15 @@ function runSelfTests() {
   // checked by a script before each commit instead.
   console.assert(freePromptItems.length === 1 && freePromptItems[0].file === "Kimi_Grido1_Racing_Systems.md", "one prompt is given away, and it is the one the popup offers");
   console.assert(freePromptItems.every((item) => isPromptAvailable(item) && item.title), "a free prompt with no markdown or no title would be a popup promising a 404");
-  // A proxy that converts decides the format. Read from the source extension
-  // instead, these count as stills and get a Ken Burns pan over their own
-  // motion — which is exactly what happened to all 30 higgs previews.
+  // The container and the motion are two different questions, and a higgs URL
+  // answers them from two different places: output=webp says what element to
+  // mount, the .png source says there is nothing moving inside it.
   const higgsPreview = "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fexample.net%2Fa.png&w=1280&q=85";
-  console.assert(deliveredExt(higgsPreview) === ".webp", "a converting proxy's output outranks the source extension");
-  console.assert(isImagePreview(higgsPreview) && !isStillPreview(higgsPreview) && !isVideoPreview(higgsPreview), "an animated webp is an image that must be left to animate itself");
+  console.assert(deliveredExt(higgsPreview) === ".webp", "a converting proxy's output decides which element is mounted");
+  console.assert(isImagePreview(higgsPreview) && !isVideoPreview(higgsPreview), "it is an image, not a video");
+  console.assert(isStillPreview(higgsPreview), "a png converted to webp is still a still, and the card must drift it or it does not move at all");
   console.assert(deliveredExt("https://cdn.example/clip.mp4?tag=29") === ".mp4", "a query string must not hide a real extension");
-  console.assert(isStillPreview("https://cdn.example/shot.png") && isStillPreview("https://images.example/?output=png&url=https%3A%2F%2Fe.net%2Fa.webp"), "a genuine still still drifts, whichever way it is stated");
+  console.assert(isStillPreview("https://cdn.example/shot.png") && !isStillPreview("https://cdn.example/loop.gif"), "stills drift, gifs animate themselves");
   console.assert(prompts.every((item) => !item.preview || isVideoPreview(item.preview) || isImagePreview(item.preview)), "every preview must classify, or its card falls back to the gradient");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // On sale in the grid while the kill switch is on, and off it entirely when
