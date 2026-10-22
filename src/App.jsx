@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { loadWhop } from "@whop/elements";
+import { Checkout, CheckoutElement, WhopElements } from "@whop/elements-react";
 import { track } from "./analytics.js";
 import { getRef, refProps } from "./affiliate.js";
 import PROMPT_ADDED from "./prompt-added.json";
@@ -1111,87 +1113,143 @@ function PlanCard({ plan, onBuy, loading, featured }) {
   );
 }
 
-// Mounts Whop's embedded checkout INLINE (no redirect). Whop's loader.js scans the
-// DOM (and observes mutations) for [data-whop-checkout-plan-id] and renders the
-// checkout in an iframe inside this div. skip-redirect + on-complete keep the user
-// on our page and let us react when payment succeeds.
-const WHOP_LOADER_SRC = "https://js.whop.com/static/checkout/loader.js";
-let whopCbSeq = 0;
+// Mounts Whop's checkout INLINE, through Whop Elements (@whop/elements-react).
+// It replaced the old loader.js, which scanned the DOM for
+// [data-whop-checkout-plan-id] and was configured entirely through data
+// attributes — including two spellings of the promo one, because the loader
+// changed its mind between versions and an attribute it does not read is
+// silently inert. Elements takes typed options instead, so a name it does not
+// know is a build error rather than a lost discount.
+//
+// The npm packages are thin: loadWhop() injects Whop's hosted SDK from
+// cdn.whop.com at runtime, so the form still comes from Whop and the session
+// credential never enters this bundle.
+//
+// Held in a module singleton rather than called per render. loadWhop() is
+// documented as safe to call repeatedly — one script, one shared promise — but
+// a new promise identity on each render would re-initialise the provider, and a
+// failed load stays failed until retry() is called on that same promise.
+let whopLoadPromise = null;
+const whopElements = () => (whopLoadPromise ||= loadWhop());
 
-// How long the loader gets to put its iframe on the page before the overlay
-// offers Whop's hosted page instead. Long enough for a slow phone connection,
-// short enough that a blocked script does not leave the buyer staring.
+// Dark, to sit in the page the form opens over. Blue is the accent the old
+// loader was given, kept so nothing about the form changes colour; "sand" is
+// the closest of Whop's gray palettes to this page's warm neutral.
+const CHECKOUT_APPEARANCE = { theme: { appearance: "dark", accentColor: "blue", grayColor: "sand" } };
+
+// Whop ships UI text in these; the site only speaks two of them.
+const CHECKOUT_LOCALE = lang === "fr" ? "fr" : "en";
+
+// Where an off-site payment step brings the buyer back. NOT optional here:
+// European cards trigger SCA on a large share of payments, and Whop's own
+// documentation only says where the buyer lands when a returnUrl is set. It is
+// also the single success path now — a finished checkout redirects the tab here
+// whatever happened — so /success has to read the `status` Whop appends before
+// it congratulates anyone. A declined or abandoned step lands on this same URL.
+//
+// Whop appends `payment` and `status` and keeps our own parameters, so the
+// buyer's address rides along to prefill the activation field.
+const checkoutReturnUrl = (prefillEmail) => {
+  if (typeof window === "undefined") return undefined;
+  const url = new URL("/success", window.location.origin);
+  if (prefillEmail) url.searchParams.set("email", prefillEmail);
+  return url.toString();
+};
+
+// Everything the checkout session is minted from, built in one place rather
+// than spelled out in the JSX. Elements reads these once, at mount, and refuses
+// to change them afterwards — so getting one wrong is not a cosmetic bug, it is
+// the wrong order. Collected here so the self-tests can assert the whole object
+// without a browser and without Whop's SDK, which is fetched from a CDN and
+// cannot be exercised everywhere.
+//
+// Empty strings become undefined deliberately: Whop treats a present-but-empty
+// promo code as a code that failed, and shows the buyer a reason for something
+// they never typed.
+const checkoutSessionOptions = ({ planId, prefillEmail, promoCode, affiliateCode, metadata }) => ({
+  plan: planId,
+  promoCode: promoCode || undefined,
+  affiliateCode: affiliateCode || undefined,
+  metadata,
+  returnUrl: checkoutReturnUrl(prefillEmail),
+  locale: CHECKOUT_LOCALE,
+  appearance: CHECKOUT_APPEARANCE,
+});
+
+// The escape hatch. Whop's SDK is fetched from cdn.whop.com at runtime, which
+// means the embedded form cannot be exercised anywhere it is unreachable — so
+// if this checkout ever misbehaves in production, set this to false and every
+// buyer goes straight to Whop's own hosted page, which is the path the overlay
+// already takes when a plan has no embeddable id.
+const USE_WHOP_ELEMENTS = true;
+
+// A backstop only. Elements reports both outcomes itself — onLoadingChange(false)
+// when the form is up, onLoadError when the SDK cannot be fetched — but neither
+// fires if the SDK loads and the element then never finishes, which is the one
+// failure that would leave a buyer watching a spinner.
 const WHOP_EMBED_TIMEOUT_MS = 8000;
 
-function WhopCheckoutEmbed({ planId, prefillEmail, promoCode, onComplete, onState }) {
-  const cbName = useMemo(() => `moventoWhopComplete_${++whopCbSeq}`, []);
+function WhopCheckoutEmbed({ planId, prefillEmail, promoCode, affiliateCode, metadata, onComplete, onState }) {
   const onCompleteRef = useRef(onComplete);
   const onStateRef = useRef(onState);
-  const hostRef = useRef(null);
   onCompleteRef.current = onComplete;
   onStateRef.current = onState;
+  // First outcome wins: a late timeout must not overwrite a form that arrived,
+  // and a retried load must not report "ready" twice.
+  const settledRef = useRef(false);
+  const settle = (state) => {
+    if (settledRef.current) return;
+    settledRef.current = true;
+    onStateRef.current?.(state);
+  };
+  // Kept so the failure face can start a fresh load in place: loadWhop() holds a
+  // rejected promise and nothing retries on its own, so without calling the
+  // retry Elements hands us, every later checkout in this tab would fail too.
+  const retryRef = useRef(null);
 
   useEffect(() => {
-    window[cbName] = (pid, receiptId) => onCompleteRef.current?.(pid, receiptId);
-    if (!document.querySelector(`script[src="${WHOP_LOADER_SRC}"]`)) {
-      const s = document.createElement("script");
-      s.src = WHOP_LOADER_SRC;
-      s.async = true;
-      s.defer = true;
-      document.head.appendChild(s);
-    }
-    return () => { try { delete window[cbName]; } catch { window[cbName] = undefined; } };
-  }, [cbName]);
-
-  // The loader says nothing back, so watch the host: the moment its iframe
-  // lands and loads, the form is on screen and the placeholder can go. If it
-  // never comes — blocked script, ad blocker, offline — say so instead of
-  // showing an empty box, and the overlay hands over to Whop's own page.
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    let settled = false;
-    const settle = (state) => { if (!settled) { settled = true; onStateRef.current?.(state); } };
-    const watchFrame = (frame) => {
-      // A frame that already painted (fast cache) never fires load again.
-      if (frame.contentDocument?.readyState === "complete" && frame.contentWindow?.length !== undefined) settle("ready");
-      frame.addEventListener("load", () => settle("ready"), { once: true });
-      // Belt and braces: an iframe on the page is the form, loaded or not.
-      setTimeout(() => settle("ready"), 1500);
-    };
-    const existing = host.querySelector("iframe");
-    if (existing) watchFrame(existing);
-    const observer = new MutationObserver(() => {
-      const frame = host.querySelector("iframe");
-      if (frame) { observer.disconnect(); watchFrame(frame); }
-    });
-    observer.observe(host, { childList: true, subtree: true });
-    const timer = setTimeout(() => settle("failed"), WHOP_EMBED_TIMEOUT_MS);
-    return () => { observer.disconnect(); clearTimeout(timer); };
+    settledRef.current = false;
+    const timer = window.setTimeout(() => settle("failed"), WHOP_EMBED_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planId]);
 
-  // Whop has used both spellings for the promo attribute across versions of the
-  // loader. An attribute it does not read is inert; a missing one silently costs
-  // the buyer the discount, so both are set.
-  const promoAttrs = promoCode
-    ? { "data-whop-checkout-promo-code": promoCode, "data-whop-checkout-promocode": promoCode }
-    : {};
-
   return (
-    <div
-      key={planId}
-      ref={hostRef}
-      data-whop-checkout-plan-id={planId}
-      data-whop-checkout-theme="dark"
-      data-whop-checkout-theme-accent-color="blue"
-      data-whop-checkout-skip-redirect="true"
-      data-whop-checkout-on-complete={cbName}
-      {...(prefillEmail ? { "data-whop-checkout-prefill-email": prefillEmail } : {})}
-      {...promoAttrs}
-      // No overflow clip and no height cap: the loader sizes the iframe to the
-      // form, and the layer around it scrolls, so the whole form is reachable.
-      className="w-full"
-    />
+    <WhopElements
+      elements={whopElements()}
+      // With this set the provider does not throw, so a blocked or failed SDK
+      // shows our own way out instead of taking the page down with it.
+      onLoadError={(error, retry) => { retryRef.current = retry; settle("failed"); }}
+    >
+      <Checkout
+        // Built above, and read once when the session is minted — the overlay
+        // mounts a fresh checkout per plan rather than updating this one, which
+        // Elements refuses. Note affiliateCode: Elements credits the affiliate
+        // as a first-class option, which the old loader had no way to do. That
+        // is why a referred buyer is STILL sent to the hosted page in
+        // CheckoutOverlay — the redirect can go whenever you want to trust this
+        // instead, and it is a commission, so not a call to make quietly.
+        {...checkoutSessionOptions({ planId, prefillEmail, promoCode, affiliateCode, metadata })}
+        onLoadingChange={(loading) => { if (!loading) settle("ready"); }}
+        // Fires once per mount, before any returnUrl navigation, which makes it
+        // the place for our own analytics and nothing else. Access is granted
+        // from the Whop webhook, never from here: a checkout restored on a later
+        // page load fires this again for the same payment.
+        onComplete={(payload) => {
+          if (payload?.result === "payment") onCompleteRef.current?.(payload.paymentId, payload.sessionId);
+        }}
+      >
+        <CheckoutElement
+          // The buyer's address, when we already know it, on the field Whop
+          // collects it in. Not locked: the address they pay with is theirs to
+          // correct, and it is what their access is keyed on.
+          buyerEmail={prefillEmail || undefined}
+          className="w-full"
+          // Whop's own loading UI, rather than an empty box, while the overlay
+          // still shows its placeholder over the top.
+        />
+      </Checkout>
+    </WhopElements>
   );
 }
 
@@ -1289,6 +1347,10 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         // available: the affiliate code rides on the URL (a=...), which is the
         // only path that credits the commission for certain.
         if (d.checkoutUrl && getRef()) { track("checkout_redirected", { plan: plan.id, ...refProps() }); window.location.assign(d.checkoutUrl); return; }
+        // The escape hatch, taken before the element is ever mounted: with
+        // USE_WHOP_ELEMENTS off every buyer gets Whop's hosted page, which is
+        // the same path a plan with no embeddable id already takes.
+        if (!USE_WHOP_ELEMENTS && d.checkoutUrl) { track("checkout_redirected", { plan: plan.id, reason: "elements_off", ...refProps() }); window.location.assign(d.checkoutUrl); return; }
         if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, promoCode: d.promoCode || "", checkoutUrl: d.checkoutUrl || "", error: "" }); return; }
         // No embeddable plan id configured — gracefully use the hosted page.
         if (d.checkoutUrl) { window.location.assign(d.checkoutUrl); return; }
@@ -1337,7 +1399,26 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
             </div>
           ) : (
             <div className={embed === "ready" ? "" : "min-h-[540px]"}>
-              <WhopCheckoutEmbed planId={load.planId} prefillEmail={prefillEmail} promoCode={load.promoCode} onState={setEmbed} onComplete={() => { track("checkout_completed", { plan: plan.id, ...refProps() }); setDone(true); }} />
+              {/* Keyed on the plan: every option is read once when the session
+                  is minted, so changing the plan has to mount a new checkout
+                  rather than update this one, which Elements refuses. */}
+              <WhopCheckoutEmbed
+                key={load.planId}
+                planId={load.planId}
+                prefillEmail={prefillEmail}
+                promoCode={load.promoCode}
+                affiliateCode={getRef() || ""}
+                metadata={{ plan: plan.id }}
+                onState={setEmbed}
+                onComplete={(paymentId) => {
+                  track("checkout_completed", { plan: plan.id, paymentId: paymentId || "", ...refProps() });
+                  // The tab is about to be redirected to returnUrl, so this face
+                  // is normally never seen. It stands for the case where it is
+                  // not — nothing should leave a buyer who has paid looking at
+                  // a payment form.
+                  setDone(true);
+                }}
+              />
               {/* Over the host until the iframe is in: no empty box while the
                   loader works, and a way out when it does not. */}
               {embed === "loading" && (
@@ -1891,6 +1972,20 @@ function runSelfTests() {
   console.assert(deliveredExt("https://cdn.example/clip.mp4?tag=29") === ".mp4", "a query string must not hide a real extension");
   console.assert(isStillPreview("https://cdn.example/shot.png") && !isStillPreview("https://cdn.example/loop.gif"), "stills drift, gifs animate themselves");
   console.assert(prompts.every((item) => !item.preview || isVideoPreview(item.preview) || isImagePreview(item.preview)), "every preview must classify, or its card falls back to the gradient");
+  // The checkout session's options. Whop reads them once and refuses to change
+  // them, so a wrong one is the wrong order rather than a cosmetic slip.
+  const sessionOpts = checkoutSessionOptions({ planId: "plan_abc123", prefillEmail: "buyer@example.com", promoCode: "", affiliateCode: "", metadata: { plan: "lifetime" } });
+  console.assert(sessionOpts.plan === "plan_abc123", "the plan the buyer clicked is the plan that gets charged");
+  console.assert(sessionOpts.promoCode === undefined && sessionOpts.affiliateCode === undefined, "an empty code must be absent, not empty: Whop shows a reason for a code nobody typed");
+  console.assert(sessionOpts.locale === "fr" || sessionOpts.locale === "en", "the locale must be one Whop ships its text in");
+  console.assert(sessionOpts.appearance?.theme?.appearance === "dark", "the form opens over a dark page and has to match it");
+  // The return URL is where a declined 3DS step lands too, so it must never
+  // assert its own outcome — the status has to come from Whop.
+  const back = new URL(sessionOpts.returnUrl);
+  console.assert(back.pathname === "/success", "a finished checkout must come back to the page that reads the outcome");
+  console.assert(back.searchParams.get("email") === "buyer@example.com", "the address rides along so activation is prefilled");
+  console.assert(!back.searchParams.has("status") && !back.searchParams.has("checkout_status"), "we must never assert the outcome ourselves — a declined payment returns to this same URL");
+  console.assert(back.protocol === "https:" || back.hostname === "localhost", "Whop only accepts an https return URL, or http on localhost");
   console.assert(!validatePlanId("weekly"), "weekly should be invalid");
   // On sale in the grid while the kill switch is on, and off it entirely when
   // it is not — the card and the checkout must never disagree.
@@ -2791,6 +2886,19 @@ function SuccessPage() {
   // contact block — promising support we did not sell is the worse mistake here.
   const [supportEarned, setSupportEarned] = useState(false);
 
+  // What Whop says happened. The embedded checkout sends every finished
+  // checkout here, not only the paid ones: an off-site step that was declined
+  // or abandoned lands on this exact URL with status=failed or status=canceled.
+  // So the outcome is read before anything on this page congratulates anyone —
+  // "Paiement confirmé" over a declined card is the one thing this page must
+  // never say. Absent means a buyer arrived some other way, which this page has
+  // always handled by simply asking for the address.
+  const [outcome] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("status") || "";
+  });
+  const paymentFailed = outcome === "failed" || outcome === "canceled";
+
   // Prefill from ?email= if the checkout redirect carried it, and log a custom
   // event (separate from the automatic /success pageview) so purchase landings
   // are easy to isolate in Vercel Analytics.
@@ -2799,7 +2907,11 @@ function SuccessPage() {
     const params = new URLSearchParams(window.location.search);
     const fromUrl = params.get("email");
     if (fromUrl && !email) setEmail(fromUrl);
-    track("success_page_viewed", { fromCheckout: params.get("checkout_status") === "success" });
+    track("success_page_viewed", {
+      fromCheckout: params.get("checkout_status") === "success" || Boolean(params.get("payment")),
+      status: params.get("status") || "",
+      payment: params.get("payment") || "",
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2854,6 +2966,31 @@ function SuccessPage() {
         </div>
       </header>
 
+      {paymentFailed ? (
+        <section className="relative z-10 mx-auto max-w-xl px-6 pb-24 pt-8 lg:px-8">
+          <div className="text-center">
+            <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl border border-white/12 bg-white/[0.05] text-white/70"><Icon name="alert" className="h-6 w-6" /></div>
+            <h1 className="text-3xl font-bold tracking-tight text-[#EDE9E0] md:text-4xl">
+              {outcome === "canceled" ? t("Payment cancelled", "Paiement annulé") : t("Payment not completed", "Paiement non abouti")}
+            </h1>
+            {/* No charge and no access, said plainly. A buyer who thinks they
+                paid and cannot copy a prompt writes to support; a buyer who
+                knows the card was declined just pays again. */}
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/55 md:text-base">
+              {outcome === "canceled"
+                ? t("Nothing was charged. You can pick up where you left off whenever you like.", "Rien n'a été prélevé. Tu peux reprendre où tu t'es arrêté quand tu veux.")
+                : t("Your bank did not approve the payment, so nothing was charged and no access was granted. You can try again with the same card or another one.", "Ta banque n'a pas validé le paiement : rien n'a été prélevé et aucun accès n'a été ouvert. Tu peux réessayer avec la même carte ou une autre.")}
+            </p>
+            <div className="mt-8 flex flex-col items-center gap-3">
+              <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Try again", "Réessayer")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
+              {/* The one case where a buyer genuinely did pay and still landed
+                  here: the webhook is the record, so point them at a human
+                  rather than at the form again. */}
+              <a href={supportUrl()} className="text-xs text-white/40 transition hover:text-white/75">{t("Already charged? Write to us", "Déjà débité ? Écris-nous")}</a>
+            </div>
+          </div>
+        </section>
+      ) : (
       <section className="relative z-10 mx-auto max-w-2xl px-6 pb-24 pt-8 lg:px-8">
         <div className="text-center">
           <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-emerald-400/[0.1]0 text-white shadow-lg shadow-emerald-500/25"><Icon name="check" className="h-6 w-6" /></div>
@@ -2891,6 +3028,7 @@ function SuccessPage() {
 
         <p className="mt-6 text-center text-xs leading-5 text-white/40">{t("Keep this email address — it's your key to access Movento anytime.", "Garde bien cet email — c'est ta clé pour accéder à Movento à tout moment.")}</p>
       </section>
+      )}
 
       <footer className="relative z-10 border-t border-white/10 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
