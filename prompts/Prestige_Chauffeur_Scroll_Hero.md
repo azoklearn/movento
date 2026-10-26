@@ -1,4 +1,4 @@
-Build a single-page luxury chauffeur website as a React + Vite + Tailwind CSS project. The centrepiece is a scroll-scrubbed cinematic hero: a 650-frame image sequence that plays forward as the visitor scrolls, like a film reel tied to the scrollbar. Dark, editorial, expensive. No video element for the hero — frames only.
+Build a single-page luxury chauffeur website as a React + Vite + Tailwind CSS project. The centrepiece is a scroll-scrubbed cinematic hero: a 217-frame image sequence that plays forward as the visitor scrolls, like a film reel tied to the scrollbar. Dark, editorial, expensive. No video element for the hero — frames only.
 
 This is a TEMPLATE. Every brand name, phone number, address and photograph below is a placeholder: replace them with your own. The design, the layout, the type scale, the colours and the scroll technique are the deliverable.
 
@@ -30,33 +30,44 @@ Colours — a near-black maroon ground with one hot crimson accent:
 Selection: background #c81f3a, text white. <html> and <body> carry bg-[#0d0606] text-[#f5ede8] antialiased overflow-x-hidden.
 
 =====================================================================
-3. ASSETS YOU MUST SUPPLY (exact specs — shoot, render or generate them)
+3. ASSETS (hosted and ready — use these exact URLs)
 =====================================================================
-Serve everything from /public so the paths below resolve at the site root.
+Every file below is live. Reference the absolute URLs as given and the page works on the first run; nothing to
+download, nothing to place in /public.
 
-A. HERO FRAME SEQUENCE — the whole point of the page.
-   /frames/<sequence-name>/desktop/f_001.webp … f_650.webp   — 1600×900, ~73 KB each (~46 MB total)
-   /frames/<sequence-name>/mobile/f_001.webp  … f_650.webp   — 960×540,  ~41 KB each (~26 MB total)
-   650 frames, three digits, zero-padded, 1-indexed. Export a 20–26s cinematic clip at ~25–30fps to WebP (quality ~72).
-   Suggested narrative arc, which the copy beats below are timed to:
-     f_001–f_240  a fleet of dark saloons parked in a lit tunnel, head-on, symmetrical; headlights come up around f_120
-     f_241–f_330  the centre car pulls away, out of the tunnel into a wet night street
-     f_331–f_500  it draws up outside a grand illuminated building; a chauffeur steps out and opens the rear door
-     f_501–f_650  close on the handover — a card, a key, a handshake. Ends on your logo in frame.
-B. HERO POSTER (shown until the first frames decode, and as the <img> fallback):
-   /assets/hero-poster-1080.webp  1920×1080      /assets/hero-poster-720.webp  1280×720
-   Use frame 1 of the sequence, graded identically.
-C. FLEET CUTOUTS — three vehicles, transparent background (WebP with alpha, VP8X):
-   /assets/car-saloon.webp    2400×1248     three-quarter front, wheels level, lit from the left
-   /assets/car-executive.webp 2400×1187
-   /assets/car-people.webp    2400×1336
-D. ABOUT STILL — the same car in motion on a wet city street at dusk, shallow depth of field:
-   /assets/about-still-2560.webp  2560×1440      /assets/about-still-3840.webp  3840×2160
-E. RIBBON TRANSITION — a short alpha-channel flourish between the fleet and the about section:
-   /assets/ribbon-unfurl.webm  (VP9 + alpha, ~900 KB)   /assets/ribbon-unfurl.mov  (HEVC + alpha, Safari)
-   Ship both and put the .webm first in the <video>; Safari takes the .mov.
+A. HERO FRAME SEQUENCE — the whole point of the page. 217 frames, three digits, zero-padded, 1-indexed.
+   Desktop (1600×900, ~71 KB each):
+     https://movento.dev/five-star/frames/desktop/f_001.webp … https://movento.dev/five-star/frames/desktop/f_217.webp
+   Mobile (960×540, ~40 KB each), served below 768px:
+     https://movento.dev/five-star/frames/mobile/f_001.webp … https://movento.dev/five-star/frames/mobile/f_217.webp
+   Build the URL, do not hardcode 217 strings:
+     const src = (i) => `https://movento.dev/five-star/frames/${variant}/f_${String(i + 1).padStart(3, "0")}.webp`;
+   What the sequence shows, which the copy beats in section 4 are timed to:
+     f_001–f_080  a fleet of dark saloons parked head-on in a lit tunnel; headlights come up around f_040
+     f_081–f_110  the centre car pulls away, out of the tunnel into a wet night street
+     f_111–f_167  it draws up outside a grand illuminated building; a chauffeur steps out and opens the rear door
+     f_168–f_217  close on the handover — a card passed between two hands, the building lights behind
+B. HERO POSTER — drawn immediately, before any frame decodes, and kept as the <img> fallback:
+   https://movento.dev/five-star/assets/hero-poster-1080.webp   1920×1080
+   https://movento.dev/five-star/assets/hero-poster-720.webp    1280×720
+C. FLEET CUTOUTS — transparent background, three-quarter front:
+   https://movento.dev/five-star/assets/car-saloon.webp      2400×1248
+   https://movento.dev/five-star/assets/car-executive.webp   2400×1187
+   https://movento.dev/five-star/assets/car-people.webp      2400×1336
+D. ABOUT STILL — a saloon in motion on a wet city street at dusk:
+   https://movento.dev/five-star/assets/about-still-2560.webp   2560×1440
+   https://movento.dev/five-star/assets/about-still-3840.webp   3840×2160
+E. RIBBON TRANSITION — alpha video between the fleet and the about section. Put the .webm first; Safari takes the .mov:
+   https://movento.dev/five-star/assets/ribbon-unfurl.webm   (VP9 + alpha)
+   https://movento.dev/five-star/assets/ribbon-unfurl.mov    (HEVC + alpha)
 F. FAVICON — inline SVG data URI, a five-point star in the accent colour:
    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23c81f3a' d='M12 2l2.9 6.9 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21.2l1.6-7L2 9.5l7.1-.6z'/%3E%3C/svg%3E" />
+
+BEFORE YOU GO LIVE: these URLs are fine while you build and demo, but a desktop visitor pulls ~15 MB of frames, and
+that bandwidth is billed to the host above, not to you. Copy the files to your own CDN or /public and swap the base
+URL before you put the site in front of real traffic. The sequence is also someone's film: shoot or render your own
+if the site is going to carry a brand, and keep the specs in section 4 — the frame count, the naming and the two
+sizes are what the code below expects.
 
 =====================================================================
 4. THE SCROLL-SCRUBBED HERO (build this first)
@@ -67,14 +78,14 @@ Progress:
   const rect = container.getBoundingClientRect();
   const scrollable = rect.height - window.innerHeight;
   const p = scrollable > 0 ? clamp(-rect.top / scrollable, 0, 1) : 0;
-  const frame = Math.min(TOTAL - 1, Math.round(p * (TOTAL - 1)));     // TOTAL = 650
+  const frame = Math.min(TOTAL - 1, Math.round(p * (TOTAL - 1)));     // TOTAL = 217
 Draw on requestAnimationFrame, and only when the frame index actually changed.
 
 Variant and path:
   const variant = window.matchMedia("(max-width: 767px)").matches ? "mobile" : "desktop";
-  const src = (i) => `/frames/${sequence}/${variant}/f_${String(i + 1).padStart(3, "0")}.webp`;
+  const src = (i) => `https://movento.dev/five-star/frames/${variant}/f_${String(i + 1).padStart(3, "0")}.webp`;
 
-Progressive preload — this is what makes it feel instant. Walk the sequence with decreasing strides [16, 8, 4, 2, 1], queueing each index once (a Set guards repeats). Every pass fills in the gaps of the last, so the scrub is coarse-but-complete within a second and sharpens as the rest arrive. Keep decoded frames in a fixed-length array; never hold two arrays of 650 Images.
+Progressive preload — this is what makes it feel instant. Walk the sequence with decreasing strides [16, 8, 4, 2, 1], queueing each index once (a Set guards repeats). Every pass fills in the gaps of the last, so the scrub is coarse-but-complete within a second and sharpens as the rest arrive. Keep decoded frames in a fixed-length array; never hold two arrays of 217 Images.
 Draw the nearest already-loaded frame when the exact one has not arrived, so the canvas never blanks.
 Re-evaluate the variant on resize across the 767px boundary and start a fresh preload.
 
