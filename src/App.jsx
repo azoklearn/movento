@@ -100,6 +100,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Prestige Chauffeur — Cinematic Scroll Hero", category: "Landing Page", type: "Landing", file: "Prestige_Chauffeur_Scroll_Hero.md", pinned: true, preview: "https://res.cloudinary.com/dk2kai0as/video/upload/v1792993761/bu_ma6zbc.mov", tags: ["Scroll Scrub", "Frame Sequence", "Luxury"], gradient: "from-[#f5ede8] via-[#c81f3a] to-[#0d0606]" },
   { title: "Melli — Master 3D Artistry", category: "Landing Page", type: "Landing", file: "Melli_Master_3D_Artistry.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261017_154537_1384fa6d-282d-46e2-8748-a70be1cf681a.png&w=1280&q=85", tags: ["Three.js", "GLB Models", "Scroll Story"], gradient: "from-[#e7e3fb] via-[#5b3bd1] to-[#0d0b1a]" },
   { title: "Meadowbell — Plucky Sprout Squad", category: "Landing Page", type: "Hero", file: "Meadowbell_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261020_084719_bdc7ea79-85d0-4149-8c11-7ecfec991eba.png&w=1280&q=85", tags: ["Anime", "Kids TV", "Video"], gradient: "from-sky-200 via-emerald-400 to-[#16240f]" },
   { title: "Feather Atlas — 3D Bird Field Guide", category: "Landing Page", type: "Hero", file: "Feather_Atlas_3D_Bird_Guide.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261004_105730_10a54951-d439-4e1b-9776-2b9e54fdd1b1.png&w=1280&q=85", tags: ["Three.js", "GLB Models", "Editorial"], gradient: "from-[#f6f1e7] via-[#4d5a3d] to-[#14170f]" },
@@ -367,6 +368,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Prestige_Chauffeur_Scroll_Hero.md",
   "Melli_Master_3D_Artistry.md",
   "Meadowbell_Hero.md",
   "Feather_Atlas_3D_Bird_Guide.md",
