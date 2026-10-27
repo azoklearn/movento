@@ -100,6 +100,13 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Orvante — Monochrome Branding Agency", category: "Agency", type: "Landing", file: "Orvante_Branding_Agency.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/orvante-agency.mp4", tags: ["Editorial", "Monochrome", "Scroll Fill"], gradient: "from-[#dadada] via-[#6f6f6f] to-[#000000]" },
+  { title: "NORVA — Night City Staffing Hero", category: "SaaS", type: "Hero", file: "Norva_Night_City_Staffing_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/norva-staffing-hero.mp4", tags: ["Scroll Scrub", "Isometric 3D", "Video"], gradient: "from-[#c6ff2e] via-[#3fd8ff] to-[#0f1626]" },
+  { title: "Wild — Pill Reveal Hero", category: "Landing Page", type: "Hero", file: "Wild_Pill_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/wild-pill-hero.mp4", tags: ["Reveal", "Travel", "Video"], gradient: "from-[#ffffff] via-[#a9a9a6] to-[#1b1b1b]" },
+  { title: "Logistics — Aerial Climb Scroll Hero", category: "Landing Page", type: "Hero", file: "Freight_Scroll_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261023_072356_6829b75c-8dc0-44bf-9593-73f508f599d7.png&w=1280&q=85", tags: ["Scroll Scrub", "Aerial", "Logistics"], gradient: "from-[#F7F5EF] via-[#8f8b8a] to-[#0a0b0c]" },
+  { title: "KV — Freight Services Scroll Hero", category: "Landing Page", type: "Landing", file: "KV_Freight_Services_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/freight-services-hero.mp4", tags: ["Scroll Scrub", "Product Render", "Blend Mode"], gradient: "from-[#ffffff] via-[#2f63ff] to-[#111111]" },
+  { title: "Petalyx — Cherry Blossom SaaS", category: "SaaS", type: "Landing", file: "Petalyx_Cherry_Blossom_SaaS.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261022_092440_a7e1d115-27f9-4496-ab60-3033aacc6bba.png&w=1280&q=85", tags: ["GSAP", "Lenis", "Watercolor"], gradient: "from-[#e7efcf] via-[#b4cd52] to-[#121410]" },
+  { title: "Tana Camps — Elephant Editorial", category: "Landing Page", type: "Landing", file: "Tana_Camps_Elephant_Sections.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/tana-elephant-sections.mp4", tags: ["Editorial", "Didone", "Letter Reveal"], gradient: "from-[#ECE3D1] via-[#A86438] to-[#43282A]" },
   { title: "Prestige Chauffeur — Cinematic Scroll Hero", category: "Landing Page", type: "Landing", file: "Prestige_Chauffeur_Scroll_Hero.md", pinned: true, preview: "https://res.cloudinary.com/dk2kai0as/video/upload/v1792993761/bu_ma6zbc.mov", tags: ["Scroll Scrub", "Frame Sequence", "Luxury"], gradient: "from-[#f5ede8] via-[#c81f3a] to-[#0d0606]" },
   { title: "Melli — Master 3D Artistry", category: "Landing Page", type: "Landing", file: "Melli_Master_3D_Artistry.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261017_154537_1384fa6d-282d-46e2-8748-a70be1cf681a.png&w=1280&q=85", tags: ["Three.js", "GLB Models", "Scroll Story"], gradient: "from-[#e7e3fb] via-[#5b3bd1] to-[#0d0b1a]" },
   { title: "Meadowbell — Plucky Sprout Squad", category: "Landing Page", type: "Hero", file: "Meadowbell_Hero.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261020_084719_bdc7ea79-85d0-4149-8c11-7ecfec991eba.png&w=1280&q=85", tags: ["Anime", "Kids TV", "Video"], gradient: "from-sky-200 via-emerald-400 to-[#16240f]" },
@@ -368,6 +375,13 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Orvante_Branding_Agency.md",
+  "Norva_Night_City_Staffing_Hero.md",
+  "Wild_Pill_Hero.md",
+  "Freight_Scroll_Hero.md",
+  "KV_Freight_Services_Hero.md",
+  "Petalyx_Cherry_Blossom_SaaS.md",
+  "Tana_Camps_Elephant_Sections.md",
   "Prestige_Chauffeur_Scroll_Hero.md",
   "Melli_Master_3D_Artistry.md",
   "Meadowbell_Hero.md",
