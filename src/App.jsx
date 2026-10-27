@@ -615,15 +615,103 @@ const LIVE_PREVIEW_EMAILS = new Set(["barbelinnoan@gmail.com"]);
 // `node scripts/prompt-dates.mjs`). A hosted file not yet in the map is newer
 // than everything in it; a link-only entry (no file) has no date and goes last
 // of its block; ties (the initial import) keep array order.
+// Moved up from beside the other preview helpers: the gallery sort below
+// reads isStillPreview, and a const declared further down is still in its
+// temporal dead zone when this array is built at module level.
+// Query strings are matched too: CDNs hand out URLs like ".../clip.mp4?tag=29",
+// which an endsWith check alone would misread as "not a video".
+const hasPreviewExt = (url, exts) => Boolean(url) && exts.some((ext) => url.endsWith(ext) || url.includes(`${ext}?`));
+
+// Some previews arrive through a resizing proxy that puts the real file in a
+// query parameter and ends on the proxy's own options:
+// "https://images.higgs.ai/?output=webp&url=<encoded original>&w=1280&q=85".
+// The outer URL has no extension at all, so it has to be unwrapped first —
+// otherwise the card silently falls back to the generated gradient.
+const proxiedPreview = (url) => {
+  const q = url ? url.indexOf("?") : -1;
+  if (q < 0) return "";
+  try {
+    return new URLSearchParams(url.slice(q + 1)).get("url") || "";
+  } catch {
+    return "";
+  }
+};
+
+// A resizing proxy also says what it CONVERTS to, and that is not what it was
+// given: every higgs URL carries "output=webp" over a .png source and returns
+// an ANIMATED webp. So the output parameter is read on its own, and it outranks
+// both extensions below.
+const proxyOutputExt = (url) => {
+  const q = url ? url.indexOf("?") : -1;
+  if (q < 0) return "";
+  try {
+    const out = new URLSearchParams(url.slice(q + 1)).get("output");
+    return out ? `.${out.trim().toLowerCase()}` : "";
+  } catch {
+    return "";
+  }
+};
+
+const PREVIEW_EXTS = [".mp4", ".webm", ".mov", ".png", ".jpg", ".jpeg", ".gif", ".webp"];
+
+// The extension of the file a preview URL actually DELIVERS, from the three
+// places it can be stated, most authoritative first:
+//   1. the proxy's own "output" — what it converts to;
+//   2. the URL's own extension — when nothing is proxied;
+//   3. the extension of the original file, unwrapped from the proxy's "url".
+//
+// The order is the fix: read bottom-up, the 30 higgs previews came out as .png
+// and counted as stills, so each one got a nine-second Ken Burns pan laid over
+// a clip that was already moving. They are animated webp and now say so.
+const deliveredExt = (url) => {
+  const converted = proxyOutputExt(url);
+  if (converted) return PREVIEW_EXTS.includes(converted) ? converted : "";
+  const own = PREVIEW_EXTS.find((ext) => hasPreviewExt(url, [ext]));
+  if (own) return own;
+  const source = proxiedPreview(url);
+  return PREVIEW_EXTS.find((ext) => hasPreviewExt(source, [ext])) || "";
+};
+
+// Which element the card mounts — a <video> or an <img>. That IS the container's
+// business, so both read deliveredExt.
+const isVideoPreview = (url) => [".mp4", ".webm", ".mov"].includes(deliveredExt(url));
+const isImagePreview = (url) => [".png", ".jpg", ".jpeg", ".gif", ".webp"].includes(deliveredExt(url));
+
+// Whether the preview MOVES, which the container does not settle: a .webp holds
+// either one frame or an animation, and nothing in the URL says which. So this
+// one reads the SOURCE and not deliveredExt — a converting proxy changes the
+// container and cannot invent frames, so a .png handed to output=webp comes
+// back a still webp however the file is now named.
+//
+// Classifying by the container is exactly the mistake that took the drift off
+// the 30 higgs previews: their source is a .png, the proxy labels them .webp,
+// and the card left them sitting there with no motion at all. .gif stays out
+// because a gif genuinely carries its own animation, and drifting something
+// already moving reads as a glitch.
+const isStillPreview = (url) => hasPreviewExt(url, [".png", ".jpg", ".jpeg"]) || hasPreviewExt(proxiedPreview(url), [".png", ".jpg", ".jpeg"]);
+
 const addedAt = (item) => PROMPT_ADDED[item.file] ?? (AVAILABLE_FILES.has(item.file) ? Infinity : 0);
 const hasDemo = (item) => (SHOW_DEMO_LINKS && item.demo ? 1 : 0);
 const isPinned = (item) => (item.pinned ? 1 : 0);
+// Whether the card moves BY ITSELF — a clip or a gif, as against a still that
+// only gets the Ken Burns pan, and against an entry with no preview at all,
+// which falls through to the generated gradient. A grid of moving tiles sells
+// the catalogue; a still among them reads as a broken one, so the movers lead.
+//
+// Read from the same isStillPreview the card uses to decide whether to drift,
+// so the order and the drift can never disagree about what moves.
+const movesItself = (item) => (item.preview && !isStillPreview(item.preview) ? 1 : 0);
 const availablePrompts = prompts
   .map((item, i) => ({ item, i }))
   .filter(({ item }) => isPromptAvailable(item))
   .sort(
     (a, b) =>
+      // Pinned still outranks everything: "put this one first" has to keep
+      // meaning first. Motion sorts INSIDE the pinned block as well as outside
+      // it, so the top of the gallery is all movement rather than a curated
+      // block with dead tiles scattered through it.
       isPinned(b.item) - isPinned(a.item) ||
+      movesItself(b.item) - movesItself(a.item) ||
       (isPinned(a.item) ? 0 : hasDemo(b.item) - hasDemo(a.item) || addedAt(b.item) - addedAt(a.item)) ||
       a.i - b.i,
   )
@@ -1595,77 +1683,6 @@ const slugify = (value) =>
     .replace(/^-+|-+$/g, "");
 const promptPath = (item) => `/prompt/${slugify(item.title)}`;
 
-// Query strings are matched too: CDNs hand out URLs like ".../clip.mp4?tag=29",
-// which an endsWith check alone would misread as "not a video".
-const hasPreviewExt = (url, exts) => Boolean(url) && exts.some((ext) => url.endsWith(ext) || url.includes(`${ext}?`));
-
-// Some previews arrive through a resizing proxy that puts the real file in a
-// query parameter and ends on the proxy's own options:
-// "https://images.higgs.ai/?output=webp&url=<encoded original>&w=1280&q=85".
-// The outer URL has no extension at all, so it has to be unwrapped first —
-// otherwise the card silently falls back to the generated gradient.
-const proxiedPreview = (url) => {
-  const q = url ? url.indexOf("?") : -1;
-  if (q < 0) return "";
-  try {
-    return new URLSearchParams(url.slice(q + 1)).get("url") || "";
-  } catch {
-    return "";
-  }
-};
-
-// A resizing proxy also says what it CONVERTS to, and that is not what it was
-// given: every higgs URL carries "output=webp" over a .png source and returns
-// an ANIMATED webp. So the output parameter is read on its own, and it outranks
-// both extensions below.
-const proxyOutputExt = (url) => {
-  const q = url ? url.indexOf("?") : -1;
-  if (q < 0) return "";
-  try {
-    const out = new URLSearchParams(url.slice(q + 1)).get("output");
-    return out ? `.${out.trim().toLowerCase()}` : "";
-  } catch {
-    return "";
-  }
-};
-
-const PREVIEW_EXTS = [".mp4", ".webm", ".mov", ".png", ".jpg", ".jpeg", ".gif", ".webp"];
-
-// The extension of the file a preview URL actually DELIVERS, from the three
-// places it can be stated, most authoritative first:
-//   1. the proxy's own "output" — what it converts to;
-//   2. the URL's own extension — when nothing is proxied;
-//   3. the extension of the original file, unwrapped from the proxy's "url".
-//
-// The order is the fix: read bottom-up, the 30 higgs previews came out as .png
-// and counted as stills, so each one got a nine-second Ken Burns pan laid over
-// a clip that was already moving. They are animated webp and now say so.
-const deliveredExt = (url) => {
-  const converted = proxyOutputExt(url);
-  if (converted) return PREVIEW_EXTS.includes(converted) ? converted : "";
-  const own = PREVIEW_EXTS.find((ext) => hasPreviewExt(url, [ext]));
-  if (own) return own;
-  const source = proxiedPreview(url);
-  return PREVIEW_EXTS.find((ext) => hasPreviewExt(source, [ext])) || "";
-};
-
-// Which element the card mounts — a <video> or an <img>. That IS the container's
-// business, so both read deliveredExt.
-const isVideoPreview = (url) => [".mp4", ".webm", ".mov"].includes(deliveredExt(url));
-const isImagePreview = (url) => [".png", ".jpg", ".jpeg", ".gif", ".webp"].includes(deliveredExt(url));
-
-// Whether the preview MOVES, which the container does not settle: a .webp holds
-// either one frame or an animation, and nothing in the URL says which. So this
-// one reads the SOURCE and not deliveredExt — a converting proxy changes the
-// container and cannot invent frames, so a .png handed to output=webp comes
-// back a still webp however the file is now named.
-//
-// Classifying by the container is exactly the mistake that took the drift off
-// the 30 higgs previews: their source is a .png, the proxy labels them .webp,
-// and the card left them sitting there with no motion at all. .gif stays out
-// because a gif genuinely carries its own animation, and drifting something
-// already moving reads as a glitch.
-const isStillPreview = (url) => hasPreviewExt(url, [".png", ".jpg", ".jpeg"]) || hasPreviewExt(proxiedPreview(url), [".png", ".jpg", ".jpeg"]);
 
 function posterFor(previewUrl) {
   // Name the poster after the real file, not after the proxy's option string.
