@@ -100,6 +100,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Oda Nobunaga — Unifiers of Japan", category: "Landing Page", type: "Landing", file: "Oda_Nobunaga_Unifiers_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/oda-nobunaga-hero.mp4", tags: ["WebGL", "Scroll Build", "Editorial"], gradient: "from-[#FAF3E9] via-[#E40038] to-[#201408]" },
   { title: "Orvante — Monochrome Branding Agency", category: "Agency", type: "Landing", file: "Orvante_Branding_Agency.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/orvante-agency.mp4", tags: ["Editorial", "Monochrome", "Scroll Fill"], gradient: "from-[#dadada] via-[#6f6f6f] to-[#000000]" },
   { title: "NORVA — Night City Staffing Hero", category: "SaaS", type: "Hero", file: "Norva_Night_City_Staffing_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/norva-staffing-hero.mp4", tags: ["Scroll Scrub", "Isometric 3D", "Video"], gradient: "from-[#c6ff2e] via-[#3fd8ff] to-[#0f1626]" },
   { title: "Wild — Pill Reveal Hero", category: "Landing Page", type: "Hero", file: "Wild_Pill_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/wild-pill-hero.mp4", tags: ["Reveal", "Travel", "Video"], gradient: "from-[#ffffff] via-[#a9a9a6] to-[#1b1b1b]" },
@@ -375,6 +376,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Oda_Nobunaga_Unifiers_Hero.md",
   "Orvante_Branding_Agency.md",
   "Norva_Night_City_Staffing_Hero.md",
   "Wild_Pill_Hero.md",
