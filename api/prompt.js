@@ -1,5 +1,5 @@
 import {
-  customerHasWhopAccess,
+  customerAccessLevel,
   customerOwnsPrompt,
   extractPrompt,
   fetchPromptMarkdown,
@@ -7,6 +7,7 @@ import {
   isSafePromptFile,
   methodNotAllowed,
   normalizeEmail,
+  promptAllowedFor,
 } from "./_shared.js";
 
 export default async function handler(req, res) {
@@ -20,9 +21,24 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid prompt." });
   }
 
-  // Three ways in: the prompt is free, the customer has full access, or they
-  // bought this one prompt on its own.
-  if (!isFreePrompt && !(await customerHasWhopAccess(email)) && !(await customerOwnsPrompt(email, file))) {
+  // Who they are, then whether that entitles them to this file. The rules are
+  // in promptAllowedFor; this only gathers what they need.
+  const level = await customerAccessLevel(email);
+  const onTrial = level === "trial";
+  // customerOwnsPrompt is the one expensive input, so it is only read when the
+  // cheap ones have not already settled it.
+  const owns = isFreePrompt || level === "full" ? false : await customerOwnsPrompt(email, file);
+
+  if (!promptAllowedFor({ level, file, isFreePrompt, owns })) {
+    // A trial member is a customer, not a stranger: tell them this one is
+    // waiting rather than that they need to buy something they already have.
+    if (onTrial) {
+      return res.status(403).json({
+        error: "Ce prompt arrive à la fin de ton essai.",
+        errorEn: "This prompt unlocks when your trial ends.",
+        trial: true,
+      });
+    }
     return res.status(403).json({ error: "Premium access required." });
   }
 

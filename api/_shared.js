@@ -27,6 +27,26 @@ const SHOWCASE_FILES = [
   "Kimi_Grido1_Racing_Systems.md",
 ];
 export const FREE_PROMPT_FILES = new Set(TRIAL_DAYS > 0 ? [] : SHOWCASE_FILES);
+// Whether a given prompt may be handed over. Pure, and separate from the
+// endpoint, because this is the one decision in the codebase that both gives
+// away paid work and withholds work already paid for — it is worth being able
+// to test every row of it rather than only the paths a mock happens to reach.
+//
+// `level` comes from customerAccessLevel, `owns` from customerOwnsPrompt.
+export function promptAllowedFor({ level, file, isFreePrompt, owns }) {
+  if (isFreePrompt) return true;       // free for everyone, customer or not
+  if (level === "full") return true;   // the catalogue was bought
+  if (owns) return true;               // this one prompt was bought on its own
+  // The trial, and the only place its limit is real: Whop's free days grant the
+  // whole monthly plan, so without this a trial member asking for prompt 187
+  // would be handed it by any check that only asks "is this membership live?".
+  return level === "trial" && TRIAL_PROMPT_FILES.has(file);
+}
+
+// What the trial hands over, and the whole of it. The same four files: with no
+// trial they are given away for an email, and with one they are what the free
+// days are for. The other prompts arrive when the trial converts.
+export const TRIAL_PROMPT_FILES = new Set(TRIAL_DAYS > 0 ? SHOWCASE_FILES : []);
 
 // The prompts live in this repo. While it is public, anyone can download the
 // whole catalogue straight from raw.githubusercontent.com and the paywall counts
@@ -365,10 +385,6 @@ export async function redisGetAccessRecord(normalizedEmail) {
   }
 }
 
-async function redisGetAccess(normalizedEmail) {
-  return Boolean(await redisGetAccessRecord(normalizedEmail));
-}
-
 export async function redisSetAccess(normalizedEmail, record) {
   const redis = Redis.fromEnv();
   await redis.set(`access:${normalizedEmail}`, record);
@@ -684,33 +700,72 @@ export function membershipPlanKind(membership) {
   return planKindFromPlanId(membership?.plan?.id || membership?.plan_id || membership?.plan);
 }
 
-export async function customerHasWhopAccess(email) {
+// The webhook's record is a SNAPSHOT taken at purchase and rewritten whenever a
+// payment lands — not a live status. Read it for the trial and one failure mode
+// matters: if the conversion payment never produced a webhook, a subscriber who
+// is now paying would sit at "trialing" for ever and lose the catalogue they
+// are paying for. So the trial reading has to be fresh as well as present. Past
+// the trial window plus a day's grace, a membership that is still valid can
+// only be one that converted — Whop would have deactivated it otherwise, and a
+// deactivation clears the record outright.
+function recordAccessLevel(record) {
+  if (TRIAL_DAYS <= 0 || record?.status !== "trialing") return "full";
+  const started = Date.parse(record.grantedAt || "");
+  if (!Number.isFinite(started)) return "full";
+  return (Date.now() - started) / 86400000 <= TRIAL_DAYS + 1 ? "trial" : "full";
+}
+
+// What a membership actually entitles someone to.
+//
+//   "full"  — the catalogue: a paid subscription, a lifetime, anything live
+//             that is not a trial
+//   "trial" — the showcase prompts and nothing else. Whop's trial grants the
+//             whole plan, so this limit is ours to enforce: without it the free
+//             days hand over all 200 prompts and leave nothing to convert to
+//   "none"  — blocked, pack-only, or not a customer
+//
+// Deliberately asymmetric. "trial" comes back only when the membership is
+// POSITIVELY known to be inside its trial window, and every doubt resolves to
+// "full": shutting a paying customer out of the catalogue they bought is a far
+// worse failure than a trial that runs a day long.
+export async function customerAccessLevel(email) {
   const normalizedEmail = normalizeEmail(email);
-  if (!normalizedEmail) return false;
+  if (!normalizedEmail) return "none";
 
   // Before either source below, which is the whole point of a block: clearing
   // the access record alone is undone by the Whop fallback further down.
-  if (await redisIsBlocked(normalizedEmail)) return false;
+  if (await redisIsBlocked(normalizedEmail)) return "none";
 
   // Fast path: the grant written by the Whop webhook at purchase. Never deleted
   // here, so a Whop API hiccup can't lock out paying customers.
-  if (await redisGetAccess(normalizedEmail)) return true;
+  const record = await redisGetAccessRecord(normalizedEmail);
+  if (record) return recordAccessLevel(record);
 
   try {
     const membership = await findWhopMembership(normalizedEmail);
-    if (!membership) return false;
+    if (!membership) return "none";
     // A pack buys a few prompts, NOT the catalogue. Whop creates a membership
     // for it like any other purchase, so without this check the fallback below
     // handed the whole catalogue to a pack buyer.
-    //
-    // Every other membership still passes, including one whose plan we cannot
+    if (membershipPlanKind(membership) === "pack") return "none";
+    // Straight from Whop, so the status is current and needs no grace window
+    // the way the stored record does.
+    if (TRIAL_DAYS > 0 && membership.status === "trialing") return "trial";
+    // Every other membership passes, including one whose plan we cannot
     // identify: this path exists so a lifetime buyer is not locked out when the
     // webhook fails, and an unfamiliar payload must not cost them their access.
-    return membershipPlanKind(membership) !== "pack";
+    return "full";
   } catch (error) {
     console.error("Whop access check failed:", error);
-    return false;
+    return "none";
   }
+}
+
+// Full access, which is what every caller but the prompt endpoint means by
+// "has access". A trial is deliberately NOT access here: it unlocks four files,
+// not the catalogue, and those travel as owned prompts instead.
+export async function customerHasWhopAccess(email) {
+  return (await customerAccessLevel(email)) === "full";
 }
 
 // Grants a pack's credits straight from the Whop API, for when the webhook

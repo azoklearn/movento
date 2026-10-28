@@ -953,11 +953,13 @@ const plans = [
     period: t("/ mo", "/ mois"),
     perDay: perDayOf("m1"),
     // What the buyer is actually agreeing to, in the line directly under the
-    // price. With a trial that is two facts, not one: nothing today, and what
-    // is taken on the day it ends. Saying only "3 days free" is the half of it
-    // that gets a card entered and a refund asked for.
+    // price. With a trial that is three facts, not one: nothing today, how
+    // much of the catalogue the free days actually cover, and what is taken on
+    // the day they end. "3 days free" alone is the half that gets a card
+    // entered and a refund asked for, and "3 days free" over all 200 prompts
+    // would be the half that is not even true.
     billedNote: TRIAL_DAYS > 0
-      ? t(`${TRIAL_DAYS} days free, then ${eur(termOf("m1").price)} a month`, `${TRIAL_DAYS} jours gratuits, puis ${eur(termOf("m1").price)} par mois`)
+      ? t(`${TRIAL_DAYS} days free on ${SHOWCASE_FILES.length} prompts, then ${eur(termOf("m1").price)} a month`, `${TRIAL_DAYS} jours gratuits sur ${SHOWCASE_FILES.length} prompts, puis ${eur(termOf("m1").price)} par mois`)
       : t("renewed every month", "renouvelé chaque mois"),
     badge: TRIAL_DAYS > 0 ? t(`${TRIAL_DAYS} days free`, `${TRIAL_DAYS} jours offerts`) : undefined,
     cta: TRIAL_DAYS > 0
@@ -1851,7 +1853,7 @@ function GeneratedPreview({ item }) {
   );
 }
 
-function PreviewCard({ item, badge, onClick, onPreview }) {
+function PreviewCard({ item, badge, onClick, onPreview, held }) {
   const [previewFailed, setPreviewFailed] = useState(false);
   const [inView, setInView] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -1920,9 +1922,16 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
         {/* Said on the tile, not in a tooltip: a gift glyph in the corner of
             the title row is only legible to someone already hunting for it,
             and the whole point of the giveaway is that it reads at a glance. */}
-        {SHOWCASE_SET.has(item.file) && TRIAL_DAYS === 0 && (
+        {/* These four are the way in either way: given away for an email with
+            no trial, and the whole of what the free days cover with one.
+            Dropped once the visitor holds the prompt some OTHER way — full
+            access, a separate purchase, a running trial — because then the
+            offer is spent. Not merely "unlocked": with no trial these cards are
+            unlocked BY being free, and hiding the badge for that reason would
+            hide the giveaway from the only people it is aimed at. */}
+        {SHOWCASE_SET.has(item.file) && !held && (
           <span className="pointer-events-none absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1.5 rounded-full bg-emerald-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#04150d] shadow-lg shadow-black/50">
-            <Icon name="gift" className="h-3 w-3" /> {t("Free", "Gratuit")}
+            <Icon name="gift" className="h-3 w-3" /> {TRIAL_DAYS > 0 ? t(`${TRIAL_DAYS} days free`, `${TRIAL_DAYS} jours offerts`) : t("Free", "Gratuit")}
           </span>
         )}
         {!inView ? <div className="relative aspect-[1.35]"><PreviewSkeleton item={item} /></div> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className="block h-auto w-full transition duration-500" style={{ aspectRatio: "auto 1.35 / 1" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`block h-auto w-full ${driftClass} transition duration-500`} style={{ aspectRatio: "auto 1.35 / 1" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <div className="relative aspect-[1.35]"><GeneratedPreview item={item} /></div>}
@@ -2102,8 +2111,14 @@ export default function MoventoSite() {
   const [unlockNotice, setUnlockNotice] = useState("");
   const [accessEmail, setAccessEmail] = useState(getStoredAccessEmail);
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
-  // Prompts bought one at a time, and purchases not yet spent on one.
+  // Prompts bought one at a time, and purchases not yet spent on one. The
+  // trial's prompts arrive through the same set: the API puts them in `owned`,
+  // so everything that unlocks a bought prompt unlocks a trial one unchanged.
   const [ownedPrompts, setOwnedPrompts] = useState(() => new Set());
+  // On the free days, as against paying. Not an access level of its own — what
+  // is unlocked is already in ownedPrompts — only what the page should say
+  // about why the rest is shut.
+  const [trialActive, setTrialActive] = useState(false);
   const [promptCredits, setPromptCredits] = useState(0);
   const [accessStatus, setAccessStatus] = useState({ loading: false, message: "", error: "" });
   const [checkoutPlan, setCheckoutPlan] = useState(null); // plan being purchased in the embedded overlay
@@ -2240,6 +2255,7 @@ export default function MoventoSite() {
       if (!response.ok) throw new Error(apiError(data, t("Unable to verify access.", "Impossible de vérifier l'accès.")));
 
       setHasPremiumAccess(Boolean(data.hasAccess));
+      setTrialActive(Boolean(data.trial));
       setAccessEmail(normalizedEmail);
       const owned = Array.isArray(data.owned) ? data.owned : [];
       const credits = Number(data.credits) || 0;
@@ -2263,7 +2279,11 @@ export default function MoventoSite() {
         if (!options.silent) {
           setAccessStatus({
             loading: false,
-            message: credits
+            message: data.trial
+              // A trial member bought nothing yet, so "your purchased prompts"
+              // would be a lie, and a worrying one.
+              ? t(`Trial running — your ${owned.length} prompt${owned.length > 1 ? "s are" : " is"} unlocked.`, `Essai en cours — ${owned.length > 1 ? `tes ${owned.length} prompts sont débloqués` : "ton prompt est débloqué"}.`)
+              : credits
               ? t(`Purchase found — ${credits} prompt${credits > 1 ? "s" : ""} left to pick.`, `Achat trouvé — ${credits} prompt${credits > 1 ? "s" : ""} à choisir.`)
               : t("Your purchased prompts are unlocked on this device.", "Tes prompts achetés sont débloqués sur cet appareil."),
             error: "",
@@ -2549,7 +2569,22 @@ export default function MoventoSite() {
                     to go to that page anyway. Only for a locked prompt —
                     someone with full access, a free prompt, a prompt already
                     bought or an unspent purchase has nothing to buy here. */}
-                {!hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (
+                {/* Mid-trial this block is only ever reached by a prompt the
+                    trial does NOT cover — the four it does are in ownedPrompts
+                    and never get here. So it says when this one opens, and does
+                    not sell a plan the visitor is already on. */}
+                {trialActive && !hasPremiumAccess && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (
+                  <div className="border-t border-white/[0.07] px-5 pb-4 pt-4">
+                    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                      <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-white/[0.06] text-white/60"><Icon name="lock" className="h-4 w-4" /></span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-[#EDE9E0]">{t("Unlocks when your trial ends", "Arrive à la fin de ton essai")}</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-white/55">{t(`Your ${TRIAL_DAYS} free days cover ${SHOWCASE_FILES.length} prompts. The rest opens with the monthly plan, at ${eur(termOf("m1").price)} a month.`, `Tes ${TRIAL_DAYS} jours gratuits couvrent ${SHOWCASE_FILES.length} prompts. Le reste s'ouvre avec le mensuel, à ${eur(termOf("m1").price)} par mois.`)}</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {!trialActive && !hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (
                   <div className="border-t border-white/[0.07] px-5 pb-4 pt-4">
                     <button
                       onClick={() => {
@@ -2562,8 +2597,11 @@ export default function MoventoSite() {
                       className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] px-4 py-3 text-left transition hover:brightness-110"
                     >
                       <span className="min-w-0">
-                        <span className="block text-sm font-bold text-white">{TRIAL_DAYS > 0 ? t(`Free for ${TRIAL_DAYS} days`, `Gratuit pendant ${TRIAL_DAYS} jours`) : t("Unlock every prompt", "Débloquer tous les prompts")}</span>
-                        <span className="mt-0.5 block text-xs leading-5 text-white/85">{TRIAL_DAYS > 0 ? t(`All ${availablePrompts.length} prompts for €0 today, then ${eur(termOf("m1").price)} a month.`, `Les ${availablePrompts.length} prompts pour 0€ aujourd'hui, puis ${eur(termOf("m1").price)} par mois.`) : t(`All ${availablePrompts.length} prompts + free ebook + 7/7 support.`, `Les ${availablePrompts.length} prompts + ebook offert + support 7j/7.`)}</span>
+                        {/* Only the four say "this one is free": claiming it
+                            over prompt 187 would be selling something the
+                            trial does not include. */}
+                        <span className="block text-sm font-bold text-white">{TRIAL_DAYS > 0 && SHOWCASE_SET.has(previewItem.file) ? t(`This one is free for ${TRIAL_DAYS} days`, `Celui-ci est gratuit ${TRIAL_DAYS} jours`) : t("Unlock every prompt", "Débloquer tous les prompts")}</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-white/85">{TRIAL_DAYS > 0 ? t(`${SHOWCASE_FILES.length} prompts for €0, then all ${availablePrompts.length} at ${eur(termOf("m1").price)} a month.`, `${SHOWCASE_FILES.length} prompts pour 0€, puis les ${availablePrompts.length} à ${eur(termOf("m1").price)} par mois.`) : t(`All ${availablePrompts.length} prompts + free ebook + 7/7 support.`, `Les ${availablePrompts.length} prompts + ebook offert + support 7j/7.`)}</span>
                       </span>
                       <span className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0A0A0B]">
                         {t("See the plans", "Voir les offres")}
@@ -2734,16 +2772,29 @@ export default function MoventoSite() {
         {!isPromptsPage && (
           <h1 className="sr-only">{t(`Movento — ${availablePrompts.length} premium website prompts, ready to copy`, `Movento — ${availablePrompts.length} prompts de sites premium, prêts à copier`)}</h1>
         )}
-        {TRIAL_DAYS > 0 && !hasPremiumAccess && (
+        {/* Mid-trial: what is open, and what the conversion brings. No link to
+            /pricing — they are already on the plan. */}
+        {TRIAL_DAYS > 0 && trialActive && !hasPremiumAccess && (
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-400/[0.07] px-5 py-4">
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-emerald-400/15 text-emerald-300"><Icon name="gift" className="h-4 w-4" /></span>
+            <span className="min-w-0">
+              <span className="block text-sm font-bold text-[#EDE9E0]">{t(`Trial running — ${ownedPrompts.size} prompt${ownedPrompts.size > 1 ? "s" : ""} unlocked`, `Essai en cours — ${ownedPrompts.size} prompt${ownedPrompts.size > 1 ? "s" : ""} débloqué${ownedPrompts.size > 1 ? "s" : ""}`)}</span>
+              <span className="block text-xs leading-5 text-white/55">{t(`The rest of the catalogue opens when it turns into the monthly plan, at ${eur(termOf("m1").price)} a month.`, `Le reste du catalogue s'ouvre quand l'essai bascule sur le mensuel, à ${eur(termOf("m1").price)} par mois.`)}</span>
+            </span>
+          </div>
+        )}
+        {/* Not a customer yet. The offer is the four prompts, not the 200 —
+            saying "all 200 free" would be a promise the trial does not keep. */}
+        {TRIAL_DAYS > 0 && !trialActive && !hasPremiumAccess && (
           <a href="/pricing" className="group mb-4 flex items-center justify-between gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-400/[0.07] px-5 py-4 text-left transition hover:border-emerald-400/50">
             <span className="flex items-center gap-3">
               <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-emerald-400/15 text-emerald-300"><Icon name="gift" className="h-4 w-4" /></span>
               <span className="min-w-0">
-                <span className="block text-sm font-bold text-[#EDE9E0]">{t(`All ${availablePrompts.length} prompts free for ${TRIAL_DAYS} days`, `Les ${availablePrompts.length} prompts gratuits pendant ${TRIAL_DAYS} jours`)}</span>
+                <span className="block text-sm font-bold text-[#EDE9E0]">{t(`${SHOWCASE_FILES.length} prompts free for ${TRIAL_DAYS} days`, `${SHOWCASE_FILES.length} prompts gratuits pendant ${TRIAL_DAYS} jours`)}</span>
                 {/* Never the free days on their own. The sentence that gets a
                     card entered has to carry what happens on day 4, or it is
                     a surprise charge dressed up as a gift. */}
-                <span className="block text-xs leading-5 text-white/55">{t(`€0 today, then ${eur(termOf("m1").price)} a month. Cancel before day ${TRIAL_DAYS} and pay nothing.`, `0€ aujourd'hui, puis ${eur(termOf("m1").price)} par mois. Résilie avant le ${TRIAL_DAYS}e jour, tu ne paies rien.`)}</span>
+                <span className="block text-xs leading-5 text-white/55">{t(`€0 today. Then the whole catalogue at ${eur(termOf("m1").price)} a month — cancel before day ${TRIAL_DAYS} and pay nothing.`, `0€ aujourd'hui. Puis tout le catalogue à ${eur(termOf("m1").price)} par mois — résilie avant le ${TRIAL_DAYS}e jour, tu ne paies rien.`)}</span>
               </span>
             </span>
             <span className="flex flex-none items-center gap-1.5 rounded-full bg-emerald-400 px-3.5 py-2 text-xs font-bold text-[#04150d]">{t("Start", "Commencer")} <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span>
@@ -2754,7 +2805,10 @@ export default function MoventoSite() {
             <div className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400/[0.1]0 text-white"><Icon name="check" className="h-4 w-4" /></div>
             <p className="text-white/75">{t("Premium access active", "Accès premium actif")} — <span className="text-white/40">{accessEmail}</span></p>
           </div>
-        ) : (
+        ) : trialActive ? null : (
+          // Hidden mid-trial: the band above has already named them, and
+          // "already a customer?" under "trial running" reads as a doubt about
+          // the access they were just told they have.
           <button onClick={() => setShowUnlockModal(true)} className="mb-8 flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#121214] px-5 py-4 text-left shadow-sm transition hover:border-white/20 hover:shadow-md">
             <span className="flex items-center gap-3">
               <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-white/[0.05] text-white/70"><Icon name="lock" className="h-4 w-4" /></span>
@@ -2824,7 +2878,7 @@ export default function MoventoSite() {
               const unlocked = hasPremiumAccess || isFree || ownedAlone;
               return (
                 <motion.div key={item.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }} className="relative">
-                  <PreviewCard item={item} onClick={() => copyPrompt(item)} onPreview={openPreview} badge={
+                  <PreviewCard item={item} held={hasPremiumAccess || ownedAlone} onClick={() => copyPrompt(item)} onPreview={openPreview} badge={
                     // Icon only, no word: the state is in the glyph (lock,
                     // copy, gift, check) and the label lives in the tooltip.
                     (() => {
