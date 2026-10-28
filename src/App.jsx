@@ -695,6 +695,37 @@ const isStillPreview = (url) => hasPreviewExt(url, [".png", ".jpg", ".jpeg"]) ||
 const addedAt = (item) => PROMPT_ADDED[item.file] ?? (AVAILABLE_FILES.has(item.file) ? Infinity : 0);
 const hasDemo = (item) => (SHOW_DEMO_LINKS && item.demo ? 1 : 0);
 const isPinned = (item) => (item.pinned ? 1 : 0);
+// Free days at the front of the monthly subscription. Keep identical to
+// TRIAL_DAYS in api/_shared.js. It grants nothing on its own: the trial is a
+// setting on the Whop plan, and this only lets the page say so.
+//
+// THE TRIAL MUST EXIST ON plan_rP9Yq4HOSgHCZ IN WHOP BEFORE THIS LEAVES 0.
+// Everything below reads it, so one number switches the whole offer: at 0 the
+// four showcase prompts are given away for an email, and above 0 nothing is
+// given away and the whole catalogue is free for those days instead.
+//
+// All four of these live above availablePrompts rather than with the other
+// catalogue switches further down: the sort reads them and runs at module
+// level, so left in place they would still be in their temporal dead zone and
+// the page would die before its first render.
+const TRIAL_DAYS = 0;
+
+// The four prompts the gallery leads with, whichever offer is running: they
+// are there because they look the best, which stays true either way. What they
+// cost is TRIAL_DAYS' business, not theirs.
+const SHOWCASE_FILES = [
+  "Mapple_Headphone_Store.md",
+  "Vantage_Dashboard_Signal_Hero.md",
+  "Lithos_Geology_Reveal_Hero.md",
+  "Kimi_Grido1_Racing_Systems.md",
+];
+const SHOWCASE_SET = new Set(SHOWCASE_FILES);
+// Given away for an email only while there is no trial. With one, nothing is
+// free: a prompt handed over without a purchase undercuts the trial it is
+// meant to sell. Mirrored in api/_shared.js, which is what actually enforces
+// access — this set only unlocks the copy button.
+const FREE_PROMPT_FILES = new Set(TRIAL_DAYS > 0 ? [] : SHOWCASE_FILES);
+
 // Whether the card moves BY ITSELF — a clip or a gif, as against a still that
 // only gets the Ken Burns pan, and against an entry with no preview at all,
 // which falls through to the generated gradient. A grid of moving tiles sells
@@ -702,36 +733,25 @@ const isPinned = (item) => (item.pinned ? 1 : 0);
 //
 // Read from the same isStillPreview the card uses to decide whether to drift,
 // so the order and the drift can never disagree about what moves.
-// The prompts given away for an email. Adding a filename here re-opens that
-// prompt, and it must be added to the same set in api/_shared.js, which is what
-// actually enforces access — this set only unlocks the copy button.
-const FREE_PROMPT_FILES = new Set([
-  "Mapple_Headphone_Store.md",
-  "Vantage_Dashboard_Signal_Hero.md",
-  "Lithos_Geology_Reveal_Hero.md",
-  "Kimi_Grido1_Racing_Systems.md",
-]);
-
-// Declared above the sort rather than with the other catalogue switches:
-// isFree reads it and availablePrompts is built at module level, so left
-// further down it is still in its temporal dead zone and the page dies
-// before its first render.
 const movesItself = (item) => (item.preview && !isStillPreview(item.preview) ? 1 : 0);
-// The giveaway, and the only thing that outranks a pin. It replaces the popup
-// that used to announce it: a visitor who opens the gallery meets the free
-// prompts first, badged, instead of being interrupted three seconds later.
-const isFree = (item) => (FREE_PROMPT_FILES.has(item.file) ? 1 : 0);
+// The shop window, and the only thing that outranks a pin. Not named for being
+// free, because it is only free some of the time: it is the handful of cards a
+// visitor should meet first whatever the offer is. It replaced the popup that
+// used to announce the giveaway — the gallery opens on it instead of
+// interrupting three seconds later.
+const leadsGallery = (item) => (SHOWCASE_SET.has(item.file) ? 1 : 0);
 const availablePrompts = prompts
   .map((item, i) => ({ item, i }))
   .filter(({ item }) => isPromptAvailable(item))
   .sort(
     (a, b) =>
-      // Free first, ahead of the pins: it is the offer, and it only works if
-      // it is the first thing seen. Then pinned, which still means "put this
-      // one first" for everything that is paid. Motion sorts inside both
-      // blocks, so the top of the gallery is all movement rather than a
-      // curated block with dead tiles scattered through it.
-      isFree(b.item) - isFree(a.item) ||
+      // The shop window first, ahead of the pins: whether it is a giveaway or
+      // the first taste of a trial, it only works if it is the first thing
+      // seen. Then pinned, which still means "put this one first" for
+      // everything else. Motion sorts inside both blocks, so the top of the
+      // gallery is all movement rather than a curated block with dead tiles
+      // scattered through it.
+      leadsGallery(b.item) - leadsGallery(a.item) ||
       isPinned(b.item) - isPinned(a.item) ||
       movesItself(b.item) - movesItself(a.item) ||
       (isPinned(a.item) ? 0 : hasDemo(b.item) - hasDemo(a.item) || addedAt(b.item) - addedAt(a.item)) ||
@@ -739,8 +759,9 @@ const availablePrompts = prompts
   )
   .map(({ item }) => item);
 
-// The free prompts, in catalogue order. They lead the gallery and carry a
-// badge, which is the whole announcement now: there is no popup. Filtered by
+// The free prompts, in catalogue order — empty while a trial is running, since
+// then nothing is given away. With no trial they lead the gallery and carry a
+// badge, which is the whole announcement: there is no popup. Filtered by
 // availability, so a free prompt whose markdown is missing is not promised.
 const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file) && isPromptAvailable(item));
 
@@ -931,10 +952,21 @@ const plans = [
     discountBadge: `−${discountOf("m1")} %`,
     period: t("/ mo", "/ mois"),
     perDay: perDayOf("m1"),
-    billedNote: t("renewed every month", "renouvelé chaque mois"),
-    cta: t("Get the monthly plan", "Prendre l'offre mensuelle"),
+    // What the buyer is actually agreeing to, in the line directly under the
+    // price. With a trial that is two facts, not one: nothing today, and what
+    // is taken on the day it ends. Saying only "3 days free" is the half of it
+    // that gets a card entered and a refund asked for.
+    billedNote: TRIAL_DAYS > 0
+      ? t(`${TRIAL_DAYS} days free, then ${eur(termOf("m1").price)} a month`, `${TRIAL_DAYS} jours gratuits, puis ${eur(termOf("m1").price)} par mois`)
+      : t("renewed every month", "renouvelé chaque mois"),
+    badge: TRIAL_DAYS > 0 ? t(`${TRIAL_DAYS} days free`, `${TRIAL_DAYS} jours offerts`) : undefined,
+    cta: TRIAL_DAYS > 0
+      ? t(`Start the ${TRIAL_DAYS} free days`, `Commencer les ${TRIAL_DAYS} jours gratuits`)
+      : t("Get the monthly plan", "Prendre l'offre mensuelle"),
     featured: false,
-    features: BASE_FEATURES,
+    features: TRIAL_DAYS > 0
+      ? [...CATALOGUE_FEATURES, t(`Cancel before day ${TRIAL_DAYS} and pay nothing`, `Résilie avant le ${TRIAL_DAYS}e jour, tu ne paies rien`)]
+      : BASE_FEATURES,
     // Both used to be withheld here, to leave the annual something to sell.
     // With the month as the only offer there is nothing to hold them back for,
     // and its Whop product was sold carrying the ebook. EBOOK_KINDS and
@@ -1888,7 +1920,7 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
         {/* Said on the tile, not in a tooltip: a gift glyph in the corner of
             the title row is only legible to someone already hunting for it,
             and the whole point of the giveaway is that it reads at a glance. */}
-        {FREE_PROMPT_FILES.has(item.file) && (
+        {SHOWCASE_SET.has(item.file) && TRIAL_DAYS === 0 && (
           <span className="pointer-events-none absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1.5 rounded-full bg-emerald-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#04150d] shadow-lg shadow-black/50">
             <Icon name="gift" className="h-3 w-3" /> {t("Free", "Gratuit")}
           </span>
@@ -2013,14 +2045,18 @@ function runSelfTests() {
   // The popup names whatever is free, so the two have to agree. Not compared
   // against api/_shared.js here — that set is not imported — so the mirror is
   // checked by a script before each commit instead.
-  console.assert(freePromptItems.length === 4, "four prompts are given away");
+  // The trial and the giveaway are alternatives, never both: a prompt handed
+  // over for an address undercuts the trial it is supposed to sell.
+  console.assert(TRIAL_DAYS > 0 ? FREE_PROMPT_FILES.size === 0 : FREE_PROMPT_FILES.size === SHOWCASE_FILES.length, "a running trial means nothing is free; no trial means the showcase is");
+  console.assert(freePromptItems.length === (TRIAL_DAYS > 0 ? 0 : 4), "four prompts are given away, unless a trial replaces them");
+  console.assert(SHOWCASE_FILES.every((f) => prompts.some((item) => item.file === f)), "every showcase filename must belong to a catalogue entry");
   console.assert(freePromptItems.every((item) => isPromptAvailable(item) && item.title), "a free prompt with no markdown or no title would be a badge promising a 404");
   // The badge, the sort and the API all key on FREE_PROMPT_FILES, so a name in
   // it that matches no entry is a giveaway nobody can find.
   console.assert([...FREE_PROMPT_FILES].every((f) => prompts.some((item) => item.file === f)), "every free filename must belong to a catalogue entry");
   // Free outranks pinned, which is the whole point of dropping the popup: the
   // offer has to be the first thing in the gallery, not an interruption.
-  console.assert(availablePrompts.slice(0, freePromptItems.length).every((item) => FREE_PROMPT_FILES.has(item.file)), "the free prompts must lead the gallery");
+  console.assert(availablePrompts.slice(0, SHOWCASE_FILES.length).every((item) => SHOWCASE_FILES.includes(item.file)), "the showcase prompts must lead the gallery, whichever offer is running");
   // The container and the motion are two different questions, and a higgs URL
   // answers them from two different places: output=webp says what element to
   // mount, the .png source says there is nothing moving inside it.
@@ -2526,8 +2562,8 @@ export default function MoventoSite() {
                       className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] px-4 py-3 text-left transition hover:brightness-110"
                     >
                       <span className="min-w-0">
-                        <span className="block text-sm font-bold text-white">{t("Unlock every prompt", "Débloquer tous les prompts")}</span>
-                        <span className="mt-0.5 block text-xs leading-5 text-white/85">{t(`All ${availablePrompts.length} prompts + free ebook + 7/7 support.`, `Les ${availablePrompts.length} prompts + ebook offert + support 7j/7.`)}</span>
+                        <span className="block text-sm font-bold text-white">{TRIAL_DAYS > 0 ? t(`Free for ${TRIAL_DAYS} days`, `Gratuit pendant ${TRIAL_DAYS} jours`) : t("Unlock every prompt", "Débloquer tous les prompts")}</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-white/85">{TRIAL_DAYS > 0 ? t(`All ${availablePrompts.length} prompts for €0 today, then ${eur(termOf("m1").price)} a month.`, `Les ${availablePrompts.length} prompts pour 0€ aujourd'hui, puis ${eur(termOf("m1").price)} par mois.`) : t(`All ${availablePrompts.length} prompts + free ebook + 7/7 support.`, `Les ${availablePrompts.length} prompts + ebook offert + support 7j/7.`)}</span>
                       </span>
                       <span className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0A0A0B]">
                         {t("See the plans", "Voir les offres")}
@@ -2697,6 +2733,21 @@ export default function MoventoSite() {
             reader, which the visible heading used to do. */}
         {!isPromptsPage && (
           <h1 className="sr-only">{t(`Movento — ${availablePrompts.length} premium website prompts, ready to copy`, `Movento — ${availablePrompts.length} prompts de sites premium, prêts à copier`)}</h1>
+        )}
+        {TRIAL_DAYS > 0 && !hasPremiumAccess && (
+          <a href="/pricing" className="group mb-4 flex items-center justify-between gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-400/[0.07] px-5 py-4 text-left transition hover:border-emerald-400/50">
+            <span className="flex items-center gap-3">
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-emerald-400/15 text-emerald-300"><Icon name="gift" className="h-4 w-4" /></span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-[#EDE9E0]">{t(`All ${availablePrompts.length} prompts free for ${TRIAL_DAYS} days`, `Les ${availablePrompts.length} prompts gratuits pendant ${TRIAL_DAYS} jours`)}</span>
+                {/* Never the free days on their own. The sentence that gets a
+                    card entered has to carry what happens on day 4, or it is
+                    a surprise charge dressed up as a gift. */}
+                <span className="block text-xs leading-5 text-white/55">{t(`€0 today, then ${eur(termOf("m1").price)} a month. Cancel before day ${TRIAL_DAYS} and pay nothing.`, `0€ aujourd'hui, puis ${eur(termOf("m1").price)} par mois. Résilie avant le ${TRIAL_DAYS}e jour, tu ne paies rien.`)}</span>
+              </span>
+            </span>
+            <span className="flex flex-none items-center gap-1.5 rounded-full bg-emerald-400 px-3.5 py-2 text-xs font-bold text-[#04150d]">{t("Start", "Commencer")} <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span>
+          </a>
         )}
         {hasPremiumAccess ? (
           <div className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.07] p-4 text-sm">

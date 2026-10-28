@@ -6,12 +6,27 @@ export const CUSTOM_PROMPTS_REPO = "https://raw.githubusercontent.com/azoklearn/
 // Prompts served without a purchase. Keep identical to FREE_PROMPT_FILES in
 // src/App.jsx: the client uses it to unlock the copy button, this one decides
 // whether /api/prompt actually hands the markdown over.
-export const FREE_PROMPT_FILES = new Set([
+// Free days at the front of the monthly subscription. This number does NOT
+// grant anything: the trial lives on the Whop plan, and this only lets the site
+// say it exists. Keep identical to TRIAL_DAYS in src/App.jsx.
+//
+// THE TRIAL MUST BE CONFIGURED ON plan_rP9Yq4HOSgHCZ IN WHOP BEFORE THIS IS
+// ANYTHING BUT 0. A page promising three free days over a plan that charges on
+// the spot is not a cosmetic error — it takes money from someone who was told
+// they would not be charged.
+export const TRIAL_DAYS = 0;
+
+// The four prompts the gallery leads with. They are the way in, and what that
+// costs depends on the trial: with no trial they are given away for an email,
+// and the moment there is one they are not — a prompt served without a purchase
+// would undercut the very thing it is meant to sell.
+const SHOWCASE_FILES = [
   "Mapple_Headphone_Store.md",
   "Vantage_Dashboard_Signal_Hero.md",
   "Lithos_Geology_Reveal_Hero.md",
   "Kimi_Grido1_Racing_Systems.md",
-]);
+];
+export const FREE_PROMPT_FILES = new Set(TRIAL_DAYS > 0 ? [] : SHOWCASE_FILES);
 
 // The prompts live in this repo. While it is public, anyone can download the
 // whole catalogue straight from raw.githubusercontent.com and the paywall counts
