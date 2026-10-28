@@ -6,7 +6,12 @@ export const CUSTOM_PROMPTS_REPO = "https://raw.githubusercontent.com/azoklearn/
 // Prompts served without a purchase. Keep identical to FREE_PROMPT_FILES in
 // src/App.jsx: the client uses it to unlock the copy button, this one decides
 // whether /api/prompt actually hands the markdown over.
-export const FREE_PROMPT_FILES = new Set(["Kimi_Grido1_Racing_Systems.md"]);
+export const FREE_PROMPT_FILES = new Set([
+  "Mapple_Headphone_Store.md",
+  "Vantage_Dashboard_Signal_Hero.md",
+  "Lithos_Geology_Reveal_Hero.md",
+  "Kimi_Grido1_Racing_Systems.md",
+]);
 
 // The prompts live in this repo. While it is public, anyone can download the
 // whole catalogue straight from raw.githubusercontent.com and the paywall counts

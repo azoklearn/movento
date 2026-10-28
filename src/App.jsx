@@ -700,16 +700,36 @@ const isPinned = (item) => (item.pinned ? 1 : 0);
 //
 // Read from the same isStillPreview the card uses to decide whether to drift,
 // so the order and the drift can never disagree about what moves.
+// The prompts given away for an email. Adding a filename here re-opens that
+// prompt, and it must be added to the same set in api/_shared.js, which is what
+// actually enforces access — this set only unlocks the copy button.
+const FREE_PROMPT_FILES = new Set([
+  "Mapple_Headphone_Store.md",
+  "Vantage_Dashboard_Signal_Hero.md",
+  "Lithos_Geology_Reveal_Hero.md",
+  "Kimi_Grido1_Racing_Systems.md",
+]);
+
+// Declared above the sort rather than with the other catalogue switches:
+// isFree reads it and availablePrompts is built at module level, so left
+// further down it is still in its temporal dead zone and the page dies
+// before its first render.
 const movesItself = (item) => (item.preview && !isStillPreview(item.preview) ? 1 : 0);
+// The giveaway, and the only thing that outranks a pin. It replaces the popup
+// that used to announce it: a visitor who opens the gallery meets the free
+// prompts first, badged, instead of being interrupted three seconds later.
+const isFree = (item) => (FREE_PROMPT_FILES.has(item.file) ? 1 : 0);
 const availablePrompts = prompts
   .map((item, i) => ({ item, i }))
   .filter(({ item }) => isPromptAvailable(item))
   .sort(
     (a, b) =>
-      // Pinned still outranks everything: "put this one first" has to keep
-      // meaning first. Motion sorts INSIDE the pinned block as well as outside
-      // it, so the top of the gallery is all movement rather than a curated
-      // block with dead tiles scattered through it.
+      // Free first, ahead of the pins: it is the offer, and it only works if
+      // it is the first thing seen. Then pinned, which still means "put this
+      // one first" for everything that is paid. Motion sorts inside both
+      // blocks, so the top of the gallery is all movement rather than a
+      // curated block with dead tiles scattered through it.
+      isFree(b.item) - isFree(a.item) ||
       isPinned(b.item) - isPinned(a.item) ||
       movesItself(b.item) - movesItself(a.item) ||
       (isPinned(a.item) ? 0 : hasDemo(b.item) - hasDemo(a.item) || addedAt(b.item) - addedAt(a.item)) ||
@@ -717,22 +737,10 @@ const availablePrompts = prompts
   )
   .map(({ item }) => item);
 
-// The prompts given away for an email. Adding a filename here re-opens that
-// prompt, and it must be added to the same set in api/_shared.js, which is what
-// actually enforces access — this set only unlocks the copy button.
-const FREE_PROMPT_FILES = new Set(["Kimi_Grido1_Racing_Systems.md"]);
-
-// What the free-prompt popup offers, looked up rather than named: change what
-// is free above and the popup follows, instead of advertising a prompt that is
-// no longer given away. Filtered by availability too — a free prompt whose
-// markdown is not in the repo would be a popup promising a 404.
+// The free prompts, in catalogue order. They lead the gallery and carry a
+// badge, which is the whole announcement now: there is no popup. Filtered by
+// availability, so a free prompt whose markdown is missing is not promised.
 const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file) && isPromptAvailable(item));
-
-// Once a session, not once a visitor: sessionStorage, so closing the tab gives
-// a returning visitor the offer again, while reloading in the same visit does
-// not pester them. Separate from PROMO_POPUP_KEY — the two popups live on
-// different pages and must not switch each other off.
-const FREE_POPUP_KEY = "movento_free_prompt_popup_seen";
 
 // One product at three terms. Each carries only its own two numbers — what it
 // is charged and what it is discounted from — and everything the page says
@@ -1875,6 +1883,14 @@ function PreviewCard({ item, badge, onClick, onPreview }) {
           mobile. Streaming the on-screen clips costs data; showing nothing
           costs the sale. The IntersectionObserver above still keeps it to the
           two or three cards actually on screen. */}
+        {/* Said on the tile, not in a tooltip: a gift glyph in the corner of
+            the title row is only legible to someone already hunting for it,
+            and the whole point of the giveaway is that it reads at a glance. */}
+        {FREE_PROMPT_FILES.has(item.file) && (
+          <span className="pointer-events-none absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1.5 rounded-full bg-emerald-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#04150d] shadow-lg shadow-black/50">
+            <Icon name="gift" className="h-3 w-3" /> {t("Free", "Gratuit")}
+          </span>
+        )}
         {!inView ? <div className="relative aspect-[1.35]"><PreviewSkeleton item={item} /></div> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className="block h-auto w-full transition duration-500" style={{ aspectRatio: "auto 1.35 / 1" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`block h-auto w-full ${driftClass} transition duration-500`} style={{ aspectRatio: "auto 1.35 / 1" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <div className="relative aspect-[1.35]"><GeneratedPreview item={item} /></div>}
       </div>
       <div className="flex items-center justify-between gap-2 px-1 pb-1 pt-3 sm:gap-3 sm:px-1.5">
@@ -1995,8 +2011,14 @@ function runSelfTests() {
   // The popup names whatever is free, so the two have to agree. Not compared
   // against api/_shared.js here — that set is not imported — so the mirror is
   // checked by a script before each commit instead.
-  console.assert(freePromptItems.length === 1 && freePromptItems[0].file === "Kimi_Grido1_Racing_Systems.md", "one prompt is given away, and it is the one the popup offers");
-  console.assert(freePromptItems.every((item) => isPromptAvailable(item) && item.title), "a free prompt with no markdown or no title would be a popup promising a 404");
+  console.assert(freePromptItems.length === 4, "four prompts are given away");
+  console.assert(freePromptItems.every((item) => isPromptAvailable(item) && item.title), "a free prompt with no markdown or no title would be a badge promising a 404");
+  // The badge, the sort and the API all key on FREE_PROMPT_FILES, so a name in
+  // it that matches no entry is a giveaway nobody can find.
+  console.assert([...FREE_PROMPT_FILES].every((f) => prompts.some((item) => item.file === f)), "every free filename must belong to a catalogue entry");
+  // Free outranks pinned, which is the whole point of dropping the popup: the
+  // offer has to be the first thing in the gallery, not an interruption.
+  console.assert(availablePrompts.slice(0, freePromptItems.length).every((item) => FREE_PROMPT_FILES.has(item.file)), "the free prompts must lead the gallery");
   // The container and the motion are two different questions, and a higgs URL
   // answers them from two different places: output=webp says what element to
   // mount, the .png source says there is nothing moving inside it.
@@ -2050,43 +2072,11 @@ export default function MoventoSite() {
   const [leadEmail, setLeadEmail] = useState(getStoredLeadEmail);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [pendingFreeItem, setPendingFreeItem] = useState(null);
-  // Why the lead form is open: "gate" when the visitor asked for a free prompt
-  // and has to leave an address first, "offer" when the site opened it on its
-  // own to give one away. Same form, same submit, different words.
-  const [leadModalReason, setLeadModalReason] = useState("gate");
   const [leadEmailInput, setLeadEmailInput] = useState("");
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [previewItem, setPreviewItem] = useState(null); // prompt preview popup
-
-  // The free prompt, offered unprompted. Shown once a session, after a beat, to
-  // a visitor who has given us nothing yet — not to someone who already left an
-  // address, already has access, or is mid-checkout. There is nothing to offer
-  // if no prompt is free, which is why freePromptItems gates the whole thing.
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    const offer = freePromptItems[0];
-    if (!offer || hasPremiumAccess || leadEmail || accessEmail) return undefined;
-    try {
-      if (window.sessionStorage.getItem(FREE_POPUP_KEY)) return undefined;
-    } catch {
-      /* private mode: show it, it just will not be remembered */
-    }
-    const id = window.setTimeout(() => {
-      // Re-checked inside the timer: the visitor may have unlocked, bought or
-      // opened another modal during the delay, and talking over any of those is
-      // worse than not offering at all.
-      if (showLeadModal || showUnlockModal || checkoutPlan || hasPremiumAccess || leadEmail || accessEmail) return;
-      setPendingFreeItem(offer);
-      setLeadModalReason("offer");
-      setShowLeadModal(true);
-      track("free_prompt_popup_shown", { prompt: offer.title, ...refProps() });
-      try { window.sessionStorage.setItem(FREE_POPUP_KEY, "1"); } catch { /* ignore */ }
-    }, 3200);
-    return () => window.clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasPremiumAccess, leadEmail, accessEmail]);
 
   // Each prompt still has its own /prompt/<slug> address, so the URL bar can be
   // shared even without a copy button. Opening the popup pushes that URL and
@@ -2349,7 +2339,6 @@ export default function MoventoSite() {
       // stacked is a dead end — the lead form sits under the preview.
       closePreview();
       setPendingFreeItem(item);
-      setLeadModalReason("gate");
       setShowLeadModal(true);
       return;
     }
@@ -2424,38 +2413,25 @@ export default function MoventoSite() {
     <main className="min-h-screen overflow-hidden bg-[#0A0A0B] text-[#EDE9E0]">
       <AnimatePresence>
         {showLeadModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => { if (leadModalReason === "offer") track("free_prompt_popup_dismissed", { prompt: pendingFreeItem?.title, ...refProps() }); setShowLeadModal(false); }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowLeadModal(false)}>
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-[#121214] p-8 shadow-2xl shadow-black/60" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setShowLeadModal(false)} className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-[#121214] text-white/40 transition hover:text-[#EDE9E0]"><Icon name="close" className="h-4 w-4" /></button>
               <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-[#EDE9E0] shadow-none"><Icon name="sparkles" className="h-5 w-5" /></div>
-              {leadModalReason === "offer" ? (
-                <>
-                  <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0]">{t("1 free prompt to try", "1 prompt gratuit pour tester")}</h2>
-                  {/* Names the prompt rather than saying "a prompt": the offer
-                      is worth more when you can see what it is, and the title
-                      comes from the entry so it cannot name the wrong one. */}
-                  <p className="mt-2 text-sm leading-6 text-white/55">
-                    {t("Enter your email and ", "Entre ton email et ")}
-                    <span className="text-white/80">{pendingFreeItem?.title}</span>
-                    {t(" is yours — the whole prompt, free, nothing to pay.", " est à toi — le prompt entier, gratuit, rien à payer.")}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0]">{t("Access free prompts", "Accéder aux prompts gratuits")}</h2>
-                  <p className="mt-2 text-sm leading-6 text-white/55">{t("Enter your email to copy free prompts. No spam, ever.", "Entrez votre email pour copier les prompts gratuits. Jamais de spam.")}</p>
-                </>
-              )}
+              {/* Opened by a copy click on a free prompt, never on its own.
+                  The prompt is named: the visitor clicked something specific
+                  and the form should say what it is handing over. */}
+              <h2 className="text-2xl font-bold tracking-tight text-[#EDE9E0]">{t("Free prompt — one step", "Prompt gratuit — une étape")}</h2>
+              <p className="mt-2 text-sm leading-6 text-white/55">
+                {t("Enter your email and ", "Entre ton email et ")}
+                <span className="text-white/80">{pendingFreeItem?.title}</span>
+                {t(" is yours — the whole prompt, free, nothing to pay.", " est à toi — le prompt entier, gratuit, rien à payer.")}
+              </p>
               <form onSubmit={submitLeadEmail} className="mt-6 flex flex-col gap-3">
                 <input autoFocus value={leadEmailInput} onChange={(e) => setLeadEmailInput(e.target.value)} type="email" required placeholder="you@example.com" className="w-full rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35 focus:ring-4 focus:ring-white/10" />
-                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-[#08080A] py-3 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? t("Just a moment...", "Un instant...") : leadModalReason === "offer" ? t("Unlock the free prompt →", "Débloquer le prompt gratuit →") : t("Copy free prompt →", "Copier le prompt gratuit →")}</button>
+                <button type="submit" disabled={leadSubmitting} className="w-full rounded-2xl bg-[#08080A] py-3 text-sm font-semibold text-white transition hover:bg-[#141418] hover:scale-[1.01] disabled:opacity-60">{leadSubmitting ? t("Just a moment...", "Un instant...") : t("Copy the free prompt →", "Copier le prompt gratuit →")}</button>
               </form>
-              <p className="mt-4 text-center text-xs text-white/40">
-                {leadModalReason === "offer"
-                  ? t("We keep your email to send you new Movento prompts. Never shared.", "On garde ton email pour t'envoyer les nouveaux prompts Movento. Jamais partagé.")
-                  : t("Your data will never be shared.", "Vos données ne seront jamais partagées.")}
-              </p>
+              <p className="mt-4 text-center text-xs text-white/40">{t("We keep your email to send you new Movento prompts. Never shared.", "On garde ton email pour t'envoyer les nouveaux prompts Movento. Jamais partagé.")}</p>
               <div className="mt-5 border-t border-white/[0.07] pt-4 text-center">
                 <button onClick={() => { setShowLeadModal(false); setShowUnlockModal(true); }} className="text-xs text-white/40 transition hover:text-white/75">{t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}</button>
               </div>
