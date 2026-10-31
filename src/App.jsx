@@ -4430,9 +4430,269 @@ function formatDate(value) {
   return date.toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", { year: "numeric", month: "long", day: "numeric" });
 }
 
-// Live view of the emails captured for the free prompts. Unlisted, gated by
-// ADMIN_TOKEN server-side, and never linked from the site: the API is what
-// actually protects the data, this page only carries the token.
+// Monthly-equivalent price of each recurring plan, derived from PLAN_TERMS so
+// it can never drift from what the pricing page actually charges.
+//
+// Two gaps are deliberate. "yearly" has no price written down anywhere in this
+// repo, and lifetime buyers have paid several different amounts as the price
+// moved — so neither is priced, only counted, and the page says how many it
+// could not price. A revenue figure resting on an invented number is worse
+// than one that admits what it does not know. "monthly" is the retired
+// 18.99 €/month plan a few subscribers never left; that one IS on record.
+const MONTHLY_EQUIV = {
+  m1: termOf("m1").price / (termOf("m1").days / 30),
+  m3: termOf("m3").price / (termOf("m3").days / 30),
+  m12: termOf("m12").price / (termOf("m12").days / 30),
+  monthly: 18.99,
+};
+
+const KIND_LABELS = {
+  m1: "Mensuel 29,90€",
+  m3: "3 mois (retiré)",
+  m12: "Annuel (retiré)",
+  monthly: "Mensuel 18,99€ (ancien)",
+  yearly: "Annuel (ancien)",
+  lifetime: "À vie",
+  pack: "Pack de prompts",
+};
+
+// The business, above the per-email tools. The access list answers "did this
+// person pay"; this answers "how is the shop doing" — which the dashboard had
+// no way to ask at all.
+function AdminOverview({ token }) {
+  const [state, setState] = useState({ loading: true, error: "", data: null });
+
+  async function load() {
+    setState((s) => ({ ...s, loading: true, error: "" }));
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin-overview`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 401) throw new Error("Token refusé.");
+      if (!response.ok) throw new Error(data.error || "Lecture impossible.");
+      // Checked before it is stored, not while it is rendered. This component
+      // sits above the lookup and block tools, so an unexpected body — a 200
+      // carrying an error, a proxy page, a half-written deploy — used to take
+      // the whole admin page down with it and leave no way to unblock anyone.
+      if (!data || typeof data.customers !== "object" || !data.customers || typeof data.leads !== "object" || !data.leads) {
+        throw new Error("Réponse inattendue de /api/admin-overview.");
+      }
+      setState({ loading: false, error: "", data });
+    } catch (error) {
+      setState((s) => ({ ...s, loading: false, error: error.message }));
+    }
+  }
+
+  useEffect(() => {
+    if (!token) return;
+    load();
+    // Loaded once, not on a timer: it walks the whole Whop membership list, so
+    // it is far too expensive to sit beside a list that refreshes every ten
+    // seconds. The refresh button is the opt-in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  // Static, so it needs no endpoint: the catalogue ships inside this bundle.
+  const catalogue = useMemo(() => {
+    const listed = new Set(prompts.map((p) => p.file).filter(Boolean));
+    return {
+      shown: availablePrompts.length,
+      entries: prompts.length,
+      // In the catalogue with no markdown behind it. The gallery filters them
+      // out, so they cost nothing and are not a fault — but the gap between
+      // "entries written" and "prompts on sale" is otherwise invisible.
+      hidden: prompts.filter((p) => !isPromptAvailable(p)).length,
+      // The other way round: a prompt file nobody can reach, because no
+      // catalogue entry points at it.
+      unlisted: [...AVAILABLE_FILES].filter((f) => !listed.has(f)),
+      withPreview: availablePrompts.filter((p) => p.preview).length,
+      withVideo: availablePrompts.filter((p) => p.preview && isVideoPreview(p.preview)).length,
+      withDemo: availablePrompts.filter((p) => p.demo).length,
+      free: FREE_PROMPT_FILES.size,
+    };
+  }, []);
+
+  const d = state.data;
+
+  // Counted here rather than on the server so the prices have exactly one home.
+  const money = useMemo(() => {
+    if (!d) return null;
+    let mrr = 0;
+    let unpriced = 0;
+    for (const [kind, count] of Object.entries((d.customers && d.customers.byKind) || {})) {
+      if (kind === "lifetime" || kind === "pack") continue;      // not recurring
+      if (MONTHLY_EQUIV[kind]) mrr += MONTHLY_EQUIV[kind] * count;
+      else unpriced += count;                                     // "yearly", or a plan we do not recognise
+    }
+    return { mrr, unpriced };
+  }, [d]);
+
+  const pct = (part, whole) => (whole > 0 ? `${Math.round((part / whole) * 1000) / 10} %` : "—");
+
+  if (!d && state.loading) {
+    return <div className="mt-6 rounded-2xl border border-white/10 bg-[#121214] p-5 text-sm text-white/40">Chargement de la vue d'ensemble…</div>;
+  }
+
+  if (!d) {
+    return (
+      <div className="mt-6 rounded-2xl border border-white/10 bg-[#121214] p-5">
+        <p className="text-sm text-red-300">{state.error || "Vue d'ensemble indisponible."}</p>
+        <button type="button" onClick={load} className="mt-3 rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:text-[#EDE9E0]">Réessayer</button>
+      </div>
+    );
+  }
+
+  const c = d.customers;
+  const l = d.leads;
+  const perDay = Array.isArray(l.perDay) ? l.perDay : [];
+  const maxDay = Math.max(1, ...perDay.map((p) => p.count));
+
+  // Only the things that cost money or lose a customer. An empty list here is
+  // the normal state, and saying so is more useful than a row of zeroes.
+  const alerts = [
+    c.canceling && { tone: "text-amber-300", text: `${c.canceling} résiliation${c.canceling > 1 ? "s" : ""} en cours — payées jusqu'à la fin de la période, puis parties.` },
+    c.pastDue && { tone: "text-amber-300", text: `${c.pastDue} impayé${c.pastDue > 1 ? "s" : ""} — le renouvellement a échoué, l'accès tient encore.` },
+    c.unpaid && { tone: "text-white/60", text: `${c.unpaid} accès sans paiement trouvé sur Whop — cadeaux, testeurs, ou attributions manuelles.` },
+    c.missingRecord && { tone: "text-red-300", text: `${c.missingRecord} paie${c.missingRecord > 1 ? "nt" : ""} sur Whop sans accès enregistré ici — un webhook qui n'est jamais arrivé. À corriger : ils ont payé et n'ont rien.` },
+    c.blocked && { tone: "text-white/50", text: `${c.blocked} email${c.blocked > 1 ? "s" : ""} bloqué${c.blocked > 1 ? "s" : ""}.` },
+    catalogue.unlisted.length && { tone: "text-white/50", text: `${catalogue.unlisted.length} fichier${catalogue.unlisted.length > 1 ? "s" : ""} de prompt sans entrée au catalogue, donc introuvable${catalogue.unlisted.length > 1 ? "s" : ""}.` },
+  ].filter(Boolean);
+
+  const HEALTH = [
+    ["Clé API Whop", d.health.whopApiKey, "sans elle, l'accès ne repose que sur Redis"],
+    ["Signature webhook", d.health.webhookSecret, "sans elle, le webhook accepte des requêtes non signées"],
+    ["Token GitHub", d.health.githubToken, "sans lui, les prompts ne viennent que du dépôt public"],
+    ["Telegram", d.health.telegram, "notifications de nouvelle vente et de nouvel email"],
+  ];
+
+  const tile = (label, value, note) => (
+    <div key={label} className="rounded-2xl border border-white/10 bg-[#121214] p-4">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-[#EDE9E0]">{value}</p>
+      {note && <p className="mt-0.5 text-[11px] leading-4 text-white/35">{note}</p>}
+    </div>
+  );
+
+  return (
+    <section className="mt-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-bold tracking-tight text-[#EDE9E0]">Vue d'ensemble</h2>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/35">
+            {state.loading ? "Actualisation…" : `Lu à ${new Date(d.generatedAt).toLocaleTimeString("fr-FR")}`}
+          </span>
+          <button type="button" onClick={load} disabled={state.loading} className="rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:text-[#EDE9E0] disabled:opacity-50">Actualiser</button>
+        </div>
+      </div>
+
+      {state.error && <p className="mt-3 text-sm text-red-300">{state.error}</p>}
+      {!d.whop.audited && (
+        <p className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-xs text-amber-300">
+          {d.whop.configured
+            ? `Whop n'a pas répondu${d.whop.error ? ` (${d.whop.error})` : ""} — les chiffres ci-dessous ne comptent que ce qui est enregistré ici.`
+            : "Clé API Whop absente — impossible de distinguer qui paie de qui a reçu un accès."}
+        </p>
+      )}
+
+      {/* Money first. It is the question the old dashboard could not answer at
+          all, and every other number here is a way of explaining it. */}
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tile("MRR estimé", eur(Math.round(money.mrr * 100) / 100), money.unpriced ? `+ ${money.unpriced} abonné(s) au tarif inconnu` : "abonnements récurrents")}
+        {tile("Clients payants", c.paying, `${c.subscriptions} abonnement(s) · ${c.lifetimes} à vie`)}
+        {tile("Nouveaux (30 j)", c.newLast30, `${c.newLast7} sur 7 jours`)}
+        {tile("Packs de prompts", c.packOnly, "achetés sans accès complet")}
+      </div>
+
+      {/* The giveaway's whole purpose, in one line. */}
+      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tile("Emails collectés", l.total, `${l.today} aujourd'hui · ${l.last7} sur 7 j`)}
+        {tile(
+          "Convertis en clients",
+          l.converted,
+          l.partial ? `${pct(l.converted, l.matchedAgainst)} des ${l.matchedAgainst} plus récents` : `${pct(l.converted, l.total)} des emails collectés`,
+        )}
+        {tile("Essais en cours", c.trialing, "pas encore facturés")}
+        {tile("Catalogue", catalogue.shown, `${catalogue.withVideo} vidéos · ${catalogue.free} gratuits${catalogue.hidden ? ` · ${catalogue.hidden} masqués` : ""}`)}
+      </div>
+
+      {alerts.length > 0 && (
+        <div className="mt-3 rounded-2xl border border-white/10 bg-[#121214] p-4">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">À regarder</p>
+          <ul className="mt-2 space-y-1.5 text-sm">
+            {alerts.map((a, i) => <li key={i} className={a.tone}>{a.text}</li>)}
+          </ul>
+        </div>
+      )}
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        {/* Emails per day. A bar chart because the shape is the point: a flat
+            week and a spike after a post are different news. */}
+        <div className="rounded-2xl border border-white/10 bg-[#121214] p-4">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Emails par jour · {perDay.length} j</p>
+          <div className="mt-3 flex h-24 items-end gap-1">
+            {perDay.map((p) => (
+              <div key={p.day} className="group relative flex-1" title={`${p.day} — ${p.count}`}>
+                <div
+                  className={`w-full rounded-t transition ${p.count ? "bg-emerald-400/70 group-hover:bg-emerald-300" : "bg-white/[0.06]"}`}
+                  style={{ height: `${Math.max(p.count ? 6 : 2, (p.count / maxDay) * 96)}px` }}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex justify-between text-[10px] text-white/30">
+            <span>{perDay[0]?.day.slice(5)}</span>
+            <span>max {maxDay}/j</span>
+            <span>{perDay[perDay.length - 1]?.day.slice(5)}</span>
+          </div>
+        </div>
+
+        {/* Which plans the paying customers are actually on — including the
+            retired ones, which is the only place they are still visible. */}
+        <div className="rounded-2xl border border-white/10 bg-[#121214] p-4">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Répartition par offre</p>
+          {Object.keys(c.byKind).length === 0 ? (
+            <p className="mt-3 text-sm text-white/40">Aucun client payant identifié.</p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {Object.entries(c.byKind)
+                .sort((a, b) => b[1] - a[1])
+                .map(([kind, count]) => (
+                  <li key={kind} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="min-w-0 truncate text-white/70">
+                      {KIND_LABELS[kind] || kind}
+                      {!MONTHLY_EQUIV[kind] && kind !== "lifetime" && kind !== "pack" && <span className="ml-1.5 text-[11px] text-white/30">tarif inconnu</span>}
+                    </span>
+                    <span className="flex-none font-semibold text-[#EDE9E0]">{count}</span>
+                  </li>
+                ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* The settings whose absence shows up as a customer complaint days
+          later, rather than as an error anyone would notice today. */}
+      <div className="mt-3 rounded-2xl border border-white/10 bg-[#121214] p-4">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Configuration</p>
+        <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+          {HEALTH.map(([label, ok, why]) => (
+            <li key={label} className="flex items-start gap-2 text-sm">
+              <span className={`mt-0.5 flex-none ${ok ? "text-emerald-300" : "text-red-300"}`}>{ok ? "✓" : "✗"}</span>
+              <span className="min-w-0">
+                <span className={ok ? "text-white/70" : "text-red-300"}>{label}</span>
+                {!ok && <span className="block text-[11px] leading-4 text-white/40">{why}</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+// The /admin page: the business above, then the per-email tools, then the live
+// list of captured emails. Unlisted, gated by ADMIN_TOKEN server-side, and
+// never linked from the site: the API is what actually protects the data, this
+// page only carries the token.
 function AdminLeadsPage() {
   const [token, setToken] = useState(() => {
     try { return window.localStorage.getItem("movento_admin_token") || ""; } catch { return ""; }
@@ -4720,22 +4980,12 @@ function AdminLeadsPage() {
       </header>
 
       <div className="mx-auto max-w-4xl px-6 pt-10">
-        <h1 className="text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0]">Emails collectés</h1>
-        <p className="mt-2 text-sm text-white/55">
-          {state.fetchedAt ? `Actualisé à ${state.fetchedAt.toLocaleTimeString("fr-FR")}` : "Chargement…"}
-          {live && " · rafraîchissement toutes les 10 s"}
-        </p>
+        <h1 className="text-3xl font-bold tracking-[-0.03em] text-[#EDE9E0]">Tableau de bord</h1>
+        <p className="mt-2 text-sm text-white/55">movento.dev — clients, revenus, emails et santé de la boutique.</p>
 
         {state.error && <div className="mt-6 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-4 text-sm text-red-300">{state.error}</div>}
 
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          {[["Total", state.total], ["Aujourd'hui", today], ["24 h", last24h]].map(([label, value]) => (
-            <div key={label} className="rounded-2xl border border-white/10 bg-[#121214] p-4">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">{label}</p>
-              <p className="mt-1 text-2xl font-bold text-[#EDE9E0]">{value}</p>
-            </div>
-          ))}
-        </div>
+        <AdminOverview token={token} />
 
         <form onSubmit={runLookup} className="mt-6 rounded-2xl border border-white/10 bg-[#121214] p-4">
           <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Pourquoi cet email a-t-il accès ?</p>
@@ -4948,7 +5198,21 @@ function AdminLeadsPage() {
           )}
         </div>
 
-        <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#121214]">
+        {/* The live end of the same data the overview summarises: this one
+            refreshes on a timer, so it carries its own counters rather than
+            leaving the reader to wonder whether the snapshot above moved. */}
+        <div className="mt-8 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h2 className="text-lg font-bold tracking-tight text-[#EDE9E0]">
+            Emails collectés <span className="text-white/35">{state.total}</span>
+          </h2>
+          <p className="text-xs text-white/40">
+            {today} aujourd'hui · {last24h} sur 24 h
+            {state.fetchedAt ? ` · lu à ${state.fetchedAt.toLocaleTimeString("fr-FR")}` : ""}
+            {live && " · toutes les 10 s"}
+          </p>
+        </div>
+
+        <div className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-[#121214]">
           {state.leads.length === 0 && !state.loading ? (
             <p className="px-5 py-10 text-center text-sm text-white/40">Aucun email pour l'instant.</p>
           ) : (

@@ -989,6 +989,9 @@ export async function auditAccessPayments(cap = 1000) {
       whopPlanKind: membership ? membershipPlanKind(membership) : null,
       whopProduct: membership?.product?.title || null,
       renewalDate: membership?.renewal_period_end || null,
+      // A subscription already set to stop still reads "active" on Whop until
+      // the day it ends, so the status alone never shows churn coming.
+      cancelAtPeriodEnd: Boolean(membership?.cancel_at_period_end) || membership?.status === "canceling",
     };
   });
 
@@ -1015,6 +1018,7 @@ export async function auditAccessPayments(cap = 1000) {
       whopPlanKind: membershipPlanKind(membership),
       whopProduct: membership.product?.title || null,
       renewalDate: membership.renewal_period_end || null,
+      cancelAtPeriodEnd: Boolean(membership.cancel_at_period_end) || membership.status === "canceling",
     });
   }
 
