@@ -728,9 +728,9 @@ const isPinned = (item) => (item.pinned ? 1 : 0);
 // the page would die before its first render.
 const TRIAL_DAYS = 0;
 
-// The four prompts the gallery leads with. They are there because they look
-// the best, which has nothing to do with what they cost — so they still open
-// the gallery now that they are no longer free.
+// The four that were the giveaway. Nothing reads this now except a trial, if
+// one is ever switched on again: it is the list the free days would cover.
+// They no longer lead the gallery — that was a privilege of being free.
 const SHOWCASE_FILES = [
   "Mapple_Headphone_Store.md",
   "Vantage_Dashboard_Signal_Hero.md",
@@ -758,24 +758,20 @@ const FREE_PROMPT_FILES = new Set();
 // Read from the same isStillPreview the card uses to decide whether to drift,
 // so the order and the drift can never disagree about what moves.
 const movesItself = (item) => (item.preview && !isStillPreview(item.preview) ? 1 : 0);
-// The shop window, and the only thing that outranks a pin. Not named for being
-// free, because it is only free some of the time: it is the handful of cards a
-// visitor should meet first whatever the offer is. It replaced the popup that
-// used to announce the giveaway — the gallery opens on it instead of
-// interrupting three seconds later.
-const leadsGallery = (item) => (SHOWCASE_SET.has(item.file) ? 1 : 0);
 const availablePrompts = prompts
   .map((item, i) => ({ item, i }))
   .filter(({ item }) => isPromptAvailable(item))
   .sort(
     (a, b) =>
-      // The shop window first, ahead of the pins: whether it is a giveaway or
-      // the first taste of a trial, it only works if it is the first thing
-      // seen. Then pinned, which still means "put this one first" for
-      // everything else. Motion sorts inside both blocks, so the top of the
-      // gallery is all movement rather than a curated block with dead tiles
-      // scattered through it.
-      leadsGallery(b.item) - leadsGallery(a.item) ||
+      // Pinned first — the newest work, which is what a returning visitor came
+      // back for. Four cards used to outrank even the pins, because they were
+      // the giveaway and an offer only works if it is seen first; with nothing
+      // free they have no claim on the front and the rule is gone.
+      //
+      // Motion sorts inside the pinned block, so the gallery opens on a wall of
+      // moving tiles. Within that, array order decides, and new entries go at
+      // the top of `prompts` — so the newest prompt carrying a clip is the
+      // first thing on the page.
       isPinned(b.item) - isPinned(a.item) ||
       movesItself(b.item) - movesItself(a.item) ||
       (isPinned(a.item) ? 0 : hasDemo(b.item) - hasDemo(a.item) || addedAt(b.item) - addedAt(a.item)) ||
@@ -2094,7 +2090,10 @@ function runSelfTests() {
   console.assert([...FREE_PROMPT_FILES].every((f) => prompts.some((item) => item.file === f)), "every free filename must belong to a catalogue entry");
   // Free outranks pinned, which is the whole point of dropping the popup: the
   // offer has to be the first thing in the gallery, not an interruption.
-  console.assert(availablePrompts.slice(0, SHOWCASE_FILES.length).every((item) => SHOWCASE_FILES.includes(item.file)), "the showcase prompts must lead the gallery, whichever offer is running");
+  // What the gallery opens on, now that nothing is free: pinned work, newest
+  // first, and every one of it moving. A still tile at the top reads as a
+  // broken one.
+  console.assert(availablePrompts.slice(0, 8).every((item) => isPinned(item) && movesItself(item)), "the gallery must open on pinned prompts that move by themselves");
   // The container and the motion are two different questions, and a higgs URL
   // answers them from two different places: output=webp says what element to
   // mount, the .png source says there is nothing moving inside it.
