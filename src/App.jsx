@@ -2245,8 +2245,12 @@ export default function MoventoSite() {
   // Five across from 1280 up, against a row that now runs the full width of the
   // window: at 1280 that is a 224px card, which still holds a title, a category
   // and the lock, and every wider screen only makes it roomier.
+  // Four across at most, however wide the screen gets. A fifth column shrank
+  // every card past the point where the design inside it could be read, and
+  // the preview IS the product — a row of thumbnails too small to judge sells
+  // nothing. Wider cards on a large monitor are the intended trade.
   const columnsForWidth = () =>
-    typeof window === "undefined" ? 2 : window.innerWidth >= 1280 ? 5 : window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 2;
+    typeof window === "undefined" ? 2 : window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 2;
   const [galleryColumns, setGalleryColumns] = useState(columnsForWidth);
   useEffect(() => {
     const sync = () => setGalleryColumns(columnsForWidth());
