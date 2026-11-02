@@ -26,7 +26,12 @@ const SHOWCASE_FILES = [
   "Lithos_Geology_Reveal_Hero.md",
   "Kimi_Grido1_Racing_Systems.md",
 ];
-export const FREE_PROMPT_FILES = new Set(TRIAL_DAYS > 0 ? [] : SHOWCASE_FILES);
+// EMPTY: nothing is served without a purchase any more. Keep identical to
+// FREE_PROMPT_FILES in src/App.jsx — that one unlocks the copy button, this one
+// decides whether /api/prompt actually hands the markdown over, so a name in
+// only one of them is either a button that fails or a prompt given away in
+// silence.
+export const FREE_PROMPT_FILES = new Set();
 // Whether a given prompt may be handed over. Pure, and separate from the
 // endpoint, because this is the one decision in the codebase that both gives
 // away paid work and withholds work already paid for — it is worth being able

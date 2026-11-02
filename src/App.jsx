@@ -728,9 +728,9 @@ const isPinned = (item) => (item.pinned ? 1 : 0);
 // the page would die before its first render.
 const TRIAL_DAYS = 0;
 
-// The four prompts the gallery leads with, whichever offer is running: they
-// are there because they look the best, which stays true either way. What they
-// cost is TRIAL_DAYS' business, not theirs.
+// The four prompts the gallery leads with. They are there because they look
+// the best, which has nothing to do with what they cost — so they still open
+// the gallery now that they are no longer free.
 const SHOWCASE_FILES = [
   "Mapple_Headphone_Store.md",
   "Vantage_Dashboard_Signal_Hero.md",
@@ -738,11 +738,17 @@ const SHOWCASE_FILES = [
   "Kimi_Grido1_Racing_Systems.md",
 ];
 const SHOWCASE_SET = new Set(SHOWCASE_FILES);
-// Given away for an email only while there is no trial. With one, nothing is
-// free: a prompt handed over without a purchase undercuts the trial it is
-// meant to sell. Mirrored in api/_shared.js, which is what actually enforces
-// access — this set only unlocks the copy button.
-const FREE_PROMPT_FILES = new Set(TRIAL_DAYS > 0 ? [] : SHOWCASE_FILES);
+// EMPTY: nothing is given away any more. The four showcase prompts used to be
+// handed over for an email address; they are now locked like every other one.
+//
+// That giveaway was the site's ONLY lead magnet: the email gate on a free copy
+// is the single caller of /api/collect-lead, so with this set empty no new
+// addresses are collected at all, and the admin funnel stops counting.
+//
+// Putting a filename back here re-opens it, and the same name must go into the
+// set in api/_shared.js, which is what actually enforces access — this one only
+// unlocks the copy button.
+const FREE_PROMPT_FILES = new Set();
 
 // Whether the card moves BY ITSELF — a clip or a gif, as against a still that
 // only gets the Ken Burns pan, and against an entry with no preview at all,
@@ -1940,14 +1946,18 @@ function PreviewCard({ item, badge, onClick, onPreview, held }) {
         {/* Said on the tile, not in a tooltip: a gift glyph in the corner of
             the title row is only legible to someone already hunting for it,
             and the whole point of the giveaway is that it reads at a glance. */}
-        {/* These four are the way in either way: given away for an email with
-            no trial, and the whole of what the free days cover with one.
+        {/* Keyed on what is actually free, NEVER on the showcase set. The two
+            used to be the same list, and when the giveaway ended these four
+            kept a "Gratuit" badge over a prompt the copy button then refused
+            — the worst kind of wrong, since it is read before the click.
+            A running trial is the one case where the showcase is the answer,
+            because then the free days are exactly what it covers.
             Dropped once the visitor holds the prompt some OTHER way — full
-            access, a separate purchase, a running trial — because then the
-            offer is spent. Not merely "unlocked": with no trial these cards are
-            unlocked BY being free, and hiding the badge for that reason would
-            hide the giveaway from the only people it is aimed at. */}
-        {SHOWCASE_SET.has(item.file) && !held && (
+            access or a separate purchase — because the offer is spent. Not
+            merely "unlocked": a free prompt is unlocked BY being free, and
+            hiding the badge for that would hide it from the only people it is
+            aimed at. */}
+        {(TRIAL_DAYS > 0 ? SHOWCASE_SET.has(item.file) : FREE_PROMPT_FILES.has(item.file)) && !held && (
           <span className="pointer-events-none absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1.5 rounded-full bg-emerald-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#04150d] shadow-lg shadow-black/50">
             <Icon name="gift" className="h-3 w-3" /> {TRIAL_DAYS > 0 ? t(`${TRIAL_DAYS} days free`, `${TRIAL_DAYS} jours offerts`) : t("Free", "Gratuit")}
           </span>
@@ -2072,10 +2082,11 @@ function runSelfTests() {
   // The popup names whatever is free, so the two have to agree. Not compared
   // against api/_shared.js here — that set is not imported — so the mirror is
   // checked by a script before each commit instead.
-  // The trial and the giveaway are alternatives, never both: a prompt handed
-  // over for an address undercuts the trial it is supposed to sell.
-  console.assert(TRIAL_DAYS > 0 ? FREE_PROMPT_FILES.size === 0 : FREE_PROMPT_FILES.size === SHOWCASE_FILES.length, "a running trial means nothing is free; no trial means the showcase is");
-  console.assert(freePromptItems.length === (TRIAL_DAYS > 0 ? 0 : 4), "four prompts are given away, unless a trial replaces them");
+  // Nothing is free. Not a temporary state to be tolerated: a non-empty set
+  // here means a prompt is being handed out, and that is now always a mistake
+  // unless someone deliberately re-opened one.
+  console.assert(FREE_PROMPT_FILES.size === 0, "no prompt is given away any more");
+  console.assert(freePromptItems.length === 0, "and none is listed as a giveaway");
   console.assert(SHOWCASE_FILES.every((f) => prompts.some((item) => item.file === f)), "every showcase filename must belong to a catalogue entry");
   console.assert(freePromptItems.every((item) => isPromptAvailable(item) && item.title), "a free prompt with no markdown or no title would be a badge promising a 404");
   // The badge, the sort and the API all key on FREE_PROMPT_FILES, so a name in
@@ -4629,7 +4640,7 @@ function AdminOverview({ token }) {
           l.partial ? `${pct(l.converted, l.matchedAgainst)} des ${l.matchedAgainst} plus récents` : `${pct(l.converted, l.total)} des emails collectés`,
         )}
         {tile("Essais en cours", c.trialing, "pas encore facturés")}
-        {tile("Catalogue", catalogue.shown, `${catalogue.withVideo} vidéos · ${catalogue.free} gratuits${catalogue.hidden ? ` · ${catalogue.hidden} masqués` : ""}`)}
+        {tile("Catalogue", catalogue.shown, `${catalogue.withVideo} vidéos${catalogue.free ? ` · ${catalogue.free} gratuits` : ""}${catalogue.hidden ? ` · ${catalogue.hidden} masqués` : ""}`)}
       </div>
 
       {alerts.length > 0 && (
