@@ -100,6 +100,13 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Nova Agent — Thinking Machines", category: "AI / SaaS", type: "Landing", file: "Nova_Agent_3D_Robot_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/nova-agent-hero.mp4", tags: ["Three.js", "3D Robot", "Scroll Camera"], gradient: "from-[#efece6] via-[#ff3d8b] to-[#141414]" },
+  { title: "Halden — Port AI Bowl Glow", category: "SaaS", type: "Landing", file: "Halden_Port_Bowl_Glow_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/halden-port-hero.mp4", tags: ["Canvas Glow", "Letter Reveal", "Scroll Pin"], gradient: "from-[#ffffff] via-[#8fd5f1] to-[#0b1d3a]" },
+  { title: "Maison Vell — Runway Depth Lookbook", category: "E-commerce", type: "Landing", file: "Maison_Vell_Runway_Lookbook.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/vell-lookbook.mp4", tags: ["Depth Line", "Sprite Crop", "Drag Scroll"], gradient: "from-[#f1f5fa] via-[#a4adb8] to-[#16191f]" },
+  { title: "Lumen Roof — Morning / Night Fog", category: "Landing Page", type: "Landing", file: "Lumen_Roof_Fog_Toggle_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/lumen-roof-hero.mp4", tags: ["WebGL Fog", "Day / Night", "Image Swap"], gradient: "from-[#f7f8dc] via-[#6d8f2a] to-[#0b1426]" },
+  { title: "Saltwake — Pirate Two-Scene Hero", category: "Landing Page", type: "Landing", file: "Saltwake_Pirate_Two_Scene_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/saltwake-pirate-hero.mp4", tags: ["SVG Waves", "Scene Change", "Game Art"], gradient: "from-[#e6e0cf] via-[#d3cebe] to-[#16130e]" },
+  { title: "Hollowmere — A Night of Lanterns", category: "Landing Page", type: "Landing", file: "Hollowmere_Halloween_Descent.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/hollowmere-halloween.mp4", tags: ["Scroll Descent", "Canvas Falls", "Halloween"], gradient: "from-[#AAEBFF] via-[#FF9A3C] to-[#110A2A]" },
+  { title: "Redline — Mars Trips 3D Hero", category: "Landing Page", type: "Landing", file: "Redline_Mars_Three_Step_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/redline-mars-hero.mp4", tags: ["Three.js", "Planet Shader", "Three Step"], gradient: "from-[#d0591f] via-[#e8283c] to-[#2a0d04]" },
   { title: "Mina — 3D Creator Living Portrait", category: "Portfolio", type: "Landing", file: "Mina_3D_Creator_Living_Portrait.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/living-portrait-hero.mp4", tags: ["WebGL", "Living Portrait", "Framer Motion"], gradient: "from-[#D7E2EA] via-[#B600A8] to-[#0C0C0C]" },
   { title: "Leon Vasari — VHS Filmography Shelf", category: "Portfolio", type: "Landing", file: "Leon_Vasari_VHS_Filmography_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/vasari-vhs-hero.mp4", tags: ["3D Shelf", "Custom Cursor", "Ink Reveal"], gradient: "from-[#EDEBE6] via-[#1F3FB0] to-[#141414]" },
   { title: "Oda Nobunaga — Unifiers of Japan", category: "Landing Page", type: "Landing", file: "Oda_Nobunaga_Unifiers_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/oda-nobunaga-hero.mp4", tags: ["WebGL", "Scroll Build", "Editorial"], gradient: "from-[#FAF3E9] via-[#E40038] to-[#201408]" },
@@ -378,6 +385,13 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Nova_Agent_3D_Robot_Hero.md",
+  "Halden_Port_Bowl_Glow_Hero.md",
+  "Maison_Vell_Runway_Lookbook.md",
+  "Lumen_Roof_Fog_Toggle_Hero.md",
+  "Saltwake_Pirate_Two_Scene_Hero.md",
+  "Hollowmere_Halloween_Descent.md",
+  "Redline_Mars_Three_Step_Hero.md",
   "Mina_3D_Creator_Living_Portrait.md",
   "Leon_Vasari_VHS_Filmography_Hero.md",
   "Oda_Nobunaga_Unifiers_Hero.md",
