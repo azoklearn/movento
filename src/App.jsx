@@ -103,6 +103,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "halo — Glass Prism P3 Kit", category: "Hero Section", type: "Hero", file: "Halo_P3_Prism_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/sweifsArea.mp4", tags: ["Three.js", "Glass Prism", "Refraction"], gradient: "from-[#9fe8ff] via-[#b084ff] to-[#151517]" },
   { title: "Nova Agent — Thinking Machines", category: "AI / SaaS", type: "Landing", file: "Nova_Agent_3D_Robot_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/nova-agent-hero.mp4", tags: ["Three.js", "3D Robot", "Scroll Camera"], gradient: "from-[#efece6] via-[#ff3d8b] to-[#141414]" },
   { title: "Halden — Port AI Bowl Glow", category: "SaaS", type: "Landing", file: "Halden_Port_Bowl_Glow_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/halden-port-hero.mp4", tags: ["Canvas Glow", "Letter Reveal", "Scroll Pin"], gradient: "from-[#ffffff] via-[#8fd5f1] to-[#0b1d3a]" },
   { title: "Maison Vell — Runway Depth Lookbook", category: "E-commerce", type: "Landing", file: "Maison_Vell_Runway_Lookbook.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/vell-lookbook.mp4", tags: ["Depth Line", "Sprite Crop", "Drag Scroll"], gradient: "from-[#f1f5fa] via-[#a4adb8] to-[#16191f]" },
@@ -388,6 +389,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Halo_P3_Prism_Hero.md",
   "Nova_Agent_3D_Robot_Hero.md",
   "Halden_Port_Bowl_Glow_Hero.md",
   "Maison_Vell_Runway_Lookbook.md",
