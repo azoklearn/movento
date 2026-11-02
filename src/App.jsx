@@ -9,9 +9,6 @@ import PROMPT_ADDED from "./prompt-added.json";
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
 const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_URL}/api/create-checkout-session`;
-// The one explainer on the home: what Movento is, in a minute. Loom's own
-// iframe rather than their embed script, so the page pulls no third-party JS.
-const LOOM_EMBED_URL = "https://www.loom.com/embed/a2716b9b7b7641958e56d1559ebdee43";
 // Deadline of the launch offer, shown as a live countdown in the bottom banner
 // on /pricing. It MUST be a real, fixed date — an ISO string with an offset,
 // e.g. "2026-08-31T23:59:59+02:00". Leave it null and the banner falls back to
@@ -2798,38 +2795,6 @@ export default function MoventoSite() {
           <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55 md:text-lg">
             {t("Click a card to see the design move. Every prompt describes the whole site — fonts, colors, animations, section by section.", "Clique sur une carte pour voir le design bouger. Chaque prompt décrit le site en entier — polices, couleurs, animations, section par section.")}
           </motion.p>
-        </section>
-      )}
-
-      {/* The explainer, back at the top of the home. It no longer sits under a
-          promise, because there is no promise left on this page — it is the
-          first thing above the catalogue. Only on the home: /prompts
-          introduces itself in words and does not need a minute of video. */}
-      {!isPromptsPage && (
-        <section id="video" className="relative z-10 mx-auto max-w-6xl px-3 pb-2 pt-10 sm:px-6 lg:px-8 lg:pt-14">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden rounded-[20px] border border-white/10 bg-[#0B0B0D] shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9)] sm:rounded-[28px]"
-          >
-            {/* 16:9 box rather than a fixed height: the player fills it at
-                every width and never letterboxes itself on a phone. */}
-            <div className="relative aspect-video">
-              <iframe
-                src={`${LOOM_EMBED_URL}?hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true`}
-                title={t("What Movento is", "Movento, c'est quoi")}
-                className="absolute inset-0 h-full w-full border-0"
-                // Without it the frame paints white before the player is up,
-                // which flashes on a black page.
-                style={{ colorScheme: "dark" }}
-                loading="lazy"
-                allow="fullscreen; picture-in-picture; clipboard-write"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
-            </div>
-          </motion.div>
         </section>
       )}
 
