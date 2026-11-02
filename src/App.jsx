@@ -100,6 +100,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Fennec — 3D Fox Workflow Hero", category: "Hero Section", type: "Hero", file: "Fennec_3D_Fox_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/autumn-fox-hero.mp4", tags: ["Three.js", "GLB Model", "Video BG"], gradient: "from-[#f4ece4] via-[#e8742a] to-[#1a1410]" },
   { title: "Folio — Rising Books Hero", category: "Hero Section", type: "Hero", file: "Folio_3D_Bookshelf_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/folio-books-hero.mp4", tags: ["Three.js", "3D Books", "Spring Wave"], gradient: "from-[#efe7d6] via-[#b8a58a] to-[#000000]" },
   { title: "halo — Glass Prism P3 Kit", category: "Hero Section", type: "Hero", file: "Halo_P3_Prism_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/sweifsArea.mp4", tags: ["Three.js", "Glass Prism", "Refraction"], gradient: "from-[#9fe8ff] via-[#b084ff] to-[#151517]" },
   { title: "Nova Agent — Thinking Machines", category: "AI / SaaS", type: "Landing", file: "Nova_Agent_3D_Robot_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/nova-agent-hero.mp4", tags: ["Three.js", "3D Robot", "Scroll Camera"], gradient: "from-[#efece6] via-[#ff3d8b] to-[#141414]" },
@@ -117,7 +118,7 @@ const prompts = [
   { title: "Wild — Pill Reveal Hero", category: "Landing Page", type: "Hero", file: "Wild_Pill_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/wild-pill-hero.mp4", tags: ["Reveal", "Travel", "Video"], gradient: "from-[#ffffff] via-[#a9a9a6] to-[#1b1b1b]" },
   { title: "Logistics — Aerial Climb Scroll Hero", category: "Landing Page", type: "Hero", file: "Freight_Scroll_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/logistics-freight-hero.mp4", tags: ["Scroll Scrub", "Aerial", "Logistics"], gradient: "from-[#F7F5EF] via-[#8f8b8a] to-[#0a0b0c]" },
   { title: "KV — Freight Services Scroll Hero", category: "Landing Page", type: "Landing", file: "KV_Freight_Services_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/freight-services-hero.mp4", tags: ["Scroll Scrub", "Product Render", "Blend Mode"], gradient: "from-[#ffffff] via-[#2f63ff] to-[#111111]" },
-  { title: "Petalyx — Cherry Blossom SaaS", category: "SaaS", type: "Landing", file: "Petalyx_Cherry_Blossom_SaaS.md", pinned: true, preview: "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261022_092440_a7e1d115-27f9-4496-ab60-3033aacc6bba.png&w=1280&q=85", tags: ["GSAP", "Lenis", "Watercolor"], gradient: "from-[#e7efcf] via-[#b4cd52] to-[#121410]" },
+  { title: "Petalyx — Cherry Blossom SaaS", category: "SaaS", type: "Landing", file: "Petalyx_Cherry_Blossom_SaaS.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/petalyx-nature-landing.mp4", tags: ["GSAP", "Lenis", "Watercolor"], gradient: "from-[#e7efcf] via-[#b4cd52] to-[#121410]" },
   { title: "Tana Camps — Elephant Editorial", category: "Landing Page", type: "Landing", file: "Tana_Camps_Elephant_Sections.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/tana-elephant-sections.mp4", tags: ["Editorial", "Didone", "Letter Reveal"], gradient: "from-[#ECE3D1] via-[#A86438] to-[#43282A]" },
   { title: "Prestige Chauffeur — Cinematic Scroll Hero", category: "Landing Page", type: "Landing", file: "Prestige_Chauffeur_Scroll_Hero.md", pinned: true, preview: "https://res.cloudinary.com/dk2kai0as/video/upload/v1792993761/bu_ma6zbc.mov", tags: ["Scroll Scrub", "Frame Sequence", "Luxury"], gradient: "from-[#f5ede8] via-[#c81f3a] to-[#0d0606]" },
   { title: "Melli — Master 3D Artistry", category: "Landing Page", type: "Landing", file: "Melli_Master_3D_Artistry.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/honey-bee-melli-landing.mp4", tags: ["Three.js", "GLB Models", "Scroll Story"], gradient: "from-[#e7e3fb] via-[#5b3bd1] to-[#0d0b1a]" },
@@ -387,6 +388,7 @@ const prompts = [
 // Only prompts whose .md is actually hosted in azoklearn/movento/prompts/ (or that open an
 // external link) are shown. Add a filename here as its content is added to the repo.
 const AVAILABLE_FILES = new Set([
+  "Fennec_3D_Fox_Hero.md",
   "Folio_3D_Bookshelf_Hero.md",
   "Halo_P3_Prism_Hero.md",
   "Nova_Agent_3D_Robot_Hero.md",
