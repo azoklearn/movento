@@ -101,6 +101,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Found — Curiosity Cabinet Spider", category: "Portfolio", type: "Landing", file: "Found_Curiosity_Cabinet_Spider.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/found-spider.mp4", tags: ["Canvas 2D", "Verlet Silk", "IK Legs"], gradient: "from-[#dfe4ff] via-[#1129e2] to-[#05081f]" },
   { title: "Petalyx — Cherry Blossom SaaS", category: "SaaS", type: "Landing", file: "Petalyx_Cherry_Blossom_SaaS.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/petalyx-nature-landing.mp4", tags: ["GSAP", "Lenis", "Watercolor"], gradient: "from-[#e7efcf] via-[#b4cd52] to-[#121410]" },
   { title: "Fennec — 3D Fox Workflow Hero", category: "Hero Section", type: "Hero", file: "Fennec_3D_Fox_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/autumn-fox-hero.mp4", tags: ["Three.js", "GLB Model", "Video BG"], gradient: "from-[#f4ece4] via-[#e8742a] to-[#1a1410]" },
   { title: "Folio — Rising Books Hero", category: "Hero Section", type: "Hero", file: "Folio_3D_Bookshelf_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/folio-books-hero.mp4", tags: ["Three.js", "3D Books", "Spring Wave"], gradient: "from-[#efe7d6] via-[#b8a58a] to-[#000000]" },
@@ -391,6 +392,7 @@ const prompts = [
 const AVAILABLE_FILES = new Set([
   "Fennec_3D_Fox_Hero.md",
   "Folio_3D_Bookshelf_Hero.md",
+  "Found_Curiosity_Cabinet_Spider.md",
   "Halo_P3_Prism_Hero.md",
   "Nova_Agent_3D_Robot_Hero.md",
   "Halden_Port_Bowl_Glow_Hero.md",
