@@ -1881,8 +1881,12 @@ function GeneratedPreview({ item }) {
 
 function PreviewCard({ item, badge, onClick, onPreview, held }) {
   const [previewFailed, setPreviewFailed] = useState(false);
-  const [inView, setInView] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [near, setNear] = useState(false);        // media is mounted
+  const [visible, setVisible] = useState(false);  // media is playing
+  // The preview's own ratio, measured once it loads. The tile has to keep its
+  // height when the media unmounts, or every card above the viewport collapses
+  // to the 1.35 fallback and the page scrolls out from under the reader.
+  const [ratio, setRatio] = useState(null);
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const hasVideo = !previewFailed && isVideoPreview(item.preview);
@@ -1893,20 +1897,31 @@ function PreviewCard({ item, badge, onClick, onPreview, held }) {
   // Only drift the stills, and only while the card is actually on screen — an
   // off-screen animation still costs a compositor layer on every card.
   const driftClass = hasImage && visible && isStillPreview(item.preview) ? "mv-kenburns" : "";
+  // What the placeholder stands in at: the real ratio once it is known, the
+  // same 1.35 the media falls back to until then.
+  const tileRatio = ratio ? String(ratio) : "1.35";
 
-  // Mobile killer: 40 autoplaying previews loading at once. Only mount the heavy
-  // media once a card nears the viewport (inView, sticky), and track whether it is
-  // currently on screen (visible) — so the first paint loads just the few cards
-  // actually shown.
+  // Two bands, because mounting and playing are different costs.
+  //
+  // `near` MOUNTS and UNMOUNTS the media. It used to be sticky — once a card
+  // had been seen its <video> stayed in the tree for good — and pausing an
+  // off-screen clip does not release its decoder or its buffer. Measured on an
+  // iPhone profile, scrolling the gallery to the foot left 131 mounted videos,
+  // every one of them with decoded data, and 3.3s of blocked main thread. That
+  // is the bug that made the catalogue unusable on a phone. None of it showed
+  // in the JS heap, which sat flat at 9.5MB: video buffers are not on it.
+  //
+  // `visible` only starts and stops playback, as before.
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") { setInView(true); setVisible(true); return; }
-    const io = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) setInView(true);
-      setVisible(entry.isIntersecting);
-    }, { rootMargin: "300px 0px", threshold: 0.01 });
-    io.observe(el);
-    return () => io.disconnect();
+    if (!el || typeof IntersectionObserver === "undefined") { setNear(true); setVisible(true); return undefined; }
+    // One viewport of slack either side, so a card is ready before it arrives
+    // and is not torn down by a few pixels of overscroll.
+    const mountIO = new IntersectionObserver(([e]) => setNear(e.isIntersecting), { rootMargin: "900px 0px", threshold: 0 });
+    const playIO = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { rootMargin: "0px", threshold: 0.01 });
+    mountIO.observe(el);
+    playIO.observe(el);
+    return () => { mountIO.disconnect(); playIO.disconnect(); };
   }, []);
 
   // Play only the previews on screen, so a phone never decodes 40 clips at once.
@@ -1921,7 +1936,7 @@ function PreviewCard({ item, badge, onClick, onPreview, held }) {
       // empty rectangle, which is exactly the failure this card had on phones.
       try { if (v.readyState >= 1 && !v.currentTime) v.currentTime = 0.1; } catch { /* seek not ready */ }
     });
-  }, [visible, inView]);
+  }, [visible, near]);
 
   // Every card opens the preview popup — the visitor sees the design play at a
   // usable size before deciding, and copies from there. Copying straight from
@@ -1964,7 +1979,7 @@ function PreviewCard({ item, badge, onClick, onPreview, held }) {
             <Icon name="gift" className="h-3 w-3" /> {TRIAL_DAYS > 0 ? t(`${TRIAL_DAYS} days free`, `${TRIAL_DAYS} jours offerts`) : t("Free", "Gratuit")}
           </span>
         )}
-        {!inView ? <div className="relative aspect-[1.35]"><PreviewSkeleton item={item} /></div> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className="block h-auto w-full transition duration-500" style={{ aspectRatio: "auto 1.35 / 1" }} autoPlay loop muted playsInline preload="metadata" onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`block h-auto w-full ${driftClass} transition duration-500`} style={{ aspectRatio: "auto 1.35 / 1" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} /> : <div className="relative aspect-[1.35]"><GeneratedPreview item={item} /></div>}
+        {!near ? <div className="relative" style={{ aspectRatio: tileRatio }}><PreviewSkeleton item={item} /></div> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className="block h-auto w-full transition duration-500" style={{ aspectRatio: "auto 1.35 / 1" }} autoPlay loop muted playsInline preload="metadata" onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight); }} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`block h-auto w-full ${driftClass} transition duration-500`} style={{ aspectRatio: "auto 1.35 / 1" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onLoad={(e) => { const i = e.currentTarget; if (i.naturalWidth && i.naturalHeight) setRatio(i.naturalWidth / i.naturalHeight); }} onError={() => setPreviewFailed(true)} /> : <div className="relative" style={{ aspectRatio: tileRatio }}><GeneratedPreview item={item} /></div>}
       </div>
       <div className="flex items-center justify-between gap-2 px-1 pb-1 pt-3 sm:gap-3 sm:px-1.5">
         <div className="min-w-0">
@@ -2562,7 +2577,7 @@ export default function MoventoSite() {
           </motion.div>
         )}
         {previewItem && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6" onClick={closePreview}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden overscroll-contain px-4 py-6" onClick={closePreview}>
             <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#121214] shadow-2xl shadow-black/60" onClick={(e) => e.stopPropagation()}>
               <button onClick={closePreview} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur transition hover:bg-black/80"><Icon name="close" className="h-4 w-4" /></button>
@@ -2579,7 +2594,11 @@ export default function MoventoSite() {
               {/* Everything under the media scrolls: four steps plus the title
                   row overflow a short phone in landscape, and the popup itself
                   is clipped to 92dvh. */}
-              <div className="flex min-h-0 flex-col overflow-y-auto">
+              {/* overscroll-contain, like the checkout overlay: without it a
+                  drag that reaches the end of this panel carries on into the
+                  gallery behind it, and the reader closes the card somewhere
+                  other than where they opened it. */}
+              <div className="flex min-h-0 flex-col overflow-y-auto overscroll-contain">
                 <div className="flex items-center justify-between gap-3 p-5">
                   <div className="min-w-0">
                     <h3 className="truncate text-base font-semibold text-[#EDE9E0]">{previewItem.title}</h3>
