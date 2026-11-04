@@ -101,7 +101,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
-  { title: "Private Preview Test", category: "Component", type: "Component", file: "Private_Preview_Test.md", onlyFor: "barbelinnoan@gmail.com", pinned: true, preview: "https://res.cloudinary.com/rkke23vr/image/upload/v1793821572/Capture_d_e%CC%81cran_2026-11-04_a%CC%80_20.44.41.png", tags: ["Private", "Test"], gradient: "from-[#e8e8ef] via-[#6b7280] to-[#111114]" },
+  { title: "Private Preview Test", category: "Component", type: "Component", file: "Private_Preview_Test.md", onlyFor: "teammoventoino1@gmail.com", pinned: true, preview: "https://res.cloudinary.com/rkke23vr/image/upload/v1793821572/Capture_d_e%CC%81cran_2026-11-04_a%CC%80_20.44.41.png", tags: ["Private", "Test"], gradient: "from-[#e8e8ef] via-[#6b7280] to-[#111114]" },
   { title: "Found — Curiosity Cabinet Spider", category: "Portfolio", type: "Landing", file: "Found_Curiosity_Cabinet_Spider.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/found-spider.mp4", tags: ["Canvas 2D", "Verlet Silk", "IK Legs"], gradient: "from-[#dfe4ff] via-[#1129e2] to-[#05081f]" },
   { title: "Petalyx — Cherry Blossom SaaS", category: "SaaS", type: "Landing", file: "Petalyx_Cherry_Blossom_SaaS.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/petalyx-nature-landing.mp4", tags: ["GSAP", "Lenis", "Watercolor"], gradient: "from-[#e7efcf] via-[#b4cd52] to-[#121410]" },
   { title: "Fennec — 3D Fox Workflow Hero", category: "Hero Section", type: "Hero", file: "Fennec_3D_Fox_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/autumn-fox-hero.mp4", tags: ["Three.js", "GLB Model", "Video BG"], gradient: "from-[#f4ece4] via-[#e8742a] to-[#1a1410]" },
@@ -646,7 +646,7 @@ const SHOW_DEMO_LINKS = true;
 // already public on every one of those popups, and anyone can put an address in
 // their own browser storage. Nothing private is gated on it, and nothing
 // private should be.
-const LIVE_PREVIEW_EMAILS = new Set(["barbelinnoan@gmail.com"]);
+const LIVE_PREVIEW_EMAILS = new Set(["teammoventoino1@gmail.com"]);
 
 // Pinned prompts lead the gallery in the order they are written in `prompts`
 // above — nothing reorders them, which is the point: "put this one first" has
@@ -2135,7 +2135,7 @@ function runSelfTests() {
   console.assert(plansWithoutEbook.every((plan) => !EBOOK_KINDS.has(plan.id)), "the ladder must not tell a buyer the ebook is not theirs");
   console.assert(!earnedSupport({ kind: "m3" }) && !earnedSupport({ kind: "monthly" }), "the plans that never bought the support must not be handed it");
   console.assert(!earnedSupport({}), "support must never be handed to an unidentified plan");
-  console.assert(canSeeLivePreviews("barbelinnoan@gmail.com") && canSeeLivePreviews(" Barbelinnoan@Gmail.COM "), "the live-preview address must match however it happens to be typed");
+  console.assert(canSeeLivePreviews("teammoventoino1@gmail.com") && canSeeLivePreviews(" TeamMoventoino1@Gmail.COM "), "the live-preview address must match however it happens to be typed");
   console.assert(!canSeeLivePreviews("") && !canSeeLivePreviews(null) && !canSeeLivePreviews(undefined) && !canSeeLivePreviews("someone@else.com"), "no other address, and no empty one, gets the live previews");
   console.assert(prompts.filter((item) => item.demo).every((item) => /^https:\/\//.test(item.demo)), "every demo must be an https URL, or the iframe is blocked as mixed content");
   // The popup names whatever is free, so the two have to agree. Not compared
