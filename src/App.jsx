@@ -101,6 +101,7 @@ const prompts = [
   // `pinned` overrides all of it and leads the gallery — for the prompts worth
   // showing first whether or not they carry a demo link. Drop the flag once
   // they are no longer the thing to open on.
+  { title: "Private Preview Test", category: "Component", type: "Component", file: "Private_Preview_Test.md", onlyFor: "barbelinnoan@gmail.com", pinned: true, preview: "https://res.cloudinary.com/rkke23vr/image/upload/v1793821572/Capture_d_e%CC%81cran_2026-11-04_a%CC%80_20.44.41.png", tags: ["Private", "Test"], gradient: "from-[#e8e8ef] via-[#6b7280] to-[#111114]" },
   { title: "Found — Curiosity Cabinet Spider", category: "Portfolio", type: "Landing", file: "Found_Curiosity_Cabinet_Spider.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/found-spider.mp4", tags: ["Canvas 2D", "Verlet Silk", "IK Legs"], gradient: "from-[#dfe4ff] via-[#1129e2] to-[#05081f]" },
   { title: "Petalyx — Cherry Blossom SaaS", category: "SaaS", type: "Landing", file: "Petalyx_Cherry_Blossom_SaaS.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/petalyx-nature-landing.mp4", tags: ["GSAP", "Lenis", "Watercolor"], gradient: "from-[#e7efcf] via-[#b4cd52] to-[#121410]" },
   { title: "Fennec — 3D Fox Workflow Hero", category: "Hero Section", type: "Hero", file: "Fennec_3D_Fox_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/autumn-fox-hero.mp4", tags: ["Three.js", "GLB Model", "Video BG"], gradient: "from-[#f4ece4] via-[#e8742a] to-[#1a1410]" },
@@ -393,6 +394,7 @@ const AVAILABLE_FILES = new Set([
   "Fennec_3D_Fox_Hero.md",
   "Folio_3D_Bookshelf_Hero.md",
   "Found_Curiosity_Cabinet_Spider.md",
+  "Private_Preview_Test.md",
   "Halo_P3_Prism_Hero.md",
   "Nova_Agent_3D_Robot_Hero.md",
   "Halden_Port_Bowl_Glow_Hero.md",
@@ -604,6 +606,20 @@ const AVAILABLE_FILES = new Set([
   "Scalable_Saas_Hero.md",
 ]);
 
+// A prompt carrying `onlyFor` is absent from availablePrompts above, so it is
+// in neither the public gallery nor any count. It comes back for that one
+// address, in the gallery only.
+//
+// This is a display rule and not a secret: the entry ships in the JS bundle
+// like every other, and /api/prompt gates on whether the caller has PAID, not
+// on this list. Fine for a scratch card to look at; nothing that matters
+// belongs behind it.
+const privatePromptsFor = (email) => {
+  const who = email ? cleanEmail(email) : "";
+  if (!who) return [];
+  return prompts.filter((p) => p.onlyFor && cleanEmail(p.onlyFor) === who && isPromptAvailable(p));
+};
+
 function isPromptAvailable(item) {
   return Boolean(item.link) || AVAILABLE_FILES.has(item.file);
 }
@@ -769,7 +785,11 @@ const FREE_PROMPT_FILES = new Set();
 const movesItself = (item) => (item.preview && !isStillPreview(item.preview) ? 1 : 0);
 const availablePrompts = prompts
   .map((item, i) => ({ item, i }))
-  .filter(({ item }) => isPromptAvailable(item))
+  // `onlyFor` entries are excluded here rather than in isPromptAvailable, which
+  // means "the markdown exists". This list is what the public gallery renders
+  // AND what every "N prompts" count is taken from, so a private card must not
+  // be in it or the offer starts quoting a number nobody else can reach.
+  .filter(({ item }) => isPromptAvailable(item) && !item.onlyFor)
   .sort(
     (a, b) =>
       // Pinned first — the newest work, which is what a returning visitor came
@@ -2296,15 +2316,25 @@ export default function MoventoSite() {
     window.addEventListener("resize", sync);
     return () => window.removeEventListener("resize", sync);
   }, []);
+  // availablePrompts plus whatever is private to this viewer, in front. The
+  // "new" window counts positions, so for that one address it shifts by the
+  // number of private cards — which is the right trade for seeing them first.
+  const galleryPrompts = useMemo(
+    () => {
+      const mine = privatePromptsFor(accessEmail || leadEmail);
+      return mine.length ? [...mine, ...availablePrompts] : availablePrompts;
+    },
+    [accessEmail, leadEmail],
+  );
   const filtered = useMemo(() => {
-    // availablePrompts is already in display order: newest first by git date.
+    // galleryPrompts is already in display order: newest first by git date.
     const q = query.toLowerCase();
-    return availablePrompts.filter((p, i) => {
+    return galleryPrompts.filter((p, i) => {
       if (galleryFilter === "new" && i >= NEW_PROMPT_COUNT) return false;
       if (galleryFilter !== "all" && galleryFilter !== "new" && p.category !== galleryFilter) return false;
       return `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(q);
     });
-  }, [query, galleryFilter]);
+  }, [query, galleryFilter, galleryPrompts]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
     // Emails never contain whitespace, so strip every whitespace/zero-width char
