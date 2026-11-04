@@ -1853,7 +1853,7 @@ function PromptPopupMedia({ item, live }) {
   return (
     <div className="relative flex-none">
       {isVideoPreview(item.preview) ? (
-        <video key={item.file} src={item.preview} poster={posterFor(item.preview)} autoPlay loop muted playsInline className="w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: String(PREVIEW_RATIO), objectPosition: item.previewPosition || "center" }} />
+        <video key={item.file} src={item.preview} poster={posterFor(item.preview)} autoPlay loop muted playsInline disablePictureInPicture className="pointer-events-none w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: String(PREVIEW_RATIO), objectPosition: item.previewPosition || "center" }} />
       ) : isImagePreview(item.preview) ? (
         <img key={item.file} src={item.preview} alt={`${item.title} preview`} className="w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: String(PREVIEW_RATIO), objectPosition: item.previewPosition || "center" }} />
       ) : (
@@ -1977,6 +1977,11 @@ function PreviewCard({ item, badge, onClick, onPreview, held }) {
           mobile. Streaming the on-screen clips costs data; showing nothing
           costs the sale. The IntersectionObserver above still keeps it to the
           two or three cards actually on screen. */}
+        {/* pointer-events-none on the clip itself: a tap that lands on a
+            <video> hands iOS its native player and the preview takes over the
+            whole screen, one card at a time. With the clip transparent to
+            hit-testing the tap passes through to the card, which opens the
+            popup — the one thing a tap here is supposed to do. */}
         {/* Said on the tile, not in a tooltip: a gift glyph in the corner of
             the title row is only legible to someone already hunting for it,
             and the whole point of the giveaway is that it reads at a glance. */}
@@ -1996,7 +2001,7 @@ function PreviewCard({ item, badge, onClick, onPreview, held }) {
             <Icon name="gift" className="h-3 w-3" /> {TRIAL_DAYS > 0 ? t(`${TRIAL_DAYS} days free`, `${TRIAL_DAYS} jours offerts`) : t("Free", "Gratuit")}
           </span>
         )}
-        {!near ? <div className="relative" style={{ aspectRatio: tileRatio }}><PreviewSkeleton item={item} /></div> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} className="block h-auto w-full transition duration-500" style={{ aspectRatio: "auto 1.35 / 1" }} autoPlay loop muted playsInline preload="metadata" onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight); }} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`block h-auto w-full ${driftClass} transition duration-500`} style={{ aspectRatio: "auto 1.35 / 1" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onLoad={(e) => { const i = e.currentTarget; if (i.naturalWidth && i.naturalHeight) setRatio(i.naturalWidth / i.naturalHeight); }} onError={() => setPreviewFailed(true)} /> : <div className="relative" style={{ aspectRatio: tileRatio }}><GeneratedPreview item={item} /></div>}
+        {!near ? <div className="relative" style={{ aspectRatio: tileRatio }}><PreviewSkeleton item={item} /></div> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} disablePictureInPicture className="pointer-events-none block h-auto w-full transition duration-500" style={{ aspectRatio: "auto 1.35 / 1" }} autoPlay loop muted playsInline preload="metadata" onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight); }} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`block h-auto w-full ${driftClass} transition duration-500`} style={{ aspectRatio: "auto 1.35 / 1" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onLoad={(e) => { const i = e.currentTarget; if (i.naturalWidth && i.naturalHeight) setRatio(i.naturalWidth / i.naturalHeight); }} onError={() => setPreviewFailed(true)} /> : <div className="relative" style={{ aspectRatio: tileRatio }}><GeneratedPreview item={item} /></div>}
       </div>
       <div className="flex items-center justify-between gap-2 px-1 pb-1 pt-3 sm:gap-3 sm:px-1.5">
         <div className="min-w-0">
