@@ -81,6 +81,27 @@ a[href]:active {
 }
 .mv-kenburns { animation: mv-kenburns 9s ease-in-out infinite alternate; will-change: transform; }
 
+/* WebKit paints its own start-playback button over any <video> that is not
+   currently playing, and on iOS it paints it big and centred. Nothing in the
+   gallery is a player anyone operates: the previews autoplay, loop, and are
+   muted. So a card that is still buffering, or any clip whose autoplay the
+   system refuses — Low Power Mode is the usual one — ends up wearing a play
+   glyph across the very design it is there to sell.
+   Both spellings are deliberate: display:none covers most builds, and
+   -webkit-appearance:none covers the iOS versions that ignore it on this
+   particular pseudo-element. */
+video::-webkit-media-controls,
+video::-webkit-media-controls-enclosure,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Highlighted tail of the hero headline: the glyphs themselves carry a warm
    cream → pale blue gradient with a soft bloom around them. No box, no second
    typeface — the phrase keeps the headline's font and only its colour changes,
