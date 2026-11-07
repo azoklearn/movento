@@ -1,4 +1,4 @@
-import { cancelWhopMembership, methodNotAllowed, normalizeEmail } from "./_shared.js";
+import { cancelWhopMembership, GUMROAD_MANAGE_URL, methodNotAllowed, normalizeEmail, redisGetAccessRecord } from "./_shared.js";
 
 // email → HTTP status + [French, English] message for each failure reason.
 // Both are returned so the client can show the visitor's own language.
@@ -18,6 +18,18 @@ export default async function handler(req, res) {
   if (!email) return res.status(400).json({ error: "Email requis.", errorEn: "Email required." });
 
   try {
+    // Billed by Gumroad: there is nothing this server can cancel, and asking
+    // Whop would answer "no subscription found" to someone who is paying.
+    const record = await redisGetAccessRecord(email);
+    if (record?.provider === "gumroad") {
+      return res.status(409).json({
+        error: "Ton abonnement est géré par Gumroad : résilie-le depuis ton espace Gumroad, ou depuis le lien « Manage membership » de ton reçu.",
+        errorEn: "Your subscription is managed by Gumroad: cancel it from your Gumroad library, or from the “Manage membership” link in your receipt.",
+        provider: "gumroad",
+        manageUrl: GUMROAD_MANAGE_URL,
+      });
+    }
+
     const result = await cancelWhopMembership(email);
     if (!result.ok) {
       const [code, message, messageEn] = MESSAGES[result.reason] || [500, "Impossible de résilier pour le moment.", "Unable to cancel right now."];

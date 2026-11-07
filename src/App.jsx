@@ -1633,9 +1633,9 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
               {embed === "failed" && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#121214] px-6 text-center">
                   <div className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/[0.05] text-white/70"><Icon name="shield" className="h-5 w-5" /></div>
-                  <p className="max-w-sm text-sm leading-6 text-white/65">{t("The checkout could not open here. Pay on Whop's secure page instead — same plan, same price.", "Le paiement n'a pas pu s'ouvrir ici. Paie sur la page sécurisée Whop — même offre, même prix.")}</p>
+                  <p className="max-w-sm text-sm leading-6 text-white/65">{t("The checkout could not open here. Pay on the secure payment page instead — same plan, same price.", "Le paiement n'a pas pu s'ouvrir ici. Paie sur la page de paiement sécurisée — même offre, même prix.")}</p>
                   {load.checkoutUrl && (
-                    <a href={load.checkoutUrl} onClick={() => track("checkout_opened_on_whop", { plan: plan.id, ...refProps() })} className="group inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Pay on Whop", "Payer sur Whop")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
+                    <a href={load.checkoutUrl} onClick={() => track("checkout_opened_on_whop", { plan: plan.id, ...refProps() })} className="group inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Pay on the secure page", "Payer sur la page sécurisée")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
                   )}
                 </div>
               )}
@@ -1650,11 +1650,11 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
           </div>
         )}
         <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[11px] text-white/40">
-          <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
+          <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment", "Paiement sécurisé")}</span>
           {/* The way out if the embed ever misbehaves on a device: the same
               plan, on Whop's own page, promo and affiliate already applied. */}
           {load.checkoutUrl && !done && (
-            <a href={load.checkoutUrl} onClick={() => track("checkout_opened_on_whop", { plan: plan.id, ...refProps() })} className="underline underline-offset-4 transition hover:text-white/75">{t("Form not showing? Open it on Whop", "Le formulaire ne s'affiche pas ? Ouvrir sur Whop")}</a>
+            <a href={load.checkoutUrl} onClick={() => track("checkout_opened_on_whop", { plan: plan.id, ...refProps() })} className="underline underline-offset-4 transition hover:text-white/75">{t("Form not showing? Open the secure payment page", "Le formulaire ne s'affiche pas ? Ouvrir la page de paiement sécurisée")}</a>
           )}
         </div>
       </div>
@@ -1667,7 +1667,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
 function Reassurance({ className = "" }) {
   return (
     <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-white/40 ${className}`}>
-      <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment via Whop", "Paiement sécurisé via Whop")}</span>
+      <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment", "Paiement sécurisé")}</span>
       <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-500" /> {t("Instant access", "Accès immédiat")}</span>
       <span className="flex items-center gap-1.5"><Icon name="check" className="h-3 w-3 text-emerald-500" /> {t("New prompts included", "Nouveaux prompts inclus")}</span>
     </div>
@@ -2059,7 +2059,7 @@ function validatePlanId(planId) {
 
 function getCheckoutErrorMessage(error) {
   if (error?.name === "TypeError") {
-    return t("The Whop payment service cannot be reached. Check the Whop checkout links in the Vercel variables.", "Le service de paiement Whop n'est pas joignable. Vérifie les liens de checkout Whop dans les variables Vercel.");
+    return t("The payment service cannot be reached right now. Please try again in a moment.", "Le service de paiement est injoignable pour le moment. Réessaie dans un instant.");
   }
   return error?.message || t("Unable to start the payment right now.", "Impossible de lancer le paiement pour le moment.");
 }
@@ -2277,7 +2277,7 @@ export default function MoventoSite() {
     if (!sessionId) return;
 
     async function confirmCheckoutSession() {
-      setAccessStatus({ loading: true, message: t("Confirming your Whop payment…", "Confirmation du paiement Whop…"), error: "" });
+      setAccessStatus({ loading: true, message: t("Confirming your payment…", "Confirmation de ton paiement…"), error: "" });
 
       try {
         const response = await fetch(`${API_BASE_URL}/api/checkout-session?session_id=${encodeURIComponent(sessionId)}`);
@@ -3787,13 +3787,13 @@ function MentionsLegales() {
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-[#EDE9E0]">4. Personal data</h2>
-            <p>Movento collects your email address to manage access to content. Payment data is processed by <span className="text-white/75">Whop</span> and is not stored by Movento. Your data is never sold to third parties. You may request access, correction or deletion by contacting us.</p>
+            <p>Movento collects your email address to manage access to content. Payment data is processed by our payment provider and is not stored by Movento. Your data is never sold to third parties. You may request access, correction or deletion by contacting us.</p>
           </div>
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-[#EDE9E0]">5. Payment</h2>
-            <p>Payments are securely processed by <span className="text-white/75">Whop</span>. Monthly and annual subscriptions can be cancelled at any time from your Whop account. Lifetime access is a one-time purchase with no subscription.</p>
-            <p className="mt-3">You can cancel your subscription at any time from your Whop account, or by emailing <span className="text-white/75">movento.dev@gmail.com</span> from the address used at checkout.</p>
+            <p>Payments are securely processed by our payment provider, named on your receipt. Subscriptions can be cancelled at any time from your account with that provider. Lifetime access is a one-time purchase with no subscription.</p>
+            <p className="mt-3">You can cancel your subscription at any time from your account with the provider named on your receipt, or by emailing <span className="text-white/75">movento.dev@gmail.com</span> from the address used at checkout.</p>
             <p className="mt-3">Movento reserves the right to modify subscription prices at any time.</p>
           </div>
 
@@ -5462,7 +5462,17 @@ function SubscriptionPage() {
 
             {data.type !== "lifetime" && (
               <div className="mt-7 border-t border-white/[0.07] pt-6">
-                {(cancel.done || data.cancelAtPeriodEnd || data.status === "canceling") ? (
+                {/* Billed by Gumroad: the site cannot cancel it, so the button
+                    that would only come back with "no subscription found" is
+                    replaced by the place where it can be done. */}
+                {data.provider === "gumroad" ? (
+                  <>
+                    <a href={data.manageUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-[#121214] px-5 py-3 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30">
+                      {t("Manage on Gumroad", "Gérer sur Gumroad")} <Icon name="arrow" className="h-4 w-4" />
+                    </a>
+                    <p className="mt-3 text-xs leading-5 text-white/40">{t("Your subscription is billed by Gumroad: cancel it there, or from the “Manage membership” link in your receipt. You keep access until the end of the period you paid for.", "Ton abonnement est facturé par Gumroad : résilie-le là-bas, ou depuis le lien « Manage membership » de ton reçu. Tu gardes l'accès jusqu'à la fin de la période payée.")}</p>
+                  </>
+                ) : (cancel.done || data.cancelAtPeriodEnd || data.status === "canceling") ? (
                   <div className="flex items-start gap-2 rounded-2xl border border-amber-400/25 bg-amber-400/[0.07] p-4 text-sm leading-6 text-amber-300">
                     <Icon name="check" className="mt-0.5 h-4 w-4 flex-none" />
                     <p>{t("Subscription cancelled — you keep access until", "Abonnement résilié — tu gardes l'accès jusqu'au")} <span className="font-medium">{formatDate(cancel.renewalDate || data.renewalDate)}</span>.</p>

@@ -348,6 +348,12 @@ export function appendPromo(url, code = CHECKOUT_PROMO_CODE) {
 // Where customers manage/cancel their membership.
 export const WHOP_PORTAL_URL = process.env.WHOP_PORTAL_URL || "https://whop.com/orders/";
 
+// Where a Gumroad buyer manages or cancels a membership. Gumroad offers no API
+// to cancel on a buyer's behalf, so the site can only send them there.
+// Overridable because this default has not been checked against Gumroad from
+// here: if it turns out wrong, fix the env var, not the code.
+export const GUMROAD_MANAGE_URL = process.env.GUMROAD_MANAGE_URL || "https://app.gumroad.com/library";
+
 // Whop membership statuses that grant access. "canceling" is still valid until
 // the period ends; "completed" covers one-time (lifetime) purchases.
 const ACCESS_STATUSES = new Set(["active", "trialing", "past_due", "canceling", "completed"]);
@@ -865,6 +871,13 @@ export async function syncPackCreditsFromWhop(email) {
 export async function getMembershipInfo(email) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return { found: false, active: false };
+
+  // A Gumroad buyer is answered from the record alone. Asking Whop first would
+  // find nothing, and the fallback below would then hand them Whop's portal.
+  const stored = await redisGetAccessRecord(normalizedEmail);
+  if (stored?.provider === "gumroad") {
+    return { found: true, active: true, type: stored.type || "unknown", kind: stored.kind || null, status: "active", plan: "Movento", provider: "gumroad", manageUrl: GUMROAD_MANAGE_URL, source: "redis" };
+  }
 
   let membership = null;
   try {
