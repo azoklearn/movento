@@ -81,7 +81,15 @@ export default async function handler(req, res) {
   const rawBody = await getRawBody(req);
   const secret = process.env.WHOP_WEBHOOK_SECRET;
 
-  if (secret && !verifySignature(rawBody, req.headers, secret)) {
+  // Fail closed. This used to verify only WHEN a secret was set, so a missing
+  // or deleted WHOP_WEBHOOK_SECRET turned the endpoint into one that granted
+  // the whole catalogue to any unsigned POST. Refusing costs a buyer nothing:
+  // with no record, /success falls back to asking Whop's API directly.
+  if (!secret) {
+    console.error("Whop webhook called but WHOP_WEBHOOK_SECRET is not set");
+    return res.status(503).json({ error: "Webhook non configuré." });
+  }
+  if (!verifySignature(rawBody, req.headers, secret)) {
     console.error("Whop webhook signature verification failed");
     return res.status(400).json({ error: "Signature invalide." });
   }
