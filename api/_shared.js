@@ -196,6 +196,39 @@ export const checkoutUrls = {
   pack: process.env.WHOP_PACK_URL || PACK_FALLBACK_URL,
 };
 
+// ---------------------------------------------------------------------------
+// Which processor takes the money.
+//
+// "whop" (the default) is everything above: the embedded form and the plan_xxx
+// links. Any other value means the checkout has MOVED to a third-party hosted
+// page, and the buyer is sent to CHECKOUT_<PLAN>_URL instead.
+//
+// The Whop tables above are deliberately left alone when that happens. They are
+// not only checkout links: resolvePlanId reads them to recognise an existing
+// member's plan_xxx, and that is what gates a current customer's access and
+// their bonus ebook. Blanking them to "move off Whop" would quietly reclassify
+// people who have already paid.
+export const CHECKOUT_PROVIDER = String(process.env.CHECKOUT_PROVIDER || "whop").trim().toLowerCase();
+export const onWhopCheckout = () => CHECKOUT_PROVIDER === "whop";
+
+// The replacement checkout, one hosted URL per plan. There is deliberately no
+// fallback: an unconfigured plan must come back empty so the endpoint refuses
+// it with a clear error, rather than send a buyer to a whop.com page that is
+// no longer selling. A dead link looks like a broken shop; a refusal does not.
+export const externalCheckoutUrls = {
+  m1: process.env.CHECKOUT_M1_URL || "",
+  m3: process.env.CHECKOUT_M3_URL || "",
+  m12: process.env.CHECKOUT_M12_URL || "",
+  monthly: process.env.CHECKOUT_MONTHLY_URL || "",
+  yearly: process.env.CHECKOUT_YEARLY_URL || "",
+  lifetime: process.env.CHECKOUT_LIFETIME_URL || "",
+  pack: process.env.CHECKOUT_PACK_URL || "",
+};
+
+// Where a buyer actually goes, whoever is taking the money.
+export const activeCheckoutUrl = (plan) =>
+  onWhopCheckout() ? checkoutUrls[plan] || "" : externalCheckoutUrls[plan] || "";
+
 // Whop plan IDs (plan_xxx), one per plan — required for the on-site EMBEDDED
 // checkout (no redirect). Set these in Vercel env, or leave them empty and use a
 // checkout-link of the form https://whop.com/checkout/plan_xxx as the *_URL above
@@ -227,6 +260,10 @@ export function resolvePlanId(plan) {
 // The URL to send a buyer to when we redirect rather than embed. A plan checkout
 // link beats a product page: it lands on the right plan in one hop.
 export function bestCheckoutUrl(plan) {
+  // Off Whop the configured URL IS the answer: it points at another processor,
+  // and the plan_xxx reasoning below would quietly replace it with a whop.com
+  // link that no longer sells anything.
+  if (!onWhopCheckout()) return externalCheckoutUrls[plan] || null;
   const configured = checkoutUrls[plan];
   if (configured && /plan_[A-Za-z0-9]+/.test(configured)) return configured;
   const planId = resolvePlanId(plan);

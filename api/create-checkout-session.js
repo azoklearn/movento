@@ -1,18 +1,20 @@
-import { appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutUrls, methodNotAllowed, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
+import { activeCheckoutUrl, appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutUrls, methodNotAllowed, onWhopCheckout, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
 
   const { plan, ref } = req.body || {};
-  const checkoutUrl = RETIRED_PLANS.has(plan) ? null : checkoutUrls[plan];
+  const checkoutUrl = RETIRED_PLANS.has(plan) ? null : activeCheckoutUrl(plan);
 
   if (!checkoutUrl) {
     return res.status(400).json({
-      error: "Plan invalide ou lien de checkout Whop manquant.",
+      error: onWhopCheckout()
+        ? "Plan invalide ou lien de checkout Whop manquant."
+        : "Plan invalide ou lien de checkout manquant pour cette offre.",
       // Only what a caller could actually buy: a plan whose link is still
       // waiting to be configured is as unbuyable as a retired one, and
       // listing it would send whoever read this error straight back into a 400.
-      validPlans: Object.keys(checkoutUrls).filter((id) => checkoutUrls[id] && !RETIRED_PLANS.has(id)),
+      validPlans: Object.keys(checkoutUrls).filter((id) => activeCheckoutUrl(id) && !RETIRED_PLANS.has(id)),
     });
   }
 
@@ -27,6 +29,14 @@ export default async function handler(req, res) {
   //
   // The promo rides on that URL for the redirect and is handed over separately
   // for the embed, so the discount applies without the buyer typing anything.
+  // Off Whop: no plan id, which is what makes the client redirect instead of
+  // mounting Whop's element — that branch already exists for plans that never
+  // had an embeddable id. And no Whop-only parameter is appended to a URL that
+  // would not understand it.
+  if (!onWhopCheckout()) {
+    return res.json({ checkoutUrl, planId: null, promoCode: null });
+  }
+
   return res.json({
     checkoutUrl: appendPromo(appendAffiliate(bestCheckoutUrl(plan) || checkoutUrl, ref)),
     planId: resolvePlanId(plan),
