@@ -68,7 +68,7 @@ if (appShow) {
 // cannot check that, and says so rather than implying it did.
 if (appTrial > 0) {
   console.log(`\n  ⚠ TRIAL_DAYS is ${appTrial}. This file cannot see Whop.`);
-  console.log(`    Confirm the ${appTrial}-day trial is configured on plan_rP9Yq4HOSgHCZ,`);
+  console.log(`    Confirm the ${appTrial}-day trial is configured on plan_QSRk1kJUpvHGF,`);
   console.log(`    or the site promises free days over a plan that charges at once.`);
 }
 if (process.exitCode) console.error("\n  mirror check FAILED");

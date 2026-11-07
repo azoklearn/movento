@@ -746,7 +746,7 @@ const isPinned = (item) => (item.pinned ? 1 : 0);
 // TRIAL_DAYS in api/_shared.js. It grants nothing on its own: the trial is a
 // setting on the Whop plan, and this only lets the page say so.
 //
-// THE TRIAL MUST EXIST ON plan_rP9Yq4HOSgHCZ IN WHOP BEFORE THIS LEAVES 0.
+// THE TRIAL MUST EXIST ON plan_QSRk1kJUpvHGF IN WHOP BEFORE THIS LEAVES 0.
 // Everything below reads it, so one number switches the whole offer: at 0 the
 // four showcase prompts are given away for an email, and above 0 nothing is
 // given away and the whole catalogue is free for those days instead.

@@ -10,7 +10,7 @@ export const CUSTOM_PROMPTS_REPO = "https://raw.githubusercontent.com/azoklearn/
 // grant anything: the trial lives on the Whop plan, and this only lets the site
 // say it exists. Keep identical to TRIAL_DAYS in src/App.jsx.
 //
-// THE TRIAL MUST BE CONFIGURED ON plan_rP9Yq4HOSgHCZ IN WHOP BEFORE THIS IS
+// THE TRIAL MUST BE CONFIGURED ON plan_QSRk1kJUpvHGF IN WHOP BEFORE THIS IS
 // ANYTHING BUT 0. A page promising three free days over a plan that charges on
 // the spot is not a cosmetic error — it takes money from someone who was told
 // they would not be charged.
@@ -117,15 +117,18 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // buyer's bank statement.
 // WHOP_M1_URL / WHOP_M3_URL / WHOP_M12_URL override them.
 //
-// The monthly term sells on plan_rP9Yq4HOSgHCZ (product prod_AcMsyhJLA93OO) —
-// the plan that sold the three-month term, and the annual before that, re-priced
-// in place rather than created fresh. So m3 and yearly below still point at this
-// same id, because that is the plan their buyers are billed on.
+// The monthly term sells on plan_QSRk1kJUpvHGF, on the Whop account that
+// replaced the suspended one (biz_YP5v1Cu3QiYCgE). On the old account it sold on
+// plan_rP9Yq4HOSgHCZ, the plan that had also sold the three-month term and the
+// annual before that, re-priced in place — which is why m3 and yearly have
+// always pointed at the same id as m1, and still do. That old id is kept in
+// LEGACY_PLAN_KINDS as "m1", so a stored record or an audit row carrying it
+// keeps its kind; it can no longer be bought.
 // planKindFromPlanId answers "m1" for all three (m1 comes first in its list);
 // mergeKind is what stops that costing anyone the ebook or the support, and it
 // only works because m1 is in EBOOK_KINDS and SUPPORT_KINDS below.
-const M1_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
-const M3_FALLBACK_URL = "https://whop.com/checkout/plan_rP9Yq4HOSgHCZ";
+const M1_FALLBACK_URL = "https://whop.com/checkout/plan_QSRk1kJUpvHGF";
+const M3_FALLBACK_URL = M1_FALLBACK_URL;
 const M12_FALLBACK_URL = "https://whop.com/checkout/plan_DmP1j9cCTGTOe";
 
 // The terms were never new Whop plans: the monthly (21.99 €) and annual (99 €)
@@ -152,7 +155,9 @@ const YEARLY_FALLBACK_URL = M3_FALLBACK_URL;
 // re-priced onto a different offer, so its id still belongs to it alone, which
 // is what keeps every lifetime buyer — at any price it has been sold for —
 // resolving to their kind, their access, their ebook and their support.
-const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_jbsdSaI7sNSof";
+// plan_No2z3JyE6Y98v on the current account; plan_jbsdSaI7sNSof, its
+// predecessor on the suspended one, is kept in LEGACY_PLAN_KINDS.
+const LIFETIME_FALLBACK_URL = "https://whop.com/checkout/plan_No2z3JyE6Y98v";
 // A pack of prompts, bought without the catalogue (Whop product
 // prod_zZlcqsSutlXvW). One purchase, PROMPT_PACK_SIZE prompts of your choice.
 const PACK_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
@@ -165,6 +170,10 @@ const PACK_FALLBACK_URL = "https://whop.com/checkout/plan_duNdZcsNAOPSx";
 const LEGACY_PLAN_KINDS = {
   plan_pAiB9wlNdjRGF: "monthly",
   plan_Yj3NE8r5Jj0E1: "yearly",
+  // The suspended account's live plans. Nobody can buy them any more, but
+  // records and audit rows still carry these ids and must keep their kind.
+  plan_rP9Yq4HOSgHCZ: "m1",
+  plan_jbsdSaI7sNSof: "lifetime",
 };
 
 // How many prompts one pack unlocks. The webhook credits this many, and the
@@ -297,8 +306,8 @@ const SUPPORT_KINDS = new Set(["m1", "m12", "lifetime", "yearly"]);
 // away from someone who already had it.
 //
 // This is not defensive programming, it is one Whop plan having sold three
-// different offers: plan_rP9Yq4HOSgHCZ said "yearly", then "m3", and says "m1"
-// to every buyer from now on, and a renewal carries nothing else to tell them
+// different offers: plan_rP9Yq4HOSgHCZ (the suspended account's monthly) said
+// "yearly", then "m3", then "m1" to every buyer, and a renewal carries nothing else to tell them
 // apart. A genuine downgrade is not lost — Whop deactivates the old membership
 // first, which clears the record outright.
 export function mergeKind(previous, next) {
@@ -677,7 +686,7 @@ export async function redisListAllAccess(cap = 1000) {
 // checkout URLs), so it ships with a default. Only the API key has to live in
 // the environment — and without this default, a deploy that has the key but not
 // the id silently falls back to Redis-only access checks.
-const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID || "biz_2CQPz7bDNhG3va";
+const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID || "biz_YP5v1Cu3QiYCgE";
 
 export function whopConfigured() {
   return Boolean(process.env.WHOP_API_KEY && WHOP_COMPANY_ID);
