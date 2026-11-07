@@ -2262,6 +2262,7 @@ export default function MoventoSite() {
   const isAdminPage = typeof window !== "undefined" && window.location.pathname === "/admin";
   const isTikTokPage = typeof window !== "undefined" && window.location.pathname === "/tiktok";
   const isChoosePage = typeof window !== "undefined" && window.location.pathname === "/choose";
+  const isPaddleTestPage = typeof window !== "undefined" && window.location.pathname === "/paddle-test";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -2574,6 +2575,7 @@ export default function MoventoSite() {
   if (isTikTokPage) return <TikTokPage />;
   if (isChoosePage) return <ChoosePromptsPage />;
   if (isSubscriptionPage) return <SubscriptionPage />;
+  if (isPaddleTestPage) return <PaddleTestPage />;
   if (isSuccessPage) return <SuccessPage />;
 
   return (
@@ -5340,6 +5342,115 @@ function AdminLeadsPage() {
                 </li>
               ))}
             </ul>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+// A bare page that opens Paddle's checkout on the monthly price, to watch the
+// whole flow work before anything on the site depends on it. Reached by URL
+// only: nothing links here. It grants no access — there is no Paddle webhook
+// yet — so a payment made here shows Paddle working, nothing more.
+const PADDLE_SCRIPT_URL = "https://cdn.paddle.com/paddle/v2/paddle.js";
+let paddleReady = null; // Paddle.Initialize may only run once per page
+
+function loadPaddle(cfg, onEvent) {
+  if (paddleReady) return paddleReady;
+  paddleReady = new Promise((resolve, reject) => {
+    const start = () => {
+      try {
+        const P = window.Paddle;
+        if (!P) throw new Error("Paddle.js s'est chargé sans exposer Paddle.");
+        // Before Initialize, or the sandbox token is checked against production.
+        if (cfg.environment === "sandbox") P.Environment.set("sandbox");
+        P.Initialize({ token: cfg.token, eventCallback: onEvent });
+        resolve(P);
+      } catch (e) {
+        reject(e);
+      }
+    };
+    if (window.Paddle) return start();
+    const s = document.createElement("script");
+    s.src = PADDLE_SCRIPT_URL;
+    s.async = true;
+    s.onload = start;
+    s.onerror = () => reject(new Error("Impossible de charger Paddle.js."));
+    document.head.appendChild(s);
+  });
+  paddleReady.catch(() => { paddleReady = null; });
+  return paddleReady;
+}
+
+function PaddleTestPage() {
+  const [state, setState] = useState({ phase: "loading", error: "", cfg: null });
+  const [log, setLog] = useState([]);
+  const add = (line) => setLog((l) => [...l.slice(-40), `${new Date().toLocaleTimeString("fr-FR")} · ${line}`]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch(`${API_BASE_URL}/api/paddle-config`);
+        let cfg = {};
+        try { cfg = await r.json(); } catch { cfg = {}; }
+        if (!r.ok || !cfg.token) throw new Error(cfg.error || `La configuration Paddle a répondu ${r.status}.`);
+        if (cfg.warning) add(`attention : ${cfg.warning}`);
+        await loadPaddle(cfg, (ev) => {
+          const name = ev?.name || ev?.type || "événement";
+          const detail = ev?.data?.status || ev?.error?.detail || ev?.detail || "";
+          add(detail ? `${name} — ${detail}` : name);
+        });
+        if (alive) {
+          setState({ phase: "ready", error: "", cfg });
+          add(`Paddle prêt, environnement ${cfg.environment}`);
+        }
+      } catch (e) {
+        if (alive) setState({ phase: "error", error: e.message, cfg: null });
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  function openCheckout() {
+    const { cfg } = state;
+    add(`ouverture du paiement, prix ${cfg.prices.m1}`);
+    try {
+      window.Paddle.Checkout.open({
+        items: [{ priceId: cfg.prices.m1, quantity: 1 }],
+        settings: { displayMode: "overlay", theme: "dark", locale: "fr" },
+      });
+    } catch (e) {
+      add(`erreur : ${e.message}`);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-[#0A0A0B] px-6 py-16 text-[#EDE9E0]">
+      <div className="mx-auto max-w-xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300/80">{state.cfg?.environment === "production" ? "Production" : "Sandbox"} · page de test</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight">Test du paiement Paddle</h1>
+        <p className="mt-3 text-sm leading-6 text-white/55">Ouvre la fenêtre de paiement Paddle sur l'offre mensuelle. Cette page ne donne aucun accès au catalogue : elle sert uniquement à vérifier que Paddle fonctionne.</p>
+
+        {state.phase === "loading" && <p className="mt-8 text-sm text-white/55">Chargement de Paddle…</p>}
+        {state.phase === "error" && <p className="mt-8 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-4 text-sm leading-6 text-red-300">{state.error}</p>}
+        {state.phase === "ready" && (
+          <button onClick={openCheckout} className="mt-8 w-full rounded-2xl bg-[#EDE9E0] px-6 py-4 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">
+            Ouvrir le paiement test · mensuel
+          </button>
+        )}
+
+        <div className="mt-8 rounded-2xl border border-white/10 bg-[#121214] p-5 text-sm leading-6 text-white/65">
+          <p className="font-semibold text-[#EDE9E0]">Carte de test (sandbox uniquement)</p>
+          <p className="mt-2 font-mono text-[#EDE9E0]">4242 4242 4242 4242</p>
+          <p>Date d'expiration : n'importe quelle date future · CVC : 100 · Nom : n'importe lequel</p>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Journal</p>
+          {log.length === 0 ? <p className="mt-2 text-xs text-white/35">Rien pour l'instant.</p> : (
+            <ol className="mt-2 space-y-1 font-mono text-xs text-white/70">{log.map((l, i) => <li key={i}>{l}</li>)}</ol>
           )}
         </div>
       </div>
