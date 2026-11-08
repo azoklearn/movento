@@ -42,6 +42,9 @@ export default async function handler(req, res) {
     // Billed by Gumroad: there is nothing this server can cancel, and asking
     // Whop would answer "no subscription found" to someone who is paying.
     const record = await redisGetAccessRecord(email);
+    if (record?.provider === "paddle" && record.type === "lifetime") {
+      return res.status(400).json({ error: MESSAGES.lifetime[1], errorEn: MESSAGES.lifetime[2] });
+    }
     if (record?.provider === "paddle") return cancelPaddle(record, res);
     if (record?.provider === "gumroad") {
       return res.status(409).json({

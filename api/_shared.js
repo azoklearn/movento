@@ -304,7 +304,9 @@ export const isGumroadUrl = (url) => {
 //   PADDLE_CLIENT_TOKEN    public, sent to the browser (test_… / live_…)
 //   PADDLE_API_KEY         server only: customer emails, subscriptions, cancel
 //   PADDLE_WEBHOOK_SECRET  server only: verifies the notifications
-//   PADDLE_M1_PRICE_ID / PADDLE_M12_PRICE_ID
+//   PADDLE_M1_PRICE_ID      the month, 29,90 € recurring
+//   PADDLE_LIFETIME_PRICE_ID lifetime, 89 € one-time (no subscription)
+//   PADDLE_M12_PRICE_ID     optional: only read if the year is ever sold here
 // The site switches to Paddle only with CHECKOUT_PROVIDER=paddle, and only for
 // the plans that have a price id, and only once all three secrets are set: a
 // Paddle buyer whose payment could not be recorded would be paying for nothing.
@@ -313,12 +315,13 @@ export function paddleEnvironment() {
 }
 // The sandbox monthly price created while testing. Production prices have no
 // default on purpose: a sandbox id sent to the live checkout is refused.
-const PADDLE_SANDBOX_DEFAULT_PRICES = { m1: "pri_01m6w6hq41jjdsrgwm0vjz156g", m12: "" };
+const PADDLE_SANDBOX_DEFAULT_PRICES = { m1: "pri_01m6w6hq41jjdsrgwm0vjz156g" };
 export function paddlePriceIds() {
   const defaults = paddleEnvironment() === "sandbox" ? PADDLE_SANDBOX_DEFAULT_PRICES : {};
   return {
     m1: String(process.env.PADDLE_M1_PRICE_ID || defaults.m1 || "").trim(),
-    m12: String(process.env.PADDLE_M12_PRICE_ID || defaults.m12 || "").trim(),
+    lifetime: String(process.env.PADDLE_LIFETIME_PRICE_ID || "").trim(),
+    m12: String(process.env.PADDLE_M12_PRICE_ID || "").trim(),
   };
 }
 export const paddleClientToken = () => String(process.env.PADDLE_CLIENT_TOKEN || "").trim();
@@ -403,7 +406,9 @@ export function paddleSubscriptionSummary(sub) {
 }
 
 // Paddle asked directly, for a buyer the site has no record for — the same
-// safety net as findGumroadSubscriber. Null when Paddle is not configured.
+// safety net as findGumroadSubscriber. A live subscription first; then a
+// completed lifetime purchase, which has no subscription to find. Null when
+// Paddle is not configured.
 export async function findPaddleSubscriber(normalizedEmail, opts) {
   if (!process.env.PADDLE_API_KEY || !normalizedEmail) return null;
   try {
@@ -415,6 +420,19 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
         const summary = paddleSubscriptionSummary(sub);
         if (summary.kind && paddleSubscriptionIsLive(summary.status)) return summary;
       }
+      const lifetimePrice = paddlePriceIds().lifetime;
+      if (lifetimePrice) {
+        const txns = await paddleApi(`/transactions?customer_id=${encodeURIComponent(customer.id)}&status=completed`, opts);
+        for (const t of txns.data || []) {
+          const isLifetime = (t.items || []).some((item) => (item?.price?.id || item?.price_id) === lifetimePrice);
+          // A refunded or charged-back purchase is still "completed" here. The
+          // webhook marks those when it revokes them (paddleMarkRefunded), and
+          // this net must not undo that.
+          if (isLifetime && !(await paddleWasRefunded(t.id))) {
+            return { kind: "lifetime", id: t.id, customerId: customer.id, status: "completed", transactionId: t.id };
+          }
+        }
+      }
     }
   } catch (error) {
     console.error("Paddle subscriber lookup failed:", error);
@@ -422,16 +440,34 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
   return null;
 }
 
-// The record a Paddle subscription grants, written by the webhook and by the
-// fallback in customerAccessLevel alike.
+// A Paddle purchase refunded or charged back, remembered for good so neither
+// the API fallback nor a replayed notification can grant it again.
+export async function paddleMarkRefunded(transactionId) {
+  if (!transactionId) return;
+  await Redis.fromEnv().set(`paddlerefund:${transactionId}`, new Date().toISOString());
+}
+export async function paddleWasRefunded(transactionId) {
+  if (!transactionId) return false;
+  try {
+    return Boolean(await Redis.fromEnv().get(`paddlerefund:${transactionId}`));
+  } catch {
+    return false;
+  }
+}
+
+// The record a Paddle purchase grants, written by the webhook and by the
+// fallback in customerAccessLevel alike. Lifetime is paid once: its id is the
+// transaction, since there is no subscription.
 export function paddleAccessRecord(summary, extra = {}) {
+  const lifetime = summary.kind === "lifetime";
   return {
     plan: `paddle_${summary.kind}`,
     kind: summary.kind,
-    type: "subscription",
-    status: "active",
+    type: lifetime ? "lifetime" : "subscription",
+    status: lifetime ? "completed" : "active",
     membershipId: summary.id,
     customerId: summary.customerId,
+    ...(summary.transactionId ? { transactionId: summary.transactionId } : {}),
     provider: "paddle",
     grantedAt: new Date().toISOString(),
     ...extra,
@@ -484,9 +520,14 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-// Lifetime went off sale when the 89 € became the annual's price (m12, on
-// Gumroad); m12 came back on sale with it.
-export const RETIRED_PLANS = new Set(["m3", "lifetime", "monthly", "yearly"]);
+//
+// The line-up depends on who sells it. On Gumroad: the month and the year (m1,
+// m12; lifetime off sale). On Paddle (CHECKOUT_PROVIDER=paddle): the month and
+// lifetime, 89 € once, and no year. The front end reads the same variable at
+// build time (PADDLE_LINEUP in src/App.jsx), so the cards and this list switch
+// together on the deploy that sets it.
+export const PADDLE_LINEUP = CHECKOUT_PROVIDER === "paddle";
+export const RETIRED_PLANS = new Set(PADDLE_LINEUP ? ["m3", "m12", "monthly", "yearly"] : ["m3", "lifetime", "monthly", "yearly"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a
@@ -1189,6 +1230,9 @@ export async function getMembershipInfo(email) {
   // Paddle: the live subscription when it can be read, for the renewal date
   // and a cancellation already scheduled; the record alone otherwise.
   if (stored?.provider === "paddle") {
+    if (stored.type === "lifetime") {
+      return { found: true, active: true, type: "lifetime", kind: "lifetime", status: "completed", plan: "Movento", provider: "paddle", source: "redis" };
+    }
     const base = { found: true, active: true, type: "subscription", kind: stored.kind || null, status: "active", plan: "Movento", provider: "paddle", source: "redis" };
     if (!stored.membershipId || !process.env.PADDLE_API_KEY) return base;
     try {

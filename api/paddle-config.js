@@ -29,9 +29,9 @@ export default function handler(req, res) {
   if (!process.env.PADDLE_WEBHOOK_SECRET) warnings.push("PADDLE_WEBHOOK_SECRET manque : les paiements ne débloqueront pas l'accès.");
   const prices = paddlePriceIds();
   if (!prices.m1) warnings.push("PADDLE_M1_PRICE_ID manque.");
-  if (!prices.m12) warnings.push("PADDLE_M12_PRICE_ID manque.");
+  if (!prices.lifetime) warnings.push("PADDLE_LIFETIME_PRICE_ID manque.");
   const switchedOn = String(process.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "paddle";
-  if (switchedOn && environment !== "production") warnings.push("CHECKOUT_PROVIDER=paddle est ignoré en sandbox : le site reste sur Gumroad tant que PADDLE_ENV n'est pas production.");
+  if (switchedOn && environment !== "production") warnings.push("CHECKOUT_PROVIDER=paddle est déjà posé alors que PADDLE_ENV n'est pas production : le site affiche l'offre Paddle (mensuel + à vie) mais n'encaisse pas avec Paddle. Retire-le jusqu'à la mise en ligne.");
 
   return res.json({
     environment,

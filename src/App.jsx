@@ -870,12 +870,17 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 // price, the year's is twelve of those months (29,90 x 12 = 358,80), which a
 // visitor can check against the card beside it. A self-test holds it to that.
 //
-// The year is sold on Gumroad at 89 € and renews every year. It replaced the
-// lifetime offer, which was the same 89 € paid once.
+// Which line-up is on sale follows who sells it, read from CHECKOUT_PROVIDER
+// at build time (exposed by vite.config.js) — the same variable api/_shared.js
+// reads for RETIRED_PLANS, so the cards and the checkout switch together on
+// the deploy that sets it:
+//   Gumroad (default): the month and the year, 89 € renewed every year.
+//   Paddle:            the month and lifetime, the same 89 € paid once.
+const PADDLE_LINEUP = String(import.meta.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "paddle";
 const PLAN_TERMS = [
   { id: "m1", price: 29.9, anchor: 39.99, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
   { id: "m3", price: 29.99, anchor: 74.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
-  { id: "m12", price: 89, anchor: 358.8, days: 365, retired: false, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
+  { id: "m12", price: 89, anchor: 358.8, days: 365, retired: PADDLE_LINEUP, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
@@ -891,9 +896,9 @@ const discountOf = (id) => {
 // headline discount and the featured offer all read it, so none of them can
 // disagree about whether it is for sale. Mirror it in RETIRED_PLANS
 // (api/_shared.js), which is what refuses a checkout on it.
-// Retired: the 89 € is now the annual's price, renewed every year. Lifetime
-// members keep their access, their ebook and their support.
-const LIFETIME_RETIRED = true;
+// On sale with Paddle only (see PADDLE_LINEUP). Off sale, lifetime members
+// keep their access, their ebook and their support.
+const LIFETIME_RETIRED = !PADDLE_LINEUP;
 const PRICE_LIFETIME = 89;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
@@ -2338,9 +2343,12 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(validatePlanId("m1") && validatePlanId("m12"), "the month and the year are the two offers and must be purchasable");
-  console.assert(["m3", "lifetime", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
-  console.assert(FEATURED_TERM === termOf("m12") && FEATURED_OFFER.price === termOf("m12").price, "the bar and the anchor quote the year while it is on sale");
+  // The two offers of each line-up, mirroring RETIRED_PLANS in api/_shared.js.
+  const second = PADDLE_LINEUP ? "lifetime" : "m12";
+  const offSale = PADDLE_LINEUP ? ["m3", "m12", "monthly", "yearly"] : ["m3", "lifetime", "monthly", "yearly"];
+  console.assert(validatePlanId("m1") && validatePlanId(second), `the month and ${second} are the two offers and must be purchasable`);
+  console.assert(offSale.every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
+  console.assert(PADDLE_LINEUP ? FEATURED_TERM === termOf("m1") : FEATURED_TERM === termOf("m12") && FEATURED_OFFER.price === termOf("m12").price, "the bar and the anchor quote the year while it is on sale, the month otherwise");
   console.assert(termOf("m12").anchor === Math.round(termOf("m1").price * 12 * 100) / 100, "the year is struck against twelve real months, not an invented price");
   console.assert(ANNUAL_MONTHS * termOf("m1").price >= termOf("m12").price && (ANNUAL_MONTHS - 1) * termOf("m1").price < termOf("m12").price, "the month the year becomes the cheaper option must be the first one that passes its price");
   // Each comparison holds only while both sides are on sale: a retired plan has
@@ -2348,7 +2356,7 @@ function runSelfTests() {
   // rather than as moot.
   console.assert(LIFETIME_RETIRED || termOf("m12").retired || PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
   console.assert(termOf("m12").retired || termOf("m1").retired || termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
-  console.assert(BEST_DISCOUNT === discountOf("m12") && BEST_DISCOUNT === 75, "the page leads with the best discount still on sale");
+  console.assert(BEST_DISCOUNT === (PADDLE_LINEUP ? LIFETIME_DISCOUNT : discountOf("m12")) && BEST_DISCOUNT === 75, "the page leads with the best discount still on sale");
   console.assert(LIFETIME_RETIRED !== visiblePlans.some((plan) => plan.id === "lifetime"), "the lifetime card must be shown exactly when the lifetime is on sale");
   // The whole pitch of the lifetime: dearer than one month, cheaper than the
   // year of months it is struck against. Either way round it would be a lie.
@@ -4024,7 +4032,7 @@ function MentionsLegales() {
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-[#EDE9E0]">5. Payment</h2>
-            <p>Payments are securely processed by our payment provider, named on your receipt. Monthly and annual subscriptions renew automatically and can be cancelled at any time from your account with that provider; access continues until the end of the period already paid. Lifetime access, no longer sold, was a one-time purchase with no subscription.</p>
+            <p>Payments are securely processed by our payment provider, named on your receipt. {PADDLE_LINEUP ? "Monthly subscriptions renew automatically and can be cancelled at any time from your account; access continues until the end of the period already paid. Lifetime access is a one-time purchase with no subscription." : "Monthly and annual subscriptions renew automatically and can be cancelled at any time from your account with that provider; access continues until the end of the period already paid. Lifetime access, no longer sold, was a one-time purchase with no subscription."}</p>
             <p className="mt-3">You can cancel your subscription at any time from your account with the provider named on your receipt, or by emailing <span className="text-white/75">movento.dev@gmail.com</span> from the address used at checkout.</p>
             <p className="mt-3">Movento reserves the right to modify subscription prices at any time.</p>
           </div>
@@ -5739,7 +5747,7 @@ function PaddleTestPage() {
             <input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} type="email" placeholder="email de test" className="w-full rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 text-sm text-[#EDE9E0] outline-none focus:border-white/35" />
             <div className="grid gap-3 sm:grid-cols-2">
               <button onClick={() => openCheckout("m1")} className="rounded-2xl bg-[#EDE9E0] px-6 py-4 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">Payer · mensuel</button>
-              <button onClick={() => openCheckout("m12")} className="rounded-2xl bg-[#EDE9E0] px-6 py-4 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">Payer · annuel</button>
+              <button onClick={() => openCheckout("lifetime")} className="rounded-2xl bg-[#EDE9E0] px-6 py-4 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">Payer · à vie</button>
             </div>
             <button onClick={checkAccess} className="w-full rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-white/80 transition hover:border-white/30">Vérifier l'accès de cet email</button>
             {access && <p className="text-sm text-white/70">{access}</p>}

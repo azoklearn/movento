@@ -9,7 +9,8 @@
 // Configure in Paddle → Developer Tools → Notifications, destination
 // https://movento.dev/api/paddle-webhook, with at least:
 //   transaction.completed, subscription.created, subscription.updated,
-//   subscription.canceled, subscription.paused, subscription.resumed
+//   subscription.canceled, subscription.paused, subscription.resumed,
+//   adjustment.created, adjustment.updated (refunds and chargebacks)
 //
 // Signed: the Paddle-Signature header carries ts=…;h1=…, an HMAC-SHA256 of
 // "ts:raw body" under PADDLE_WEBHOOK_SECRET. Unset, every request is refused —
@@ -22,6 +23,8 @@ import {
   paddleApi,
   paddleCustomerEmail,
   paddleGrantAllowed,
+  paddleMarkRefunded,
+  paddleWasRefunded,
   paddlePlanOfItems,
   paddleSubscriptionIsLive,
   paddleSubscriptionSummary,
@@ -69,9 +72,23 @@ export function paddleDecision(event) {
       action: "grant",
       kind,
       subscriptionId: data.subscription_id || null,
+      // Lifetime is paid once: the transaction is all there is to point at.
+      transactionId: data.id || null,
       customerId: data.customer_id || null,
       customEmail: normalizeEmail(data.custom_data?.email),
     };
+  }
+  // A refund or a chargeback. Approved refunds only: a refund request can be
+  // rejected, and a rejected one must not cost the buyer anything. The access
+  // it takes away is the lifetime bought in that transaction; a subscription's
+  // refund comes with its cancellation, which is handled above.
+  if (type === "adjustment.created" || type === "adjustment.updated") {
+    const action = String(data.action || "");
+    const approved = String(data.status || "") === "approved";
+    if ((action === "refund" && approved) || action === "chargeback") {
+      return { action: "refund", reason: action, transactionId: data.transaction_id || null, subscriptionId: data.subscription_id || null, customerId: data.customer_id || null, customEmail: "" };
+    }
+    return { action: "ignore", reason: `adjustment ${action || "?"} ${data.status || ""}`.trim() };
   }
   if (type.startsWith("subscription.")) {
     const summary = paddleSubscriptionSummary(data);
@@ -173,11 +190,31 @@ export default async function handler(req, res) {
       if (previous?.kind === "lifetime") {
         console.log("Paddle sale kept under an existing lifetime:", email);
       } else {
+        if (decision.kind === "lifetime" && (await paddleWasRefunded(decision.transactionId))) {
+          console.log("Paddle lifetime grant skipped, the purchase was refunded:", email, decision.transactionId);
+          return res.json({ ok: true, skipped: "refunded" });
+        }
         await redisSetAccess(email, paddleAccessRecord(
-          { kind: decision.kind, id: decision.subscriptionId || previous?.membershipId || null, customerId: decision.customerId },
+          {
+            kind: decision.kind,
+            id: decision.kind === "lifetime" ? decision.transactionId : decision.subscriptionId || previous?.membershipId || null,
+            customerId: decision.customerId,
+            ...(decision.kind === "lifetime" ? { transactionId: decision.transactionId } : {}),
+          },
           { paddleEventAt: occurredAt, ...(previous?.provider === "paddle" && previous.grantedAt ? { grantedAt: previous.grantedAt } : {}) },
         ));
         console.log("Access granted via Paddle:", email, decision.kind, event.event_type);
+      }
+    } else if (decision.action === "refund") {
+      // Remembered whatever the record says, so the API fallback and a
+      // replayed sale notification cannot hand it back later.
+      await paddleMarkRefunded(decision.transactionId);
+      const ours = previous?.provider === "paddle" && previous.transactionId && previous.transactionId === decision.transactionId;
+      if (ours) {
+        await redisClearAccess(email);
+        console.log("Access revoked via Paddle:", email, decision.reason, decision.transactionId);
+      } else {
+        console.log("Paddle refund recorded, no access tied to it:", email, decision.transactionId);
       }
     } else if (decision.action === "revoke") {
       // Only what this subscription granted. Ending it must not cost someone
