@@ -105,16 +105,18 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // Replacing a plan means changing the id here and adding the old one to
 // LEGACY_PLAN_KINDS below, so its subscribers keep resolving.
 //
-// The subscription plans. Only the monthly term is on sale, beside the lifetime
-// further down; the others stay fully configured because the ids are what every
-// buyer's record is keyed on, and a subscriber whose plan stopped resolving
-// would lose the ebook and the support they still pay for.
+// The subscription plans. The month (m1) and the year (m12) are on sale; the
+// others stay fully configured because the ids are what every buyer's record
+// is keyed on, and a subscriber whose plan stopped resolving would lose the
+// ebook and the support they still pay for.
 //
-// M1 MUST READ 29.99 € PER MONTH AND LIFETIME 89 € ON WHOP, matching
-// PLAN_TERMS["m1"].price and PRICE_LIFETIME in src/App.jsx.
-// The site only quotes a price; Whop is what charges it, and a card that quotes
-// one figure while Whop takes another is the one failure here that reaches a
-// buyer's bank statement.
+// M1 MUST READ 29.99 € PER MONTH, ON WHOP AND ON GUMROAD, AND M12 89 € PER
+// YEAR ON GUMROAD, matching PLAN_TERMS in src/App.jsx. The m12 links below
+// are the OLD Whop annual, kept for its members' renewals; the 89 € year is
+// sold on Gumroad only (gumroadCheckoutUrls further down).
+// The site only quotes a price; the processor is what charges it, and a card
+// that quotes one figure while the processor takes another is the one failure
+// here that reaches a buyer's bank statement.
 // WHOP_M1_URL / WHOP_M3_URL / WHOP_M12_URL override them.
 //
 // The monthly term sells on plan_QSRk1kJUpvHGF, on the Whop account that
@@ -243,10 +245,18 @@ export const externalCheckoutUrls = {
 // sale notification, so a Gumroad buyer would pay and never be unlocked. Until
 // the token is in Vercel, the plan stays on Whop, which still grants access.
 export const GUMROAD_M1_FALLBACK_URL = "https://barbelinnoan.gumroad.com/l/vujeq";
+export const GUMROAD_M12_FALLBACK_URL = "https://barbelinnoan.gumroad.com/l/jawns";
 export const gumroadCheckoutUrls = {
   m1: process.env.GUMROAD_M1_URL || GUMROAD_M1_FALLBACK_URL,
+  m12: process.env.GUMROAD_M12_URL || GUMROAD_M12_FALLBACK_URL,
   lifetime: process.env.GUMROAD_LIFETIME_URL || "",
 };
+
+// Plans sold ONLY on Gumroad. The 89 € year exists nowhere on Whop: the m12
+// still configured there is an old 99,99 € plan that existing members renew
+// on. So while Gumroad is not ready this plan has no checkout at all, rather
+// than quietly selling the old Whop price.
+const GUMROAD_ONLY_PLANS = new Set(["m12"]);
 export const gumroadWebhookReady = () => Boolean(process.env.GUMROAD_WEBHOOK_TOKEN);
 
 // "whop" | "gumroad" | "external" for one plan. An explicit CHECKOUT_PROVIDER
@@ -254,6 +264,7 @@ export const gumroadWebhookReady = () => Boolean(process.env.GUMROAD_WEBHOOK_TOK
 export function checkoutProviderFor(plan) {
   if (!onWhopCheckout()) return "external";
   if (gumroadWebhookReady() && gumroadCheckoutUrls[plan]) return "gumroad";
+  if (GUMROAD_ONLY_PLANS.has(plan)) return "none";
   return "whop";
 }
 
@@ -262,6 +273,7 @@ export function activeCheckoutUrl(plan) {
   const provider = checkoutProviderFor(plan);
   if (provider === "gumroad") return gumroadCheckoutUrls[plan] || "";
   if (provider === "external") return externalCheckoutUrls[plan] || "";
+  if (provider === "none") return "";
   return checkoutUrls[plan] || "";
 }
 
@@ -320,7 +332,9 @@ export function bestCheckoutUrl(plan) {
 // their access and the bonus ebook — but no new checkout may be opened on them.
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
-export const RETIRED_PLANS = new Set(["m3", "m12", "monthly", "yearly"]);
+// Lifetime went off sale when the 89 € became the annual's price (m12, on
+// Gumroad); m12 came back on sale with it.
+export const RETIRED_PLANS = new Set(["m3", "lifetime", "monthly", "yearly"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a

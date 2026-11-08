@@ -855,13 +855,17 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 // being rewritten by hand every time it changes — that is exactly what went
 // stale when the single offer stopped being the lifetime.
 //
-// A retired term's anchor is frozen at the figure its buyers actually saw
-// (m12's 227.88 was twelve times a 18.99 month, which the month no longer
-// costs). Live anchors are the plan's own regular price, nothing invented.
+// A retired term's anchor is frozen at the figure its buyers actually saw.
+// Live anchors are a real figure, nothing invented: the month's is its regular
+// price, the year's is twelve of those months (29,99 x 12 = 359,88), which a
+// visitor can check against the card beside it. A self-test holds it to that.
+//
+// The year is sold on Gumroad at 89 € and renews every year. It replaced the
+// lifetime offer, which was the same 89 € paid once.
 const PLAN_TERMS = [
   { id: "m1", price: 29.99, anchor: 39.99, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
   { id: "m3", price: 29.99, anchor: 74.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
-  { id: "m12", price: 99.99, anchor: 227.88, days: 365, retired: true, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
+  { id: "m12", price: 89, anchor: 359.88, days: 365, retired: false, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
@@ -877,7 +881,9 @@ const discountOf = (id) => {
 // headline discount and the featured offer all read it, so none of them can
 // disagree about whether it is for sale. Mirror it in RETIRED_PLANS
 // (api/_shared.js), which is what refuses a checkout on it.
-const LIFETIME_RETIRED = false;
+// Retired: the 89 € is now the annual's price, renewed every year. Lifetime
+// members keep their access, their ebook and their support.
+const LIFETIME_RETIRED = true;
 const PRICE_LIFETIME = 89;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
@@ -889,6 +895,9 @@ const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR
 // How long on the subscription costs what lifetime costs once. Ceiling, not
 // round: it is the month you cross the figure, so the claim is never early.
 const LIFETIME_MONTHS = Math.ceil(PRICE_LIFETIME / termOf("m1").price);
+// The same for the year: the month on which the monthly plan has cost more
+// than the whole year does. Ceiling, so the claim is never early.
+const ANNUAL_MONTHS = Math.ceil(termOf("m12").price / termOf("m1").price);
 
 // The figure the page leads with — the best of everything a button actually
 // offers, so it can never promise a reduction no card gives. Lifetime counts
@@ -1065,10 +1074,14 @@ const plans = [
     period: t("/ yr", "/ an"),
     perDay: perDayOf("m12"),
     billedNote: t("renewed every year", "renouvelé chaque année"),
-    badge: t("Most chosen", "Le plus choisi"),
+    // "Best value" rather than "most chosen": the arithmetic is on the card
+    // beside it, whereas what other buyers chose is nothing this page measures.
+    badge: t("Best value", "Meilleur rapport"),
     cta: t("Get the annual plan", "Prendre l'offre annuelle"),
     featured: true,
-    features: BASE_FEATURES,
+    // The comparison as a line of its own, derived from both prices so it
+    // cannot outlive either of them.
+    features: [...BASE_FEATURES, t(`Cheaper from month ${ANNUAL_MONTHS}`, `Rentable dès le ${ANNUAL_MONTHS}e mois`)],
     // Tied to the term rather than to the product, so it stays on the card that
     // carries it and nowhere else. SUPPORT_KINDS is what honours it.
     perk: t("Direct support included", "Support direct inclus"),
@@ -2221,20 +2234,22 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  console.assert(validatePlanId("m1") && validatePlanId("lifetime"), "the month and the lifetime are the two offers and must be purchasable");
-  console.assert(["m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
-  console.assert(FEATURED_TERM === termOf("m1") && FEATURED_OFFER.price === termOf("m1").price, "the bar and the anchor quote the only term on sale");
+  console.assert(validatePlanId("m1") && validatePlanId("m12"), "the month and the year are the two offers and must be purchasable");
+  console.assert(["m3", "lifetime", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
+  console.assert(FEATURED_TERM === termOf("m12") && FEATURED_OFFER.price === termOf("m12").price, "the bar and the anchor quote the year while it is on sale");
+  console.assert(termOf("m12").anchor === Math.round(termOf("m1").price * 12 * 100) / 100, "the year is struck against twelve real months, not an invented price");
+  console.assert(ANNUAL_MONTHS * termOf("m1").price >= termOf("m12").price && (ANNUAL_MONTHS - 1) * termOf("m1").price < termOf("m12").price, "the month the year becomes the cheaper option must be the first one that passes its price");
   // Each comparison holds only while both sides are on sale: a retired plan has
   // nothing to be cheaper or dearer than, and the rule would read as a failure
   // rather than as moot.
   console.assert(LIFETIME_RETIRED || termOf("m12").retired || PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
   console.assert(termOf("m12").retired || termOf("m1").retired || termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
-  console.assert(BEST_DISCOUNT === LIFETIME_DISCOUNT && BEST_DISCOUNT === 75, "the page leads with the best discount still on sale");
+  console.assert(BEST_DISCOUNT === discountOf("m12") && BEST_DISCOUNT === 75, "the page leads with the best discount still on sale");
   console.assert(LIFETIME_RETIRED !== visiblePlans.some((plan) => plan.id === "lifetime"), "the lifetime card must be shown exactly when the lifetime is on sale");
   // The whole pitch of the lifetime: dearer than one month, cheaper than the
   // year of months it is struck against. Either way round it would be a lie.
-  console.assert(PRICE_LIFETIME > termOf("m1").price && PRICE_LIFETIME < PRICE_LIFETIME_ANCHOR, "lifetime must cost more than a month and less than a year of them");
-  console.assert(LIFETIME_MONTHS * termOf("m1").price >= PRICE_LIFETIME && (LIFETIME_MONTHS - 1) * termOf("m1").price < PRICE_LIFETIME, "the month the lifetime becomes the cheaper option must be the first one that passes its price");
+  console.assert(LIFETIME_RETIRED || (PRICE_LIFETIME > termOf("m1").price && PRICE_LIFETIME < PRICE_LIFETIME_ANCHOR), "lifetime must cost more than a month and less than a year of them");
+  console.assert(LIFETIME_RETIRED || (LIFETIME_MONTHS * termOf("m1").price >= PRICE_LIFETIME && (LIFETIME_MONTHS - 1) * termOf("m1").price < PRICE_LIFETIME), "the month the lifetime becomes the cheaper option must be the first one that passes its price");
   // A card may not promise an extra its kind is not granted: the card is the
   // promise, EBOOK_KINDS and SUPPORT_KINDS are what keep it, and the two going
   // out of step is the one failure here a buyer finds out about after paying.
@@ -3905,7 +3920,7 @@ function MentionsLegales() {
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-[#EDE9E0]">5. Payment</h2>
-            <p>Payments are securely processed by our payment provider, named on your receipt. Subscriptions can be cancelled at any time from your account with that provider. Lifetime access is a one-time purchase with no subscription.</p>
+            <p>Payments are securely processed by our payment provider, named on your receipt. Monthly and annual subscriptions renew automatically and can be cancelled at any time from your account with that provider; access continues until the end of the period already paid. Lifetime access, no longer sold, was a one-time purchase with no subscription.</p>
             <p className="mt-3">You can cancel your subscription at any time from your account with the provider named on your receipt, or by emailing <span className="text-white/75">movento.dev@gmail.com</span> from the address used at checkout.</p>
             <p className="mt-3">Movento reserves the right to modify subscription prices at any time.</p>
           </div>
@@ -4675,7 +4690,7 @@ const MONTHLY_EQUIV = {
 const KIND_LABELS = {
   m1: "Mensuel 29,99€",
   m3: "3 mois (retiré)",
-  m12: "Annuel (retiré)",
+  m12: "Annuel 89€",
   monthly: "Mensuel 18,99€ (ancien)",
   yearly: "Annuel (ancien)",
   lifetime: "À vie",

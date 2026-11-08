@@ -34,6 +34,7 @@ const lastSegment = (value) => {
 // always one the webhook recognises.
 export const gumroadProducts = () => ({
   m1: process.env.GUMROAD_M1_PRODUCT || gumroadCheckoutUrls.m1 || "",
+  m12: process.env.GUMROAD_M12_PRODUCT || gumroadCheckoutUrls.m12 || "",
   lifetime: process.env.GUMROAD_LIFETIME_PRODUCT || gumroadCheckoutUrls.lifetime || "",
 });
 

@@ -8,9 +8,11 @@ export default async function handler(req, res) {
 
   if (!checkoutUrl) {
     return res.status(400).json({
-      error: onWhopCheckout()
-        ? "Plan invalide ou lien de checkout Whop manquant."
-        : "Plan invalide ou lien de checkout manquant pour cette offre.",
+      error: checkoutProviderFor(plan) === "none" && !RETIRED_PLANS.has(plan)
+        ? "Cette offre n'est pas encore disponible au paiement. Réessaie dans quelques minutes, ou prends l'offre mensuelle."
+        : onWhopCheckout()
+          ? "Plan invalide ou lien de checkout Whop manquant."
+          : "Plan invalide ou lien de checkout manquant pour cette offre.",
       // Only what a caller could actually buy: a plan whose link is still
       // waiting to be configured is as unbuyable as a retired one, and
       // listing it would send whoever read this error straight back into a 400.
