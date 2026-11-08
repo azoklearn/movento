@@ -1,7 +1,10 @@
 // Registers api/telegram-webhook.js with Telegram and publishes the command
 // menu, so the bot answers /ventes. Called once from the button in /admin;
 // harmless to call again. ADMIN_TOKEN-gated: it points the bot somewhere.
-import { isAdminAuthorized, methodNotAllowed } from "./_shared.js";
+//
+// ?action=test instead sends one sample sale notification, worded exactly as
+// a real one (api/paddle-webhook.js), to check the bot end to end.
+import { isAdminAuthorized, methodNotAllowed, notifyTelegram } from "./_shared.js";
 import { telegramWebhookSecret } from "./telegram-webhook.js";
 
 const COMMANDS = [
@@ -29,6 +32,13 @@ export default async function handler(req, res) {
   if (!isAdminAuthorized(req)) return res.status(401).json({ error: "Non autorisé." });
   if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID) {
     return res.status(400).json({ error: "TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID manque dans Vercel." });
+  }
+
+  if (req.query?.action === "test") {
+    const sent = await notifyTelegram("🧪 TEST · 💰 Nouvelle vente Paddle — Mensuel\n29,99 € · net 23,87 €\nclient@exemple.fr");
+    return sent
+      ? res.json({ ok: true, sent: true })
+      : res.status(502).json({ error: "Telegram n'a pas accepté le message : vérifie TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID, et que tu as écrit au moins une fois au bot." });
   }
 
   // The site's own address, as this request reached it.
