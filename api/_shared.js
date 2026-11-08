@@ -234,9 +234,45 @@ export const externalCheckoutUrls = {
   pack: process.env.CHECKOUT_PACK_URL || "",
 };
 
+// Gumroad, plan by plan, while CHECKOUT_PROVIDER stays "whop". This is how the
+// move off Whop happens one product at a time: a plan with a Gumroad link here
+// sells on Gumroad, a plan without one is still sold by Whop, so lifetime keeps
+// selling while only the monthly has been created on Gumroad.
+//
+// Gated on GUMROAD_WEBHOOK_TOKEN. Without it the Gumroad webhook refuses every
+// sale notification, so a Gumroad buyer would pay and never be unlocked. Until
+// the token is in Vercel, the plan stays on Whop, which still grants access.
+export const GUMROAD_M1_FALLBACK_URL = "https://barbelinnoan.gumroad.com/l/vujeq";
+export const gumroadCheckoutUrls = {
+  m1: process.env.GUMROAD_M1_URL || GUMROAD_M1_FALLBACK_URL,
+  lifetime: process.env.GUMROAD_LIFETIME_URL || "",
+};
+export const gumroadWebhookReady = () => Boolean(process.env.GUMROAD_WEBHOOK_TOKEN);
+
+// "whop" | "gumroad" | "external" for one plan. An explicit CHECKOUT_PROVIDER
+// still moves every plan at once, as before.
+export function checkoutProviderFor(plan) {
+  if (!onWhopCheckout()) return "external";
+  if (gumroadWebhookReady() && gumroadCheckoutUrls[plan]) return "gumroad";
+  return "whop";
+}
+
 // Where a buyer actually goes, whoever is taking the money.
-export const activeCheckoutUrl = (plan) =>
-  onWhopCheckout() ? checkoutUrls[plan] || "" : externalCheckoutUrls[plan] || "";
+export function activeCheckoutUrl(plan) {
+  const provider = checkoutProviderFor(plan);
+  if (provider === "gumroad") return gumroadCheckoutUrls[plan] || "";
+  if (provider === "external") return externalCheckoutUrls[plan] || "";
+  return checkoutUrls[plan] || "";
+}
+
+export const isGumroadUrl = (url) => {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "gumroad.com" || host.endsWith(".gumroad.com") || host === "gum.co";
+  } catch {
+    return false;
+  }
+};
 
 // Whop plan IDs (plan_xxx), one per plan — required for the on-site EMBEDDED
 // checkout (no redirect). Set these in Vercel env, or leave them empty and use a
@@ -272,7 +308,7 @@ export function bestCheckoutUrl(plan) {
   // Off Whop the configured URL IS the answer: it points at another processor,
   // and the plan_xxx reasoning below would quietly replace it with a whop.com
   // link that no longer sells anything.
-  if (!onWhopCheckout()) return externalCheckoutUrls[plan] || null;
+  if (checkoutProviderFor(plan) !== "whop") return activeCheckoutUrl(plan) || null;
   const configured = checkoutUrls[plan];
   if (configured && /plan_[A-Za-z0-9]+/.test(configured)) return configured;
   const planId = resolvePlanId(plan);

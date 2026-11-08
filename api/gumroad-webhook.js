@@ -13,6 +13,7 @@
 //     account is acknowledged and ignored.
 import { timingSafeEqual } from "node:crypto";
 import {
+  gumroadCheckoutUrls,
   methodNotAllowed,
   normalizeEmail,
   redisClearAccess,
@@ -29,9 +30,11 @@ const lastSegment = (value) => {
   return s.slice(s.lastIndexOf("/") + 1).toLowerCase();
 };
 
+// Defaults to the product the checkout sells, so the plan that is on sale is
+// always one the webhook recognises.
 export const gumroadProducts = () => ({
-  m1: process.env.GUMROAD_M1_PRODUCT || "",
-  lifetime: process.env.GUMROAD_LIFETIME_PRODUCT || "",
+  m1: process.env.GUMROAD_M1_PRODUCT || gumroadCheckoutUrls.m1 || "",
+  lifetime: process.env.GUMROAD_LIFETIME_PRODUCT || gumroadCheckoutUrls.lifetime || "",
 });
 
 // Which of our plans a Gumroad payload is for, or null. Matched on every

@@ -1508,11 +1508,113 @@ function CheckoutSuccess({ plan, prefillEmail, onUnlocked }) {
   );
 }
 
+// Gumroad's overlay script. Loaded on first use only: most visitors never open
+// a checkout, and it has no business slowing the gallery down.
+const GUMROAD_SCRIPT_SRC = "https://gumroad.com/js/gumroad.js";
+let gumroadScriptPromise = null;
+function loadGumroadScript() {
+  if (gumroadScriptPromise) return gumroadScriptPromise;
+  gumroadScriptPromise = new Promise((resolve, reject) => {
+    const el = document.createElement("script");
+    el.src = GUMROAD_SCRIPT_SRC;
+    el.async = true;
+    el.onload = () => resolve();
+    el.onerror = () => { gumroadScriptPromise = null; reject(new Error("gumroad.js did not load")); };
+    document.head.appendChild(el);
+  });
+  return gumroadScriptPromise;
+}
+
+// wanted=true sends the buyer straight to the payment form, past the product
+// page. A malformed URL is returned untouched: it still has to be a link.
+function gumroadCheckoutHref(url) {
+  try {
+    const u = new URL(url);
+    u.searchParams.set("wanted", "true");
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+// The Gumroad step of CheckoutOverlay. gumroad.js turns a link to the product
+// into its overlay; if the script is blocked or does not take the link, the
+// same click opens Gumroad's page instead. Nothing here can leave a buyer
+// without a way to pay.
+//
+// Gumroad tells this page nothing when the payment goes through: access is
+// granted by the sale notification (api/gumroad-webhook.js). So the buyer
+// says they have paid, and the unlock step checks their email against that.
+function GumroadCheckout({ url, plan, onPaid }) {
+  const linkRef = useRef(null);
+  const openedRef = useRef(false);
+  const [script, setScript] = useState("loading");
+  const href = gumroadCheckoutHref(url);
+
+  useEffect(() => {
+    let alive = true;
+    // The link is already on the page here, so the script finds it when it
+    // scans the document on load.
+    loadGumroadScript()
+      .then(() => {
+        if (!alive) return;
+        setScript("ready");
+        // Opened once, on arrival: the buyer has just clicked a buy button and
+        // should not have to click a second one. The button stays for reopening.
+        if (!openedRef.current) {
+          openedRef.current = true;
+          window.setTimeout(() => { if (alive) linkRef.current?.click(); }, 60);
+        }
+      })
+      .catch(() => {
+        if (!alive) return;
+        setScript("failed");
+        track("checkout_embed_failed", { plan: plan.id, provider: "gumroad" });
+      });
+    return () => { alive = false; };
+  }, [url, plan.id]);
+
+  return (
+    <div className="flex min-h-[320px] flex-col items-center justify-center gap-5 px-5 py-10 text-center">
+      <div className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/[0.05] text-white/70"><Icon name="shield" className="h-5 w-5" /></div>
+      <div>
+        <p className="text-lg font-semibold tracking-tight text-[#EDE9E0]">{plan.name} · {plan.price} <span className="text-sm font-normal text-white/45">{plan.period}</span></p>
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">
+          {script === "loading"
+            ? t("Opening the secure checkout…", "Ouverture du paiement sécurisé…")
+            : t("The payment window opens on top of the site. Not showing? Use the button below.", "La fenêtre de paiement s'ouvre par-dessus le site. Elle ne s'affiche pas ? Utilise le bouton ci-dessous.")}
+        </p>
+      </div>
+      {/* What gumroad.js looks for: a link to the product with its class. Kept
+          off-screen because the script restyles it as Gumroad's own pink
+          button; the visible button below clicks it. If the script never binds
+          it, that click is an ordinary link and opens Gumroad's page. */}
+      <span className="sr-only" aria-hidden="true">
+        <a ref={linkRef} href={href} tabIndex={-1} className="gumroad-button" data-gumroad-overlay-checkout="true">Gumroad</a>
+      </span>
+      <button
+        type="button"
+        onClick={() => {
+          track("checkout_opened_on_gumroad", { plan: plan.id, script });
+          if (script === "ready" && linkRef.current) linkRef.current.click();
+          else window.location.assign(href);
+        }}
+        className="group inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white"
+      >
+        {t("Pay", "Payer")} {plan.price} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" />
+      </button>
+      <button type="button" onClick={onPaid} className="text-xs text-white/50 underline underline-offset-4 transition hover:text-white/80">
+        {t("Already paid? Unlock my access", "Déjà payé ? Débloquer mon accès")}
+      </button>
+    </div>
+  );
+}
+
 // Full-screen overlay that runs the whole purchase ON-SITE: fetch the plan id,
 // mount the embedded Whop checkout, then confirm access — never leaving the page.
 // Falls back to the hosted redirect only when no plan_xxx id is configured.
 function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
-  const [load, setLoad] = useState({ loading: true, planId: "", promoCode: "", checkoutUrl: "", error: "" });
+  const [load, setLoad] = useState({ loading: true, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", error: "" });
   const [done, setDone] = useState(false);
   // "loading" until Whop's iframe is on the page, "ready" once it is, "failed"
   // when it never came.
@@ -1537,7 +1639,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
 
   useEffect(() => {
     let alive = true;
-    setLoad({ loading: true, planId: "", promoCode: "", checkoutUrl: "", error: "" });
+    setLoad({ loading: true, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", error: "" });
     (async () => {
       try {
         const r = await fetch(CHECKOUT_API_URL, {
@@ -1548,6 +1650,11 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         let d = {};
         try { d = await r.json(); } catch { d = {}; }
         if (!r.ok) throw new Error(apiError(d, t(`Payment server error (${r.status}).`, `Erreur serveur paiement (${r.status}).`)));
+        // Sold on Gumroad: its own overlay opens on top of this layer, which
+        // stays behind it to take the buyer to the unlock step afterwards.
+        // Before the referral redirect below on purpose: the affiliate code
+        // is a Whop one and means nothing on a Gumroad page.
+        if (d.provider === "gumroad" && d.checkoutUrl) { if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: d.checkoutUrl, gumroadUrl: d.checkoutUrl, error: "" }); return; }
         // Referred visitors go to Whop's hosted checkout even when the embed is
         // available: the affiliate code rides on the URL (a=...), which is the
         // only path that credits the commission for certain.
@@ -1556,12 +1663,12 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         // USE_WHOP_ELEMENTS off every buyer gets Whop's hosted page, which is
         // the same path a plan with no embeddable id already takes.
         if (!USE_WHOP_ELEMENTS && d.checkoutUrl) { track("checkout_redirected", { plan: plan.id, reason: "elements_off", ...refProps() }); window.location.assign(d.checkoutUrl); return; }
-        if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, promoCode: d.promoCode || "", checkoutUrl: d.checkoutUrl || "", error: "" }); return; }
+        if (d.planId) { if (alive) setLoad({ loading: false, planId: d.planId, promoCode: d.promoCode || "", checkoutUrl: d.checkoutUrl || "", gumroadUrl: "", error: "" }); return; }
         // No embeddable plan id configured — gracefully use the hosted page.
         if (d.checkoutUrl) { window.location.assign(d.checkoutUrl); return; }
         throw new Error(t("Checkout is unavailable for this plan.", "Checkout indisponible pour cette offre."));
       } catch (e) {
-        if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: "", error: getCheckoutErrorMessage(e) });
+        if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", error: getCheckoutErrorMessage(e) });
       }
     })();
     return () => { alive = false; };
@@ -1602,6 +1709,8 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
               <p className="max-w-sm text-sm leading-6 text-red-300">{load.error}</p>
               <button onClick={() => setLoad((s) => ({ ...s }))} className="rounded-full bg-[#08080A] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418]">{t("Retry", "Réessayer")}</button>
             </div>
+          ) : load.gumroadUrl ? (
+            <GumroadCheckout url={load.gumroadUrl} plan={plan} onPaid={() => setDone(true)} />
           ) : (
             <div className={embed === "ready" ? "" : "min-h-[540px]"}>
               {/* Keyed on the plan: every option is read once when the session
@@ -1655,7 +1764,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
           <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment", "Paiement sécurisé")}</span>
           {/* The way out if the embed ever misbehaves on a device: the same
               plan, on Whop's own page, promo and affiliate already applied. */}
-          {load.checkoutUrl && !done && (
+          {load.checkoutUrl && !load.gumroadUrl && !done && (
             <a href={load.checkoutUrl} onClick={() => track("checkout_opened_on_whop", { plan: plan.id, ...refProps() })} className="underline underline-offset-4 transition hover:text-white/75">{t("Form not showing? Open the secure payment page", "Le formulaire ne s'affiche pas ? Ouvrir la page de paiement sécurisée")}</a>
           )}
         </div>

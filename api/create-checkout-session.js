@@ -1,4 +1,4 @@
-import { activeCheckoutUrl, appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutUrls, methodNotAllowed, onWhopCheckout, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
+import { activeCheckoutUrl, appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutProviderFor, checkoutUrls, isGumroadUrl, methodNotAllowed, onWhopCheckout, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -33,13 +33,18 @@ export default async function handler(req, res) {
   // mounting Whop's element — that branch already exists for plans that never
   // had an embeddable id. And no Whop-only parameter is appended to a URL that
   // would not understand it.
-  if (!onWhopCheckout()) {
-    return res.json({ checkoutUrl, planId: null, promoCode: null });
+  //
+  // provider tells the client which page this is: a Gumroad link opens in
+  // Gumroad's own overlay on top of the site rather than as a redirect.
+  if (checkoutProviderFor(plan) !== "whop") {
+    const provider = isGumroadUrl(checkoutUrl) ? "gumroad" : "external";
+    return res.json({ checkoutUrl, planId: null, promoCode: null, provider });
   }
 
   return res.json({
     checkoutUrl: appendPromo(appendAffiliate(bestCheckoutUrl(plan) || checkoutUrl, ref)),
     planId: resolvePlanId(plan),
     promoCode: CHECKOUT_PROMO_CODE || null,
+    provider: "whop",
   });
 }
