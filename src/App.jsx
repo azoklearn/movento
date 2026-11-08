@@ -4915,6 +4915,20 @@ const KIND_LABELS = {
 // no way to ask at all.
 function AdminOverview({ token }) {
   const [state, setState] = useState({ loading: true, error: "", data: null });
+  // Registers the bot's commands (/ventes, /derniers, /abonnes) with Telegram.
+  const [tgSetup, setTgSetup] = useState({ loading: false, ok: false, error: "" });
+
+  async function connectTelegram() {
+    setTgSetup({ loading: true, ok: false, error: "" });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/telegram-setup`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Erreur ${response.status}.`);
+      setTgSetup({ loading: false, ok: true, error: "" });
+    } catch (error) {
+      setTgSetup({ loading: false, ok: false, error: error.message });
+    }
+  }
 
   async function load() {
     setState((s) => ({ ...s, loading: true, error: "" }));
@@ -5138,6 +5152,16 @@ function AdminOverview({ token }) {
             </li>
           ))}
         </ul>
+        {d.health.telegram && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/[0.07] pt-4">
+            <button type="button" onClick={connectTelegram} disabled={tgSetup.loading} className="rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2 text-xs font-semibold text-white/70 transition hover:text-[#EDE9E0] disabled:opacity-50">
+              {tgSetup.loading ? "Connexion…" : "Activer les commandes Telegram"}
+            </button>
+            <span className={`text-xs ${tgSetup.error ? "text-red-300" : "text-white/45"}`}>
+              {tgSetup.error || (tgSetup.ok ? "C'est fait : écris /ventes à ton bot." : "Pour demander tes ventes au bot : /ventes, /derniers, /abonnes.")}
+            </span>
+          </div>
+        )}
       </div>
     </section>
   );
