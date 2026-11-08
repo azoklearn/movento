@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { loadWhop } from "@whop/elements";
 import { Checkout, CheckoutElement, WhopElements } from "@whop/elements-react";
@@ -1629,12 +1629,95 @@ function GumroadCheckout({ url, plan, onPaid }) {
   );
 }
 
+// The Paddle step of CheckoutOverlay. Paddle.js opens its own overlay over
+// this layer, in euros with VAT inside the price; this layer stays behind it
+// to take over when it closes. Paddle reports the payment itself
+// (checkout.completed), so unlike Gumroad the unlock step follows on its own,
+// with the address the payment was made from.
+function PaddleCheckout({ cfg, plan, prefillEmail, onPaid }) {
+  const [phase, setPhase] = useState("loading"); // loading | open | closed | failed
+  const paidRef = useRef(false);
+  // Through a ref: the parent passes a new function on every render, and the
+  // effect below must not re-run (and reopen the checkout) because of it.
+  const onPaidRef = useRef(onPaid);
+  onPaidRef.current = onPaid;
+
+  const open = useCallback(() => {
+    try {
+      const email = cleanEmail(prefillEmail || "");
+      window.Paddle.Checkout.open({
+        items: [{ priceId: cfg.priceId, quantity: 1 }],
+        ...(email ? { customer: { email } } : {}),
+        // Read back by the webhook only if Paddle's customer record cannot be.
+        customData: { plan: plan.id, ...(email ? { email } : {}) },
+        settings: { displayMode: "overlay", theme: "dark", locale: t("en", "fr") },
+      });
+      setPhase("open");
+      track("checkout_opened_on_paddle", { plan: plan.id });
+    } catch (e) {
+      console.error("Paddle checkout did not open:", e);
+      setPhase("failed");
+    }
+  }, [cfg.priceId, plan.id, prefillEmail]);
+
+  useEffect(() => {
+    let alive = true;
+    const stop = onPaddleEvent((ev) => {
+      const name = ev?.name || "";
+      if (name === "checkout.completed" && !paidRef.current) {
+        paidRef.current = true;
+        track("checkout_completed", { plan: plan.id, provider: "paddle" });
+        // Closed by us: Paddle's own success screen would only sit on top of
+        // the unlock step that says the same thing and does something.
+        try { window.Paddle.Checkout.close(); } catch {}
+        onPaidRef.current(cleanEmail(ev?.data?.customer?.email || ""));
+      } else if (name === "checkout.closed" && !paidRef.current) {
+        if (alive) setPhase("closed");
+      } else if (name === "checkout.error") {
+        if (alive) setPhase("failed");
+      }
+    });
+    loadPaddle(cfg)
+      .then(() => { if (alive) open(); })
+      .catch((e) => {
+        console.error(e);
+        if (alive) setPhase("failed");
+        track("checkout_embed_failed", { plan: plan.id, provider: "paddle" });
+      });
+    return () => { alive = false; stop(); };
+  }, [cfg, open, plan.id]);
+
+  return (
+    <div className="flex min-h-[320px] flex-col items-center justify-center gap-5 px-5 py-10 text-center">
+      <div className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/[0.05] text-white/70"><Icon name="shield" className="h-5 w-5" /></div>
+      <div>
+        <p className="text-lg font-semibold tracking-tight text-[#EDE9E0]">{plan.name} · {plan.price} <span className="text-sm font-normal text-white/45">{plan.period}</span></p>
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">
+          {phase === "loading" && t("Opening the secure checkout…", "Ouverture du paiement sécurisé…")}
+          {phase === "open" && t("Complete the payment in the window above.", "Termine le paiement dans la fenêtre au-dessus.")}
+          {phase === "closed" && t("The payment window was closed. Nothing was charged.", "La fenêtre de paiement a été fermée. Rien n'a été débité.")}
+          {phase === "failed" && t("The checkout could not open. Check your connection and try again.", "Le paiement n'a pas pu s'ouvrir. Vérifie ta connexion et réessaie.")}
+        </p>
+        <p className="mx-auto mt-3 max-w-sm text-xs leading-5 text-white/40">{t("Price in euros, VAT included. Payment handled by Paddle.", "Prix en euros, TVA incluse. Paiement géré par Paddle.")}</p>
+      </div>
+      {(phase === "closed" || phase === "failed") && (
+        <button type="button" onClick={() => (window.Paddle ? open() : window.location.reload())} className="group inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">
+          {t("Pay", "Payer")} {plan.price} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 // Full-screen overlay that runs the whole purchase ON-SITE: fetch the plan id,
 // mount the embedded Whop checkout, then confirm access — never leaving the page.
 // Falls back to the hosted redirect only when no plan_xxx id is configured.
 function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
-  const [load, setLoad] = useState({ loading: true, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", error: "" });
+  const [load, setLoad] = useState({ loading: true, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", paddle: null, error: "" });
   const [done, setDone] = useState(false);
+  // The address Paddle took the payment from, handed to the unlock step so the
+  // buyer does not have to type it again.
+  const [paidEmail, setPaidEmail] = useState("");
   // "loading" until Whop's iframe is on the page, "ready" once it is, "failed"
   // when it never came.
   const [embed, setEmbed] = useState("loading");
@@ -1658,7 +1741,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
 
   useEffect(() => {
     let alive = true;
-    setLoad({ loading: true, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", error: "" });
+    setLoad({ loading: true, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", paddle: null, error: "" });
     (async () => {
       try {
         const r = await fetch(CHECKOUT_API_URL, {
@@ -1673,6 +1756,9 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         // stays behind it to take the buyer to the unlock step afterwards.
         // Before the referral redirect below on purpose: the affiliate code
         // is a Whop one and means nothing on a Gumroad page.
+        // Sold on Paddle: its overlay opens on top of this layer with the
+        // price id; nothing to redirect to, and no affiliate code to carry.
+        if (d.provider === "paddle" && d.paddle?.priceId && d.paddle?.token) { if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", paddle: d.paddle, error: "" }); return; }
         if (d.provider === "gumroad" && d.checkoutUrl) { if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: d.checkoutUrl, gumroadUrl: d.checkoutUrl, error: "" }); return; }
         // Referred visitors go to Whop's hosted checkout even when the embed is
         // available: the affiliate code rides on the URL (a=...), which is the
@@ -1716,7 +1802,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
             padding) — Whop's fields are already narrow enough. */}
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214] p-1 shadow-2xl shadow-black/60 sm:rounded-[28px] sm:p-4">
           {done ? (
-            <CheckoutSuccess plan={plan} prefillEmail={prefillEmail} onUnlocked={onUnlocked} />
+            <CheckoutSuccess plan={plan} prefillEmail={paidEmail || prefillEmail} onUnlocked={onUnlocked} />
           ) : load.loading ? (
             <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
               <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/70" />
@@ -1728,6 +1814,8 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
               <p className="max-w-sm text-sm leading-6 text-red-300">{load.error}</p>
               <button onClick={() => setLoad((s) => ({ ...s }))} className="rounded-full bg-[#08080A] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418]">{t("Retry", "Réessayer")}</button>
             </div>
+          ) : load.paddle ? (
+            <PaddleCheckout cfg={load.paddle} plan={plan} prefillEmail={prefillEmail} onPaid={(email) => { setPaidEmail(email || ""); setDone(true); }} />
           ) : load.gumroadUrl ? (
             <GumroadCheckout url={load.gumroadUrl} plan={plan} onPaid={() => setDone(true)} />
           ) : (
@@ -5519,14 +5607,20 @@ function AdminLeadsPage() {
   );
 }
 
-// A bare page that opens Paddle's checkout on the monthly price, to watch the
-// whole flow work before anything on the site depends on it. Reached by URL
-// only: nothing links here. It grants no access — there is no Paddle webhook
-// yet — so a payment made here shows Paddle working, nothing more.
+// Paddle.js, shared by the real checkout and the /paddle-test page.
+// Paddle.Initialize may only run once per page and takes a single event
+// callback, so that callback hands every event to whoever is listening now:
+// the checkout layer that is open, or the test page's log.
 const PADDLE_SCRIPT_URL = "https://cdn.paddle.com/paddle/v2/paddle.js";
-let paddleReady = null; // Paddle.Initialize may only run once per page
+let paddleReady = null;
+const paddleListeners = new Set();
+function onPaddleEvent(fn) {
+  paddleListeners.add(fn);
+  return () => paddleListeners.delete(fn);
+}
 
-function loadPaddle(cfg, onEvent) {
+function loadPaddle(cfg) {
+  const onEvent = (ev) => paddleListeners.forEach((fn) => { try { fn(ev); } catch (e) { console.error(e); } });
   if (paddleReady) return paddleReady;
   paddleReady = new Promise((resolve, reject) => {
     const start = () => {
@@ -5560,6 +5654,11 @@ function PaddleTestPage() {
 
   useEffect(() => {
     let alive = true;
+    const stop = onPaddleEvent((ev) => {
+      const name = ev?.name || ev?.type || "événement";
+      const detail = ev?.data?.status || ev?.error?.detail || ev?.detail || "";
+      add(detail ? `${name} — ${detail}` : name);
+    });
     (async () => {
       try {
         const r = await fetch(`${API_BASE_URL}/api/paddle-config`);
@@ -5567,11 +5666,7 @@ function PaddleTestPage() {
         try { cfg = await r.json(); } catch { cfg = {}; }
         if (!r.ok || !cfg.token) throw new Error(cfg.error || `La configuration Paddle a répondu ${r.status}.`);
         if (cfg.warning) add(`attention : ${cfg.warning}`);
-        await loadPaddle(cfg, (ev) => {
-          const name = ev?.name || ev?.type || "événement";
-          const detail = ev?.data?.status || ev?.error?.detail || ev?.detail || "";
-          add(detail ? `${name} — ${detail}` : name);
-        });
+        await loadPaddle(cfg);
         if (alive) {
           setState({ phase: "ready", error: "", cfg });
           add(`Paddle prêt, environnement ${cfg.environment}`);
@@ -5580,19 +5675,42 @@ function PaddleTestPage() {
         if (alive) setState({ phase: "error", error: e.message, cfg: null });
       }
     })();
-    return () => { alive = false; };
+    return () => { alive = false; stop(); };
   }, []);
 
-  function openCheckout() {
+  // The address the test pays with. In sandbox the webhook only unlocks the
+  // addresses in PADDLE_TEST_EMAILS (and teammoventoino1@gmail.com), so this
+  // has to be one of them for the unlock check below to pass.
+  const [testEmail, setTestEmail] = useState("teammoventoino1@gmail.com");
+  const [access, setAccess] = useState("");
+
+  function openCheckout(planId) {
     const { cfg } = state;
-    add(`ouverture du paiement, prix ${cfg.prices.m1}`);
+    const priceId = cfg.prices[planId];
+    if (!priceId) { add(`aucun prix configuré pour ${planId}`); return; }
+    add(`ouverture du paiement ${planId}, prix ${priceId}`);
     try {
       window.Paddle.Checkout.open({
-        items: [{ priceId: cfg.prices.m1, quantity: 1 }],
+        items: [{ priceId, quantity: 1 }],
+        customer: testEmail ? { email: testEmail } : undefined,
+        customData: { plan: planId, email: testEmail },
         settings: { displayMode: "overlay", theme: "dark", locale: "fr" },
       });
     } catch (e) {
       add(`erreur : ${e.message}`);
+    }
+  }
+
+  // The same check the site makes after a purchase: did the webhook (or the
+  // API fallback) record access for this address?
+  async function checkAccess() {
+    setAccess("…");
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/verify-access`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: cleanEmail(testEmail) }) });
+      const d = await r.json().catch(() => ({}));
+      setAccess(d.hasAccess ? "Accès débloqué ✓" : "Pas encore d'accès — le webhook n'est pas arrivé, ou l'adresse n'est pas dans PADDLE_TEST_EMAILS.");
+    } catch {
+      setAccess("Vérification impossible.");
     }
   }
 
@@ -5601,14 +5719,21 @@ function PaddleTestPage() {
       <div className="mx-auto max-w-xl">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300/80">{state.cfg?.environment === "production" ? "Production" : "Sandbox"} · page de test</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">Test du paiement Paddle</h1>
-        <p className="mt-3 text-sm leading-6 text-white/55">Ouvre la fenêtre de paiement Paddle sur l'offre mensuelle. Cette page ne donne aucun accès au catalogue : elle sert uniquement à vérifier que Paddle fonctionne.</p>
+        <p className="mt-3 text-sm leading-6 text-white/55">Ouvre la fenêtre de paiement Paddle, puis vérifie que le webhook a bien débloqué l'accès. En sandbox, seules les adresses de test sont débloquées.</p>
 
+        {state.cfg?.warning && <p className="mt-6 rounded-2xl border border-amber-400/25 bg-amber-400/[0.07] p-4 text-sm leading-6 text-amber-300">{state.cfg.warning}</p>}
         {state.phase === "loading" && <p className="mt-8 text-sm text-white/55">Chargement de Paddle…</p>}
         {state.phase === "error" && <p className="mt-8 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-4 text-sm leading-6 text-red-300">{state.error}</p>}
         {state.phase === "ready" && (
-          <button onClick={openCheckout} className="mt-8 w-full rounded-2xl bg-[#EDE9E0] px-6 py-4 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">
-            Ouvrir le paiement test · mensuel
-          </button>
+          <div className="mt-8 space-y-3">
+            <input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} type="email" placeholder="email de test" className="w-full rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 text-sm text-[#EDE9E0] outline-none focus:border-white/35" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button onClick={() => openCheckout("m1")} className="rounded-2xl bg-[#EDE9E0] px-6 py-4 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">Payer · mensuel</button>
+              <button onClick={() => openCheckout("m12")} className="rounded-2xl bg-[#EDE9E0] px-6 py-4 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">Payer · annuel</button>
+            </div>
+            <button onClick={checkAccess} className="w-full rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-white/80 transition hover:border-white/30">Vérifier l'accès de cet email</button>
+            {access && <p className="text-sm text-white/70">{access}</p>}
+          </div>
         )}
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-[#121214] p-5 text-sm leading-6 text-white/65">

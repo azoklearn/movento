@@ -1,20 +1,18 @@
-import { methodNotAllowed } from "./_shared.js";
+import { methodNotAllowed, paddleCheckoutReady, paddleClientToken, paddleEnvironment, paddlePriceIds } from "./_shared.js";
 
 // What a browser needs to open Paddle's checkout, and nothing else. The
 // client-side token is public by design — Paddle.js embeds it in the page — so
 // it can be served here. The API key and the webhook secret never leave the
 // server and are not read by this file.
 //
-// Sandbox unless PADDLE_ENV says "production": the first runs are tests with
-// Paddle's test cards, and a sandbox checkout cannot take real money.
-const DEFAULT_M1_PRICE = "pri_01m6w6hq41jjdsrgwm0vjz156g"; // monthly, product pro_01m6w6geahj4ade9k6hhsp5995
-
+// Used by the /paddle-test page. The real checkout gets the same three facts
+// from /api/create-checkout-session, for the one plan being bought.
 export default function handler(req, res) {
   if (req.method !== "GET") return methodNotAllowed(res, "GET");
   res.setHeader("Cache-Control", "no-store");
 
-  const environment = String(process.env.PADDLE_ENV || "").trim().toLowerCase() === "production" ? "production" : "sandbox";
-  const token = String(process.env.PADDLE_CLIENT_TOKEN || "").trim();
+  const environment = paddleEnvironment();
+  const token = paddleClientToken();
   if (!token) {
     return res.status(503).json({ error: "PADDLE_CLIENT_TOKEN n'est pas configuré dans Vercel.", environment });
   }
@@ -23,14 +21,23 @@ export default function handler(req, res) {
   // most likely setup mistake, and Paddle's own error for it is opaque, so it
   // is named here — as a warning, not a refusal, in case the prefixes change.
   const expected = environment === "sandbox" ? "test_" : "live_";
-  const warning = token.startsWith(expected)
-    ? null
-    : `Le token ne commence pas par ${expected} alors que l'environnement est ${environment} : Paddle risque de le refuser.`;
+  const warnings = [];
+  if (!token.startsWith(expected)) warnings.push(`Le token ne commence pas par ${expected} alors que l'environnement est ${environment} : Paddle risque de le refuser.`);
+  // What the real checkout also needs, named so the test page says what is
+  // missing before anyone pays.
+  if (!process.env.PADDLE_API_KEY) warnings.push("PADDLE_API_KEY manque : le webhook ne pourra pas lire l'email de l'acheteur.");
+  if (!process.env.PADDLE_WEBHOOK_SECRET) warnings.push("PADDLE_WEBHOOK_SECRET manque : les paiements ne débloqueront pas l'accès.");
+  const prices = paddlePriceIds();
+  if (!prices.m1) warnings.push("PADDLE_M1_PRICE_ID manque.");
+  if (!prices.m12) warnings.push("PADDLE_M12_PRICE_ID manque.");
+  const switchedOn = String(process.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "paddle";
+  if (switchedOn && environment !== "production") warnings.push("CHECKOUT_PROVIDER=paddle est ignoré en sandbox : le site reste sur Gumroad tant que PADDLE_ENV n'est pas production.");
 
   return res.json({
     environment,
     token,
-    prices: { m1: String(process.env.PADDLE_M1_PRICE_ID || DEFAULT_M1_PRICE).trim() },
-    warning,
+    prices,
+    live: paddleCheckoutReady() && switchedOn,
+    warning: warnings.join(" ") || null,
   });
 }

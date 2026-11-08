@@ -1,9 +1,23 @@
-import { activeCheckoutUrl, appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutProviderFor, checkoutUrls, isGumroadUrl, methodNotAllowed, onWhopCheckout, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
+import { activeCheckoutUrl, appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutProviderFor, checkoutUrls, isGumroadUrl, methodNotAllowed, onWhopCheckout, paddleClientToken, paddleEnvironment, paddlePriceIds, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
 
   const { plan, ref } = req.body || {};
+
+  // Paddle has no URL to send anyone to: the client opens Paddle.js's overlay
+  // with the price id, so that is what goes back, with the public token and
+  // the environment it belongs to.
+  if (!RETIRED_PLANS.has(plan) && checkoutProviderFor(plan) === "paddle") {
+    return res.json({
+      provider: "paddle",
+      checkoutUrl: null,
+      planId: null,
+      promoCode: null,
+      paddle: { environment: paddleEnvironment(), token: paddleClientToken(), priceId: paddlePriceIds()[plan] },
+    });
+  }
+
   const checkoutUrl = RETIRED_PLANS.has(plan) ? null : activeCheckoutUrl(plan);
 
   if (!checkoutUrl) {
@@ -16,7 +30,7 @@ export default async function handler(req, res) {
       // Only what a caller could actually buy: a plan whose link is still
       // waiting to be configured is as unbuyable as a retired one, and
       // listing it would send whoever read this error straight back into a 400.
-      validPlans: Object.keys(checkoutUrls).filter((id) => activeCheckoutUrl(id) && !RETIRED_PLANS.has(id)),
+      validPlans: Object.keys(checkoutUrls).filter((id) => (checkoutProviderFor(id) === "paddle" || activeCheckoutUrl(id)) && !RETIRED_PLANS.has(id)),
     });
   }
 

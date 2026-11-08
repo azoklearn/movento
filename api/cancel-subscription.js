@@ -1,4 +1,25 @@
-import { cancelWhopMembership, GUMROAD_MANAGE_URL, methodNotAllowed, normalizeEmail, redisGetAccessRecord } from "./_shared.js";
+import { cancelWhopMembership, GUMROAD_MANAGE_URL, methodNotAllowed, normalizeEmail, paddleApi, paddleSubscriptionSummary, redisGetAccessRecord } from "./_shared.js";
+
+// Paddle: cancelled at the end of the period through the API, the way the
+// Whop branch does it. Access stays until then; subscription.canceled, sent
+// by Paddle on that date, is what takes it away (api/paddle-webhook.js).
+async function cancelPaddle(record, res) {
+  if (!record.membershipId || !process.env.PADDLE_API_KEY) {
+    return res.status(500).json({ error: "Service de résiliation indisponible.", errorEn: "Cancellation service unavailable." });
+  }
+  const path = `/subscriptions/${encodeURIComponent(record.membershipId)}`;
+  try {
+    const current = paddleSubscriptionSummary((await paddleApi(path)).data);
+    if (current.cancelAtPeriodEnd || current.status === "canceled") {
+      return res.json({ ok: true, alreadyCanceled: true, renewalDate: current.renewalDate });
+    }
+    const { data } = await paddleApi(`${path}/cancel`, { method: "POST", body: { effective_from: "next_billing_period" } });
+    return res.json({ ok: true, alreadyCanceled: false, renewalDate: paddleSubscriptionSummary(data).renewalDate });
+  } catch (error) {
+    console.error("Paddle cancel failed:", error);
+    return res.status(502).json({ error: "La résiliation a échoué. Réessaie dans un instant.", errorEn: "Cancellation failed. Try again in a moment." });
+  }
+}
 
 // email → HTTP status + [French, English] message for each failure reason.
 // Both are returned so the client can show the visitor's own language.
@@ -21,6 +42,7 @@ export default async function handler(req, res) {
     // Billed by Gumroad: there is nothing this server can cancel, and asking
     // Whop would answer "no subscription found" to someone who is paying.
     const record = await redisGetAccessRecord(email);
+    if (record?.provider === "paddle") return cancelPaddle(record, res);
     if (record?.provider === "gumroad") {
       return res.status(409).json({
         error: "Ton abonnement est géré par Gumroad : résilie-le depuis ton espace Gumroad, ou depuis le lien « Manage membership » de ton reçu.",

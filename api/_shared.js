@@ -220,7 +220,10 @@ export const checkoutUrls = {
 // their bonus ebook. Blanking them to "move off Whop" would quietly reclassify
 // people who have already paid.
 export const CHECKOUT_PROVIDER = String(process.env.CHECKOUT_PROVIDER || "whop").trim().toLowerCase();
-export const onWhopCheckout = () => CHECKOUT_PROVIDER === "whop";
+// "paddle" is not a hosted-URL provider: it sells the plans Paddle is set up
+// for and leaves every other plan on the default chain below (Gumroad, then
+// Whop), so turning it on can never leave a plan with nothing to sell it.
+export const onWhopCheckout = () => CHECKOUT_PROVIDER === "whop" || CHECKOUT_PROVIDER === "paddle";
 
 // The replacement checkout, one hosted URL per plan. There is deliberately no
 // fallback: an unconfigured plan must come back empty so the endpoint refuses
@@ -259,9 +262,10 @@ export const gumroadCheckoutUrls = {
 const GUMROAD_ONLY_PLANS = new Set(["m12"]);
 export const gumroadWebhookReady = () => Boolean(process.env.GUMROAD_WEBHOOK_TOKEN);
 
-// "whop" | "gumroad" | "external" for one plan. An explicit CHECKOUT_PROVIDER
-// still moves every plan at once, as before.
+// "paddle" | "whop" | "gumroad" | "external" | "none" for one plan. An explicit
+// hosted-URL CHECKOUT_PROVIDER still moves every plan at once, as before.
 export function checkoutProviderFor(plan) {
+  if (CHECKOUT_PROVIDER === "paddle" && paddleCheckoutReady() && paddlePriceIds()[plan]) return "paddle";
   if (!onWhopCheckout()) return "external";
   if (gumroadWebhookReady() && gumroadCheckoutUrls[plan]) return "gumroad";
   if (GUMROAD_ONLY_PLANS.has(plan)) return "none";
@@ -285,6 +289,154 @@ export const isGumroadUrl = (url) => {
     return false;
   }
 };
+
+// ---------------------------------------------------------------------------
+// Paddle Billing.
+//
+// Paddle is the merchant of record: it charges in euros with VAT inside the
+// price, which is why it replaces Gumroad (dollars at checkout, VAT on top).
+// The checkout is Paddle.js's overlay, opened on the site with a price id; the
+// sale reaches the site through api/paddle-webhook.js, which grants access on
+// payment and takes it away when the subscription ends.
+//
+// Sandbox unless PADDLE_ENV is "production". Everything below is read from the
+// environment at call time:
+//   PADDLE_CLIENT_TOKEN    public, sent to the browser (test_… / live_…)
+//   PADDLE_API_KEY         server only: customer emails, subscriptions, cancel
+//   PADDLE_WEBHOOK_SECRET  server only: verifies the notifications
+//   PADDLE_M1_PRICE_ID / PADDLE_M12_PRICE_ID
+// The site switches to Paddle only with CHECKOUT_PROVIDER=paddle, and only for
+// the plans that have a price id, and only once all three secrets are set: a
+// Paddle buyer whose payment could not be recorded would be paying for nothing.
+export function paddleEnvironment() {
+  return String(process.env.PADDLE_ENV || "").trim().toLowerCase() === "production" ? "production" : "sandbox";
+}
+// The sandbox monthly price created while testing. Production prices have no
+// default on purpose: a sandbox id sent to the live checkout is refused.
+const PADDLE_SANDBOX_DEFAULT_PRICES = { m1: "pri_01m6w6hq41jjdsrgwm0vjz156g", m12: "" };
+export function paddlePriceIds() {
+  const defaults = paddleEnvironment() === "sandbox" ? PADDLE_SANDBOX_DEFAULT_PRICES : {};
+  return {
+    m1: String(process.env.PADDLE_M1_PRICE_ID || defaults.m1 || "").trim(),
+    m12: String(process.env.PADDLE_M12_PRICE_ID || defaults.m12 || "").trim(),
+  };
+}
+export const paddleClientToken = () => String(process.env.PADDLE_CLIENT_TOKEN || "").trim();
+// Production only. A sandbox checkout takes Paddle's test card, so pointing the
+// site's buy buttons at it would hand the catalogue to anyone who types 4242;
+// and it refuses real cards, so a real buyer could not pay at all. Sandbox is
+// tested on /paddle-test instead.
+export function paddleCheckoutReady() {
+  return paddleEnvironment() === "production" && Boolean(paddleClientToken() && process.env.PADDLE_API_KEY && process.env.PADDLE_WEBHOOK_SECRET);
+}
+// Who a SANDBOX payment may unlock. The test page is public and the test card
+// is free, so in sandbox only these addresses are granted anything; every
+// other sandbox sale is logged and ignored. Production grants everyone.
+const PADDLE_DEFAULT_TEST_EMAILS = ["teammoventoino1@gmail.com"];
+export function paddleGrantAllowed(normalizedEmail) {
+  if (paddleEnvironment() === "production") return true;
+  const listed = String(process.env.PADDLE_TEST_EMAILS || "").split(",").map(normalizeEmail).filter(Boolean);
+  return [...PADDLE_DEFAULT_TEST_EMAILS, ...listed].includes(normalizedEmail);
+}
+// Which of our plans a Paddle price id is, or null.
+export function paddlePlanOfPrice(priceId) {
+  if (!priceId) return null;
+  for (const [kind, id] of Object.entries(paddlePriceIds())) {
+    if (id && id === priceId) return kind;
+  }
+  return null;
+}
+// The plan a subscription or transaction is for, from its line items.
+export function paddlePlanOfItems(items) {
+  for (const item of items || []) {
+    const kind = paddlePlanOfPrice(item?.price?.id || item?.price_id);
+    if (kind) return kind;
+  }
+  return null;
+}
+
+const paddleApiBase = () => (paddleEnvironment() === "production" ? "https://api.paddle.com" : "https://sandbox-api.paddle.com");
+
+// One call to Paddle's API. Throws on a refusal, with Paddle's own detail, so
+// the caller decides whether that is fatal (a webhook retries) or not (an
+// access check carries on to the next source).
+export async function paddleApi(path, { method = "GET", body, fetchImpl = fetch } = {}) {
+  const key = process.env.PADDLE_API_KEY;
+  if (!key) throw new Error("PADDLE_API_KEY is not set");
+  const res = await fetchImpl(`${paddleApiBase()}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = data?.error?.detail || data?.error?.code || res.status;
+    throw new Error(`Paddle ${method} ${path} refused: ${detail}`);
+  }
+  return data;
+}
+
+export async function paddleCustomerEmail(customerId, opts) {
+  if (!customerId) return "";
+  const { data } = await paddleApi(`/customers/${encodeURIComponent(customerId)}`, opts);
+  return normalizeEmail(data?.email);
+}
+
+// Statuses that are still owed the catalogue. "past_due" is a card being
+// retried: Paddle cancels the subscription itself if the retries fail, and
+// that cancellation is what takes the access away.
+const PADDLE_LIVE_STATUSES = new Set(["active", "trialing", "past_due"]);
+export const paddleSubscriptionIsLive = (status) => PADDLE_LIVE_STATUSES.has(String(status || ""));
+
+// The shape the site needs from a Paddle subscription.
+export function paddleSubscriptionSummary(sub) {
+  return {
+    id: sub?.id || null,
+    kind: paddlePlanOfItems(sub?.items),
+    status: sub?.status || null,
+    customerId: sub?.customer_id || null,
+    // A cancellation asked for at the end of the period is a scheduled change
+    // until that date, when the subscription itself becomes "canceled".
+    cancelAtPeriodEnd: sub?.scheduled_change?.action === "cancel",
+    renewalDate: sub?.scheduled_change?.effective_at || sub?.next_billed_at || sub?.current_billing_period?.ends_at || null,
+  };
+}
+
+// Paddle asked directly, for a buyer the site has no record for — the same
+// safety net as findGumroadSubscriber. Null when Paddle is not configured.
+export async function findPaddleSubscriber(normalizedEmail, opts) {
+  if (!process.env.PADDLE_API_KEY || !normalizedEmail) return null;
+  try {
+    const customers = await paddleApi(`/customers?email=${encodeURIComponent(normalizedEmail)}`, opts);
+    for (const customer of customers.data || []) {
+      if (normalizeEmail(customer.email) !== normalizedEmail) continue;
+      const subs = await paddleApi(`/subscriptions?customer_id=${encodeURIComponent(customer.id)}&status=active,trialing,past_due`, opts);
+      for (const sub of subs.data || []) {
+        const summary = paddleSubscriptionSummary(sub);
+        if (summary.kind && paddleSubscriptionIsLive(summary.status)) return summary;
+      }
+    }
+  } catch (error) {
+    console.error("Paddle subscriber lookup failed:", error);
+  }
+  return null;
+}
+
+// The record a Paddle subscription grants, written by the webhook and by the
+// fallback in customerAccessLevel alike.
+export function paddleAccessRecord(summary, extra = {}) {
+  return {
+    plan: `paddle_${summary.kind}`,
+    kind: summary.kind,
+    type: "subscription",
+    status: "active",
+    membershipId: summary.id,
+    customerId: summary.customerId,
+    provider: "paddle",
+    grantedAt: new Date().toISOString(),
+    ...extra,
+  };
+}
 
 // Whop plan IDs (plan_xxx), one per plan — required for the on-site EMBEDDED
 // checkout (no redirect). Set these in Vercel env, or leave them empty and use a
@@ -908,7 +1060,19 @@ export async function customerAccessLevel(email) {
   const record = await redisGetAccessRecord(normalizedEmail);
   if (record) return recordAccessLevel(record);
 
-  // Second source: Gumroad's own list of live subscribers, for a buyer whose
+  // Paddle, for a buyer whose notification has not landed (yet, or at all).
+  const paddle = paddleGrantAllowed(normalizedEmail) ? await findPaddleSubscriber(normalizedEmail) : null;
+  if (paddle) {
+    try {
+      await redisSetAccess(normalizedEmail, paddleAccessRecord(paddle, { source: "paddle_api" }));
+      console.log("Access granted from the Paddle API (no notification):", normalizedEmail, paddle.kind);
+    } catch (error) {
+      console.error("Could not record the Paddle access:", error);
+    }
+    return "full";
+  }
+
+  // Next source: Gumroad's own list of live subscribers, for a buyer whose
   // sale notification never landed. Recorded on the way out so the next check
   // is the fast path above, and "My subscription" sees a Gumroad member.
   const gumroad = await findGumroadSubscriber(normalizedEmail);
@@ -1021,6 +1185,20 @@ export async function getMembershipInfo(email) {
   const stored = await redisGetAccessRecord(normalizedEmail);
   if (stored?.provider === "gumroad") {
     return { found: true, active: true, type: stored.type || "unknown", kind: stored.kind || null, status: "active", plan: "Movento", provider: "gumroad", manageUrl: GUMROAD_MANAGE_URL, source: "redis" };
+  }
+  // Paddle: the live subscription when it can be read, for the renewal date
+  // and a cancellation already scheduled; the record alone otherwise.
+  if (stored?.provider === "paddle") {
+    const base = { found: true, active: true, type: "subscription", kind: stored.kind || null, status: "active", plan: "Movento", provider: "paddle", source: "redis" };
+    if (!stored.membershipId || !process.env.PADDLE_API_KEY) return base;
+    try {
+      const { data } = await paddleApi(`/subscriptions/${encodeURIComponent(stored.membershipId)}`);
+      const sub = paddleSubscriptionSummary(data);
+      return { ...base, kind: sub.kind || base.kind, status: sub.status || "active", cancelAtPeriodEnd: sub.cancelAtPeriodEnd, renewalDate: sub.renewalDate, source: "paddle" };
+    } catch (error) {
+      console.error("Paddle subscription lookup failed:", error);
+      return base;
+    }
   }
 
   let membership = null;
