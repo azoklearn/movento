@@ -1722,7 +1722,7 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid }) {
         if (alive) setPhase("failed");
       }
     });
-    loadPaddle(cfg)
+    loadPaddle({ environment: cfg.environment, token: cfg.token })
       .then(() => { if (alive) open(); })
       .catch((e) => {
         console.error(e);
@@ -1732,7 +1732,9 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid }) {
     // A form that never reports in is a spinner for ever; this says so.
     const backstop = window.setTimeout(() => { if (alive) setPhase((p) => (p === "loading" ? "failed" : p)); }, 15000);
     return () => { alive = false; stop(); window.clearTimeout(backstop); };
-  }, [cfg, open, plan.id]);
+    // On the values, not the cfg object: a caller that builds cfg inline hands
+    // a new object every render, and each one would reopen the checkout.
+  }, [cfg.environment, cfg.token, open, plan.id]);
 
   const total = totals ? formatMoney(totals.total, totals.currency) : "";
   const tax = totals ? formatMoney(totals.tax, totals.currency) : "";
@@ -5814,6 +5816,11 @@ function PaddleTestPage() {
     }
   }
 
+  // The site's own checkout (PaddleCheckout: inline form beside the order
+  // summary), opened here on either plan, so the real design can be tried
+  // against the real Paddle before the buy buttons are switched to it.
+  const [inlinePlan, setInlinePlan] = useState(null);
+
   // The same check the site makes after a purchase: did the webhook (or the
   // API fallback) record access for this address?
   async function checkAccess() {
@@ -5844,11 +5851,37 @@ function PaddleTestPage() {
               <button onClick={() => openCheckout("m1")} className="rounded-2xl bg-[#EDE9E0] px-6 py-4 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">Payer · mensuel</button>
               <button onClick={() => openCheckout("lifetime")} className="rounded-2xl bg-[#EDE9E0] px-6 py-4 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">Payer · à vie</button>
             </div>
+            <p className="pt-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Checkout Movento (nouveau design)</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button onClick={() => { add("checkout Movento · mensuel"); setInlinePlan("m1"); }} className="rounded-2xl border border-white/15 px-6 py-4 text-sm font-bold text-[#EDE9E0] transition hover:border-white/35">Checkout Movento · mensuel</button>
+              <button onClick={() => { add("checkout Movento · à vie"); setInlinePlan("lifetime"); }} className="rounded-2xl border border-white/15 px-6 py-4 text-sm font-bold text-[#EDE9E0] transition hover:border-white/35">Checkout Movento · à vie</button>
+            </div>
             <button onClick={checkAccess} className="w-full rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-white/80 transition hover:border-white/30">Vérifier l'accès de cet email</button>
             {access && <p className="text-sm text-white/70">{access}</p>}
           </div>
         )}
 
+      </div>
+
+      {/* Wider than the page: the summary and the form sit side by side. Keyed
+          on the plan so switching plans mounts a fresh checkout. */}
+      {inlinePlan && state.cfg && (
+        <div className="mx-auto mt-8 max-w-4xl">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Aperçu du checkout du site</p>
+            <button onClick={() => setInlinePlan(null)} className="text-xs text-white/50 underline underline-offset-4 hover:text-white/80">Fermer</button>
+          </div>
+          <PaddleCheckout
+            key={inlinePlan}
+            cfg={{ environment: state.cfg.environment, token: state.cfg.token, priceId: state.cfg.prices[inlinePlan] }}
+            plan={plans.find((p) => p.id === inlinePlan)}
+            prefillEmail={testEmail}
+            onPaid={(email) => { add(`paiement terminé${email ? ` pour ${email}` : ""}`); setInlinePlan(null); checkAccess(); }}
+          />
+        </div>
+      )}
+
+      <div className="mx-auto max-w-xl">
         <div className="mt-8 rounded-2xl border border-white/10 bg-[#121214] p-5 text-sm leading-6 text-white/65">
           <p className="font-semibold text-[#EDE9E0]">Carte de test (sandbox uniquement)</p>
           <p className="mt-2 font-mono text-[#EDE9E0]">4242 4242 4242 4242</p>
