@@ -17,7 +17,10 @@
 // a grant is the whole catalogue.
 import { createHmac, timingSafeEqual } from "node:crypto";
 import {
+  formatMinorAmount,
   methodNotAllowed,
+  notifyTelegramOnce,
+  paddleEnvironment,
   normalizeEmail,
   paddleAccessRecord,
   paddleApi,
@@ -93,12 +96,56 @@ export function paddleDecision(event) {
   if (type.startsWith("subscription.")) {
     const summary = paddleSubscriptionSummary(data);
     if (!summary.kind) return { action: "ignore", reason: "not one of our prices" };
-    const base = { kind: summary.kind, subscriptionId: summary.id, customerId: summary.customerId, customEmail: normalizeEmail(data.custom_data?.email) };
+    const base = { kind: summary.kind, subscriptionId: summary.id, customerId: summary.customerId, customEmail: normalizeEmail(data.custom_data?.email), status: summary.status, cancelAtPeriodEnd: summary.cancelAtPeriodEnd, renewalDate: summary.renewalDate };
     if (paddleSubscriptionIsLive(summary.status)) return { action: "grant", ...base };
     // canceled, paused: the period that was paid for is over.
     return { action: "revoke", reason: summary.status || type, ...base };
   }
   return { action: "ignore", reason: type || "no event type" };
+}
+
+// The Telegram line for one processed event, or null when there is nothing
+// worth a ping. Pure, so it can be tested on its own. "previous" is the record
+// as it was before this event, which is what tells a change from a repeat.
+const PLAN_NAMES = { m1: "Mensuel", lifetime: "À vie", m12: "Annuel" };
+export function paddleTelegramMessage(event, decision, email, previous) {
+  const type = String(event?.event_type || "");
+  const data = event?.data || {};
+  const plan = PLAN_NAMES[decision.kind] || decision.kind || "";
+  const test = paddleEnvironment() === "production" ? "" : "🧪 TEST · ";
+  const date = (iso) => (iso ? new Date(iso).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" }) : "");
+
+  if (type === "transaction.completed") {
+    const totals = data.details?.totals || {};
+    const paid = formatMinorAmount(totals.grand_total ?? totals.total, data.currency_code);
+    const net = formatMinorAmount(totals.earnings, data.currency_code);
+    const renewal = data.origin === "subscription_recurring";
+    return [
+      `${test}${renewal ? "🔁 Renouvellement" : "💰 Nouvelle vente"} Paddle — ${plan}`,
+      [paid, net && `net ${net}`].filter(Boolean).join(" · "),
+      email,
+    ].filter(Boolean).join("\n");
+  }
+  if (decision.action === "refund") {
+    const amount = formatMinorAmount(data.totals?.total, data.currency_code);
+    const title = decision.reason === "chargeback" ? "⚠️ Litige bancaire (chargeback)" : "↩️ Remboursement";
+    return [`${test}${title} Paddle`, amount, email].filter(Boolean).join("\n");
+  }
+  if (type === "subscription.canceled") return `${test}❌ Abonnement terminé — ${plan}\n${email}`;
+  if (type === "subscription.paused") return `${test}⏸️ Abonnement en pause — ${plan}\n${email}`;
+  if (type.startsWith("subscription.") && decision.action === "grant") {
+    const was = previous?.provider === "paddle" ? previous : null;
+    if (decision.status === "past_due" && was?.paddleStatus !== "past_due") {
+      return `${test}💳 Paiement échoué — ${plan}\nPaddle va réessayer la carte.\n${email}`;
+    }
+    if (decision.cancelAtPeriodEnd && !was?.cancelScheduled) {
+      return `${test}⚠️ Résiliation programmée — ${plan}\nFin de l'accès le ${date(decision.renewalDate)}\n${email}`;
+    }
+    if (!decision.cancelAtPeriodEnd && was?.cancelScheduled) {
+      return `${test}✅ Résiliation annulée — ${plan}\n${email}`;
+    }
+  }
+  return null;
 }
 
 export default async function handler(req, res) {
@@ -201,7 +248,13 @@ export default async function handler(req, res) {
             customerId: decision.customerId,
             ...(decision.kind === "lifetime" ? { transactionId: decision.transactionId } : {}),
           },
-          { paddleEventAt: occurredAt, ...(previous?.provider === "paddle" && previous.grantedAt ? { grantedAt: previous.grantedAt } : {}) },
+          {
+            paddleEventAt: occurredAt,
+            ...(previous?.provider === "paddle" && previous.grantedAt ? { grantedAt: previous.grantedAt } : {}),
+            // Kept so the Telegram ping fires on a change, not on every
+            // subscription.updated Paddle sends while nothing changed.
+            ...(decision.status ? { paddleStatus: decision.status, cancelScheduled: Boolean(decision.cancelAtPeriodEnd) } : { paddleStatus: previous?.paddleStatus, cancelScheduled: previous?.cancelScheduled }),
+          },
         ));
         console.log("Access granted via Paddle:", email, decision.kind, event.event_type);
       }
@@ -227,6 +280,8 @@ export default async function handler(req, res) {
         console.log("Paddle revoke skipped, access comes from elsewhere:", email, previous?.plan || "none");
       }
     }
+    const text = paddleTelegramMessage(event, decision, email, previous);
+    if (text) await notifyTelegramOnce(`paddle:${event.event_id || `${event.event_type}:${decision.transactionId || decision.subscriptionId}:${occurredAt}`}`, text);
     return res.json({ ok: true });
   } catch (error) {
     console.error("Paddle webhook handling failed:", error);

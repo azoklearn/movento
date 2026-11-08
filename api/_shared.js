@@ -634,6 +634,31 @@ export async function notifyTelegram(text) {
   }
 }
 
+// The same, at most once per key: processors retry a notification until they
+// get a 200, and a retried sale must not ping twice. The key lives a week,
+// far longer than any retry window. Without Redis it still sends.
+export async function notifyTelegramOnce(key, text) {
+  if (!text || !process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID) return false;
+  try {
+    const first = await Redis.fromEnv().set(`notified:${key}`, 1, { nx: true, ex: 7 * 86400 });
+    if (!first) return false;
+  } catch {
+    // Redis unavailable: a duplicate ping beats a missed sale.
+  }
+  return notifyTelegram(text);
+}
+
+// Paddle's API amounts are strings in the currency's smallest unit ("2999").
+export function formatMinorAmount(amount, currency) {
+  const n = Number(amount);
+  if (!Number.isFinite(n) || !currency) return "";
+  try {
+    return new Intl.NumberFormat("fr-FR", { style: "currency", currency: String(currency).toUpperCase() }).format(n / 100);
+  } catch {
+    return "";
+  }
+}
+
 export function normalizeEmail(email) {
   // Strip every whitespace/zero-width char (mobile autocomplete can inject a
   // non-breaking or zero-width space that trim() leaves behind).

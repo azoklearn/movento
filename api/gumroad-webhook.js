@@ -19,7 +19,11 @@ import {
   redisClearAccess,
   redisGetAccessRecord,
   redisSetAccess,
+  formatMinorAmount,
+  notifyTelegramOnce,
 } from "./_shared.js";
+
+const GUMROAD_PLAN_NAMES = { m1: "Mensuel", m12: "Annuel", lifetime: "À vie" };
 
 const truthy = (v) => v === true || v === "true" || v === "1";
 
@@ -144,6 +148,13 @@ export default async function handler(req, res) {
           grantedAt: new Date().toISOString(),
         });
         console.log("Access granted via Gumroad:", decision.email, decision.kind, decision.reason);
+        // Gumroad's price is in cents of the sale's currency.
+        const amount = formatMinorAmount(fields.price, fields.currency);
+        const renewal = truthy(fields.is_recurring_charge);
+        await notifyTelegramOnce(
+          `gumroad:${fields.sale_id || `${decision.email}:${decision.reason}:${fields.sale_timestamp || ""}`}`,
+          [`${truthy(fields.test) ? "🧪 TEST · " : ""}${renewal ? "🔁 Renouvellement" : "💰 Nouvelle vente"} Gumroad — ${GUMROAD_PLAN_NAMES[decision.kind] || decision.kind}`, amount, decision.email].filter(Boolean).join("\n"),
+        );
       }
     } else if (decision.action === "revoke") {
       const previous = await redisGetAccessRecord(decision.email);
@@ -152,6 +163,10 @@ export default async function handler(req, res) {
       if (previous?.provider === "gumroad") {
         await redisClearAccess(decision.email);
         console.log("Access revoked via Gumroad:", decision.email, decision.reason);
+        await notifyTelegramOnce(
+          `gumroad:revoke:${fields.sale_id || fields.subscription_id || decision.email}:${decision.reason}`,
+          `${decision.reason === "subscription_ended" ? "❌ Abonnement terminé" : "↩️ Remboursement / litige"} Gumroad — ${GUMROAD_PLAN_NAMES[decision.kind] || decision.kind}\n${decision.email}`,
+        );
       } else if (previous) {
         console.log("Gumroad revoke skipped, access comes from elsewhere:", decision.email, previous.plan);
       }
