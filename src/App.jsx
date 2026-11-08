@@ -1644,18 +1644,38 @@ function GumroadCheckout({ url, plan, onPaid }) {
   );
 }
 
-// The Paddle step of CheckoutOverlay. Paddle.js opens its own overlay over
-// this layer, in euros with VAT inside the price; this layer stays behind it
-// to take over when it closes. Paddle reports the payment itself
-// (checkout.completed), so unlike Gumroad the unlock step follows on its own,
-// with the address the payment was made from.
+// The Paddle step of CheckoutOverlay, in Paddle's INLINE mode: Paddle's
+// payment form sits inside a page laid out here, beside an order summary in
+// Movento's own style, instead of in Paddle's overlay, which can only be
+// themed light or dark. Paddle asks that an inline checkout show what is being
+// bought and its totals next to the form; the summary is that, and its
+// figures are Paddle's own, from the checkout events (VAT included, in the
+// buyer's country). Paddle reports the payment itself (checkout.completed), so
+// the unlock step follows on its own with the address the payment was made from.
+const PADDLE_FRAME_CLASS = "mv-paddle-frame";
+
+// Paddle.js hands totals as plain numbers in the currency's main unit.
+// Anything else is not shown rather than shown wrong.
+const formatMoney = (amount, currency) => {
+  const n = Number(amount);
+  if (!Number.isFinite(n) || !currency) return "";
+  try {
+    return new Intl.NumberFormat(t("en-IE", "fr-FR"), { style: "currency", currency }).format(n);
+  } catch {
+    return "";
+  }
+};
+
 function PaddleCheckout({ cfg, plan, prefillEmail, onPaid }) {
-  const [phase, setPhase] = useState("loading"); // loading | open | closed | failed
+  const [phase, setPhase] = useState("loading"); // loading | ready | failed
+  // What Paddle says the buyer will pay, once it knows their country.
+  const [totals, setTotals] = useState(null);
   const paidRef = useRef(false);
   // Through a ref: the parent passes a new function on every render, and the
   // effect below must not re-run (and reopen the checkout) because of it.
   const onPaidRef = useRef(onPaid);
   onPaidRef.current = onPaid;
+  const lifetime = plan.id === "lifetime";
 
   const open = useCallback(() => {
     try {
@@ -1665,9 +1685,17 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid }) {
         ...(email ? { customer: { email } } : {}),
         // Read back by the webhook only if Paddle's customer record cannot be.
         customData: { plan: plan.id, ...(email ? { email } : {}) },
-        settings: { displayMode: "overlay", theme: "dark", locale: t("en", "fr") },
+        settings: {
+          displayMode: "inline",
+          frameTarget: PADDLE_FRAME_CLASS,
+          frameInitialHeight: 450,
+          frameStyle: "width:100%;min-width:286px;background-color:transparent;border:none;",
+          // Everything on one step: email, address and card together.
+          variant: "one-page",
+          theme: "dark",
+          locale: t("en", "fr"),
+        },
       });
-      setPhase("open");
       track("checkout_opened_on_paddle", { plan: plan.id });
     } catch (e) {
       console.error("Paddle checkout did not open:", e);
@@ -1679,16 +1707,18 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid }) {
     let alive = true;
     const stop = onPaddleEvent((ev) => {
       const name = ev?.name || "";
-      if (name === "checkout.completed" && !paidRef.current) {
+      const data = ev?.data;
+      if (data?.totals && data?.currency_code && alive) {
+        setTotals({ ...data.totals, currency: data.currency_code, country: data.customer?.address?.country_code || "" });
+      }
+      if (name === "checkout.loaded") {
+        if (alive) setPhase("ready");
+      } else if (name === "checkout.completed" && !paidRef.current) {
         paidRef.current = true;
         track("checkout_completed", { plan: plan.id, provider: "paddle" });
-        // Closed by us: Paddle's own success screen would only sit on top of
-        // the unlock step that says the same thing and does something.
-        try { window.Paddle.Checkout.close(); } catch {}
-        onPaidRef.current(cleanEmail(ev?.data?.customer?.email || ""));
-      } else if (name === "checkout.closed" && !paidRef.current) {
-        if (alive) setPhase("closed");
+        onPaidRef.current(cleanEmail(data?.customer?.email || ""));
       } else if (name === "checkout.error") {
+        console.error("Paddle checkout error:", ev?.error || ev);
         if (alive) setPhase("failed");
       }
     });
@@ -1699,27 +1729,89 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid }) {
         if (alive) setPhase("failed");
         track("checkout_embed_failed", { plan: plan.id, provider: "paddle" });
       });
-    return () => { alive = false; stop(); };
+    // A form that never reports in is a spinner for ever; this says so.
+    const backstop = window.setTimeout(() => { if (alive) setPhase((p) => (p === "loading" ? "failed" : p)); }, 15000);
+    return () => { alive = false; stop(); window.clearTimeout(backstop); };
   }, [cfg, open, plan.id]);
 
+  const total = totals ? formatMoney(totals.total, totals.currency) : "";
+  const tax = totals ? formatMoney(totals.tax, totals.currency) : "";
+  const subtotal = totals ? formatMoney(totals.subtotal, totals.currency) : "";
+  const included = [...(plan.features || []).filter((f) => f !== t("Cancel anytime", "Résiliation à tout moment")).slice(0, 5), plan.perk, plan.bonus].filter(Boolean);
+
   return (
-    <div className="flex min-h-[320px] flex-col items-center justify-center gap-5 px-5 py-10 text-center">
-      <div className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/[0.05] text-white/70"><Icon name="shield" className="h-5 w-5" /></div>
-      <div>
-        <p className="text-lg font-semibold tracking-tight text-[#EDE9E0]">{plan.name} · {plan.price} <span className="text-sm font-normal text-white/45">{plan.period}</span></p>
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/55">
-          {phase === "loading" && t("Opening the secure checkout…", "Ouverture du paiement sécurisé…")}
-          {phase === "open" && t("Complete the payment in the window above.", "Termine le paiement dans la fenêtre au-dessus.")}
-          {phase === "closed" && t("The payment window was closed. Nothing was charged.", "La fenêtre de paiement a été fermée. Rien n'a été débité.")}
-          {phase === "failed" && t("The checkout could not open. Check your connection and try again.", "Le paiement n'a pas pu s'ouvrir. Vérifie ta connexion et réessaie.")}
+    <div className="grid gap-3 p-1 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-6 md:p-2">
+      {/* The order, as the buyer will be charged for it. */}
+      <aside className="relative self-start overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-4 sm:p-6">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#ffa582]/[0.08] blur-3xl" />
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">{t("Your order", "Ta commande")}</p>
+        <div className="mt-3 flex items-baseline justify-between gap-3">
+          <h3 className="text-xl font-semibold tracking-tight text-[#EDE9E0]">Movento · {plan.name}</h3>
+          {plan.discountBadge && <span className="rounded-full border border-[#ffa582]/25 bg-[#ffa582]/[0.08] px-2 py-0.5 text-[11px] font-semibold text-[#ffb89c]">{plan.discountBadge}</span>}
+        </div>
+        <div className="mt-2 flex items-baseline gap-2">
+          {plan.originalPrice && <span className="text-sm text-white/35 line-through">{plan.originalPrice}</span>}
+          <span className="text-4xl font-bold tracking-[-0.03em] text-[#EDE9E0]">{plan.price}</span>
+          <span className="text-sm text-white/45">{plan.period}</span>
+        </div>
+        <p className="mt-1 text-xs text-white/45">
+          {lifetime ? t("One payment, never renewed.", "Un seul paiement, jamais renouvelé.") : t("Renewed every month. Cancel anytime from your account.", "Renouvelé chaque mois. Résiliable à tout moment depuis ton compte.")}
         </p>
-        <p className="mx-auto mt-3 max-w-sm text-xs leading-5 text-white/40">{t("Price in euros, VAT included. Payment handled by Paddle.", "Prix en euros, TVA incluse. Paiement géré par Paddle.")}</p>
-      </div>
-      {(phase === "closed" || phase === "failed") && (
-        <button type="button" onClick={() => (window.Paddle ? open() : window.location.reload())} className="group inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">
-          {t("Pay", "Payer")} {plan.price} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" />
-        </button>
-      )}
+
+        {/* Open on a wide screen; folded on a phone, where the list would
+            push the payment form below the first screen. */}
+        <details className="group mt-4 border-t border-white/[0.07] pt-4 md:mt-5 md:pt-5" open={typeof window !== "undefined" && window.innerWidth >= 768}>
+          <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-white/45 md:pointer-events-none [&::-webkit-details-marker]:hidden">
+            {t("What's included", "Ce qui est inclus")}
+            <Icon name="arrow" className="h-3.5 w-3.5 rotate-90 transition group-open:-rotate-90 md:hidden" />
+          </summary>
+          <ul className="mt-3 space-y-2 text-sm text-white/70">
+            {included.map((f) => (
+              <li key={f} className="flex items-start gap-2.5"><Icon name="check" className="mt-0.5 h-3.5 w-3.5 flex-none text-emerald-400" />{f}</li>
+            ))}
+          </ul>
+        </details>
+
+        {/* Paddle's figures once it has them; the plan's price until then. */}
+        <dl className="mt-4 space-y-1.5 border-t border-white/[0.07] pt-4 text-sm md:mt-5 md:pt-5">
+          {subtotal && tax && (
+            <>
+              <div className="flex justify-between text-white/50"><dt>{t("Subtotal", "Sous-total")}</dt><dd>{subtotal}</dd></div>
+              <div className="flex justify-between text-white/50"><dt>{t("VAT", "TVA")}{totals.country ? ` (${totals.country})` : ""}</dt><dd>{tax}</dd></div>
+            </>
+          )}
+          <div className="flex items-baseline justify-between pt-1 text-[#EDE9E0]">
+            <dt className="font-semibold">{t("Total today", "Total aujourd'hui")}</dt>
+            <dd className="text-lg font-bold">{total || plan.price}</dd>
+          </div>
+          {!total && <p className="text-xs text-white/40">{t("VAT included, worked out for your country.", "TVA incluse, calculée selon ton pays.")}</p>}
+        </dl>
+
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-white/45 md:mt-5">
+          <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3" />{t("Secure payment by Paddle", "Paiement sécurisé par Paddle")}</span>
+          <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-400" />{t("Instant access", "Accès immédiat")}</span>
+        </div>
+      </aside>
+
+      {/* Paddle's form. The container is Paddle's frame target; the loader
+          and the failure state sit over it, never instead of it, so the frame
+          is on the page from the first render. */}
+      <section className="relative min-h-[480px] rounded-2xl border border-white/[0.08] bg-[#0d0d10] p-3 sm:p-5">
+        <div className={PADDLE_FRAME_CLASS} />
+        {phase === "loading" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-[#0d0d10]">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/70" />
+            <p className="text-sm text-white/55">{t("Loading secure payment…", "Chargement du paiement sécurisé…")}</p>
+          </div>
+        )}
+        {phase === "failed" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-[#0d0d10] px-6 text-center">
+            <div className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/[0.05] text-white/70"><Icon name="alert" className="h-5 w-5" /></div>
+            <p className="max-w-xs text-sm leading-6 text-white/65">{t("The payment form could not load. Check your connection and try again.", "Le formulaire de paiement n'a pas pu se charger. Vérifie ta connexion et réessaie.")}</p>
+            <button type="button" onClick={() => window.location.reload()} className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Retry", "Réessayer")}</button>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -1804,7 +1896,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
       {/* Safe-area padding: on a notched phone the bar and the close button
           must sit below the status bar, not under it. */}
       <div className="sticky top-0 z-10 border-b border-white/[0.07] bg-[#0A0A0B]/90 backdrop-blur" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-        <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
+        <div className={`mx-auto flex ${load.paddle && !done ? "max-w-4xl" : "max-w-xl"} items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4`}>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[#EDE9E0]">{plan.name}</p>
             <p className="text-xs text-white/55">{plan.price} <span className="text-white/40">{plan.period}</span></p>
@@ -1812,10 +1904,13 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
           <button onClick={onClose} aria-label={t("Close", "Fermer")} className="grid h-10 w-10 flex-none place-items-center rounded-full border border-white/10 bg-[#121214] text-white/55 transition hover:border-white/25 hover:text-[#EDE9E0]"><Icon name="close" className="h-4 w-4" /></button>
         </div>
       </div>
-      <div className="relative mx-auto max-w-xl px-2 pb-16 pt-3 sm:px-4 sm:pt-6" style={{ paddingBottom: "max(4rem, env(safe-area-inset-bottom))" }}>
+      {/* Wider for Paddle's step: its summary and form sit side by side. */}
+      <div className={`relative mx-auto ${load.paddle && !done ? "max-w-4xl" : "max-w-xl"} px-2 pb-16 pt-3 sm:px-4 sm:pt-6`} style={{ paddingBottom: "max(4rem, env(safe-area-inset-bottom))" }}>
         {/* The form gets the full width on a phone (2px of rim, no card
             padding) — Whop's fields are already narrow enough. */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214] p-1 shadow-2xl shadow-black/60 sm:rounded-[28px] sm:p-4">
+        {/* Paddle's step brings its own two panels; a card around them
+            would only be a frame inside a frame. */}
+        <div className={load.paddle && !done ? "relative" : "relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214] p-1 shadow-2xl shadow-black/60 sm:rounded-[28px] sm:p-4"}>
           {done ? (
             <CheckoutSuccess plan={plan} prefillEmail={paidEmail || prefillEmail} onUnlocked={onUnlocked} />
           ) : load.loading ? (
@@ -1883,7 +1978,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
           </div>
         )}
         <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[11px] text-white/40">
-          <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment", "Paiement sécurisé")}</span>
+          {!(load.paddle && !done) && <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment", "Paiement sécurisé")}</span>}
           {/* The way out if the embed ever misbehaves on a device: the same
               plan, on Whop's own page, promo and affiliate already applied. */}
           {load.checkoutUrl && !load.gumroadUrl && !done && (
