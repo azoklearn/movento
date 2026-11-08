@@ -103,9 +103,10 @@ const prompts = [
   // they are no longer the thing to open on.
   // Published with Ciao Energy's agreement; its assets are served from the
   // azoklearn/ciao-energy-site repository through jsDelivr. The preview is the
-  // site's share image, cropped to the gallery's 1.35:1 and hosted here — a
-  // still on purpose (a clip here lagged), so `lead` is what puts it first.
-  { title: "Ciao Energy — 3D Can Carousel", category: "E-commerce", type: "Landing", file: "Ciao_Energy_3D_Can_Carousel.md", pinned: true, lead: true, preview: "/previews/ciao-energy.jpg", tags: ["Three.js", "Scroll Camera", "3D Cans"], gradient: "from-[#9089D3] via-[#3D2B68] to-[#000000]" },
+  // screenshot first shown on the private test card, before the prompt
+  // existed — a still on purpose (a clip here lagged), so `lead` is what puts
+  // it first.
+  { title: "Ciao Energy — 3D Can Carousel", category: "E-commerce", type: "Landing", file: "Ciao_Energy_3D_Can_Carousel.md", pinned: true, lead: true, preview: "https://res.cloudinary.com/rkke23vr/image/upload/v1793821572/Capture_d_e%CC%81cran_2026-11-04_a%CC%80_20.44.41.png", tags: ["Three.js", "Scroll Camera", "3D Cans"], gradient: "from-[#9089D3] via-[#3D2B68] to-[#000000]" },
   { title: "VirtualFit — Spatial Try-On Arc", category: "E-commerce", type: "Hero", file: "VirtualFit_Spatial_TryOn_Arc.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/virtualfit-arc-hero.mp4", tags: ["Spatial UI", "Glass Arc", "Scan Reveal"], gradient: "from-[#f4f1ea] via-[#c9c2b6] to-[#2b2724]" },
   { title: "Leon Vasari — Curved VHS Archive", category: "Portfolio", type: "Landing", file: "Leon_Vasari_Curved_VHS_Archive.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/vhs-arc-hero.mp4", tags: ["Curved Arc", "Timeline", "Ink Reveal"], gradient: "from-[#ECE8E0] via-[#1F3FB0] to-[#141414]" },
   { title: "Private Preview Test", category: "Component", type: "Component", file: "Private_Preview_Test.md", onlyFor: "teammoventoino1@gmail.com", pinned: true, preview: "https://res.cloudinary.com/rkke23vr/image/upload/v1793821572/Capture_d_e%CC%81cran_2026-11-04_a%CC%80_20.44.41.png", tags: ["Private", "Test"], gradient: "from-[#e8e8ef] via-[#6b7280] to-[#111114]" },
