@@ -4693,6 +4693,9 @@ const MONTHLY_EQUIV = {
   monthly: 18.99,
 };
 
+// How the admin grant button names each plan it can give.
+const GRANT_PLAN_LABELS = { m1: "mensuel", m12: "annuel", lifetime: "à vie" };
+
 const KIND_LABELS = {
   m1: "Mensuel 29,90€",
   m3: "3 mois (retiré)",
@@ -4962,6 +4965,9 @@ function AdminLeadsPage() {
   // the same email) fires. Same shape as the subscription page's cancel flow.
   const [revoke, setRevoke] = useState({ confirming: false, loading: false, error: "" });
   const [grant, setGrant] = useState({ confirming: false, loading: false, error: "" });
+  // Which plan a manual grant records. Monthly by default: it is what a
+  // Gumroad buyer whose sale did not reach the site has bought.
+  const [grantPlan, setGrantPlan] = useState("m1");
 
   async function fetchLookup(value) {
     setLookup({ loading: true, error: "", data: null });
@@ -5024,7 +5030,7 @@ function AdminLeadsPage() {
       const response = await fetch(`${API_BASE_URL}/api/admin-lookup`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ email: lookup.data.email, action: "grant" }),
+        body: JSON.stringify({ email: lookup.data.email, action: "grant", plan: grantPlan }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Attribution impossible.");
@@ -5037,7 +5043,7 @@ function AdminLeadsPage() {
 
   const LOOKUP_REASONS = {
     blocked: { label: "Bloqué — l'accès est refusé quoi que dise Whop", tone: "text-red-300" },
-    redis_grant: { label: "Accès accordé via le webhook Whop", tone: "text-emerald-300" },
+    redis_grant: { label: "Accès enregistré sur le site (paiement reçu ou ajout manuel)", tone: "text-emerald-300" },
     whop_free_trial: { label: "Essai gratuit Whop en cours — pas encore facturé", tone: "text-amber-300" },
     whop_membership: { label: "Adhésion Whop active (achat ou ajout manuel)", tone: "text-emerald-300" },
     pack_only: { label: "A acheté le pack de prompts, pas l'accès complet", tone: "text-white/70" },
@@ -5254,8 +5260,20 @@ function AdminLeadsPage() {
               </p>
               {lookup.data.redis && (
                 <div className="text-white/55">
-                  <p className="text-white/40">Enregistrement Redis (webhook)</p>
-                  <p>{lookup.data.redis.type || "?"} · {lookup.data.redis.kind || "?"} · {lookup.data.redis.status || "?"} · accordé {formatDate(lookup.data.redis.grantedAt) || "?"}</p>
+                  <p className="text-white/40">Accès enregistré sur le site</p>
+                  <p>{KIND_LABELS[lookup.data.redis.kind] || lookup.data.redis.kind || "?"} · {lookup.data.redis.plan?.startsWith("admin_grant") ? "ajout manuel" : lookup.data.redis.provider === "gumroad" ? "paiement Gumroad" : "paiement Whop"} · accordé {formatDate(lookup.data.redis.grantedAt) || "?"}</p>
+                </div>
+              )}
+              {lookup.data.gumroad && (
+                <div className="text-white/55">
+                  <p className="text-white/40">Abonnement Gumroad</p>
+                  <p>
+                    {!lookup.data.gumroad.configured
+                      ? "GUMROAD_ACCESS_TOKEN absent — impossible de vérifier sur Gumroad."
+                      : lookup.data.gumroad.found
+                        ? `${KIND_LABELS[lookup.data.gumroad.kind] || lookup.data.gumroad.kind} · statut ${lookup.data.gumroad.status}`
+                        : "Aucun abonnement actif sur Gumroad pour cet email."}
+                  </p>
                 </div>
               )}
               {lookup.data.whop.found && (
@@ -5300,21 +5318,41 @@ function AdminLeadsPage() {
                   everything else, so a grant on a blocked email would change
                   nothing. */}
               <div className="border-t border-white/[0.07] pt-3">
+                {/* The plan the grant records. Re-granting on another plan
+                    replaces the record, which is how a grant is corrected. */}
+                <div className="mb-3 flex flex-wrap gap-1.5" role="radiogroup" aria-label="Offre à donner">
+                  {[["m1", "Mensuel"], ["m12", "Annuel"], ["lifetime", "À vie"]].map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="radio"
+                      aria-checked={grantPlan === id}
+                      onClick={() => { setGrantPlan(id); setGrant({ confirming: false, loading: false, error: "" }); }}
+                      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${grantPlan === id ? "bg-[#EDE9E0] text-[#0A0A0B]" : "border border-white/10 bg-[#0A0A0B] text-white/55 hover:text-[#EDE9E0]"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 <button
                   type="button"
                   onClick={runGrant}
                   disabled={grant.loading}
                   className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${grant.confirming ? "bg-emerald-500 text-white hover:bg-emerald-400" : "border border-emerald-400/30 bg-emerald-400/[0.08] text-emerald-300 hover:bg-emerald-400/[0.14]"}`}
                 >
-                  {grant.loading ? "…" : grant.confirming ? "Confirmer l'accès à vie" : "Donner l'accès à vie"}
+                  {grant.loading ? "…" : `${grant.confirming ? "Confirmer" : "Donner"} l'accès ${GRANT_PLAN_LABELS[grantPlan]}`}
                 </button>
                 {grant.confirming && !grant.loading && (
                   <button type="button" onClick={() => setGrant({ confirming: false, loading: false, error: "" })} className="ml-2 text-sm text-white/40 hover:text-white/70">Annuler</button>
                 )}
                 <p className="mt-2 text-xs text-white/40">
-                  Tout le catalogue et l'ebook, gratuitement et sans passer par Whop{lookup.data.blocked ? " — et le blocage de cet email sera levé." : "."}
+                  {grantPlan === "lifetime"
+                    ? "Tout le catalogue et l'ebook, pour toujours, sans paiement"
+                    : "Tout le catalogue et l'ebook, enregistré comme un abonnement Gumroad : la page « Mon abonnement » renvoie vers Gumroad pour le gérer"}
+                  {lookup.data.redis ? " — remplace l'accès déjà enregistré" : ""}
+                  {lookup.data.blocked ? " — et le blocage de cet email sera levé." : "."}
                 </p>
-                {lookup.data.granted && <p className="mt-2 text-sm font-semibold text-emerald-300">Accès à vie accordé.</p>}
+                {lookup.data.granted && <p className="mt-2 text-sm font-semibold text-emerald-300">Accès {GRANT_PLAN_LABELS[lookup.data.redis?.kind] || ""} accordé.</p>}
                 {grant.error && <p className="mt-2 text-sm text-red-300">{grant.error}</p>}
               </div>
 

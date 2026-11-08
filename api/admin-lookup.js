@@ -1,5 +1,6 @@
 import {
   customerHasWhopAccess,
+  findGumroadSubscriber,
   findWhopMembership,
   isAdminAuthorized,
   membershipPlanKind,
@@ -13,6 +14,9 @@ import {
   redisUnblockEmail,
   whopConfigured,
 } from "./_shared.js";
+
+// What an admin may grant: the two plans on sale, and lifetime for a gift.
+const GRANT_PLANS = new Set(["m1", "m12", "lifetime"]);
 
 async function buildLookup(email) {
   const [redisRecord, owned, credits, hasAccess, blocked] = await Promise.all([
@@ -34,6 +38,10 @@ async function buildLookup(email) {
   }
 
   const membershipKind = membership ? membershipPlanKind(membership) : null;
+
+  // Gumroad's own answer, so a buyer the site has no record for can be told
+  // apart from someone who never paid. Null when GUMROAD_ACCESS_TOKEN is unset.
+  const gumroad = await findGumroadSubscriber(email).catch(() => null);
 
   // The one-line answer to "how does he have access without paying" — every
   // other field here is what backs this up.
@@ -58,9 +66,16 @@ async function buildLookup(email) {
           type: redisRecord.type || null,
           status: redisRecord.status || null,
           membershipId: redisRecord.membershipId || null,
+          provider: redisRecord.provider || null,
           grantedAt: redisRecord.grantedAt || null,
         }
       : null,
+    gumroad: {
+      configured: Boolean(process.env.GUMROAD_ACCESS_TOKEN),
+      found: Boolean(gumroad),
+      kind: gumroad?.kind || null,
+      status: gumroad?.status || null,
+    },
     packCredits: credits,
     ownedPrompts: owned,
     whop: {
@@ -93,9 +108,12 @@ async function buildLookup(email) {
 // — so revoking here is the fix for a stray Redis record, not a substitute for
 // canceling the membership on Whop when one exists.
 //
-// grant writes the same record the Whop webhook writes for a lifetime
-// purchase, so the holder gets the catalogue and the bonus ebook without
-// paying — a gift, a refund made good, a tester. It also lifts a block on that
+// grant writes the record a purchase writes, on the plan given in `plan`:
+// "m1" (monthly, the default), "m12" (annual) or "lifetime". The holder gets
+// the catalogue and the bonus ebook — a Gumroad buyer whose sale did not reach
+// the site, a gift, a tester. A monthly or annual grant is recorded as a
+// Gumroad subscription, which is where those plans are sold, so "My
+// subscription" sends the holder to Gumroad to manage it. It also lifts a block on that
 // email: blocks are checked before anything else, so granting to a blocked
 // address would otherwise write a record that changes nothing.
 //
@@ -126,18 +144,28 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Action invalide." });
   }
 
+  const grantPlan = action === "grant" ? String(req.body?.plan || "m1") : null;
+  if (grantPlan && !GRANT_PLANS.has(grantPlan)) {
+    return res.status(400).json({ error: "Offre invalide." });
+  }
+
   try {
     if (action === "grant") {
       await redisUnblockEmail(email);
+      const lifetime = grantPlan === "lifetime";
+      // The Gumroad subscription id, when there is one, ties the grant to the
+      // purchase it stands in for.
+      const gumroad = lifetime ? null : await findGumroadSubscriber(email).catch(() => null);
       await redisSetAccess(email, {
-        plan: "admin_grant",
-        kind: "lifetime",
-        type: "lifetime",
+        plan: lifetime ? "admin_grant" : `admin_grant_${grantPlan}`,
+        kind: grantPlan,
+        type: lifetime ? "lifetime" : "subscription",
         status: "active",
-        membershipId: null,
+        membershipId: gumroad?.id || null,
+        ...(lifetime ? {} : { provider: "gumroad" }),
         grantedAt: new Date().toISOString(),
       });
-      console.log("Lifetime access granted via admin lookup:", email);
+      console.log("Access granted via admin lookup:", email, grantPlan);
     } else if (action === "revoke") {
       await redisClearAccess(email);
       console.log("Access revoked via admin lookup:", email);
