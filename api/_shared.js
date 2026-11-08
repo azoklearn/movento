@@ -822,6 +822,66 @@ function recordAccessLevel(record) {
   return (Date.now() - started) / 86400000 <= TRIAL_DAYS + 1 ? "trial" : "full";
 }
 
+// Gumroad, asked directly. The sale notification (api/gumroad-webhook.js) is
+// the fast path, but it depends on a Ping URL and a token typed by hand in two
+// dashboards; when either is off, every buyer pays and is not let in. This
+// reads Gumroad's list of live subscribers instead, so a buyer who enters the
+// email they paid with is unlocked whatever happened to the notification.
+//
+// Needs GUMROAD_ACCESS_TOKEN (Gumroad → Settings → Advanced → Applications →
+// create an application → "Generate access token"). Without it this finds no
+// one and the site behaves as before.
+//
+// Product ids, not permalinks: the subscribers endpoint is keyed on the id.
+export const GUMROAD_PRODUCT_IDS = {
+  m1: process.env.GUMROAD_M1_PRODUCT_ID || "V5989XT_MusmMEJ6Lzk1nw==",
+  m12: process.env.GUMROAD_M12_PRODUCT_ID || "b8mgW83lQy5Pi_Cr0PJG-g==",
+};
+// "pending_cancellation" has asked to stop but has paid to the end of the
+// period; "pending_failure" is a card being retried. Both are still owed the
+// catalogue. "failed_payment", "cancelled" and an ended fixed period are not.
+const GUMROAD_LIVE_STATUSES = new Set(["alive", "pending_cancellation", "pending_failure"]);
+const GUMROAD_API = "https://api.gumroad.com/v2";
+
+export async function findGumroadSubscriber(normalizedEmail, { fetchImpl = fetch } = {}) {
+  const token = process.env.GUMROAD_ACCESS_TOKEN;
+  if (!token || !normalizedEmail) return null;
+  for (const [kind, productId] of Object.entries(GUMROAD_PRODUCT_IDS)) {
+    if (!productId) continue;
+    // The email filter narrows the answer to one buyer. The rows are still
+    // matched by hand below, so an API that ignored the filter could only
+    // cost a few more pages, never let the wrong person in.
+    let pageKey = "";
+    for (let page = 0; page < 10; page += 1) {
+      const url = new URL(`${GUMROAD_API}/products/${encodeURIComponent(productId)}/subscribers`);
+      url.searchParams.set("email", normalizedEmail);
+      // Gumroad's documented way is the query parameter; the header is the
+      // OAuth standard it also accepts. Both, so neither reading can miss.
+      url.searchParams.set("access_token", token);
+      if (pageKey) url.searchParams.set("page_key", pageKey);
+      let data;
+      try {
+        const res = await fetchImpl(url, { headers: { Authorization: `Bearer ${token}` } });
+        data = await res.json().catch(() => ({}));
+        if (!res.ok || data.success === false) {
+          console.error("Gumroad subscribers lookup refused:", res.status, data.message || "");
+          break;
+        }
+      } catch (error) {
+        console.error("Gumroad subscribers lookup failed:", error);
+        break;
+      }
+      const match = (data.subscribers || []).find(
+        (s) => normalizeEmail(s.user_email || s.email) === normalizedEmail && GUMROAD_LIVE_STATUSES.has(String(s.status || "alive")),
+      );
+      if (match) return { kind, id: match.id || null, status: match.status || "alive" };
+      pageKey = data.next_page_key || "";
+      if (!pageKey) break;
+    }
+  }
+  return null;
+}
+
 // What a membership actually entitles someone to.
 //
 //   "full"  — the catalogue: a paid subscription, a lifetime, anything live
@@ -847,6 +907,31 @@ export async function customerAccessLevel(email) {
   // here, so a Whop API hiccup can't lock out paying customers.
   const record = await redisGetAccessRecord(normalizedEmail);
   if (record) return recordAccessLevel(record);
+
+  // Second source: Gumroad's own list of live subscribers, for a buyer whose
+  // sale notification never landed. Recorded on the way out so the next check
+  // is the fast path above, and "My subscription" sees a Gumroad member.
+  const gumroad = await findGumroadSubscriber(normalizedEmail);
+  if (gumroad) {
+    try {
+      await redisSetAccess(normalizedEmail, {
+        plan: `gumroad_${gumroad.kind}`,
+        kind: gumroad.kind,
+        type: "subscription",
+        status: "active",
+        membershipId: gumroad.id,
+        provider: "gumroad",
+        source: "gumroad_api",
+        grantedAt: new Date().toISOString(),
+      });
+      console.log("Access granted from the Gumroad API (no sale notification):", normalizedEmail, gumroad.kind);
+    } catch (error) {
+      // The buyer is still let in: a failed write only costs the next check
+      // another call to Gumroad.
+      console.error("Could not record the Gumroad access:", error);
+    }
+    return "full";
+  }
 
   try {
     const membership = await findWhopMembership(normalizedEmail);
