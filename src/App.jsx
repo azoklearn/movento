@@ -867,7 +867,7 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 //
 // A retired term's anchor is frozen at the figure its buyers actually saw.
 // Live anchors are a real figure, nothing invented: the month's is its regular
-// price, the year's is twelve of those months (29,90 x 12 = 358,80), which a
+// price, the year's is twelve of those months (29,99 x 12 = 359,88), which a
 // visitor can check against the card beside it. A self-test holds it to that.
 //
 // Which line-up is on sale follows who sells it, read from CHECKOUT_PROVIDER
@@ -878,9 +878,9 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 //   Paddle:            the month and lifetime, the same 89 € paid once.
 const PADDLE_LINEUP = String(import.meta.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "paddle";
 const PLAN_TERMS = [
-  { id: "m1", price: 29.9, anchor: 39.99, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
+  { id: "m1", price: 29.99, anchor: 39.99, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
   { id: "m3", price: 29.99, anchor: 74.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
-  { id: "m12", price: 89, anchor: 358.8, days: 365, retired: PADDLE_LINEUP, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
+  { id: "m12", price: 89, anchor: 359.88, days: 365, retired: PADDLE_LINEUP, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
@@ -903,7 +903,8 @@ const PRICE_LIFETIME = 89;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
 // Rounded because binary floating point does not keep cents: 29.9 * 12 came
-// out as 358.79999999999995, which is the price the month is at again.
+// out as 358.79999999999995. 29.99 * 12 happens to land on 359.88, which is
+// luck, not a reason to drop the rounding.
 const PRICE_LIFETIME_ANCHOR = Math.round(termOf("m1").price * 12 * 100) / 100;
 const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
 // How long on the subscription costs what lifetime costs once. Ceiling, not
@@ -4293,7 +4294,7 @@ const SITE_PRICE_HIGH = 2000;
 
 function PriceAnchor({ onPick }) {
   // What a year on the featured term costs — not what the term costs, which is
-  // only the same thing when the term is a year. At 29,90 € a month the raw
+  // only the same thing when the term is a year. At 29,99 € a month the raw
   // division reads 26, and the sentence below would call it 26 years.
   const yearOfFeatured = FEATURED_TERM ? (FEATURED_TERM.price * 365) / FEATURED_TERM.days : FEATURED_OFFER.price;
   // How many times over the cheapest site a freelancer would quote covers what
@@ -4900,7 +4901,7 @@ const MONTHLY_EQUIV = {
 const GRANT_PLAN_LABELS = { m1: "mensuel", m12: "annuel", lifetime: "à vie" };
 
 const KIND_LABELS = {
-  m1: "Mensuel 29,90€",
+  m1: "Mensuel 29,99€",
   m3: "3 mois (retiré)",
   m12: "Annuel 89€",
   monthly: "Mensuel 18,99€ (ancien)",

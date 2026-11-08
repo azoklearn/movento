@@ -110,7 +110,7 @@ const WHOP_API = "https://api.whop.com/api/v1";
 // is keyed on, and a subscriber whose plan stopped resolving would lose the
 // ebook and the support they still pay for.
 //
-// M1 MUST READ 29.90 € PER MONTH, ON WHOP AND ON GUMROAD, AND M12 89 € PER
+// M1 MUST READ 29.99 € PER MONTH (ON PADDLE, AND ON WHOP AND GUMROAD), AND M12 89 € PER
 // YEAR ON GUMROAD, matching PLAN_TERMS in src/App.jsx. The m12 links below
 // are the OLD Whop annual, kept for its members' renewals; the 89 € year is
 // sold on Gumroad only (gumroadCheckoutUrls further down).
@@ -304,7 +304,7 @@ export const isGumroadUrl = (url) => {
 //   PADDLE_CLIENT_TOKEN    public, sent to the browser (test_… / live_…)
 //   PADDLE_API_KEY         server only: customer emails, subscriptions, cancel
 //   PADDLE_WEBHOOK_SECRET  server only: verifies the notifications
-//   PADDLE_M1_PRICE_ID      the month, 29,90 € recurring
+//   PADDLE_M1_PRICE_ID      the month, 29,99 € recurring
 //   PADDLE_LIFETIME_PRICE_ID lifetime, 89 € one-time (no subscription)
 //   PADDLE_M12_PRICE_ID     optional: only read if the year is ever sold here
 // The site switches to Paddle only with CHECKOUT_PROVIDER=paddle, and only for
