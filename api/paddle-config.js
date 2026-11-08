@@ -30,6 +30,11 @@ export default function handler(req, res) {
   const prices = paddlePriceIds();
   if (!prices.m1) warnings.push("PADDLE_M1_PRICE_ID manque.");
   if (!prices.lifetime) warnings.push("PADDLE_LIFETIME_PRICE_ID manque.");
+  // The likeliest copy-paste mistake: the product id (pro_…) where the price
+  // id (pri_…) goes. Paddle's checkout only takes the price.
+  for (const [plan, id] of Object.entries(prices)) {
+    if (id && !id.startsWith("pri_")) warnings.push(`L'identifiant ${plan} (${id}) n'est pas un prix : il doit commencer par pri_ (Catalog → Products → le produit → Prices). Un identifiant pro_ est celui du produit.`);
+  }
   const switchedOn = String(process.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "paddle";
   if (switchedOn && environment !== "production") warnings.push("CHECKOUT_PROVIDER=paddle est déjà posé alors que PADDLE_ENV n'est pas production : le site affiche l'offre Paddle (mensuel + à vie) mais n'encaisse pas avec Paddle. Retire-le jusqu'à la mise en ligne.");
 
