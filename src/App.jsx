@@ -1597,6 +1597,13 @@ function GumroadCheckout({ url, plan, onPaid }) {
             ? t("Opening the secure checkout…", "Ouverture du paiement sécurisé…")
             : t("The payment window opens on top of the site. Not showing? Use the button below.", "La fenêtre de paiement s'ouvre par-dessus le site. Elle ne s'affiche pas ? Utilise le bouton ci-dessous.")}
         </p>
+        {/* Gumroad processes every payment in US dollars, whatever currency the
+            product is priced in, and no setting changes that. Said here, before
+            the overlay, so a buyer who was quoted euros is not surprised by a
+            dollar total and does not take it for a different price. */}
+        <p className="mx-auto mt-3 max-w-sm text-xs leading-5 text-white/40">
+          {t(`Gumroad shows the total in US dollars: it is the dollar equivalent of ${plan.price}, and your bank charges you in euros.`, `Gumroad affiche le total en dollars : c'est l'équivalent de ${plan.price}, et ta banque te débite en euros.`)}
+        </p>
       </div>
       {/* What gumroad.js looks for: a link to the product with its class. Kept
           off-screen because the script restyles it as Gumroad's own pink
