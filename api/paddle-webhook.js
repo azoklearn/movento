@@ -28,6 +28,7 @@ import {
   paddleGrantAllowed,
   paddleMarkRefunded,
   paddleWasRefunded,
+  recordWebhookStatus,
   paddlePlanOfItems,
   paddleSubscriptionIsLive,
   paddleSubscriptionSummary,
@@ -148,7 +149,26 @@ export function paddleTelegramMessage(event, decision, email, previous) {
   return null;
 }
 
+// Every response is recorded (recordWebhookStatus) before it goes out, so
+// /admin shows the last call Paddle made, its code, and what came of it.
 export default async function handler(req, res) {
+  const status = res.status.bind(res);
+  const json = res.json.bind(res);
+  let code = 200;
+  res.status = (c) => { code = c; return status(c); };
+  res.json = async (body) => {
+    await recordWebhookStatus("paddle", {
+      code,
+      event: req.paddleEvent || "",
+      outcome: body?.error || body?.ignored || body?.skipped || (body?.stale ? "notification plus ancienne que l'accès, ignorée" : "traitée"),
+      telegram: req.paddleTelegram || "aucun message prévu",
+    });
+    return json(body);
+  };
+  return handle(req, res);
+}
+
+async function handle(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
 
   const secret = process.env.PADDLE_WEBHOOK_SECRET;
@@ -170,6 +190,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "JSON invalide." });
   }
 
+  req.paddleEvent = String(event?.event_type || "");
   const decision = paddleDecision(event);
   if (decision.action === "ignore") {
     console.log("Paddle notification ignored:", event.event_type, decision.reason);
@@ -281,7 +302,12 @@ export default async function handler(req, res) {
       }
     }
     const text = paddleTelegramMessage(event, decision, email, previous);
-    if (text) await notifyTelegramOnce(`paddle:${event.event_id || `${event.event_type}:${decision.transactionId || decision.subscriptionId}:${occurredAt}`}`, text);
+    if (text) {
+      const sent = await notifyTelegramOnce(`paddle:${event.event_id || `${event.event_type}:${decision.transactionId || decision.subscriptionId}:${occurredAt}`}`, text);
+      req.paddleTelegram = !process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID
+        ? "non envoyé : TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID manque"
+        : sent ? "envoyé" : "non envoyé : déjà envoyé pour cet événement, ou refusé par Telegram";
+    }
     return res.json({ ok: true });
   } catch (error) {
     console.error("Paddle webhook handling failed:", error);

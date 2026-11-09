@@ -1,5 +1,5 @@
 import { Redis } from "@upstash/redis";
-import { auditAccessPayments, isAdminAuthorized, whopConfigured } from "./_shared.js";
+import { auditAccessPayments, isAdminAuthorized, readWebhookStatus, whopConfigured } from "./_shared.js";
 
 // One read for the whole business, behind /admin.
 //
@@ -168,6 +168,8 @@ export default async function handler(req, res) {
       // Everything that silently changes behaviour when it is missing. Not
       // "is the site up" — it plainly is, you are reading this — but the
       // settings whose absence shows up as a customer complaint days later.
+      // The last call each payment webhook handled (api/paddle-webhook.js).
+      webhooks: { paddle: await readWebhookStatus("paddle") },
       health: {
         whopApiKey: Boolean(process.env.WHOP_API_KEY),
         whopCompanyId: Boolean(process.env.WHOP_COMPANY_ID),

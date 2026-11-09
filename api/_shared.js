@@ -634,6 +634,25 @@ export async function notifyTelegram(text) {
   }
 }
 
+// The last notification a processor's webhook handled, and how it went —
+// kept so /admin can say "Paddle last called at 14:02, 200, Telegram sent"
+// instead of the owner digging through two dashboards' logs. Never throws.
+export async function recordWebhookStatus(provider, status) {
+  try {
+    await Redis.fromEnv().set(`webhook:last:${provider}`, { at: new Date().toISOString(), ...status });
+  } catch {
+    // Redis unavailable: the diagnostic is lost, the webhook is not.
+  }
+}
+export async function readWebhookStatus(provider) {
+  try {
+    const value = await Redis.fromEnv().get(`webhook:last:${provider}`);
+    return typeof value === "string" ? JSON.parse(value) : value || null;
+  } catch {
+    return null;
+  }
+}
+
 // The same, at most once per key: processors retry a notification until they
 // get a 200, and a retried sale must not ping twice. The key lives a week,
 // far longer than any retry window. Without Redis it still sends.
