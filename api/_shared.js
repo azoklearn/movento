@@ -316,13 +316,23 @@ export function paddleEnvironment() {
 // The sandbox monthly price created while testing. Production prices have no
 // default on purpose: a sandbox id sent to the live checkout is refused.
 const PADDLE_SANDBOX_DEFAULT_PRICES = { m1: "pri_01m6w6hq41jjdsrgwm0vjz156g" };
-export function paddlePriceIds() {
+// Each variable may list several price ids, comma-separated, newest first:
+// "pri_new,pri_old". The first is what the checkout sells; all of them are
+// recognised, so a price change does not orphan the subscribers still on the
+// old one (their renewals, cancellations and refunds keep being handled).
+const priceList = (value) => String(value || "").split(",").map((v) => v.trim()).filter(Boolean);
+export function paddlePriceIdLists() {
   const defaults = paddleEnvironment() === "sandbox" ? PADDLE_SANDBOX_DEFAULT_PRICES : {};
   return {
-    m1: String(process.env.PADDLE_M1_PRICE_ID || defaults.m1 || "").trim(),
-    lifetime: String(process.env.PADDLE_LIFETIME_PRICE_ID || "").trim(),
-    m12: String(process.env.PADDLE_M12_PRICE_ID || "").trim(),
+    m1: priceList(process.env.PADDLE_M1_PRICE_ID || defaults.m1),
+    lifetime: priceList(process.env.PADDLE_LIFETIME_PRICE_ID),
+    m12: priceList(process.env.PADDLE_M12_PRICE_ID),
   };
+}
+// The price each plan is SOLD at: the first of its list.
+export function paddlePriceIds() {
+  const lists = paddlePriceIdLists();
+  return Object.fromEntries(Object.entries(lists).map(([kind, ids]) => [kind, ids[0] || ""]));
 }
 export const paddleClientToken = () => String(process.env.PADDLE_CLIENT_TOKEN || "").trim();
 // Production only. A sandbox checkout takes Paddle's test card, so pointing the
@@ -344,8 +354,8 @@ export function paddleGrantAllowed(normalizedEmail) {
 // Which of our plans a Paddle price id is, or null.
 export function paddlePlanOfPrice(priceId) {
   if (!priceId) return null;
-  for (const [kind, id] of Object.entries(paddlePriceIds())) {
-    if (id && id === priceId) return kind;
+  for (const [kind, ids] of Object.entries(paddlePriceIdLists())) {
+    if (ids.includes(priceId)) return kind;
   }
   return null;
 }
@@ -420,11 +430,11 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
         const summary = paddleSubscriptionSummary(sub);
         if (summary.kind && paddleSubscriptionIsLive(summary.status)) return summary;
       }
-      const lifetimePrice = paddlePriceIds().lifetime;
-      if (lifetimePrice) {
+      const lifetimePrices = paddlePriceIdLists().lifetime;
+      if (lifetimePrices.length) {
         const txns = await paddleApi(`/transactions?customer_id=${encodeURIComponent(customer.id)}&status=completed`, opts);
         for (const t of txns.data || []) {
-          const isLifetime = (t.items || []).some((item) => (item?.price?.id || item?.price_id) === lifetimePrice);
+          const isLifetime = (t.items || []).some((item) => lifetimePrices.includes(item?.price?.id || item?.price_id));
           // A refunded or charged-back purchase is still "completed" here. The
           // webhook marks those when it revokes them (paddleMarkRefunded), and
           // this net must not undo that.

@@ -1,4 +1,4 @@
-import { methodNotAllowed, paddleCheckoutReady, paddleClientToken, paddleEnvironment, paddlePriceIds } from "./_shared.js";
+import { methodNotAllowed, paddleCheckoutReady, paddleClientToken, paddleEnvironment, paddlePriceIdLists, paddlePriceIds } from "./_shared.js";
 
 // What a browser needs to open Paddle's checkout, and nothing else. The
 // client-side token is public by design — Paddle.js embeds it in the page — so
@@ -32,7 +32,7 @@ export default function handler(req, res) {
   if (!prices.lifetime) warnings.push("PADDLE_LIFETIME_PRICE_ID manque.");
   // The likeliest copy-paste mistake: the product id (pro_…) where the price
   // id (pri_…) goes. Paddle's checkout only takes the price.
-  for (const [plan, id] of Object.entries(prices)) {
+  for (const [plan, id] of Object.entries(paddlePriceIdLists()).flatMap(([p, ids]) => ids.map((i) => [p, i]))) {
     if (id && !id.startsWith("pri_")) warnings.push(`L'identifiant ${plan} (${id}) n'est pas un prix : il doit commencer par pri_ (Catalog → Products → le produit → Prices). Un identifiant pro_ est celui du produit.`);
   }
   const switchedOn = String(process.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "paddle";
@@ -42,6 +42,8 @@ export default function handler(req, res) {
     environment,
     token,
     prices,
+    // Every price recognised per plan, the sold one first.
+    recognised: paddlePriceIdLists(),
     live: paddleCheckoutReady() && switchedOn,
     warning: warnings.join(" ") || null,
   });

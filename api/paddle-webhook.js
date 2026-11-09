@@ -194,6 +194,24 @@ async function handle(req, res) {
   const decision = paddleDecision(event);
   if (decision.action === "ignore") {
     console.log("Paddle notification ignored:", event.event_type, decision.reason);
+    // A payment on a price the site does not know is money in with nobody
+    // unlocked, usually because the price was changed in Paddle and not in
+    // Vercel (or the old one dropped from the list). Said out loud.
+    if (event.event_type === "transaction.completed" && decision.reason === "not one of our prices") {
+      const data = event.data || {};
+      const ids = [...new Set((data.items || []).map((i) => i?.price?.id || i?.price_id).filter(Boolean))].join(", ");
+      let email = "";
+      try { email = await paddleCustomerEmail(data.customer_id); } catch {}
+      const totals = data.details?.totals || {};
+      const sent = await notifyTelegramOnce(`paddle:${event.event_id || data.id}`, [
+        "⚠️ Paiement Paddle sur un prix non reconnu",
+        formatMinorAmount(totals.grand_total ?? totals.total, data.currency_code),
+        email,
+        `Prix : ${ids || "?"}`,
+        "Ajoute-le à PADDLE_M1_PRICE_ID ou PADDLE_LIFETIME_PRICE_ID dans Vercel (plusieurs séparés par une virgule), puis donne l'accès depuis /admin.",
+      ].filter(Boolean).join("\n"));
+      req.paddleTelegram = sent ? "alerte prix inconnu envoyée" : "alerte prix inconnu non envoyée";
+    }
     return res.json({ ok: true, ignored: decision.reason });
   }
 
