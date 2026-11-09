@@ -1663,7 +1663,7 @@ const formatMoney = (amount, currency) => {
   }
 };
 
-function PaddleCheckout({ cfg, plan, prefillEmail, onPaid }) {
+function PaddleCheckout({ cfg, plan, prefillEmail, onPaid, fallbackUrl }) {
   const [phase, setPhase] = useState("loading"); // loading | ready | failed
   // What Paddle says the buyer will pay, once it knows their country.
   const [totals, setTotals] = useState(null);
@@ -1807,10 +1807,33 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid }) {
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-[#0d0d10] px-6 text-center">
             <div className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/[0.05] text-white/70"><Icon name="alert" className="h-5 w-5" /></div>
             <p className="max-w-xs text-sm leading-6 text-white/65">{t("The payment form could not load. Check your connection and try again.", "Le formulaire de paiement n'a pas pu se charger. Vérifie ta connexion et réessaie.")}</p>
-            <button type="button" onClick={() => window.location.reload()} className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Retry", "Réessayer")}</button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button type="button" onClick={() => window.location.reload()} className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Retry", "Réessayer")}</button>
+              {fallbackUrl && (
+                <a href={gumroadCheckoutHref(fallbackUrl)} target="_blank" rel="noopener noreferrer" onClick={() => track("checkout_fallback_gumroad", { plan: plan.id, reason: "paddle_failed" })} className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/40">
+                  {t("Pay with the backup link", "Payer via le lien de secours")}
+                </a>
+              )}
+            </div>
           </div>
         )}
       </section>
+      {/* The backup, offered under the form as well: a form that loads but
+          refuses a card is not a "failed" load, and the buyer still needs a
+          way to pay. It opens Gumroad in a new tab, so this layer stays to
+          unlock the access once they have paid there. */}
+      {fallbackUrl && (
+        <div className="flex flex-col items-center gap-1.5 text-center text-xs text-white/45 md:col-span-2 md:flex-row md:justify-center md:gap-3">
+          <span>{t("Payment not going through?", "Le paiement ne passe pas ?")}</span>
+          <a href={gumroadCheckoutHref(fallbackUrl)} target="_blank" rel="noopener noreferrer" onClick={() => track("checkout_fallback_gumroad", { plan: plan.id, reason: "buyer_choice" })} className="font-semibold text-white/70 underline underline-offset-4 transition hover:text-white">
+            {t("Use the backup payment link (Gumroad)", "Utilise le lien de secours (Gumroad)")}
+          </a>
+          <span className="hidden md:inline">·</span>
+          <button type="button" onClick={() => onPaidRef.current("")} className="underline underline-offset-4 transition hover:text-white/80">
+            {t("Paid that way? Unlock my access", "Payé par ce lien ? Débloquer mon accès")}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1864,7 +1887,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         // is a Whop one and means nothing on a Gumroad page.
         // Sold on Paddle: its overlay opens on top of this layer with the
         // price id; nothing to redirect to, and no affiliate code to carry.
-        if (d.provider === "paddle" && d.paddle?.priceId && d.paddle?.token) { if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", paddle: d.paddle, error: "" }); return; }
+        if (d.provider === "paddle" && d.paddle?.priceId && d.paddle?.token) { if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", paddle: d.paddle, paddleFallback: d.fallbackUrl || "", error: "" }); return; }
         if (d.provider === "gumroad" && d.checkoutUrl) { if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: d.checkoutUrl, gumroadUrl: d.checkoutUrl, error: "" }); return; }
         // Referred visitors go to Whop's hosted checkout even when the embed is
         // available: the affiliate code rides on the URL (a=...), which is the
@@ -1924,7 +1947,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
               <button onClick={() => setLoad((s) => ({ ...s }))} className="rounded-full bg-[#08080A] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418]">{t("Retry", "Réessayer")}</button>
             </div>
           ) : load.paddle ? (
-            <PaddleCheckout cfg={load.paddle} plan={plan} prefillEmail={prefillEmail} onPaid={(email) => { setPaidEmail(email || ""); setDone(true); }} />
+            <PaddleCheckout cfg={load.paddle} plan={plan} prefillEmail={prefillEmail} fallbackUrl={load.paddleFallback} onPaid={(email) => { setPaidEmail(email || ""); setDone(true); }} />
           ) : load.gumroadUrl ? (
             <GumroadCheckout url={load.gumroadUrl} plan={plan} onPaid={() => setDone(true)} />
           ) : (

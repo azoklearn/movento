@@ -1,4 +1,4 @@
-import { activeCheckoutUrl, appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutProviderFor, checkoutUrls, isGumroadUrl, methodNotAllowed, onWhopCheckout, paddleClientToken, paddleEnvironment, paddlePriceIds, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
+import { activeCheckoutUrl, appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutProviderFor, checkoutUrls, gumroadCheckoutUrls, gumroadWebhookReady, isGumroadUrl, methodNotAllowed, onWhopCheckout, paddleClientToken, paddleEnvironment, paddlePriceIds, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -15,6 +15,11 @@ export default async function handler(req, res) {
       planId: null,
       promoCode: null,
       paddle: { environment: paddleEnvironment(), token: paddleClientToken(), priceId: paddlePriceIds()[plan] },
+      // A way to pay when Paddle's form will not: the same plan on Gumroad.
+      // Only where Gumroad sells that plan (no lifetime there) and only while
+      // its sales unlock access (GUMROAD_WEBHOOK_TOKEN), or a buyer would
+      // pay and not be let in.
+      fallbackUrl: gumroadWebhookReady() ? gumroadCheckoutUrls[plan] || null : null,
     });
   }
 
