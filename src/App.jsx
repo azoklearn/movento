@@ -1858,51 +1858,58 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid, fallbackUrl }) {
   );
 }
 
-// The Mollie step of CheckoutOverlay. Mollie's payment page is hosted, so the
-// site's part is the order summary and the buyer's email (the access is
-// granted to it, and the month's subscription is set up on it), then a hand
-// over to Mollie. The buyer comes back to /success, which unlocks the access
-// once api/mollie-webhook.js has recorded the payment.
+// The Mollie step of CheckoutOverlay: straight to Mollie's hosted payment
+// page, with nothing to fill in first (asking the email before paying was
+// friction). The order summary shows while the hand-over happens. The buyer
+// gives their email on /success after paying, where the claim code in the
+// return URL ties it to this payment (api/mollie-claim.js). When the email is
+// already known (a returning visitor), it rides along and /success unlocks by
+// itself.
 //
 // No VAT line: the seller is under the French VAT franchise, so the price is
 // the whole price.
 function MollieCheckout({ cfg, plan, prefillEmail }) {
-  const [email, setEmail] = useState(prefillEmail || "");
-  const [st, setSt] = useState({ loading: false, error: "" });
+  const [st, setSt] = useState({ loading: true, error: "" });
+  const startedRef = useRef(false);
 
-  async function pay(e) {
-    e.preventDefault();
-    const norm = cleanEmail(email);
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(norm)) { setSt({ loading: false, error: t("Enter a valid email address.", "Entre une adresse email valide.") }); return; }
+  const start = useCallback(async () => {
     setSt({ loading: true, error: "" });
     try {
-      const r = await fetch(`${API_BASE_URL}/api/mollie-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: plan.id, email: norm }) });
+      const known = cleanEmail(prefillEmail || "");
+      const r = await fetch(`${API_BASE_URL}/api/mollie-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: plan.id, ...(known ? { email: known } : {}) }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.checkoutUrl) throw new Error(apiError(d, t("The payment could not start. Try again in a moment.", "Le paiement n'a pas pu démarrer. Réessaie dans un instant.")));
-      try { window.localStorage.setItem("movento_access_email", norm); } catch {}
       track("checkout_opened_on_mollie", { plan: plan.id });
       window.location.assign(d.checkoutUrl);
     } catch (err) {
       setSt({ loading: false, error: err.message });
     }
-  }
+  }, [plan.id, prefillEmail]);
+
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    start();
+  }, [start]);
 
   return (
     <div className="grid gap-3 p-1 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-6 md:p-2">
       <OrderSummary plan={plan} provider="Mollie" priceNote={t("Final price: VAT not applicable (art. 293 B of the French tax code).", "Prix final : TVA non applicable, art. 293 B du CGI.")} />
-      <section className="relative flex flex-col justify-center rounded-2xl border border-white/[0.08] bg-[#0d0d10] p-5 sm:p-8">
-        {cfg?.test && <p className="mb-4 self-start rounded-full border border-amber-400/30 bg-amber-400/[0.08] px-3 py-1 text-[11px] font-semibold text-amber-300">{t("Test mode: no real charge", "Mode test : aucun débit réel")}</p>}
-        <h3 className="text-lg font-semibold tracking-tight text-[#EDE9E0]">{t("Where should we send your access?", "Où envoyer ton accès ?")}</h3>
-        <p className="mt-1.5 text-sm leading-6 text-white/50">{t("Your access is tied to this email. You will use it to unlock the catalogue on any device.", "Ton accès est lié à cet email. Tu l'utiliseras pour débloquer le catalogue sur n'importe quel appareil.")}</p>
-        <form onSubmit={pay} className="mt-5 space-y-3">
-          <input autoFocus value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@exemple.com" className="w-full rounded-2xl border border-white/10 bg-[#121214] px-4 py-3.5 text-sm text-[#EDE9E0] outline-none placeholder:text-white/35 focus:border-white/35 focus:ring-4 focus:ring-white/10" />
-          <button type="submit" disabled={st.loading} className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#EDE9E0] px-6 py-3.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white disabled:opacity-60">
-            {st.loading ? t("Opening the secure payment…", "Ouverture du paiement sécurisé…") : <>{t("Continue to payment", "Continuer vers le paiement")} · {plan.price} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></>}
-          </button>
-          {st.error && <p className="flex items-start gap-2 text-xs leading-5 text-red-300"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{st.error}</p>}
-        </form>
-        <p className="mt-5 flex items-center gap-2 text-xs text-white/40"><Icon name="shield" className="h-3.5 w-3.5" />{t("Card, Apple Pay and more, on Mollie's secure page.", "Carte bancaire, Apple Pay et plus, sur la page sécurisée de Mollie.")}</p>
-        {plan.id !== "lifetime" && <p className="mt-2 text-xs text-white/35">{t("Renewed every month on the same card. Cancel anytime from “My subscription”.", "Renouvelé chaque mois sur la même carte. Résiliable à tout moment depuis « Mon abonnement ».")}</p>}
+      <section className="relative flex min-h-[260px] flex-col items-center justify-center gap-4 rounded-2xl border border-white/[0.08] bg-[#0d0d10] p-6 text-center sm:p-8">
+        {cfg?.test && <p className="rounded-full border border-amber-400/30 bg-amber-400/[0.08] px-3 py-1 text-[11px] font-semibold text-amber-300">{t("Test mode: no real charge", "Mode test : aucun débit réel")}</p>}
+        {st.loading ? (
+          <>
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/70" />
+            <p className="text-sm text-white/60">{t("Taking you to the secure payment…", "Redirection vers le paiement sécurisé…")}</p>
+            <p className="max-w-xs text-xs text-white/35">{t("Card, Apple Pay and more, on Mollie's page. You'll give your email right after paying.", "Carte bancaire, Apple Pay et plus, sur la page de Mollie. Tu donneras ton email juste après le paiement.")}</p>
+          </>
+        ) : (
+          <>
+            <div className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/[0.05] text-white/70"><Icon name="alert" className="h-5 w-5" /></div>
+            <p className="max-w-xs text-sm leading-6 text-white/65">{st.error}</p>
+            <button type="button" onClick={start} className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Retry", "Réessayer")}</button>
+          </>
+        )}
       </section>
     </div>
   );
@@ -3585,6 +3592,14 @@ function SuccessPage() {
 
   const clean = (v) => String(v).replace(/[\s\u00AD\u200B-\u200D\u2060\uFEFF]/g, "").toLowerCase();
 
+  // The claim code Mollie's return carries when the buyer has not given an
+  // email yet: the form below then asks for it.
+  const [mollieClaim] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams(window.location.search);
+    return params.get("provider") === "mollie" && !params.get("email") ? params.get("claim") || "" : "";
+  });
+
   // Back from Mollie with the email: the payment is confirmed by Mollie's
   // webhook, which can land a few seconds after the buyer does. So the page
   // checks by itself, every few seconds for half a minute, instead of asking
@@ -3618,6 +3633,25 @@ function SuccessPage() {
     const normalized = clean(address || email);
     if (!normalized) { setStatus({ loading: false, ok: false, error: t("Enter the email used at checkout.", "Entre l'email utilisé lors de l'achat.") }); return; }
     setStatus({ loading: true, ok: false, error: "" });
+    // Back from Mollie with a claim code: this email is first attached to
+    // the payment (api/mollie-claim.js), asking again while Mollie has not
+    // confirmed it, and only then is the access checked like any other.
+    if (mollieClaim && !address) {
+      let claimed = false;
+      for (let attempt = 0; attempt < 10 && !claimed; attempt += 1) {
+        try {
+          const r = await fetch(`${API_BASE_URL}/api/mollie-claim`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ claim: mollieClaim, email: normalized }) });
+          const d = await r.json().catch(() => ({}));
+          if (r.status === 202) { await new Promise((resolve) => setTimeout(resolve, 3000)); continue; }
+          if (!r.ok) { setStatus({ loading: false, ok: false, error: apiError(d, t("Unable to verify right now. Please retry.", "Vérification impossible pour le moment. Réessaie.")) }); return; }
+          claimed = true;
+        } catch {
+          setStatus({ loading: false, ok: false, error: t("Unable to verify right now. Please retry.", "Vérification impossible pour le moment. Réessaie.") });
+          return;
+        }
+      }
+      if (!claimed) { setStatus({ loading: false, ok: false, error: t("Your payment is still being confirmed by Mollie. Retry in a minute.", "Ton paiement est encore en cours de confirmation chez Mollie. Réessaie dans une minute.") }); return; }
+    }
     try {
       const response = await fetch(`${API_BASE_URL}/api/verify-access`, {
         method: "POST",
@@ -3698,9 +3732,11 @@ function SuccessPage() {
         <div className="mt-8 rounded-[28px] border border-white/10 bg-[#121214] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7">
           <div className="flex items-center gap-3">
             <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-[#08080A] text-sm font-bold text-white">1</span>
-            <h2 className="text-lg font-semibold text-[#EDE9E0]">{t("Unlock your prompts", "Débloque tes prompts")}</h2>
+            <h2 className="text-lg font-semibold text-[#EDE9E0]">{mollieClaim ? t("Where should we send your access?", "Où envoyer ton accès ?") : t("Unlock your prompts", "Débloque tes prompts")}</h2>
           </div>
-          <p className="mt-3 text-sm leading-6 text-white/55">{t("Enter the email you used at checkout. It unlocks the full catalog on this device — and on any device, anytime.", "Entre l'email que tu as utilisé au paiement. Il débloque tout le catalogue sur cet appareil — et sur n'importe quel appareil, à tout moment.")}</p>
+          <p className="mt-3 text-sm leading-6 text-white/55">{mollieClaim
+            ? t("Last step: enter your email. Your access is tied to it — it unlocks the full catalog here and on any device, anytime.", "Dernière étape : entre ton email. Ton accès y est lié — il débloque tout le catalogue ici et sur n'importe quel appareil, à tout moment.")
+            : t("Enter the email you used at checkout. It unlocks the full catalog on this device — and on any device, anytime.", "Entre l'email que tu as utilisé au paiement. Il débloque tout le catalogue sur cet appareil — et sur n'importe quel appareil, à tout moment.")}</p>
           {status.ok ? (
             <div className="mt-5 flex flex-col items-start gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.07] p-4 text-sm leading-6 text-emerald-300 sm:flex-row sm:items-center sm:justify-between">
               <span className="flex items-center gap-2"><Icon name="check" className="h-4 w-4 flex-none" /> {t("Access unlocked on this device!", "Accès débloqué sur cet appareil !")}</span>
