@@ -223,7 +223,7 @@ export const CHECKOUT_PROVIDER = String(process.env.CHECKOUT_PROVIDER || "whop")
 // "paddle" is not a hosted-URL provider: it sells the plans Paddle is set up
 // for and leaves every other plan on the default chain below (Gumroad, then
 // Whop), so turning it on can never leave a plan with nothing to sell it.
-export const onWhopCheckout = () => CHECKOUT_PROVIDER === "whop" || CHECKOUT_PROVIDER === "paddle";
+export const onWhopCheckout = () => CHECKOUT_PROVIDER === "whop" || CHECKOUT_PROVIDER === "paddle" || CHECKOUT_PROVIDER === "mollie";
 
 // The replacement checkout, one hosted URL per plan. There is deliberately no
 // fallback: an unconfigured plan must come back empty so the endpoint refuses
@@ -265,6 +265,7 @@ export const gumroadWebhookReady = () => Boolean(process.env.GUMROAD_WEBHOOK_TOK
 // "paddle" | "whop" | "gumroad" | "external" | "none" for one plan. An explicit
 // hosted-URL CHECKOUT_PROVIDER still moves every plan at once, as before.
 export function checkoutProviderFor(plan) {
+  if (CHECKOUT_PROVIDER === "mollie" && mollieReady() && MOLLIE_PRICES[plan]) return "mollie";
   if (CHECKOUT_PROVIDER === "paddle" && paddleCheckoutReady() && paddlePriceIds()[plan]) return "paddle";
   if (!onWhopCheckout()) return "external";
   if (gumroadWebhookReady() && gumroadCheckoutUrls[plan]) return "gumroad";
@@ -460,6 +461,77 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Mollie.
+//
+// A payment processor, not a reseller: the owner sells directly, and under the
+// French VAT franchise (art. 293 B du CGI) the price is the whole price, no VAT
+// added. Mollie's hosted payment page takes the card; the buyer comes back to
+// /success, and api/mollie-webhook.js — which Mollie calls with a payment id
+// that it then reads back from the API, so nothing unauthenticated is
+// trusted — grants the access.
+//
+// The month is a Mollie subscription: the first payment (sequenceType
+// "first") stores the card as a mandate, the webhook then creates the
+// subscription, and Mollie charges every month after that. Each paid month
+// extends the access to a month ahead plus MOLLIE_GRACE_DAYS, so a
+// subscription that stops for any reason ends the access by itself.
+// Lifetime is one payment.
+//
+//   MOLLIE_API_KEY          test_… to try, live_… to sell
+//   MOLLIE_M1_PRICE         default 29.99
+//   MOLLIE_LIFETIME_PRICE   default 89.00
+// The site switches to Mollie with CHECKOUT_PROVIDER=mollie.
+export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
+export const mollieTestMode = () => String(process.env.MOLLIE_API_KEY || "").startsWith("test_");
+export const MOLLIE_PRICES = {
+  m1: Number(process.env.MOLLIE_M1_PRICE || 29.99).toFixed(2),
+  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 89).toFixed(2),
+};
+export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", lifetime: "À vie" };
+export const MOLLIE_GRACE_DAYS = 5;
+
+export async function mollieApi(path, { method = "GET", body, fetchImpl = fetch } = {}) {
+  const key = process.env.MOLLIE_API_KEY;
+  if (!key) throw new Error("MOLLIE_API_KEY is not set");
+  const res = await fetchImpl(`https://api.mollie.com/v2${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 204) return {};
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`Mollie ${method} ${path} refused: ${data?.detail || data?.title || res.status}`);
+  return data;
+}
+
+// A month from a date, then the grace days: how long one paid month of the
+// subscription keeps the catalogue open.
+export function mollieMonthAccessUntil(from = new Date()) {
+  const d = new Date(from);
+  d.setUTCMonth(d.getUTCMonth() + 1);
+  d.setUTCDate(d.getUTCDate() + MOLLIE_GRACE_DAYS);
+  return d.toISOString();
+}
+
+export function mollieAccessRecord({ kind, paymentId, customerId, subscriptionId = null, accessUntil = null }, extra = {}) {
+  const lifetime = kind === "lifetime";
+  return {
+    plan: `mollie_${kind}`,
+    kind,
+    type: lifetime ? "lifetime" : "subscription",
+    status: lifetime ? "completed" : "active",
+    membershipId: lifetime ? paymentId : subscriptionId,
+    transactionId: paymentId,
+    customerId,
+    ...(subscriptionId ? { subscriptionId } : {}),
+    ...(accessUntil ? { accessUntil } : {}),
+    provider: "mollie",
+    grantedAt: new Date().toISOString(),
+    ...extra,
+  };
+}
+
 // A Paddle purchase refunded or charged back, remembered for good so neither
 // the API fallback nor a replayed notification can grant it again.
 export async function paddleMarkRefunded(transactionId) {
@@ -544,10 +616,11 @@ export function bestCheckoutUrl(plan) {
 // The line-up depends on who sells it. On Gumroad: the month and the year (m1,
 // m12; lifetime off sale). On Paddle (CHECKOUT_PROVIDER=paddle): the month and
 // lifetime, 89 € once, and no year. The front end reads the same variable at
-// build time (PADDLE_LINEUP in src/App.jsx), so the cards and this list switch
+// build time (LIFETIME_LINEUP in src/App.jsx), so the cards and this list switch
 // together on the deploy that sets it.
-export const PADDLE_LINEUP = CHECKOUT_PROVIDER === "paddle";
-export const RETIRED_PLANS = new Set(PADDLE_LINEUP ? ["m3", "m12", "monthly", "yearly"] : ["m3", "lifetime", "monthly", "yearly"]);
+// Mollie sells the same line-up as Paddle: the month and lifetime.
+export const LIFETIME_LINEUP = CHECKOUT_PROVIDER === "paddle" || CHECKOUT_PROVIDER === "mollie";
+export const RETIRED_PLANS = new Set(LIFETIME_LINEUP ? ["m3", "m12", "monthly", "yearly"] : ["m3", "lifetime", "monthly", "yearly"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a
@@ -1163,7 +1236,11 @@ export async function customerAccessLevel(email) {
   // Fast path: the grant written by the Whop webhook at purchase. Never deleted
   // here, so a Whop API hiccup can't lock out paying customers.
   const record = await redisGetAccessRecord(normalizedEmail);
-  if (record) return recordAccessLevel(record);
+  // A record may carry an end date (accessUntil): a Mollie subscription is
+  // granted a month at a time, plus a few days' grace, and extended by each
+  // payment. Past it, the record is spent and the sources below decide.
+  const expired = record?.accessUntil && Date.now() > Date.parse(record.accessUntil);
+  if (record && !expired) return recordAccessLevel(record);
 
   // Paddle, for a buyer whose notification has not landed (yet, or at all).
   const paddle = paddleGrantAllowed(normalizedEmail) ? await findPaddleSubscriber(normalizedEmail) : null;
@@ -1290,6 +1367,23 @@ export async function getMembershipInfo(email) {
   const stored = await redisGetAccessRecord(normalizedEmail);
   if (stored?.provider === "gumroad") {
     return { found: true, active: true, type: stored.type || "unknown", kind: stored.kind || null, status: "active", plan: "Movento", provider: "gumroad", manageUrl: GUMROAD_MANAGE_URL, source: "redis" };
+  }
+  // Mollie: lifetime from the record; the month with its next charge (or the
+  // date access ends, once cancelled) read from the subscription.
+  if (stored?.provider === "mollie") {
+    if (stored.type === "lifetime") {
+      return { found: true, active: true, type: "lifetime", kind: "lifetime", status: "completed", plan: "Movento", provider: "mollie", source: "redis" };
+    }
+    const base = { found: true, active: true, type: "subscription", kind: stored.kind || "m1", status: "active", plan: "Movento", provider: "mollie", cancelAtPeriodEnd: Boolean(stored.cancelScheduled), renewalDate: stored.accessUntil || null, source: "redis" };
+    if (stored.cancelScheduled || !stored.subscriptionId || !stored.customerId || !mollieReady()) return base;
+    try {
+      const sub = await mollieApi(`/customers/${encodeURIComponent(stored.customerId)}/subscriptions/${encodeURIComponent(stored.subscriptionId)}`);
+      const ended = sub.status === "canceled" || sub.status === "completed";
+      return { ...base, status: sub.status === "suspended" ? "past_due" : "active", cancelAtPeriodEnd: ended, renewalDate: ended ? stored.accessUntil || null : sub.nextPaymentDate || stored.accessUntil || null, source: "mollie" };
+    } catch (error) {
+      console.error("Mollie subscription lookup failed:", error);
+      return base;
+    }
   }
   // Paddle: the live subscription when it can be read, for the renewal date
   // and a cancellation already scheduled; the record alone otherwise.

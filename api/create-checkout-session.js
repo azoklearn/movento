@@ -1,9 +1,15 @@
-import { activeCheckoutUrl, appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutProviderFor, checkoutUrls, gumroadCheckoutUrls, gumroadWebhookReady, isGumroadUrl, methodNotAllowed, onWhopCheckout, paddleClientToken, paddleEnvironment, paddlePriceIds, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
+import { MOLLIE_PRICES, mollieTestMode, activeCheckoutUrl, appendAffiliate, appendPromo, bestCheckoutUrl, CHECKOUT_PROMO_CODE, checkoutProviderFor, checkoutUrls, gumroadCheckoutUrls, gumroadWebhookReady, isGumroadUrl, methodNotAllowed, onWhopCheckout, paddleClientToken, paddleEnvironment, paddlePriceIds, resolvePlanId, RETIRED_PLANS } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
 
   const { plan, ref } = req.body || {};
+
+  // Mollie: the site asks for the buyer's email, then /api/mollie-checkout
+  // starts the payment and returns Mollie's page. Nothing to redirect to yet.
+  if (!RETIRED_PLANS.has(plan) && checkoutProviderFor(plan) === "mollie") {
+    return res.json({ provider: "mollie", checkoutUrl: null, planId: null, promoCode: null, mollie: { price: MOLLIE_PRICES[plan], test: mollieTestMode() } });
+  }
 
   // Paddle has no URL to send anyone to: the client opens Paddle.js's overlay
   // with the price id, so that is what goes back, with the public token and
@@ -35,7 +41,7 @@ export default async function handler(req, res) {
       // Only what a caller could actually buy: a plan whose link is still
       // waiting to be configured is as unbuyable as a retired one, and
       // listing it would send whoever read this error straight back into a 400.
-      validPlans: Object.keys(checkoutUrls).filter((id) => (checkoutProviderFor(id) === "paddle" || activeCheckoutUrl(id)) && !RETIRED_PLANS.has(id)),
+      validPlans: Object.keys(checkoutUrls).filter((id) => (["paddle", "mollie"].includes(checkoutProviderFor(id)) || activeCheckoutUrl(id)) && !RETIRED_PLANS.has(id)),
     });
   }
 

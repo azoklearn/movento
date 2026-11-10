@@ -169,7 +169,8 @@ export default async function handler(req, res) {
       // "is the site up" — it plainly is, you are reading this — but the
       // settings whose absence shows up as a customer complaint days later.
       // The last call each payment webhook handled (api/paddle-webhook.js).
-      webhooks: { paddle: await readWebhookStatus("paddle") },
+      webhooks: { paddle: await readWebhookStatus("paddle"), mollie: await readWebhookStatus("mollie") },
+      checkoutProvider: String(process.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() || "gumroad",
       health: {
         whopApiKey: Boolean(process.env.WHOP_API_KEY),
         whopCompanyId: Boolean(process.env.WHOP_COMPANY_ID),

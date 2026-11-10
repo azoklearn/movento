@@ -9,7 +9,7 @@
 //     public, and sales figures are not for whoever finds it.
 // Anything else gets a silent 200, so Telegram does not keep retrying it.
 import { createHash, timingSafeEqual } from "node:crypto";
-import { formatMinorAmount, methodNotAllowed, paddleApi, paddlePlanOfItems, paddlePriceIds } from "./_shared.js";
+import { formatMinorAmount, methodNotAllowed, mollieApi, paddleApi, paddlePlanOfItems, paddlePriceIds } from "./_shared.js";
 
 export function telegramWebhookSecret(botToken = process.env.TELEGRAM_BOT_TOKEN) {
   if (!botToken) return "";
@@ -73,13 +73,13 @@ function sumText(sales, field) {
   return parts.length ? parts.join(" + ") : formatMinorAmount(0, "EUR");
 }
 
-export function salesReport(sales, now = new Date()) {
+export function salesReport(sales, now = new Date(), source = "Paddle") {
   const windows = [
     ["Aujourd'hui", parisStart(now)],
     ["7 derniers jours", new Date(now.getTime() - 7 * 86400000)],
     ["Ce mois-ci", parisStart(now, { month: true })],
   ];
-  const lines = ["📊 Ventes Paddle"];
+  const lines = [`📊 Ventes ${source}`];
   for (const [label, since] of windows) {
     const inWindow = sales.filter((s) => s.at && new Date(s.at) >= since);
     const fresh = inWindow.filter((s) => !s.renewal).length;
@@ -93,7 +93,7 @@ export function salesReport(sales, now = new Date()) {
       inWindow.length
         ? `${fresh} nouvelle${fresh > 1 ? "s" : ""} vente${fresh > 1 ? "s" : ""}${byPlan ? ` (${byPlan})` : ""} · ${renewals} renouvellement${renewals > 1 ? "s" : ""}`
         : "Aucune vente",
-      ...(inWindow.length ? [`${sumText(inWindow, "paid")} encaissés · net ${sumText(inWindow, "net")}`] : []),
+      ...(inWindow.length ? [`${sumText(inWindow, "paid")} encaissés${inWindow.every((s) => Number.isFinite(s.net)) ? ` · net ${sumText(inWindow, "net")}` : ""}`] : []),
     );
   }
   return lines.join("\n");
@@ -104,6 +104,38 @@ export function latestReport(sales) {
   if (!latest.length) return "🧾 Aucun paiement ces 31 derniers jours.";
   const when = (iso) => new Date(iso).toLocaleString("fr-FR", { timeZone: "Europe/Paris", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   return ["🧾 Derniers paiements", ...latest.map((s) => `${when(s.at)} · ${s.renewal ? "🔁" : "💰"} ${PLAN_NAMES[s.kind] || s.kind} · ${formatMinorAmount(s.paid, s.currency)}${s.email ? ` · ${s.email}` : ""}`)].join("\n");
+}
+
+// Mollie's side of the same three reports: payments read from Mollie, in the
+// shape saleOf gives Paddle's. No net figure: Mollie's fees are settled apart.
+export function mollieSaleOf(p) {
+  if (p.status !== "paid") return null;
+  const plan = p.metadata?.plan || (p.subscriptionId ? "m1" : "");
+  if (plan !== "m1" && plan !== "lifetime") return null;
+  const paid = Math.round((Number(p.amount?.value || 0) - Number(p.amountRefunded?.value || 0)) * 100);
+  return { kind: plan, at: p.paidAt || p.createdAt || "", currency: p.amount?.currency || "EUR", paid, net: NaN, renewal: p.sequenceType === "recurring" || Boolean(p.subscriptionId), email: p.metadata?.email || "" };
+}
+
+async function mollieList(path, until, maxPages = 10) {
+  const rows = [];
+  let next = path;
+  for (let page = 0; next && page < maxPages; page += 1) {
+    const res = await mollieApi(next);
+    const items = Object.values(res._embedded || {})[0] || [];
+    rows.push(...items);
+    // Newest first: stop once the page reaches back past the window.
+    if (until && items.length && new Date(items[items.length - 1].createdAt) < until) break;
+    const href = res._links?.next?.href;
+    next = href ? (() => { const u = new URL(href); return `${u.pathname.replace(/^\/v2/, "")}${u.search}`; })() : "";
+  }
+  return rows;
+}
+
+export function mollieSubscribersReport(subs) {
+  const ours = subs.filter((s) => (s.metadata?.plan || "m1") === "m1");
+  const active = ours.filter((s) => s.status === "active");
+  const suspended = ours.filter((s) => s.status === "suspended");
+  return ["👥 Abonnés Mollie", `${active.length} actif${active.length > 1 ? "s" : ""}`, `${suspended.length} suspendu${suspended.length > 1 ? "s" : ""} (prélèvements en échec)`].join("\n");
 }
 
 export function subscribersReport(subs) {
@@ -128,6 +160,18 @@ const HELP = [
 ].join("\n");
 
 async function answer(command) {
+  // Whoever sells reports: Mollie when the site sells through it.
+  if (String(process.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "mollie") {
+    if (!process.env.MOLLIE_API_KEY) return "MOLLIE_API_KEY n'est pas configurée : impossible de lire Mollie.";
+    if (command === "/ventes" || command === "/derniers") {
+      const now = new Date();
+      const since = new Date(Math.min(parisStart(now, { month: true }).getTime(), now.getTime() - (command === "/derniers" ? 31 : 7) * 86400000));
+      const sales = (await mollieList("/payments?limit=250", since)).map(mollieSaleOf).filter(Boolean);
+      return command === "/ventes" ? salesReport(sales, now, "Mollie") : latestReport(sales).replace("Derniers paiements", "Derniers paiements Mollie");
+    }
+    if (command === "/abonnes") return mollieSubscribersReport(await mollieList("/subscriptions?limit=250"));
+    return HELP;
+  }
   if (!process.env.PADDLE_API_KEY) return "PADDLE_API_KEY n'est pas configurée : impossible de lire Paddle.";
   if (!paddlePriceIds().m1 && !paddlePriceIds().lifetime) return "Aucun prix Paddle configuré.";
   if (command === "/ventes" || command === "/derniers") {

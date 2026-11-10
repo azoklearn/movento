@@ -1,4 +1,24 @@
-import { cancelWhopMembership, GUMROAD_MANAGE_URL, methodNotAllowed, normalizeEmail, paddleApi, paddleSubscriptionSummary, redisGetAccessRecord } from "./_shared.js";
+import { cancelWhopMembership, GUMROAD_MANAGE_URL, methodNotAllowed, mollieApi, normalizeEmail, paddleApi, paddleSubscriptionSummary, redisGetAccessRecord, redisSetAccess } from "./_shared.js";
+
+// Mollie: the subscription is deleted, so no further month is charged, and
+// the access record keeps its end date: the month already paid runs out on
+// its own (accessUntil), which is "cancel at the end of the period".
+async function cancelMollie(email, record, res) {
+  if (record.cancelScheduled) return res.json({ ok: true, alreadyCanceled: true, renewalDate: record.accessUntil || null });
+  if (record.subscriptionId && record.customerId) {
+    try {
+      await mollieApi(`/customers/${encodeURIComponent(record.customerId)}/subscriptions/${encodeURIComponent(record.subscriptionId)}`, { method: "DELETE" });
+    } catch (error) {
+      // Already gone on Mollie's side is a cancellation too.
+      if (!/canceled|not found|404|410/i.test(error.message)) {
+        console.error("Mollie cancel failed:", error);
+        return res.status(502).json({ error: "La résiliation a échoué. Réessaie dans un instant.", errorEn: "Cancellation failed. Try again in a moment." });
+      }
+    }
+  }
+  await redisSetAccess(email, { ...record, cancelScheduled: true, canceledAt: new Date().toISOString() });
+  return res.json({ ok: true, alreadyCanceled: false, renewalDate: record.accessUntil || null });
+}
 
 // Paddle: cancelled at the end of the period through the API, the way the
 // Whop branch does it. Access stays until then; subscription.canceled, sent
@@ -42,10 +62,11 @@ export default async function handler(req, res) {
     // Billed by Gumroad: there is nothing this server can cancel, and asking
     // Whop would answer "no subscription found" to someone who is paying.
     const record = await redisGetAccessRecord(email);
-    if (record?.provider === "paddle" && record.type === "lifetime") {
+    if ((record?.provider === "paddle" || record?.provider === "mollie") && record.type === "lifetime") {
       return res.status(400).json({ error: MESSAGES.lifetime[1], errorEn: MESSAGES.lifetime[2] });
     }
     if (record?.provider === "paddle") return cancelPaddle(record, res);
+    if (record?.provider === "mollie") return cancelMollie(email, record, res);
     if (record?.provider === "gumroad") {
       return res.status(409).json({
         error: "Ton abonnement est géré par Gumroad : résilie-le depuis ton espace Gumroad, ou depuis le lien « Manage membership » de ton reçu.",

@@ -39,7 +39,8 @@ function offersFollowLineup(paddle) {
 
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
-  const paddle = String(env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "paddle";
+  // Paddle and Mollie both sell the month and lifetime.
+  const paddle = ["paddle", "mollie"].includes(String(env.CHECKOUT_PROVIDER || "").trim().toLowerCase());
   return {
     plugins: [react(), tailwindcss(), offersFollowLineup(paddle)],
     // CHECKOUT_PROVIDER is read by the front end too: it decides which plans the

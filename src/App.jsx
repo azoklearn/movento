@@ -872,11 +872,11 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 // the deploy that sets it:
 //   Gumroad (default): the month and the year, 89 € renewed every year.
 //   Paddle:            the month and lifetime, the same 89 € paid once.
-const PADDLE_LINEUP = String(import.meta.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "paddle";
+const LIFETIME_LINEUP = ["paddle", "mollie"].includes(String(import.meta.env.CHECKOUT_PROVIDER || "").trim().toLowerCase());
 const PLAN_TERMS = [
   { id: "m1", price: 29.99, anchor: 39.99, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
   { id: "m3", price: 29.99, anchor: 74.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
-  { id: "m12", price: 89, anchor: 359.88, days: 365, retired: PADDLE_LINEUP, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
+  { id: "m12", price: 89, anchor: 359.88, days: 365, retired: LIFETIME_LINEUP, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
@@ -892,9 +892,9 @@ const discountOf = (id) => {
 // headline discount and the featured offer all read it, so none of them can
 // disagree about whether it is for sale. Mirror it in RETIRED_PLANS
 // (api/_shared.js), which is what refuses a checkout on it.
-// On sale with Paddle only (see PADDLE_LINEUP). Off sale, lifetime members
+// On sale with Paddle only (see LIFETIME_LINEUP). Off sale, lifetime members
 // keep their access, their ebook and their support.
-const LIFETIME_RETIRED = !PADDLE_LINEUP;
+const LIFETIME_RETIRED = !LIFETIME_LINEUP;
 const PRICE_LIFETIME = 89;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
@@ -1663,6 +1663,74 @@ const formatMoney = (amount, currency) => {
   }
 };
 
+// The order, as the buyer will be charged for it: the left half of the
+// Paddle and Mollie checkouts. `totals` are the processor's own figures when
+// it reports them (Paddle does, VAT and all); without them the plan's price
+// stands, with `priceNote` saying what it includes.
+function OrderSummary({ plan, totals, provider, priceNote }) {
+  const lifetime = plan.id === "lifetime";
+  const total = totals ? formatMoney(totals.total, totals.currency) : "";
+  const tax = totals ? formatMoney(totals.tax, totals.currency) : "";
+  const subtotal = totals ? formatMoney(totals.subtotal, totals.currency) : "";
+  const included = [...(plan.features || []).filter((f) => f !== t("Cancel anytime", "Résiliation à tout moment")).slice(0, 5), plan.perk, plan.bonus].filter(Boolean);
+  return (
+      <aside className="relative self-start overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-4 sm:p-6">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#ffa582]/[0.08] blur-3xl" />
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">{t("Your order", "Ta commande")}</p>
+        <div className="mt-3 flex items-baseline justify-between gap-3">
+          <h3 className="text-xl font-semibold tracking-tight text-[#EDE9E0]">Movento · {plan.name}</h3>
+          {plan.discountBadge && <span className="rounded-full border border-[#ffa582]/25 bg-[#ffa582]/[0.08] px-2 py-0.5 text-[11px] font-semibold text-[#ffb89c]">{plan.discountBadge}</span>}
+        </div>
+        <div className="mt-2 flex items-baseline gap-2">
+          {plan.originalPrice && <span className="text-sm text-white/35 line-through">{plan.originalPrice}</span>}
+          <span className="text-4xl font-bold tracking-[-0.03em] text-[#EDE9E0]">{plan.price}</span>
+          <span className="text-sm text-white/45">{plan.period}</span>
+        </div>
+        <p className="mt-1 text-xs text-white/45">
+          {lifetime ? t("One payment, never renewed.", "Un seul paiement, jamais renouvelé.") : t("Renewed every month. Cancel anytime from your account.", "Renouvelé chaque mois. Résiliable à tout moment depuis ton compte.")}
+        </p>
+
+        {/* Open on a wide screen; folded on a phone, where the list would
+            push the payment form below the first screen. */}
+        <details className="group mt-4 border-t border-white/[0.07] pt-4 md:mt-5 md:pt-5" open={typeof window !== "undefined" && window.innerWidth >= 768}>
+          <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-white/45 md:pointer-events-none [&::-webkit-details-marker]:hidden">
+            {t("What's included", "Ce qui est inclus")}
+            <Icon name="arrow" className="h-3.5 w-3.5 rotate-90 transition group-open:-rotate-90 md:hidden" />
+          </summary>
+          <ul className="mt-3 space-y-2 text-sm text-white/70">
+            {included.map((f) => (
+              <li key={f} className="flex items-start gap-2.5"><Icon name="check" className="mt-0.5 h-3.5 w-3.5 flex-none text-emerald-400" />{f}</li>
+            ))}
+          </ul>
+        </details>
+
+        {/* The processor's figures once it has them (Paddle reports them);
+            the plan's price until then, or for good. */}
+        <dl className="mt-4 space-y-1.5 border-t border-white/[0.07] pt-4 text-sm md:mt-5 md:pt-5">
+          {subtotal && tax && (
+            <>
+              <div className="flex justify-between text-white/50"><dt>{t("Subtotal", "Sous-total")}</dt><dd>{subtotal}</dd></div>
+              <div className="flex justify-between text-white/50"><dt>{t("VAT", "TVA")}{totals.country ? ` (${totals.country})` : ""}</dt><dd>{tax}</dd></div>
+            </>
+          )}
+          <div className="flex items-baseline justify-between pt-1 text-[#EDE9E0]">
+            <dt className="font-semibold">{t("Total today", "Total aujourd'hui")}</dt>
+            <dd className="text-lg font-bold">{total || plan.price}</dd>
+          </div>
+          {!total && <p className="text-xs text-white/40">{priceNote || t("VAT included, worked out for your country.", "TVA incluse, calculée selon ton pays.")}</p>}
+        </dl>
+
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-white/45 md:mt-5">
+          <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3" />{t(`Secure payment by ${provider}`, `Paiement sécurisé par ${provider}`)}</span>
+          <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-400" />{t("Instant access", "Accès immédiat")}</span>
+        </div>
+        <p className="mt-3 text-[11px] leading-4 text-white/35">
+          {t("By paying you accept the", "En payant, tu acceptes les")} <a href="/cgv" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-white/60">{t("terms of sale", "CGV")}</a> {t("and the", "et la")} <a href="/remboursement" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-white/60">{t("refund policy", "politique de remboursement")}</a>.
+        </p>
+      </aside>
+  );
+}
+
 function PaddleCheckout({ cfg, plan, prefillEmail, onPaid, fallbackUrl }) {
   const [phase, setPhase] = useState("loading"); // loading | ready | failed
   // Paddle's own reason when the form fails, shown small under the message:
@@ -1739,64 +1807,9 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid, fallbackUrl }) {
     // a new object every render, and each one would reopen the checkout.
   }, [cfg.environment, cfg.token, open, plan.id]);
 
-  const total = totals ? formatMoney(totals.total, totals.currency) : "";
-  const tax = totals ? formatMoney(totals.tax, totals.currency) : "";
-  const subtotal = totals ? formatMoney(totals.subtotal, totals.currency) : "";
-  const included = [...(plan.features || []).filter((f) => f !== t("Cancel anytime", "Résiliation à tout moment")).slice(0, 5), plan.perk, plan.bonus].filter(Boolean);
-
   return (
     <div className="grid gap-3 p-1 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-6 md:p-2">
-      {/* The order, as the buyer will be charged for it. */}
-      <aside className="relative self-start overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-4 sm:p-6">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#ffa582]/[0.08] blur-3xl" />
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">{t("Your order", "Ta commande")}</p>
-        <div className="mt-3 flex items-baseline justify-between gap-3">
-          <h3 className="text-xl font-semibold tracking-tight text-[#EDE9E0]">Movento · {plan.name}</h3>
-          {plan.discountBadge && <span className="rounded-full border border-[#ffa582]/25 bg-[#ffa582]/[0.08] px-2 py-0.5 text-[11px] font-semibold text-[#ffb89c]">{plan.discountBadge}</span>}
-        </div>
-        <div className="mt-2 flex items-baseline gap-2">
-          {plan.originalPrice && <span className="text-sm text-white/35 line-through">{plan.originalPrice}</span>}
-          <span className="text-4xl font-bold tracking-[-0.03em] text-[#EDE9E0]">{plan.price}</span>
-          <span className="text-sm text-white/45">{plan.period}</span>
-        </div>
-        <p className="mt-1 text-xs text-white/45">
-          {lifetime ? t("One payment, never renewed.", "Un seul paiement, jamais renouvelé.") : t("Renewed every month. Cancel anytime from your account.", "Renouvelé chaque mois. Résiliable à tout moment depuis ton compte.")}
-        </p>
-
-        {/* Open on a wide screen; folded on a phone, where the list would
-            push the payment form below the first screen. */}
-        <details className="group mt-4 border-t border-white/[0.07] pt-4 md:mt-5 md:pt-5" open={typeof window !== "undefined" && window.innerWidth >= 768}>
-          <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-white/45 md:pointer-events-none [&::-webkit-details-marker]:hidden">
-            {t("What's included", "Ce qui est inclus")}
-            <Icon name="arrow" className="h-3.5 w-3.5 rotate-90 transition group-open:-rotate-90 md:hidden" />
-          </summary>
-          <ul className="mt-3 space-y-2 text-sm text-white/70">
-            {included.map((f) => (
-              <li key={f} className="flex items-start gap-2.5"><Icon name="check" className="mt-0.5 h-3.5 w-3.5 flex-none text-emerald-400" />{f}</li>
-            ))}
-          </ul>
-        </details>
-
-        {/* Paddle's figures once it has them; the plan's price until then. */}
-        <dl className="mt-4 space-y-1.5 border-t border-white/[0.07] pt-4 text-sm md:mt-5 md:pt-5">
-          {subtotal && tax && (
-            <>
-              <div className="flex justify-between text-white/50"><dt>{t("Subtotal", "Sous-total")}</dt><dd>{subtotal}</dd></div>
-              <div className="flex justify-between text-white/50"><dt>{t("VAT", "TVA")}{totals.country ? ` (${totals.country})` : ""}</dt><dd>{tax}</dd></div>
-            </>
-          )}
-          <div className="flex items-baseline justify-between pt-1 text-[#EDE9E0]">
-            <dt className="font-semibold">{t("Total today", "Total aujourd'hui")}</dt>
-            <dd className="text-lg font-bold">{total || plan.price}</dd>
-          </div>
-          {!total && <p className="text-xs text-white/40">{t("VAT included, worked out for your country.", "TVA incluse, calculée selon ton pays.")}</p>}
-        </dl>
-
-        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-white/45 md:mt-5">
-          <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3" />{t("Secure payment by Paddle", "Paiement sécurisé par Paddle")}</span>
-          <span className="flex items-center gap-1.5"><Icon name="zap" className="h-3 w-3 text-amber-400" />{t("Instant access", "Accès immédiat")}</span>
-        </div>
-      </aside>
+      <OrderSummary plan={plan} totals={totals} provider="Paddle" />
 
       {/* Paddle's form. The container is Paddle's frame target; the loader
           and the failure state sit over it, never instead of it, so the frame
@@ -1841,6 +1854,56 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid, fallbackUrl }) {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// The Mollie step of CheckoutOverlay. Mollie's payment page is hosted, so the
+// site's part is the order summary and the buyer's email (the access is
+// granted to it, and the month's subscription is set up on it), then a hand
+// over to Mollie. The buyer comes back to /success, which unlocks the access
+// once api/mollie-webhook.js has recorded the payment.
+//
+// No VAT line: the seller is under the French VAT franchise, so the price is
+// the whole price.
+function MollieCheckout({ cfg, plan, prefillEmail }) {
+  const [email, setEmail] = useState(prefillEmail || "");
+  const [st, setSt] = useState({ loading: false, error: "" });
+
+  async function pay(e) {
+    e.preventDefault();
+    const norm = cleanEmail(email);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(norm)) { setSt({ loading: false, error: t("Enter a valid email address.", "Entre une adresse email valide.") }); return; }
+    setSt({ loading: true, error: "" });
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/mollie-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: plan.id, email: norm }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.checkoutUrl) throw new Error(apiError(d, t("The payment could not start. Try again in a moment.", "Le paiement n'a pas pu démarrer. Réessaie dans un instant.")));
+      try { window.localStorage.setItem("movento_access_email", norm); } catch {}
+      track("checkout_opened_on_mollie", { plan: plan.id });
+      window.location.assign(d.checkoutUrl);
+    } catch (err) {
+      setSt({ loading: false, error: err.message });
+    }
+  }
+
+  return (
+    <div className="grid gap-3 p-1 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-6 md:p-2">
+      <OrderSummary plan={plan} provider="Mollie" priceNote={t("Final price: VAT not applicable (art. 293 B of the French tax code).", "Prix final : TVA non applicable, art. 293 B du CGI.")} />
+      <section className="relative flex flex-col justify-center rounded-2xl border border-white/[0.08] bg-[#0d0d10] p-5 sm:p-8">
+        {cfg?.test && <p className="mb-4 self-start rounded-full border border-amber-400/30 bg-amber-400/[0.08] px-3 py-1 text-[11px] font-semibold text-amber-300">{t("Test mode: no real charge", "Mode test : aucun débit réel")}</p>}
+        <h3 className="text-lg font-semibold tracking-tight text-[#EDE9E0]">{t("Where should we send your access?", "Où envoyer ton accès ?")}</h3>
+        <p className="mt-1.5 text-sm leading-6 text-white/50">{t("Your access is tied to this email. You will use it to unlock the catalogue on any device.", "Ton accès est lié à cet email. Tu l'utiliseras pour débloquer le catalogue sur n'importe quel appareil.")}</p>
+        <form onSubmit={pay} className="mt-5 space-y-3">
+          <input autoFocus value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="email@exemple.com" className="w-full rounded-2xl border border-white/10 bg-[#121214] px-4 py-3.5 text-sm text-[#EDE9E0] outline-none placeholder:text-white/35 focus:border-white/35 focus:ring-4 focus:ring-white/10" />
+          <button type="submit" disabled={st.loading} className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#EDE9E0] px-6 py-3.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white disabled:opacity-60">
+            {st.loading ? t("Opening the secure payment…", "Ouverture du paiement sécurisé…") : <>{t("Continue to payment", "Continuer vers le paiement")} · {plan.price} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></>}
+          </button>
+          {st.error && <p className="flex items-start gap-2 text-xs leading-5 text-red-300"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{st.error}</p>}
+        </form>
+        <p className="mt-5 flex items-center gap-2 text-xs text-white/40"><Icon name="shield" className="h-3.5 w-3.5" />{t("Card, Apple Pay and more, on Mollie's secure page.", "Carte bancaire, Apple Pay et plus, sur la page sécurisée de Mollie.")}</p>
+        {plan.id !== "lifetime" && <p className="mt-2 text-xs text-white/35">{t("Renewed every month on the same card. Cancel anytime from “My subscription”.", "Renouvelé chaque mois sur la même carte. Résiliable à tout moment depuis « Mon abonnement ».")}</p>}
+      </section>
     </div>
   );
 }
@@ -1894,6 +1957,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         // is a Whop one and means nothing on a Gumroad page.
         // Sold on Paddle: its overlay opens on top of this layer with the
         // price id; nothing to redirect to, and no affiliate code to carry.
+        if (d.provider === "mollie" && d.mollie) { if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", paddle: null, mollie: d.mollie, error: "" }); return; }
         if (d.provider === "paddle" && d.paddle?.priceId && d.paddle?.token) { if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", paddle: d.paddle, paddleFallback: d.fallbackUrl || "", error: "" }); return; }
         if (d.provider === "gumroad" && d.checkoutUrl) { if (alive) setLoad({ loading: false, planId: "", promoCode: "", checkoutUrl: d.checkoutUrl, gumroadUrl: d.checkoutUrl, error: "" }); return; }
         // Referred visitors go to Whop's hosted checkout even when the embed is
@@ -1925,7 +1989,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
       {/* Safe-area padding: on a notched phone the bar and the close button
           must sit below the status bar, not under it. */}
       <div className="sticky top-0 z-10 border-b border-white/[0.07] bg-[#0A0A0B]/90 backdrop-blur" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-        <div className={`mx-auto flex ${load.paddle && !done ? "max-w-4xl" : "max-w-xl"} items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4`}>
+        <div className={`mx-auto flex ${(load.paddle || load.mollie) && !done ? "max-w-4xl" : "max-w-xl"} items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4`}>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[#EDE9E0]">{plan.name}</p>
             <p className="text-xs text-white/55">{plan.price} <span className="text-white/40">{plan.period}</span></p>
@@ -1934,12 +1998,12 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
         </div>
       </div>
       {/* Wider for Paddle's step: its summary and form sit side by side. */}
-      <div className={`relative mx-auto ${load.paddle && !done ? "max-w-4xl" : "max-w-xl"} px-2 pb-16 pt-3 sm:px-4 sm:pt-6`} style={{ paddingBottom: "max(4rem, env(safe-area-inset-bottom))" }}>
+      <div className={`relative mx-auto ${(load.paddle || load.mollie) && !done ? "max-w-4xl" : "max-w-xl"} px-2 pb-16 pt-3 sm:px-4 sm:pt-6`} style={{ paddingBottom: "max(4rem, env(safe-area-inset-bottom))" }}>
         {/* The form gets the full width on a phone (2px of rim, no card
             padding) — Whop's fields are already narrow enough. */}
         {/* Paddle's step brings its own two panels; a card around them
             would only be a frame inside a frame. */}
-        <div className={load.paddle && !done ? "relative" : "relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214] p-1 shadow-2xl shadow-black/60 sm:rounded-[28px] sm:p-4"}>
+        <div className={(load.paddle || load.mollie) && !done ? "relative" : "relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214] p-1 shadow-2xl shadow-black/60 sm:rounded-[28px] sm:p-4"}>
           {done ? (
             <CheckoutSuccess plan={plan} prefillEmail={paidEmail || prefillEmail} onUnlocked={onUnlocked} />
           ) : load.loading ? (
@@ -1953,6 +2017,8 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
               <p className="max-w-sm text-sm leading-6 text-red-300">{load.error}</p>
               <button onClick={() => setLoad((s) => ({ ...s }))} className="rounded-full bg-[#08080A] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#141418]">{t("Retry", "Réessayer")}</button>
             </div>
+          ) : load.mollie ? (
+            <MollieCheckout cfg={load.mollie} plan={plan} prefillEmail={prefillEmail} />
           ) : load.paddle ? (
             <PaddleCheckout cfg={load.paddle} plan={plan} prefillEmail={prefillEmail} fallbackUrl={load.paddleFallback} onPaid={(email) => { setPaidEmail(email || ""); setDone(true); }} />
           ) : load.gumroadUrl ? (
@@ -2007,7 +2073,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
           </div>
         )}
         <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[11px] text-white/40">
-          {!(load.paddle && !done) && <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment", "Paiement sécurisé")}</span>}
+          {!((load.paddle || load.mollie) && !done) && <span className="flex items-center gap-1.5"><Icon name="shield" className="h-3 w-3 text-white/45" /> {t("Secure payment", "Paiement sécurisé")}</span>}
           {/* The way out if the embed ever misbehaves on a device: the same
               plan, on Whop's own page, promo and affiliate already applied. */}
           {load.checkoutUrl && !load.gumroadUrl && !done && (
@@ -2468,11 +2534,11 @@ async function copyTextToClipboard(text) {
 
 function runSelfTests() {
   // The two offers of each line-up, mirroring RETIRED_PLANS in api/_shared.js.
-  const second = PADDLE_LINEUP ? "lifetime" : "m12";
-  const offSale = PADDLE_LINEUP ? ["m3", "m12", "monthly", "yearly"] : ["m3", "lifetime", "monthly", "yearly"];
+  const second = LIFETIME_LINEUP ? "lifetime" : "m12";
+  const offSale = LIFETIME_LINEUP ? ["m3", "m12", "monthly", "yearly"] : ["m3", "lifetime", "monthly", "yearly"];
   console.assert(validatePlanId("m1") && validatePlanId(second), `the month and ${second} are the two offers and must be purchasable`);
   console.assert(offSale.every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
-  console.assert(PADDLE_LINEUP ? FEATURED_TERM === termOf("m1") : FEATURED_TERM === termOf("m12") && FEATURED_OFFER.price === termOf("m12").price, "the bar and the anchor quote the year while it is on sale, the month otherwise");
+  console.assert(LIFETIME_LINEUP ? FEATURED_TERM === termOf("m1") : FEATURED_TERM === termOf("m12") && FEATURED_OFFER.price === termOf("m12").price, "the bar and the anchor quote the year while it is on sale, the month otherwise");
   console.assert(termOf("m12").anchor === Math.round(termOf("m1").price * 12 * 100) / 100, "the year is struck against twelve real months, not an invented price");
   console.assert(ANNUAL_MONTHS * termOf("m1").price >= termOf("m12").price && (ANNUAL_MONTHS - 1) * termOf("m1").price < termOf("m12").price, "the month the year becomes the cheaper option must be the first one that passes its price");
   // Each comparison holds only while both sides are on sale: a retired plan has
@@ -2480,7 +2546,7 @@ function runSelfTests() {
   // rather than as moot.
   console.assert(LIFETIME_RETIRED || termOf("m12").retired || PRICE_LIFETIME > termOf("m12").price, "lifetime must cost more than a year, or the subscriptions beside it mean nothing");
   console.assert(termOf("m12").retired || termOf("m1").retired || termOf("m12").price < 12 * termOf("m1").price, "a year must cost less than twelve months bought one at a time");
-  console.assert(BEST_DISCOUNT === (PADDLE_LINEUP ? LIFETIME_DISCOUNT : discountOf("m12")) && BEST_DISCOUNT === 75, "the page leads with the best discount still on sale");
+  console.assert(BEST_DISCOUNT === (LIFETIME_LINEUP ? LIFETIME_DISCOUNT : discountOf("m12")) && BEST_DISCOUNT === 75, "the page leads with the best discount still on sale");
   console.assert(LIFETIME_RETIRED !== visiblePlans.some((plan) => plan.id === "lifetime"), "the lifetime card must be shown exactly when the lifetime is on sale");
   // The whole pitch of the lifetime: dearer than one month, cheaper than the
   // year of months it is struck against. Either way round it would be a lie.
@@ -2619,6 +2685,7 @@ export default function MoventoSite() {
 
   const isSuccessPage = typeof window !== "undefined" && window.location.pathname === "/success";
   const isMentionsPage = typeof window !== "undefined" && window.location.pathname === "/mentions-legales";
+  const legalPath = typeof window !== "undefined" ? window.location.pathname : "";
   const isPricingPage = typeof window !== "undefined" && window.location.pathname === "/pricing";
   const isSubscriptionPage = typeof window !== "undefined" && window.location.pathname === "/subscription";
   const isAdminPage = typeof window !== "undefined" && window.location.pathname === "/admin";
@@ -2933,6 +3000,9 @@ export default function MoventoSite() {
 
   if (isAdminPage) return <AdminLeadsPage />;
   if (isMentionsPage) return <MentionsLegales />;
+  if (legalPath === "/cgv") return <CgvPage />;
+  if (legalPath === "/remboursement") return <RefundPage />;
+  if (legalPath === "/confidentialite") return <PrivacyPage />;
   if (isPricingPage) return <PricingPage />;
   if (isTikTokPage) return <TikTokPage />;
   if (isChoosePage) return <ChoosePromptsPage />;
@@ -3389,6 +3459,9 @@ export default function MoventoSite() {
           <div className="flex items-center gap-5">
             <a href="/tiktok" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Monetize TikTok", "Monétise TikTok")}</a>
             <a href="/subscription" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("My subscription", "Mon abonnement")}</a>
+            <a href="/cgv" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Terms of sale", "CGV")}</a>
+            <a href="/remboursement" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Refunds", "Remboursement")}</a>
+            <a href="/confidentialite" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Privacy", "Confidentialité")}</a>
             <a href="/mentions-legales" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Legal notice", "Mentions légales")}</a>
             {/* Full reload on purpose: `lang` is resolved once at module load. */}
             <a href={`?lang=${lang === "fr" ? "en" : "fr"}`} className="text-sm font-medium text-white/40 transition hover:text-[#EDE9E0]" hrefLang={lang === "fr" ? "en" : "fr"}>{lang === "fr" ? "English" : "Français"}</a>
@@ -3512,9 +3585,37 @@ function SuccessPage() {
 
   const clean = (v) => String(v).replace(/[\s\u00AD\u200B-\u200D\u2060\uFEFF]/g, "").toLowerCase();
 
-  async function unlock(e) {
+  // Back from Mollie with the email: the payment is confirmed by Mollie's
+  // webhook, which can land a few seconds after the buyer does. So the page
+  // checks by itself, every few seconds for half a minute, instead of asking
+  // the buyer to press a button and read "not yet".
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = clean(params.get("email") || "");
+    if (params.get("provider") !== "mollie" || !fromUrl) return;
+    let alive = true;
+    (async () => {
+      setStatus({ loading: true, ok: false, error: "" });
+      for (let attempt = 0; attempt < 10 && alive; attempt += 1) {
+        try {
+          const r = await fetch(`${API_BASE_URL}/api/verify-access`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: fromUrl }) });
+          const d = await r.json().catch(() => ({}));
+          if (d.hasAccess) { if (alive) unlock(null, fromUrl); return; }
+        } catch {}
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+      if (alive) setStatus({ loading: false, ok: false, error: t("We have not received the payment confirmation yet. If you paid, retry in a minute; if you cancelled, nothing was charged.", "On n'a pas encore re\u00E7u la confirmation du paiement. Si tu as pay\u00E9, r\u00E9essaie dans une minute ; si tu as annul\u00E9, rien n'a \u00E9t\u00E9 pr\u00E9lev\u00E9.") });
+    })();
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // `address` lets the Mollie return check pass the email it read from the
+  // URL: the state set from it is not visible yet in this render's closure.
+  async function unlock(e, address) {
     if (e) e.preventDefault();
-    const normalized = clean(email);
+    const normalized = clean(address || email);
     if (!normalized) { setStatus({ loading: false, ok: false, error: t("Enter the email used at checkout.", "Entre l'email utilisé lors de l'achat.") }); return; }
     setStatus({ loading: true, ok: false, error: "" });
     try {
@@ -3858,7 +3959,7 @@ function TikTokPage() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
           <p className="text-sm text-white/40">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
-          <a href="/mentions-legales" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Legal notice", "Mentions légales")}</a>
+          <LegalLinks />
         </div>
       </footer>
     </main>
@@ -4136,7 +4237,9 @@ function MentionsLegales() {
         <div className="mt-12 space-y-10 text-sm leading-7 text-white/60">
           <div>
             <h2 className="mb-3 text-base font-semibold text-[#EDE9E0]">1. Website publisher</h2>
-            <p>This website <strong className="text-white/75">movento.dev</strong> is published by <span className="text-white/75">Movento</span>.</p>
+            <p>This website <strong className="text-white/75">movento.dev</strong> is published by:</p>
+            <div className="mt-2"><SellerIdentity /></div>
+            <p className="mt-3">Terms of sale, refunds and privacy: <a href="/cgv" className="underline underline-offset-4">CGV</a> · <a href="/remboursement" className="underline underline-offset-4">Remboursement</a> · <a href="/confidentialite" className="underline underline-offset-4">Confidentialité</a>.</p>
           </div>
 
           <div>
@@ -4156,7 +4259,7 @@ function MentionsLegales() {
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-[#EDE9E0]">5. Payment</h2>
-            <p>Payments are securely processed by our payment provider, named on your receipt. {PADDLE_LINEUP ? "Monthly subscriptions renew automatically and can be cancelled at any time from your account; access continues until the end of the period already paid. Lifetime access is a one-time purchase with no subscription." : "Monthly and annual subscriptions renew automatically and can be cancelled at any time from your account with that provider; access continues until the end of the period already paid. Lifetime access, no longer sold, was a one-time purchase with no subscription."}</p>
+            <p>Payments are securely processed by our payment provider, named on your receipt. {LIFETIME_LINEUP ? "Monthly subscriptions renew automatically and can be cancelled at any time from your account; access continues until the end of the period already paid. Lifetime access is a one-time purchase with no subscription." : "Monthly and annual subscriptions renew automatically and can be cancelled at any time from your account with that provider; access continues until the end of the period already paid. Lifetime access, no longer sold, was a one-time purchase with no subscription."}</p>
             <p className="mt-3">You can cancel your subscription at any time from your account with the provider named on your receipt, or by emailing <span className="text-white/75">movento.dev@gmail.com</span> from the address used at checkout.</p>
             <p className="mt-3">Movento reserves the right to modify subscription prices at any time.</p>
           </div>
@@ -4181,6 +4284,191 @@ function MentionsLegales() {
         </div>
       </footer>
     </main>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The seller's legal identity, shown on every legal page. Filled in by the
+// owner; an empty field is simply left out, never replaced by a placeholder,
+// so nothing on these pages pretends to a detail that is not there.
+const LEGAL = {
+  name: "", // legal name, exactly as in the payment accounts (person or company)
+  status: "", // e.g. "Entrepreneur individuel (micro-entreprise)"
+  siret: "",
+  address: "",
+  email: "movento.dev@gmail.com",
+  refundDays: 14,
+};
+const SELLER = LEGAL.name || "Movento";
+// Who takes the payment, as the CGV must say. Read from the same setting as
+// the line-up, at build time.
+const PAYMENT_PROVIDER = (() => {
+  const p = String(import.meta.env.CHECKOUT_PROVIDER || "").trim().toLowerCase();
+  if (p === "mollie") return { name: "Mollie B.V.", role: "prestataire de paiement" };
+  if (p === "paddle") return { name: "Paddle.com", role: "revendeur agréé et marchand officiel (Merchant of Record)" };
+  return { name: "Gumroad, Inc.", role: "plateforme de vente" };
+})();
+
+function LegalLinks({ className = "" }) {
+  const link = "text-sm text-white/40 transition hover:text-[#EDE9E0]";
+  return (
+    <nav className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-2 ${className}`} aria-label={t("Legal", "Informations légales")}>
+      <a href="/cgv" className={link}>{t("Terms of sale", "CGV")}</a>
+      <a href="/remboursement" className={link}>{t("Refunds", "Remboursement")}</a>
+      <a href="/confidentialite" className={link}>{t("Privacy", "Confidentialité")}</a>
+      <a href="/mentions-legales" className={link}>{t("Legal notice", "Mentions légales")}</a>
+    </nav>
+  );
+}
+
+function SellerIdentity() {
+  return (
+    <p>
+      <strong className="text-white/75">{SELLER}</strong>
+      {LEGAL.status && <>, {LEGAL.status}</>}
+      {LEGAL.siret && <> · SIRET {LEGAL.siret}</>}
+      {LEGAL.address && <> · {LEGAL.address}</>}
+      {" · "}<a href={`mailto:${LEGAL.email}`} className="underline underline-offset-4">{LEGAL.email}</a>
+      <br />TVA non applicable, art. 293 B du CGI.
+    </p>
+  );
+}
+
+// One layout for the legal pages: the same frame as the legal notice.
+function LegalPage({ title, children }) {
+  return (
+    <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <a href="/"><Logo /></a>
+        <a href="/" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">← Retour</a>
+      </header>
+      <section className="relative z-10 mx-auto max-w-3xl px-6 pb-24 pt-12 lg:px-8">
+        <h1 className="text-4xl font-bold tracking-tight text-[#EDE9E0] md:text-5xl">{title}</h1>
+        <div className="mt-12 space-y-10 text-sm leading-7 text-white/60 [&_h2]:mb-3 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-[#EDE9E0] [&_li]:ml-5 [&_li]:list-disc [&_p+p]:mt-3">{children}</div>
+      </section>
+      <footer className="relative z-10 border-t border-white/10 py-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
+          <Logo />
+          <LegalLinks />
+        </div>
+      </footer>
+    </main>
+  );
+}
+
+function CgvPage() {
+  return (
+    <LegalPage title="Conditions générales de vente">
+      <div><h2>1. Vendeur</h2><SellerIdentity /></div>
+      <div>
+        <h2>2. Objet</h2>
+        <p>Les présentes conditions régissent la vente, sur movento.dev, d'un accès numérique à la bibliothèque de prompts Movento : des instructions prêtes à copier dans un outil d'intelligence artificielle (Lovable, v0, Bolt, Cursor, Claude, Shopify…) pour créer un site internet. Toute commande vaut acceptation des présentes conditions.</p>
+      </div>
+      <div>
+        <h2>3. Offres et prix</h2>
+        <ul>
+          <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
+          {LIFETIME_RETIRED
+            ? <li><strong className="text-white/75">Annuel : {eur(termOf("m12").price)} par an</strong>, renouvelé automatiquement chaque année jusqu'à résiliation.</li>
+            : <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>}
+        </ul>
+        <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
+      </div>
+      <div>
+        <h2>4. Commande et paiement</h2>
+        <p>Le paiement est réalisé en ligne par carte bancaire ou un autre moyen proposé, via {PAYMENT_PROVIDER.name}, {PAYMENT_PROVIDER.role}. Movento n'a jamais accès aux données de carte. {PAYMENT_PROVIDER.name === "Paddle.com" ? "Paddle.com est le revendeur de la commande et en assure la facturation ; ses propres conditions d'achat s'appliquent au paiement." : ""}</p>
+      </div>
+      <div>
+        <h2>5. Accès</h2>
+        <p>L'accès au catalogue est ouvert dès la confirmation du paiement et rattaché à l'adresse email utilisée lors de l'achat, qui permet de le retrouver sur n'importe quel appareil. Le catalogue évolue : des prompts sont ajoutés régulièrement.</p>
+      </div>
+      <div>
+        <h2>6. Abonnement et résiliation</h2>
+        <p>L'abonnement se renouvelle automatiquement à chaque échéance. Il peut être résilié à tout moment depuis la page <a href="/subscription" className="underline underline-offset-4">Mon abonnement</a> ou par email à {LEGAL.email}. La résiliation prend effet à la fin de la période déjà payée, jusqu'à laquelle l'accès reste ouvert ; aucune somme n'est due au-delà.</p>
+      </div>
+      <div>
+        <h2>7. Droit de rétractation et remboursement</h2>
+        <p>Le contenu étant numérique et fourni immédiatement, le droit légal de rétractation de 14 jours ne s'applique pas une fois l'accès utilisé (art. L221-28 du Code de la consommation). Movento rembourse néanmoins tout premier achat sur simple demande dans les {LEGAL.refundDays} jours, selon la <a href="/remboursement" className="underline underline-offset-4">politique de remboursement</a>.</p>
+      </div>
+      <div>
+        <h2>8. Licence d'utilisation</h2>
+        <p>L'achat donne le droit d'utiliser les prompts pour créer des sites, pour soi ou pour des clients, y compris à des fins commerciales. Il ne donne pas le droit de revendre, publier ou partager les prompts eux-mêmes, ni de partager son accès. Un accès partagé ou un usage abusif peut être suspendu.</p>
+      </div>
+      <div>
+        <h2>9. Responsabilité</h2>
+        <p>Les prompts sont fournis comme des instructions à destination d'outils tiers, dont Movento ne maîtrise ni le fonctionnement ni les résultats. Movento s'engage à fournir l'accès décrit ; sa responsabilité ne saurait excéder le montant payé pour la période en cours.</p>
+      </div>
+      <div>
+        <h2>10. Données personnelles</h2>
+        <p>Voir la <a href="/confidentialite" className="underline underline-offset-4">politique de confidentialité</a>.</p>
+      </div>
+      <div>
+        <h2>11. Litiges</h2>
+        <p>Les présentes conditions sont soumises au droit français. En cas de difficulté, écris d'abord à {LEGAL.email} : une solution amiable est toujours recherchée. Le consommateur peut aussi recourir gratuitement à un médiateur de la consommation, ou à la plateforme européenne de règlement des litiges : <a href="https://ec.europa.eu/consumers/odr" className="underline underline-offset-4">ec.europa.eu/consumers/odr</a>.</p>
+      </div>
+    </LegalPage>
+  );
+}
+
+function RefundPage() {
+  return (
+    <LegalPage title="Politique de remboursement">
+      <div>
+        <h2>Satisfait ou remboursé {LEGAL.refundDays} jours</h2>
+        <p>Si Movento ne te convient pas, tu peux demander le remboursement de ton premier achat (mensuel ou à vie) dans les <strong className="text-white/75">{LEGAL.refundDays} jours</strong> qui suivent le paiement, sans avoir à te justifier.</p>
+      </div>
+      <div>
+        <h2>Comment demander</h2>
+        <p>Écris à <a href={`mailto:${LEGAL.email}`} className="underline underline-offset-4">{LEGAL.email}</a> depuis l'adresse utilisée lors de l'achat, en indiquant la date du paiement. Le remboursement est fait sur le moyen de paiement utilisé, sous 14 jours au plus tard ; l'accès au catalogue est fermé au même moment.</p>
+      </div>
+      <div>
+        <h2>Renouvellements</h2>
+        <p>Les mois suivants ne sont pas remboursés, mais l'abonnement se résilie à tout moment depuis <a href="/subscription" className="underline underline-offset-4">Mon abonnement</a> : aucun nouveau prélèvement n'a lieu et l'accès reste ouvert jusqu'à la fin du mois payé. Un renouvellement prélevé par erreur, après une résiliation par exemple, est remboursé sur demande.</p>
+      </div>
+      <div><h2>Vendeur</h2><SellerIdentity /></div>
+    </LegalPage>
+  );
+}
+
+function PrivacyPage() {
+  return (
+    <LegalPage title="Politique de confidentialité">
+      <div><h2>Responsable du traitement</h2><SellerIdentity /></div>
+      <div>
+        <h2>Données collectées</h2>
+        <ul>
+          <li>Ton <strong className="text-white/75">adresse email</strong>, pour ouvrir et retrouver ton accès.</li>
+          <li>Les informations de ton <strong className="text-white/75">achat</strong> (offre, date, statut de l'abonnement), pour gérer ton accès et tes remboursements.</li>
+          <li>Des <strong className="text-white/75">statistiques de visite anonymes</strong> (Vercel Web Analytics, sans cookie ni profil).</li>
+        </ul>
+        <p>Les données de carte bancaire sont traitées uniquement par {PAYMENT_PROVIDER.name} ; Movento n'y a jamais accès.</p>
+      </div>
+      <div>
+        <h2>Pourquoi</h2>
+        <p>Pour exécuter la vente (te donner et gérer ton accès) et répondre à tes demandes. Tes données ne sont jamais vendues ni utilisées pour de la publicité.</p>
+      </div>
+      <div>
+        <h2>Prestataires</h2>
+        <ul>
+          <li>Vercel (hébergement du site et statistiques anonymes)</li>
+          <li>Upstash (base de données des accès)</li>
+          <li>{PAYMENT_PROVIDER.name} (paiement)</li>
+          <li>Telegram (notification interne des ventes au vendeur)</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Durée de conservation</h2>
+        <p>Le temps de ton accès, puis jusqu'à 3 ans pour répondre à une éventuelle demande ; les données de facturation sont gardées 10 ans, comme la loi l'impose.</p>
+      </div>
+      <div>
+        <h2>Tes droits</h2>
+        <p>Tu peux demander l'accès à tes données, leur correction ou leur suppression, en écrivant à <a href={`mailto:${LEGAL.email}`} className="underline underline-offset-4">{LEGAL.email}</a>. Tu peux aussi saisir la CNIL (cnil.fr).</p>
+      </div>
+      <div>
+        <h2>Stockage local</h2>
+        <p>Le site enregistre ton email dans ton navigateur (localStorage) pour garder ton accès ouvert. Aucun cookie publicitaire n'est utilisé.</p>
+      </div>
+    </LegalPage>
   );
 }
 
@@ -4887,7 +5175,7 @@ function PricingPage() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
           <p className="text-sm text-white/40">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
-          <a href="/" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Back to home", "Retour à l'accueil")}</a>
+          <LegalLinks />
         </div>
       </footer>
 
@@ -5180,17 +5468,27 @@ function AdminOverview({ token }) {
         </ul>
         {/* What Paddle last sent and what came of it: the first thing to
             read when a sale did not ping or did not unlock. */}
-        <div className="mt-4 border-t border-white/[0.07] pt-4 text-sm">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Dernière notification Paddle</p>
-          {d.webhooks?.paddle ? (
-            <p className={`mt-1.5 ${d.webhooks.paddle.code >= 400 ? "text-red-300" : "text-white/70"}`}>
-              {new Date(d.webhooks.paddle.at).toLocaleString("fr-FR")} · {d.webhooks.paddle.event || "?"} · code {d.webhooks.paddle.code} · {d.webhooks.paddle.outcome}
-              <span className="block text-xs text-white/45">Telegram : {d.webhooks.paddle.telegram}</span>
-            </p>
-          ) : (
-            <p className="mt-1.5 text-red-300">Aucune reçue. Paddle n'a jamais appelé https://movento.dev/api/paddle-webhook : vérifie la destination dans Paddle → Developer Tools → Notifications.</p>
-          )}
-        </div>
+        {/* What each payment webhook last received and what came of it: the
+            first thing to read when a sale did not ping or did not unlock.
+            The processor selling now first; another only once it has called. */}
+        {[["mollie", "Mollie", "https://movento.dev/api/mollie-webhook", "Mollie l'appelle tout seul à chaque paiement : vérifie que MOLLIE_API_KEY est dans Vercel et fais un paiement test."], ["paddle", "Paddle", "https://movento.dev/api/paddle-webhook", "vérifie la destination dans Paddle → Developer Tools → Notifications."]]
+          .filter(([key]) => d.webhooks?.[key] || d.checkoutProvider === key)
+          .map(([key, name, url, hint]) => {
+            const w = d.webhooks?.[key];
+            return (
+              <div key={key} className="mt-4 border-t border-white/[0.07] pt-4 text-sm">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Dernière notification {name}</p>
+                {w ? (
+                  <p className={`mt-1.5 ${w.code >= 400 ? "text-red-300" : "text-white/70"}`}>
+                    {new Date(w.at).toLocaleString("fr-FR")} · {w.event || "?"} · code {w.code} · {w.outcome}
+                    <span className="block text-xs text-white/45">Telegram : {w.telegram}</span>
+                  </p>
+                ) : (
+                  <p className="mt-1.5 text-red-300">Aucune reçue. {name} n'a jamais appelé {url} : {hint}</p>
+                )}
+              </div>
+            );
+          })}
         {d.health.telegram && (
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/[0.07] pt-4">
             <button type="button" onClick={() => connectTelegram(false)} disabled={tgSetup.loading} className="rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2 text-xs font-semibold text-white/70 transition hover:text-[#EDE9E0] disabled:opacity-50">
