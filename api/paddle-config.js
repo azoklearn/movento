@@ -35,6 +35,13 @@ export default function handler(req, res) {
   for (const [plan, id] of Object.entries(paddlePriceIdLists()).flatMap(([p, ids]) => ids.map((i) => [p, i]))) {
     if (id && !id.startsWith("pri_")) warnings.push(`L'identifiant ${plan} (${id}) n'est pas un prix : il doit commencer par pri_ (Catalog → Products → le produit → Prices). Un identifiant pro_ est celui du produit.`);
   }
+  // What each variable holds, as read: a value with anything but price ids
+  // and separators in it is worth seeing as Vercel has it.
+  for (const name of ["PADDLE_M1_PRICE_ID", "PADDLE_LIFETIME_PRICE_ID"]) {
+    const raw = String(process.env[name] || "");
+    const leftover = raw.replace(/pri_[A-Za-z0-9]+/g, "").replace(/[\s,;"']/g, "");
+    if (raw && leftover) warnings.push(`${name} contient autre chose que des identifiants pri_… (${JSON.stringify(raw)}).`);
+  }
   const switchedOn = String(process.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "paddle";
   if (switchedOn && environment !== "production") warnings.push("CHECKOUT_PROVIDER=paddle est déjà posé alors que PADDLE_ENV n'est pas production : le site affiche l'offre Paddle (mensuel + à vie) mais n'encaisse pas avec Paddle. Retire-le jusqu'à la mise en ligne.");
 

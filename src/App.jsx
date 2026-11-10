@@ -1665,6 +1665,9 @@ const formatMoney = (amount, currency) => {
 
 function PaddleCheckout({ cfg, plan, prefillEmail, onPaid, fallbackUrl }) {
   const [phase, setPhase] = useState("loading"); // loading | ready | failed
+  // Paddle's own reason when the form fails, shown small under the message:
+  // "the payment did not open" tells nobody what to fix.
+  const [failure, setFailure] = useState("");
   // What Paddle says the buyer will pay, once it knows their country.
   const [totals, setTotals] = useState(null);
   const paidRef = useRef(false);
@@ -1716,7 +1719,10 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid, fallbackUrl }) {
         onPaidRef.current(cleanEmail(data?.customer?.email || ""));
       } else if (name === "checkout.error") {
         console.error("Paddle checkout error:", ev?.error || ev);
-        if (alive) setPhase("failed");
+        if (alive) {
+          setFailure(String(ev?.error?.code || ev?.error?.type || ev?.error?.detail || ev?.detail || ev?.data?.error || ""));
+          setPhase("failed");
+        }
       }
     });
     loadPaddle({ environment: cfg.environment, token: cfg.token })
@@ -1807,6 +1813,7 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid, fallbackUrl }) {
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-[#0d0d10] px-6 text-center">
             <div className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/[0.05] text-white/70"><Icon name="alert" className="h-5 w-5" /></div>
             <p className="max-w-xs text-sm leading-6 text-white/65">{t("The payment form could not load. Check your connection and try again.", "Le formulaire de paiement n'a pas pu se charger. Vérifie ta connexion et réessaie.")}</p>
+            {failure && <p className="max-w-xs break-all font-mono text-[11px] text-white/35">{failure}</p>}
             <div className="flex flex-wrap items-center justify-center gap-2">
               <button type="button" onClick={() => window.location.reload()} className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Retry", "Réessayer")}</button>
               {fallbackUrl && (

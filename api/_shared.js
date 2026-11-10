@@ -320,7 +320,17 @@ const PADDLE_SANDBOX_DEFAULT_PRICES = { m1: "pri_01m6w6hq41jjdsrgwm0vjz156g" };
 // "pri_new,pri_old". The first is what the checkout sells; all of them are
 // recognised, so a price change does not orphan the subscribers still on the
 // old one (their renewals, cancellations and refunds keep being handled).
-const priceList = (value) => String(value || "").split(",").map((v) => v.trim()).filter(Boolean);
+// Every pri_… token in the value, whatever separates them (comma, space,
+// semicolon, new line) and whatever surrounds them (quotes): a value typed as
+// "pri_a pri_b" must not reach the checkout as one id Paddle refuses. A value
+// with no pri_ token at all (a pro_… pasted by mistake) is kept as it is, so
+// /api/paddle-config can name the mistake.
+const priceList = (value) => {
+  const raw = String(value || "");
+  const ids = raw.match(/pri_[A-Za-z0-9]+/g);
+  if (ids) return [...new Set(ids)];
+  return raw.split(/[\s,;]+/).map((v) => v.replace(/^["']|["']$/g, "")).filter(Boolean);
+};
 export function paddlePriceIdLists() {
   const defaults = paddleEnvironment() === "sandbox" ? PADDLE_SANDBOX_DEFAULT_PRICES : {};
   return {
