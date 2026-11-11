@@ -520,13 +520,12 @@ export const FAIR_USE_DAILY_COPIES = 3;
 export const FAIR_USE_KINDS = new Set(["m3"]);
 
 // The win-back offer: someone who opened a Mollie payment and left without
-// paying is offered the year at a lower price, for its first year only (the
-// renewals are at the normal price). Valid for WINDOW_HOURS after the payment
-// they left, once per abandoned payment, and never on a payment that was
-// itself the offer.
+// paying is offered lifetime at a lower price, paid once. Valid for
+// WINDOW_HOURS after the payment they left, once per abandoned payment, and
+// never on a payment that was itself the offer.
 export const MOLLIE_WINBACK = {
-  plan: "m12",
-  price: Number(process.env.MOLLIE_WINBACK_M12_PRICE || 119).toFixed(2),
+  plan: "lifetime",
+  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 169).toFixed(2),
   windowHours: 48,
 };
 

@@ -1867,7 +1867,7 @@ function forgetStartedPayment() {
   try { window.localStorage.removeItem(PENDING_PAYMENT_KEY); } catch {}
 }
 
-// "Tu pars déjà ?" — the year at the win-back price, offered to someone who
+// "Tu pars déjà ?" — lifetime at the win-back price, offered to someone who
 // opened a payment and left it. Which payment: `claim` when the page knows it
 // (the success page), else ?left= (Mollie's cancel button lands there), else
 // the one this browser last opened. The server decides whether it still
@@ -1951,26 +1951,26 @@ function WinbackOffer({ claim: explicit = "" }) {
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
-          aria-label={t("Offer on the annual plan", "Offre sur l'annuel")}
+          aria-label={t("Offer on lifetime access", "Offre sur l'accès à vie")}
           className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-[#B9A4FF]/40 bg-[#141218] p-7 text-center shadow-[0_0_80px_-12px_rgba(150,120,255,0.55)] sm:p-8"
         >
           <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#7C5CFF]/25 to-transparent" />
           <button onClick={close} aria-label={t("Close", "Fermer")} className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full border border-white/10 text-white/50 transition hover:text-white"><Icon name="close" className="h-4 w-4" /></button>
           <span className="relative inline-block rounded-full bg-gradient-to-r from-[#F0566B] via-[#B04BF0] to-[#7C8CFF] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-white">{t(`−${percent}% just for you`, `−${percent}% rien que pour toi`)}</span>
           <h2 className="relative mt-4 text-[26px] font-black leading-tight tracking-[-0.03em] text-white">{t("Leaving already?", "Tu pars déjà ?")}</h2>
-          <p className="relative mt-2 text-sm leading-6 text-white/60">{t("Here is the annual plan at a price we don't show anywhere else, for your first year.", "Voici l'annuel à un prix qu'on n'affiche nulle part ailleurs, pour ta première année.")}</p>
+          <p className="relative mt-2 text-sm leading-6 text-white/60">{t("Here is lifetime access at a price we don't show anywhere else. Paid once, yours for good.", "Voici l'accès à vie à un prix qu'on n'affiche nulle part ailleurs. Payé une fois, à toi pour toujours.")}</p>
           <div className="relative mt-6 flex items-baseline justify-center gap-3">
             <span className="text-xl text-white/35 line-through">{eur(offer.regular)}</span>
             <span className="text-[52px] font-black leading-none tracking-[-0.04em] text-white">{eur(offer.price)}</span>
           </div>
-          <p className="relative mt-1.5 text-[13px] text-white/50">{t(`the first year, then ${eur(offer.regular)} a year · cancel anytime`, `la première année, puis ${eur(offer.regular)} par an · résiliable à tout moment`)}</p>
+          <p className="relative mt-1.5 text-[13px] text-white/50">{t("one-time payment · no subscription", "paiement unique · sans abonnement")}</p>
           <ul className="relative mx-auto mt-5 max-w-xs space-y-1.5 text-left text-[13px] text-white/70">
-            {[t(`Unlimited access to ${CATALOGUE_COUNT} prompts`, `Accès illimité à ${CATALOGUE_COUNT} prompts`), FEATURE_BACKGROUNDS, t("Direct support + free ebook", "Support direct + ebook offert")].map((line) => (
+            {[t(`Unlimited access to ${CATALOGUE_COUNT} prompts, for life`, `Accès illimité à ${CATALOGUE_COUNT} prompts, à vie`), FEATURE_BACKGROUNDS, t("Lifetime updates + early access", "Mises à jour à vie + accès anticipé"), t("Direct support + free ebook", "Support direct + ebook offert")].map((line) => (
               <li key={line} className="flex items-start gap-2"><Icon name="tick" className="mt-[5px] h-[13px] w-[13px] flex-none text-[#C9B8FF]" /> {line}</li>
             ))}
           </ul>
           <button type="button" onClick={take} disabled={busy} className="relative mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-white to-[#D3D8FF] px-5 py-4 text-[15px] font-bold text-[#0A0A0B] shadow-[0_10px_40px_-12px_rgba(190,195,255,0.7)] transition hover:brightness-105 disabled:opacity-60">
-            {busy ? t("Loading…", "Chargement…") : t(`Get the annual for ${eur(offer.price)}`, `Prendre l'annuel à ${eur(offer.price)}`)} {!busy && <Icon name="arrow" className="h-4 w-4" />}
+            {busy ? t("Loading…", "Chargement…") : t(`Get lifetime for ${eur(offer.price)}`, `Prendre l'accès à vie à ${eur(offer.price)}`)} {!busy && <Icon name="arrow" className="h-4 w-4" />}
           </button>
           {error && <p className="relative mt-3 text-xs text-red-300">{error}</p>}
           {left > 0 && <p className="relative mt-3 text-xs text-white/40"><Icon name="clock" className="mr-1 inline h-3.5 w-3.5 -translate-y-px" />{t(`Offer valid for ${hours} h ${String(minutes).padStart(2, "0")} min`, `Offre valable encore ${hours} h ${String(minutes).padStart(2, "0")} min`)}</p>}
