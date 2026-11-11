@@ -4619,7 +4619,7 @@ function RefundPage() {
     <LegalPage title="Politique de remboursement">
       <div>
         <h2>Satisfait ou remboursé {LEGAL.refundDays} jours</h2>
-        <p>Si Movento ne te convient pas, tu peux demander le remboursement de ton premier achat (mensuel ou à vie) dans les <strong className="text-white/75">{LEGAL.refundDays} jours</strong> qui suivent le paiement, sans avoir à te justifier.</p>
+        <p>Si Movento ne te convient pas, tu peux demander le remboursement de ton premier achat (3 mois, annuel ou à vie) dans les <strong className="text-white/75">{LEGAL.refundDays} jours</strong> qui suivent le paiement, sans avoir à te justifier.</p>
       </div>
       <div>
         <h2>Comment demander</h2>
@@ -5739,7 +5739,7 @@ function AdminLeadsPage() {
   const [grant, setGrant] = useState({ confirming: false, loading: false, error: "" });
   // Which plan a manual grant records. Monthly by default: it is what a
   // Gumroad buyer whose sale did not reach the site has bought.
-  const [grantPlan, setGrantPlan] = useState("m1");
+  const [grantPlan, setGrantPlan] = useState("m3");
 
   async function fetchLookup(value) {
     setLookup({ loading: true, error: "", data: null });
@@ -6093,7 +6093,7 @@ function AdminLeadsPage() {
                 {/* The plan the grant records. Re-granting on another plan
                     replaces the record, which is how a grant is corrected. */}
                 <div className="mb-3 flex flex-wrap gap-1.5" role="radiogroup" aria-label="Offre à donner">
-                  {[["m1", "Mensuel"], ["m12", "Annuel"], ["lifetime", "À vie"]].map(([id, label]) => (
+                  {[["m3", "3 mois"], ["m12", "Annuel"], ["lifetime", "À vie"], ["m1", "Mensuel"]].map(([id, label]) => (
                     <button
                       key={id}
                       type="button"
