@@ -1266,50 +1266,71 @@ const monthlyPlan = plans.find((plan) => plan.id === "monthly" && !plan.hidden);
 function PlanCard({ plan, onBuy, loading, featured }) {
   // Nothing to line up with, and no other card to be the best of.
   const alone = isSinglePlan;
-  const highlight = featured && !alone;
-  // One list, one tick per row: what the plan buys, then the support and the
-  // ebook it carries, said in the same voice as the rest.
-  const rows = [...(plan.features || []), plan.perk, plan.bonus].filter(Boolean);
   return (
-    <div className={`relative flex flex-col rounded-[26px] bg-[#1A1A1D] p-6 sm:p-8 ${highlight ? "ring-1 ring-white/[0.12]" : "ring-1 ring-white/[0.05]"}`}>
-      {/* Identity: the name, the ribbon beside it rather than over the card's
-          edge, and one line saying what the plan is. */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h3 className="text-xl font-bold tracking-tight text-[#EDE9E0]">{plan.name}</h3>
-        {highlight && (
-          <span className="rounded-full bg-gradient-to-r from-[#F0566B] via-[#B04BF0] to-[#7C8CFF] px-2.5 py-1 text-[11px] font-bold text-white">{plan.badge || t("Best value", "Meilleur choix")}</span>
-        )}
+    <div className="mv-glass relative flex flex-col rounded-xl px-5 pb-6 pt-9 sm:p-7">
+      {/* The travelling light along the card's own edge. Two lamps, half a turn
+          apart, seen through a 1.5px ring — see .mv-glow. */}
+      <span className="mv-glow" aria-hidden="true">
+        <span className="mv-glow-blob" />
+        <span className="mv-glow-blob" />
+      </span>
+      {featured && !alone && <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{plan.badge || t("Best value", "Meilleur choix")}</span>}
+
+      {/* Identity: the name with its discount, then one line on what the plan is. */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <h3 className="text-lg font-semibold tracking-tight text-[#EDE9E0]">{plan.name}</h3>
+        {plan.discountBadge && <span className="mv-chip flex-none rounded-full px-2 py-[3px] text-[11px] font-semibold leading-[1.5] text-[#EDE9E0]">{plan.discountBadge}</span>}
       </div>
-      {(plan.subtitle || plan.description) && <p className="mt-2 text-sm leading-6 text-white/55">{plan.subtitle || plan.description}</p>}
+      {(plan.subtitle || plan.description) && <p className="mt-1.5 text-[13px] leading-6 text-white/55">{plan.subtitle || plan.description}</p>}
 
-      <div className="my-6 border-t border-dashed border-white/[0.12]" />
+      <div className="my-5 border-t border-dashed border-white/[0.12]" />
 
-      {/* The old price struck before the new one, on one baseline: read left
+      {/* Both prices on one baseline, the old one first and struck: read left
           to right it is the discount. Wraps rather than overflow at 320px. */}
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        {plan.originalPrice && <span className="text-[30px] font-bold leading-none tracking-[-0.03em] text-white/30 line-through decoration-2 sm:text-[38px]">{plan.originalPrice}</span>}
-        <span className="text-[38px] font-bold leading-none tracking-[-0.03em] text-[#EDE9E0] sm:text-[46px]">{plan.price}</span>
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        {plan.originalPrice && <span className="text-base leading-none text-white/35 line-through sm:text-lg">{plan.originalPrice}</span>}
+        <span className="text-[34px] font-bold leading-none tracking-[-0.03em] text-[#EDE9E0] sm:text-[40px]">{plan.price}</span>
       </div>
-      {plan.billedNote && <p className="mt-2.5 text-sm text-white/55">{plan.billedNote}</p>}
+      {plan.billedNote && <p className="mt-2 text-[13px] text-white/45">{plan.billedNote}</p>}
 
       <button
         onClick={() => onBuy(plan)}
         disabled={loading}
-        className={`group mt-6 flex w-full items-center justify-center gap-2 rounded-full px-4 py-3.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${highlight ? "bg-gradient-to-r from-[#F0566B] via-[#5B5BF7] to-[#C58CFF] text-white shadow-[0_14px_40px_-14px_rgba(123,92,255,0.8)] hover:brightness-110" : "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white"}`}
+        style={{ "--mv-glow-color": "#ffa582", "--mv-glow-duration": "6s", "--mv-glow-opacity": 0.85 }}
+        className="mv-cta group mt-5 flex w-full items-center justify-center gap-1.5 rounded-full px-4 py-3 text-[13px] font-semibold text-[#EDE9E0] sm:mt-6 sm:gap-2 sm:py-3.5 sm:text-sm disabled:cursor-not-allowed disabled:opacity-60"
       >
+        {/* Its own pair of lamps, warm this time — the same device as the card
+            at a quarter the size, which is what ties the two together. */}
+        <span className="mv-glow" aria-hidden="true">
+          <span className="mv-glow-blob" />
+          <span className="mv-glow-blob" />
+        </span>
         {loading ? t("Loading…", "Chargement…") : plan.cta}
+        <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
       </button>
 
-      <ul className="mt-7 space-y-3">
-        {rows.map((feat) => (
-          <li key={feat} className={`flex items-start gap-3 text-sm leading-6 ${STRONG_FEATURES.has(feat) ? "font-semibold text-[#EDE9E0]" : "text-white/65"}`}>
-            <Icon name="tick" className="mt-[5px] h-[14px] w-[14px] flex-none text-white/80" />
+      {/* One list: what the plan buys, then support and the ebook in their own
+          colours, which is what still marks them as the reason to pick it. */}
+      <ul className="mt-6 space-y-2.5">
+        {(plan.features || []).map((feat) => (
+          <li key={feat} className={`flex items-start gap-2.5 text-[13px] leading-6 ${STRONG_FEATURES.has(feat) ? "font-semibold text-[#EDE9E0]" : "text-white/65"}`}>
+            <Icon name="tick" className="mt-[5px] h-[13px] w-[13px] flex-none text-[#EDE9E0]" />
             <span>
               {feat}
-              {NEW_FEATURES.has(feat) && <span className="ml-2 inline-block -translate-y-px rounded-full border border-[#F0566B]/70 px-1.5 py-px align-middle text-[9px] font-bold uppercase tracking-[0.08em] text-[#FF8A8A]">New</span>}
+              {NEW_FEATURES.has(feat) && <span className="mv-chip ml-2 inline-block -translate-y-px rounded-full px-1.5 py-px align-middle text-[9px] font-bold uppercase tracking-[0.08em] text-[#EDE9E0]">New</span>}
             </span>
           </li>
         ))}
+        {plan.perk && (
+          <li className="flex items-start gap-2.5 text-[13px] font-semibold leading-6 text-emerald-200">
+            <Icon name="chat" className="mt-1 h-4 w-4 flex-none text-emerald-300" /> {plan.perk}
+          </li>
+        )}
+        {plan.bonus && (
+          <li className="flex items-start gap-2.5 text-[13px] font-semibold leading-6 text-amber-200">
+            <Icon name="gift" className="mt-1 h-4 w-4 flex-none text-amber-300" /> {plan.bonus}
+          </li>
+        )}
       </ul>
     </div>
   );
