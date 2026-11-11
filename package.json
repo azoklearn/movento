@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/check-mirror.mjs && node scripts/posters.mjs && vite build",
+    "build": "node scripts/check-mirror.mjs && node scripts/posters.mjs && node scripts/backgrounds.mjs && vite build",
     "check": "node scripts/check-mirror.mjs",
     "preview": "vite preview"
   },

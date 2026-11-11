@@ -6,6 +6,7 @@ import { track } from "./analytics.js";
 import { getRef, refProps } from "./affiliate.js";
 import PROMPT_ADDED from "./prompt-added.json";
 import POSTER_FRAMES from "./posters.json";
+import BACKGROUND_CLIPS from "./backgrounds.json";
 
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
@@ -107,6 +108,11 @@ const prompts = [
   // existed — a still on purpose (a clip here lagged), so `lead` is what puts
   // it first.
   { title: "Ciao Energy — 3D Can Carousel", category: "E-commerce", type: "Landing", file: "Ciao_Energy_3D_Can_Carousel.md", pinned: true, lead: true, preview: "https://res.cloudinary.com/rkke23vr/image/upload/v1793821572/Capture_d_e%CC%81cran_2026-11-04_a%CC%80_20.44.41.png", tags: ["Three.js", "Scroll Camera", "3D Cans"], gradient: "from-[#9089D3] via-[#3D2B68] to-[#000000]" },
+  { title: "LUNE — Bag Slots Story", category: "Social", type: "Story", file: "Lune_Bag_Slots_Story.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/bag-slots-hero.mp4", tags: ["Slot Reels", "Frame Scrub", "Packshot"], gradient: "from-[#d4d5d3] via-[#b9a8ef] to-[#16161a]" },
+  { title: "Main Character Mode — Life-Sim Post", category: "Social", type: "Post", file: "Main_Character_Mode_Life_Sim.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/main-character-hero.mp4", tags: ["Pie Menu", "Spinning Gem", "Game UI"], gradient: "from-[#3f8fd8] via-[#7ad14a] to-[#1f3f8f]" },
+  { title: "Haldoren — Laptop Dive Portfolio", category: "Portfolio", type: "Hero", file: "Haldoren_Laptop_Dive_Portfolio.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/laptop-portfolio.mp4", tags: ["Scroll Dive", "Video Scrub", "Lanyard Badge"], gradient: "from-[#cfeee0] via-[#1a5a40] to-[#0b2f20]" },
+  { title: "NOWHERE® — Stay Out of the Loop", category: "E-commerce", type: "Landing", file: "Nowhere_Circle_Lookbook.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/look-circle-hero.mp4", tags: ["Spring Ring", "FLIP Focus", "Receipt Slip"], gradient: "from-[#ffffff] via-[#ececec] to-[#000000]" },
+  { title: "Mossline — Floating Moss Island", category: "Landing Page", type: "Landing", file: "Mossline_Floating_Island_Scroll.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/mossline-hero.mp4", tags: ["Video Scrub", "Fly-In", "Hotspots"], gradient: "from-[#e7ebe8] via-[#c6f35c] to-[#10291a]" },
   { title: "VirtualFit — Spatial Try-On Arc", category: "E-commerce", type: "Hero", file: "VirtualFit_Spatial_TryOn_Arc.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/virtualfit-arc-hero.mp4", tags: ["Spatial UI", "Glass Arc", "Scan Reveal"], gradient: "from-[#f4f1ea] via-[#c9c2b6] to-[#2b2724]" },
   { title: "Leon Vasari — Curved VHS Archive", category: "Portfolio", type: "Landing", file: "Leon_Vasari_Curved_VHS_Archive.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/vhs-arc-hero.mp4", tags: ["Curved Arc", "Timeline", "Ink Reveal"], gradient: "from-[#ECE8E0] via-[#1F3FB0] to-[#141414]" },
   { title: "Found — Curiosity Cabinet Spider", category: "Portfolio", type: "Landing", file: "Found_Curiosity_Cabinet_Spider.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/found-spider.mp4", tags: ["Canvas 2D", "Verlet Silk", "IK Legs"], gradient: "from-[#dfe4ff] via-[#1129e2] to-[#05081f]" },
@@ -412,6 +418,11 @@ const AVAILABLE_FILES = new Set([
   "Leon_Vasari_Curved_VHS_Archive.md",
   "VirtualFit_Spatial_TryOn_Arc.md",
   "Ciao_Energy_3D_Can_Carousel.md",
+  "Lune_Bag_Slots_Story.md",
+  "Main_Character_Mode_Life_Sim.md",
+  "Haldoren_Laptop_Dive_Portfolio.md",
+  "Nowhere_Circle_Lookbook.md",
+  "Mossline_Floating_Island_Scroll.md",
   "Leon_Vasari_VHS_Filmography_Hero.md",
   "Oda_Nobunaga_Unifiers_Hero.md",
   "Orvante_Branding_Agency.md",
@@ -2188,8 +2199,18 @@ function Logo() {
 }
 
 // Cheap, network-free placeholder shown until a card scrolls near the viewport.
+// It carries the loading sweep too: a card that is about to arrive should not
+// read as an empty box any more than one whose clip is still downloading.
 function PreviewSkeleton({ item }) {
-  return <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-20`} />;
+  return <><div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-20`} /><LoadingSweep transparent /></>;
+}
+
+// Laid over a preview until its first frame is painted, so a clip that is
+// still downloading shows a light band sweeping across the tile instead of a
+// black rectangle. `transparent` keeps what is underneath visible (a poster
+// frame, the skeleton's gradient) and only adds the sweep.
+function LoadingSweep({ done = false, transparent = false }) {
+  return <div aria-hidden="true" className={`mv-loading pointer-events-none z-[1] ${done ? "is-done" : ""}`} style={transparent ? { background: "transparent" } : undefined} />;
 }
 
 // Local static poster (a frame grabbed at ~3s) for a video preview, generated
@@ -2289,6 +2310,9 @@ function LiveSitePreview({ item }) {
 // real thing in a tab.
 function PromptPopupMedia({ item, live }) {
   const [mode, setMode] = useState(live ? "live" : "clip");
+  // Per file, so stepping to another prompt shows the sweep again.
+  const [loadedFile, setLoadedFile] = useState(null);
+  const loaded = loadedFile === item.file;
 
   if (mode === "live") {
     return (
@@ -2307,12 +2331,13 @@ function PromptPopupMedia({ item, live }) {
   return (
     <div className="relative flex-none">
       {isVideoPreview(item.preview) ? (
-        <video key={item.file} src={item.preview} poster={posterFor(item.preview)} autoPlay loop muted playsInline disablePictureInPicture className="pointer-events-none w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: String(PREVIEW_RATIO), objectPosition: item.previewPosition || "center" }} />
+        <video key={item.file} src={item.preview} poster={posterFor(item.preview)} autoPlay loop muted playsInline disablePictureInPicture onLoadedData={() => setLoadedFile(item.file)} onError={() => setLoadedFile(item.file)} className="pointer-events-none w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: String(PREVIEW_RATIO), objectPosition: item.previewPosition || "center" }} />
       ) : isImagePreview(item.preview) ? (
-        <img key={item.file} src={item.preview} alt={`${item.title} preview`} className="w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: String(PREVIEW_RATIO), objectPosition: item.previewPosition || "center" }} />
+        <img key={item.file} src={item.preview} alt={`${item.title} preview`} onLoad={() => setLoadedFile(item.file)} onError={() => setLoadedFile(item.file)} className="w-full flex-none bg-[#0B0B0D] object-contain" style={{ aspectRatio: String(PREVIEW_RATIO), objectPosition: item.previewPosition || "center" }} />
       ) : (
         <div className="relative w-full flex-none overflow-hidden bg-[#0B0B0D]" style={{ aspectRatio: String(PREVIEW_RATIO) }}><GeneratedPreview item={item} /></div>
       )}
+      {(isVideoPreview(item.preview) || isImagePreview(item.preview)) && <LoadingSweep done={loaded} transparent={Boolean(posterFor(item.preview))} />}
       {live && (
         <button
           onClick={() => setMode("live")}
@@ -2353,6 +2378,10 @@ function PreviewCard({ item, badge, onClick, onPreview, held }) {
   // height when the media unmounts, or every card above the viewport collapses
   // to the 1.35 fallback and the page scrolls out from under the reader.
   const [ratio, setRatio] = useState(null);
+  // First frame painted. Reset when the media unmounts, since it starts
+  // loading again from nothing when the card comes back.
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { if (!near) setLoaded(false); }, [near]);
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const hasVideo = !previewFailed && isVideoPreview(item.preview);
@@ -2455,7 +2484,8 @@ function PreviewCard({ item, badge, onClick, onPreview, held }) {
             <Icon name="gift" className="h-3 w-3" /> {TRIAL_DAYS > 0 ? t(`${TRIAL_DAYS} days free`, `${TRIAL_DAYS} jours offerts`) : t("Free", "Gratuit")}
           </span>
         )}
-        {!near ? <div className="relative" style={{ aspectRatio: tileRatio }}><PreviewSkeleton item={item} /></div> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} disablePictureInPicture className="pointer-events-none block h-auto w-full transition duration-500" style={{ aspectRatio: "auto 1.35 / 1" }} autoPlay loop muted playsInline preload="metadata" onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight); }} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`block h-auto w-full ${driftClass} transition duration-500`} style={{ aspectRatio: "auto 1.35 / 1" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onLoad={(e) => { const i = e.currentTarget; if (i.naturalWidth && i.naturalHeight) setRatio(i.naturalWidth / i.naturalHeight); }} onError={() => setPreviewFailed(true)} /> : <div className="relative" style={{ aspectRatio: tileRatio }}><GeneratedPreview item={item} /></div>}
+        {!near ? <div className="relative" style={{ aspectRatio: tileRatio }}><PreviewSkeleton item={item} /></div> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} disablePictureInPicture className="pointer-events-none block h-auto w-full transition duration-500" style={{ aspectRatio: "auto 1.35 / 1" }} autoPlay loop muted playsInline preload="metadata" onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight); }} onLoadedData={() => setLoaded(true)} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`block h-auto w-full ${driftClass} transition duration-500`} style={{ aspectRatio: "auto 1.35 / 1" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onLoad={(e) => { const i = e.currentTarget; setLoaded(true); if (i.naturalWidth && i.naturalHeight) setRatio(i.naturalWidth / i.naturalHeight); }} onError={() => setPreviewFailed(true)} /> : <div className="relative" style={{ aspectRatio: tileRatio }}><GeneratedPreview item={item} /></div>}
+        {near && (hasVideo || hasImage) && <LoadingSweep done={loaded} transparent={hasVideo && Boolean(posterFor(item.preview))} />}
       </div>
       <div className="flex items-center justify-between gap-2 px-1 pb-1 pt-3 sm:gap-3 sm:px-1.5">
         <div className="min-w-0">
@@ -2595,7 +2625,9 @@ function runSelfTests() {
   // What the gallery opens on, now that nothing is free: pinned work, newest
   // first, and every one of it moving. A still tile at the top reads as a
   // broken one.
-  console.assert(availablePrompts.slice(0, 8).every((item) => isPinned(item) && movesItself(item)), "the gallery must open on pinned prompts that move by themselves");
+  // A `lead` card is the one exception: it is placed first on purpose, and the
+  // Ciao still is there because its clip made the page stutter.
+  console.assert(availablePrompts.slice(0, 8).every((item) => isPinned(item) && (item.lead || movesItself(item))), "the gallery must open on pinned prompts that move by themselves");
   // The container and the motion are two different questions, and a higgs URL
   // answers them from two different places: output=webp says what element to
   // mount, the .png source says there is nothing moving inside it.
@@ -2635,7 +2667,9 @@ if (typeof window !== "undefined" && !window.__MOVENTO_TESTS_RAN__) {
 }
 
 export default function MoventoSite() {
-  const [query, setQuery] = useState("");
+  // Seeded from ?q= so the nav's search, submitted from another page, lands on
+  // the gallery already filtered.
+  const [query, setQuery] = useState(() => (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("q") || "" : ""));
   const [copiedCard, setCopiedCard] = useState("");
   const [copyError, setCopyError] = useState("");
   const [unlockNotice, setUnlockNotice] = useState("");
@@ -2657,7 +2691,6 @@ export default function MoventoSite() {
   const [pendingFreeItem, setPendingFreeItem] = useState(null);
   const [leadEmailInput, setLeadEmailInput] = useState("");
   const [leadSubmitting, setLeadSubmitting] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [previewItem, setPreviewItem] = useState(null); // prompt preview popup
 
@@ -2699,6 +2732,7 @@ export default function MoventoSite() {
   const isTikTokPage = typeof window !== "undefined" && window.location.pathname === "/tiktok";
   const isChoosePage = typeof window !== "undefined" && window.location.pathname === "/choose";
   const isPaddleTestPage = typeof window !== "undefined" && window.location.pathname === "/paddle-test";
+  const isBackgroundsPage = typeof window !== "undefined" && window.location.pathname === "/backgrounds";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -3016,6 +3050,7 @@ export default function MoventoSite() {
   if (isSubscriptionPage) return <SubscriptionPage />;
   if (isPaddleTestPage) return <PaddleTestPage />;
   if (isSuccessPage) return <SuccessPage />;
+  if (isBackgroundsPage) return <BackgroundsPage hasAccess={hasPremiumAccess} />;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#0A0A0B] text-[#EDE9E0]">
@@ -3220,86 +3255,7 @@ export default function MoventoSite() {
         <div className="absolute inset-0 opacity-100" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.055) 1px, transparent 0)", backgroundSize: "38px 38px", maskImage: "radial-gradient(ellipse 80% 55% at 50% 0%, #000 30%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 80% 55% at 50% 0%, #000 30%, transparent 100%)" }} />
       </div>
 
-      <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
-        <Logo />
-        <nav className="hidden items-center gap-8 text-sm font-medium text-white/55 md:flex">
-          <a href="/prompts" className="transition hover:text-[#EDE9E0]">Prompts</a>
-          <a href="/pricing" className="transition hover:text-[#EDE9E0]">{t("Pricing", "Tarifs")}</a>
-          <a href="/tiktok" className="transition hover:text-[#EDE9E0]">{t("Monetize TikTok", "Monétise TikTok")}</a>
-          <a href="/subscription" className="transition hover:text-[#EDE9E0]">{t("My subscription", "Mon abonnement")}</a>
-        </nav>
-        <div className="hidden items-center gap-3 md:flex">
-          <LangSwitch />
-          <a href="/pricing" className="rounded-full border border-white/15 bg-[#08080A] px-5 py-2.5 text-sm font-semibold text-[#EDE9E0] transition hover:border-white/30 hover:bg-[#141418]">{t("Get started", "Commencer")}</a>
-        </div>
-        <button onClick={() => setMobileMenuOpen((open) => !open)} aria-label={t("Menu", "Menu")} aria-expanded={mobileMenuOpen} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#121214] text-white/60 shadow-sm transition hover:border-white/25 md:hidden">
-          <Icon name={mobileMenuOpen ? "close" : "menu"} className="h-5 w-5" />
-        </button>
-        {/* Full-height panel sliding in from the right, rather than a dropdown
-            under the header: on a phone the links get room to breathe and the
-            call to action sits where the thumb already is. */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                onClick={() => setMobileMenuOpen(false)}
-                className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
-              />
-              <motion.nav
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-                className="fixed right-0 top-0 z-50 flex h-[100dvh] w-[78%] max-w-xs flex-col border-l border-white/10 bg-[#131315] md:hidden"
-              >
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  aria-label={t("Close", "Fermer")}
-                  className="absolute right-5 top-5 grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-white/[0.06] text-white transition hover:bg-white/[0.14]"
-                >
-                  <Icon name="close" className="h-4 w-4" />
-                </button>
-
-                <div className="flex flex-col gap-1 px-6 pt-24">
-                  {[
-                    { href: "/prompts", label: "Prompts" },
-                    { href: "/pricing", label: t("Pricing", "Tarifs") },
-                    { href: "/tiktok", label: t("Monetize TikTok", "Monétise TikTok") },
-                    { href: "/subscription", label: t("My subscription", "Mon abonnement") },
-                  ].map((link, i) => (
-                    <motion.a
-                      key={link.label}
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      initial={{ opacity: 0, x: 22 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.35, delay: 0.1 + i * 0.06, ease: [0.16, 1, 0.3, 1] }}
-                      className="rounded-2xl px-2 py-3.5 text-lg font-medium text-white/70 transition hover:bg-white/[0.05] hover:text-[#EDE9E0]"
-                    >
-                      {link.label}
-                    </motion.a>
-                  ))}
-                </div>
-
-                <div className="mt-auto px-6 pb-10">
-                  <div className="mb-4 flex justify-start"><LangSwitch /></div>
-                  <a
-                    href="/pricing"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-full bg-[#EDE9E0] px-5 py-3.5 text-center text-sm font-bold text-[#0A0A0B] transition hover:bg-white"
-                  >
-                    {t("Get started", "Commencer")}
-                  </a>
-                </div>
-              </motion.nav>
-            </>
-          )}
-        </AnimatePresence>
-      </header>
+      <SiteNav query={query} setQuery={setQuery} />
 
       {/* The home opens straight on the grid — no promise, no buttons, no
           heading above it. The designs are the argument, so nothing stands
@@ -3547,6 +3503,236 @@ function EbookCard({ className = "" }) {
         <Icon name="download" className="h-4 w-4" /> {t("Download the ebook", "Télécharger l'ebook")}
       </a>
     </div>
+  );
+}
+
+// The site's top bar: one full-width strip, the logo and the catalogue's own
+// sections on the left (Prompts, Backgrounds, TikTok), the account side on
+// the right (pricing, subscription, language, search, the call to action).
+// `query`/`setQuery` make the search filter the page live; without them the
+// search sends the visitor to the gallery with ?q= set.
+const NAV_PRIMARY = () => [
+  { href: "/prompts", label: "Prompts", match: (p) => p === "/" || p === "/prompts" || p.startsWith("/prompt/") },
+  { href: "/backgrounds", label: "Backgrounds" },
+  { href: "/tiktok", label: "TikTok" },
+];
+const NAV_SECONDARY = () => [
+  { href: "/pricing", label: t("Pricing", "Tarifs") },
+  { href: "/subscription", label: t("My subscription", "Mon abonnement") },
+];
+
+function SiteNav({ query, setQuery, searchLabel }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(Boolean(query));
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef(null);
+  const path = typeof window !== "undefined" ? window.location.pathname : "/";
+  const isActive = (link) => (link.match ? link.match(path) : path === link.href);
+  const live = typeof setQuery === "function";
+  const value = live ? query : draft;
+
+  useEffect(() => { if (searchOpen) inputRef.current?.focus(); }, [searchOpen]);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (live) return;
+    const q = draft.trim();
+    window.location.assign(q ? `/prompts?q=${encodeURIComponent(q)}` : "/prompts");
+  };
+  const closeSearch = () => {
+    if (live) setQuery("");
+    setDraft("");
+    setSearchOpen(false);
+  };
+
+  return (
+    <header className="relative z-30 w-full border-b border-white/[0.06] bg-[#121214]/90 backdrop-blur-xl">
+      <div className="flex h-16 items-center gap-6 px-4 sm:px-6">
+        <a href="/" className="flex-none transition hover:opacity-85" aria-label="Movento"><Logo /></a>
+        <nav className="hidden items-center gap-1 md:flex" aria-label={t("Sections", "Sections")}>
+          {NAV_PRIMARY().map((link) => (
+            <a key={link.href} href={link.href} aria-current={isActive(link) ? "page" : undefined} className={`rounded-full px-3 py-2 text-[15px] font-medium transition ${isActive(link) ? "text-[#EDE9E0]" : "text-white/55 hover:text-[#EDE9E0]"}`}>
+              {link.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="ml-auto flex items-center gap-1">
+          <nav className="hidden items-center gap-1 lg:flex" aria-label={t("Account", "Compte")}>
+            {NAV_SECONDARY().map((link) => (
+              <a key={link.href} href={link.href} aria-current={isActive(link) ? "page" : undefined} className={`rounded-full px-3 py-2 text-[15px] font-medium transition ${isActive(link) ? "text-[#EDE9E0]" : "text-white/55 hover:text-[#EDE9E0]"}`}>
+                {link.label}
+              </a>
+            ))}
+          </nav>
+          <LangSwitch className="mx-2 hidden md:inline-block" />
+          {searchOpen ? (
+            <form onSubmit={submit} role="search" className="flex h-10 items-center gap-2 rounded-full border border-white/10 bg-[#1A1A1D] pl-3.5 pr-1.5">
+              <Icon name="search" className="h-4 w-4 flex-none text-white/45" />
+              <input
+                ref={inputRef}
+                value={value}
+                onChange={(e) => (live ? setQuery(e.target.value) : setDraft(e.target.value))}
+                onKeyDown={(e) => { if (e.key === "Escape") closeSearch(); }}
+                placeholder={searchLabel || t("Search a prompt…", "Chercher un prompt…")}
+                aria-label={searchLabel || t("Search a prompt", "Chercher un prompt")}
+                className="w-32 bg-transparent text-sm text-[#EDE9E0] placeholder:text-white/35 focus:outline-none sm:w-48"
+              />
+              <button type="button" onClick={closeSearch} aria-label={t("Close search", "Fermer la recherche")} className="grid h-7 w-7 place-items-center rounded-full text-white/45 transition hover:bg-white/10 hover:text-[#EDE9E0]">
+                <Icon name="close" className="h-3.5 w-3.5" />
+              </button>
+            </form>
+          ) : (
+            <button type="button" onClick={() => setSearchOpen(true)} aria-label={t("Search", "Rechercher")} className="grid h-10 w-10 place-items-center rounded-full text-white/60 transition hover:bg-white/[0.06] hover:text-[#EDE9E0]">
+              <Icon name="search" className="h-[18px] w-[18px]" />
+            </button>
+          )}
+          <a href="/pricing" className="ml-2 hidden rounded-full bg-[#232327] px-5 py-2.5 text-sm font-semibold text-[#EDE9E0] transition hover:bg-[#2E2E33] md:inline-block">{t("Get started", "Commencer")}</a>
+          <button onClick={() => setMenuOpen((open) => !open)} aria-label={t("Menu", "Menu")} aria-expanded={menuOpen} className="ml-1 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#1A1A1D] text-white/60 transition hover:border-white/25 md:hidden">
+            <Icon name={menuOpen ? "close" : "menu"} className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Full-height panel from the right on a phone: the links get room and
+          the call to action sits where the thumb already is. */}
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} onClick={() => setMenuOpen(false)} className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden" />
+            <motion.nav initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }} className="fixed right-0 top-0 z-50 flex h-[100dvh] w-[78%] max-w-xs flex-col border-l border-white/10 bg-[#131315] md:hidden">
+              <button onClick={() => setMenuOpen(false)} aria-label={t("Close", "Fermer")} className="absolute right-5 top-5 grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-white/[0.06] text-white transition hover:bg-white/[0.14]">
+                <Icon name="close" className="h-4 w-4" />
+              </button>
+              <div className="flex flex-col gap-1 px-6 pt-24">
+                {[...NAV_PRIMARY(), ...NAV_SECONDARY()].map((link, i) => (
+                  <motion.a key={link.href} href={link.href} onClick={() => setMenuOpen(false)} initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35, delay: 0.1 + i * 0.06, ease: [0.16, 1, 0.3, 1] }} className={`rounded-2xl px-2 py-3.5 text-lg font-medium transition hover:bg-white/[0.05] hover:text-[#EDE9E0] ${isActive(link) ? "text-[#EDE9E0]" : "text-white/70"}`}>
+                    {link.label}
+                  </motion.a>
+                ))}
+              </div>
+              <div className="mt-auto px-6 pb-10">
+                <div className="mb-4 flex justify-start"><LangSwitch /></div>
+                <a href="/pricing" onClick={() => setMenuOpen(false)} className="block rounded-full bg-[#EDE9E0] px-5 py-3.5 text-center text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Get started", "Commencer")}</a>
+              </div>
+            </motion.nav>
+          </>
+        )}
+      </AnimatePresence>
+    </header>
+  );
+}
+
+// One background clip: mounted only near the viewport and played only on it,
+// like the gallery cards, since a page of autoplaying clips is the one thing
+// that brings a phone to its knees. A clip that fails to load drops out.
+function BackgroundTile({ clip, hasAccess }) {
+  const ref = useRef(null);
+  const videoRef = useRef(null);
+  const [near, setNear] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setNear(true); setVisible(true); return undefined; }
+    const mountIO = new IntersectionObserver(([e]) => setNear(e.isIntersecting), { rootMargin: "700px 0px", threshold: 0 });
+    const playIO = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0.01 });
+    mountIO.observe(el);
+    playIO.observe(el);
+    return () => { mountIO.disconnect(); playIO.disconnect(); };
+  }, []);
+  useEffect(() => { if (!near) setLoaded(false); }, [near]);
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    if (!visible) { v.pause?.(); return; }
+    v.play?.().catch(() => {});
+  }, [visible, near]);
+
+  if (failed) return null;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(clip.url);
+      setCopied(true);
+      track("background_copied", { prompt: clip.item.title });
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      window.prompt(t("Copy the link:", "Copie le lien :"), clip.url);
+    }
+  };
+
+  return (
+    <div className="group">
+      <div ref={ref} className="relative aspect-video overflow-hidden rounded-[16px] bg-[#0B0B0D] ring-1 ring-white/[0.06] transition duration-300 group-hover:ring-white/20">
+        {near && <video ref={videoRef} src={clip.url} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture onLoadedData={() => setLoaded(true)} onError={() => setFailed(true)} className="pointer-events-none absolute inset-0 h-full w-full object-cover" />}
+        <LoadingSweep done={near && loaded} />
+        <div className="absolute inset-x-0 bottom-0 z-[2] flex items-center gap-2 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-10 opacity-100 transition duration-300 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+          {hasAccess ? (
+            <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 rounded-full bg-[#EDE9E0] px-3.5 py-2 text-xs font-bold text-[#0A0A0B] transition hover:bg-white">
+              <Icon name={copied ? "check" : "copy"} className="h-3.5 w-3.5" /> {copied ? t("Copied", "Copié") : t("Copy link", "Copier le lien")}
+            </button>
+          ) : (
+            <a href="/pricing?from=backgrounds" className="inline-flex items-center gap-1.5 rounded-full bg-[#EDE9E0] px-3.5 py-2 text-xs font-bold text-[#0A0A0B] transition hover:bg-white">
+              <Icon name="lock" className="h-3.5 w-3.5" /> {t("Unlock", "Débloquer")}
+            </a>
+          )}
+          <a href={promptPath(clip.item)} className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/40 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/70">
+            {t("See the prompt", "Voir le prompt")}
+          </a>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-2 px-1 pt-2.5">
+        <p className="truncate text-[13px] font-semibold tracking-tight text-[#EDE9E0]">{clip.item.title}</p>
+        <p className="flex-none text-[11px] text-white/40">{clip.item.category}</p>
+      </div>
+    </div>
+  );
+}
+
+// /backgrounds — every background clip the catalogue's prompts use, in the
+// gallery's own order (newest first), each linked back to its prompt. The list
+// is built from the markdown at build time (scripts/backgrounds.mjs); only
+// prompts that are on sale contribute.
+function BackgroundsPage({ hasAccess }) {
+  const [query, setQuery] = useState("");
+  const clips = useMemo(() => {
+    const byFile = new Map();
+    for (const clip of BACKGROUND_CLIPS) {
+      if (!byFile.has(clip.file)) byFile.set(clip.file, []);
+      byFile.get(clip.file).push(clip.url);
+    }
+    return availablePrompts.flatMap((item) => (byFile.get(item.file) || []).map((url) => ({ url, item })));
+  }, []);
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return clips;
+    return clips.filter(({ item }) => `${item.title} ${item.category} ${(item.tags || []).join(" ")}`.toLowerCase().includes(q));
+  }, [clips, query]);
+
+  return (
+    <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
+      <SiteNav query={query} setQuery={setQuery} searchLabel={t("Search a background…", "Chercher un background…")} />
+      <section className="mx-auto max-w-7xl px-6 pb-4 pt-12 text-center lg:px-8 lg:pt-16">
+        <h1 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">Backgrounds</h1>
+        <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-white/55">
+          {t(`${clips.length} background videos taken from the prompts. Copy the link and drop it into your own site.`, `${clips.length} vidéos de fond tirées des prompts. Copie le lien et mets-le dans ton propre site.`)}
+        </p>
+      </section>
+      <section className="px-4 pb-24 pt-8 sm:px-6 lg:px-8">
+        {shown.length ? (
+          <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {shown.map((clip) => <BackgroundTile key={clip.url} clip={clip} hasAccess={hasAccess} />)}
+          </div>
+        ) : (
+          <p className="py-20 text-center text-sm text-white/45">{t("No background matches this search.", "Aucun background ne correspond à cette recherche.")}</p>
+        )}
+      </section>
+    </main>
   );
 }
 
@@ -3832,14 +4018,7 @@ function TikTokPage() {
         <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-white/[0.04] blur-[120px]" />
       </div>
 
-      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
-        <a href="/" className="transition hover:opacity-80"><Logo /></a>
-        <div className="flex items-center gap-2">
-          <a href="/#prompts" className="hidden rounded-full px-4 py-2.5 text-sm font-medium text-white/55 transition hover:text-[#EDE9E0] sm:inline-block">{t("Catalog", "Catalogue")}</a>
-          <LangSwitch />
-          <a href="/" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#EDE9E0]">← {t("Back", "Retour")}</a>
-        </div>
-      </header>
+      <SiteNav />
 
       <section className="relative z-10 mx-auto max-w-3xl px-6 pb-16 pt-8 text-center lg:px-8 lg:pt-12">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 backdrop-blur">

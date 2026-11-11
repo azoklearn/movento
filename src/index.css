@@ -154,7 +154,32 @@ video::-webkit-media-controls-start-playback-button {
   }
 }
 
+/* Loading sweep: what a preview shows until its first frame is painted,
+   instead of a black rectangle. A dark tile with a soft light band crossing
+   it, on a loop, so the visitor reads "loading" rather than "broken". */
+@keyframes mv-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.mv-loading {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #111114;
+  transition: opacity 0.45s ease;
+}
+.mv-loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.08) 40%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0.08) 60%, transparent 80%);
+  animation: mv-sweep 1.4s ease-in-out infinite;
+}
+.mv-loading.is-done { opacity: 0; pointer-events: none; }
+.mv-loading.is-done::after { animation: none; }
+
 @media (prefers-reduced-motion: reduce) {
+  .mv-loading::after { animation: none; }
   .mv-aurora { animation: none; }
   .mv-kenburns { animation: none; }
   html { scroll-behavior: auto; }
