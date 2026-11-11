@@ -23,7 +23,7 @@ import {
   notifyTelegramOnce,
 } from "./_shared.js";
 
-const GUMROAD_PLAN_NAMES = { m1: "Mensuel", m12: "Annuel", lifetime: "À vie" };
+const GUMROAD_PLAN_NAMES = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie" };
 
 const truthy = (v) => v === true || v === "true" || v === "1";
 
@@ -38,6 +38,7 @@ const lastSegment = (value) => {
 // always one the webhook recognises.
 export const gumroadProducts = () => ({
   m1: process.env.GUMROAD_M1_PRODUCT || gumroadCheckoutUrls.m1 || "",
+  m3: process.env.GUMROAD_M3_PRODUCT || gumroadCheckoutUrls.m3 || "",
   m12: process.env.GUMROAD_M12_PRODUCT || gumroadCheckoutUrls.m12 || "",
   lifetime: process.env.GUMROAD_LIFETIME_PRODUCT || gumroadCheckoutUrls.lifetime || "",
 });

@@ -7,7 +7,7 @@
 // back from Mollie with it can attach an email to that one payment
 // (api/mollie-claim.js); nobody without it can.
 //
-// The month is a subscription, so Mollie needs a customer to store the card
+// 3 months and the year are subscriptions, so Mollie needs a customer to store the card
 // against (sequenceType "first"): one is created with no email, and the email
 // is added to it on the claim. When the email IS already known (a returning
 // visitor), it is passed along and the customer reused, as before.
@@ -62,9 +62,9 @@ export default async function handler(req, res) {
         amount: { currency: "EUR", value: MOLLIE_PRICES[plan] },
         description: plan === "lifetime" ? "Movento — Accès à vie" : `Movento — ${MOLLIE_PLAN_LABELS[plan]}`,
         customerId,
-        // The month stores the card for the charges that follow; lifetime is
-        // charged once.
-        sequenceType: plan === "m1" ? "first" : "oneoff",
+        // A subscription (3 months, the year) stores the card for the charges
+        // that follow; lifetime is charged once.
+        sequenceType: plan === "lifetime" ? "oneoff" : "first",
         redirectUrl: `${base}/success?provider=mollie&claim=${claim}${knownEmail ? `&email=${encodeURIComponent(knownEmail)}` : ""}`,
         cancelUrl: `${base}/pricing`,
         webhookUrl: `${base}/api/mollie-webhook`,

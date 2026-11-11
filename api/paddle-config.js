@@ -28,8 +28,9 @@ export default function handler(req, res) {
   if (!process.env.PADDLE_API_KEY) warnings.push("PADDLE_API_KEY manque : le webhook ne pourra pas lire l'email de l'acheteur.");
   if (!process.env.PADDLE_WEBHOOK_SECRET) warnings.push("PADDLE_WEBHOOK_SECRET manque : les paiements ne débloqueront pas l'accès.");
   const prices = paddlePriceIds();
-  if (!prices.m1) warnings.push("PADDLE_M1_PRICE_ID manque.");
-  if (!prices.lifetime) warnings.push("PADDLE_LIFETIME_PRICE_ID manque.");
+  if (!prices.m3) warnings.push("PADDLE_M3_PRICE_ID manque (3 mois, 49 €).");
+  if (!prices.m12) warnings.push("PADDLE_M12_PRICE_ID manque (annuel, 89 €).");
+  if (!prices.lifetime) warnings.push("PADDLE_LIFETIME_PRICE_ID manque (à vie, 149 €).");
   // The likeliest copy-paste mistake: the product id (pro_…) where the price
   // id (pri_…) goes. Paddle's checkout only takes the price.
   for (const [plan, id] of Object.entries(paddlePriceIdLists()).flatMap(([p, ids]) => ids.map((i) => [p, i]))) {
@@ -37,7 +38,7 @@ export default function handler(req, res) {
   }
   // What each variable holds, as read: a value with anything but price ids
   // and separators in it is worth seeing as Vercel has it.
-  for (const name of ["PADDLE_M1_PRICE_ID", "PADDLE_LIFETIME_PRICE_ID"]) {
+  for (const name of ["PADDLE_M1_PRICE_ID", "PADDLE_M3_PRICE_ID", "PADDLE_M12_PRICE_ID", "PADDLE_LIFETIME_PRICE_ID"]) {
     const raw = String(process.env[name] || "");
     const leftover = raw.replace(/pri_[A-Za-z0-9]+/g, "").replace(/[\s,;"']/g, "");
     if (raw && leftover) warnings.push(`${name} contient autre chose que des identifiants pri_… (${JSON.stringify(raw)}).`);

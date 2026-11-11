@@ -16,7 +16,7 @@ import {
 } from "./_shared.js";
 
 // What an admin may grant: the two plans on sale, and lifetime for a gift.
-const GRANT_PLANS = new Set(["m1", "m12", "lifetime"]);
+const GRANT_PLANS = new Set(["m1", "m3", "m12", "lifetime"]);
 
 async function buildLookup(email) {
   const [redisRecord, owned, credits, hasAccess, blocked] = await Promise.all([
@@ -109,7 +109,7 @@ async function buildLookup(email) {
 // canceling the membership on Whop when one exists.
 //
 // grant writes the record a purchase writes, on the plan given in `plan`:
-// "m1" (monthly, the default), "m12" (annual) or "lifetime". The holder gets
+// "m1" (monthly, the default), "m3" (3 months), "m12" (annual) or "lifetime". The holder gets
 // the catalogue and the bonus ebook — a Gumroad buyer whose sale did not reach
 // the site, a gift, a tester. A monthly or annual grant is recorded as a
 // Gumroad subscription, which is where those plans are sold, so "My

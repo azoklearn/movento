@@ -20,7 +20,7 @@
 //
 // Mollie calls again on every status change, and retries a call that did not
 // get a 200, so all of this is idempotent.
-import { emailForPayment, ensureSubscription, grantPaid, wasRefunded } from "./_mollie.js";
+import { emailForPayment, ensureSubscription, grantPaid, planOfPayment, wasRefunded } from "./_mollie.js";
 import {
   formatMinorAmount,
   MOLLIE_PLAN_LABELS,
@@ -68,8 +68,8 @@ export default async function handler(req, res) {
     return done(500, `lecture du paiement impossible : ${error.message}`);
   }
 
-  const plan = payment.metadata?.plan || (payment.subscriptionId ? "m1" : "");
-  if (plan !== "m1" && plan !== "lifetime") return done(200, "ignoré : pas une offre Movento");
+  const plan = await planOfPayment(payment);
+  if (!MOLLIE_PLAN_LABELS[plan]) return done(200, "ignoré : pas une offre Movento");
   const email = await emailForPayment(payment);
   const test = mollieTestMode() || payment.mode === "test" ? "🧪 TEST · " : "";
   const label = MOLLIE_PLAN_LABELS[plan];
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
     if (refundedInFull || chargedBack) {
       await Redis.fromEnv().set(`mollierefund:${payment.id}`, new Date().toISOString()).catch(() => {});
       const previous = email ? await redisGetAccessRecord(email) : null;
-      const ours = previous?.provider === "mollie" && (previous.transactionId === payment.id || (plan === "m1" && previous.kind === "m1"));
+      const ours = previous?.provider === "mollie" && (previous.transactionId === payment.id || (plan !== "lifetime" && previous.kind === plan));
       if (ours) {
         if (previous.subscriptionId && previous.customerId) {
           await mollieApi(`/customers/${encodeURIComponent(previous.customerId)}/subscriptions/${encodeURIComponent(previous.subscriptionId)}`, { method: "DELETE" }).catch((e) => console.error("Mollie subscription cancel after refund failed:", e));
@@ -101,8 +101,8 @@ export default async function handler(req, res) {
         await grantPaid(payment, email);
         outcome = renewal ? "renouvellement : accès prolongé" : "vente : accès accordé";
       } else {
-        // Paid, owner unknown until the buyer claims it. The card is set up
-        // for the month now, so nothing is lost if the claim comes later.
+        // Paid, owner unknown until the buyer claims it. The subscription is
+        // set up now, so nothing is lost if the claim comes later.
         if (payment.sequenceType === "first") await ensureSubscription(payment, "");
         outcome = "vente : en attente de l'email du client";
       }
@@ -112,7 +112,7 @@ export default async function handler(req, res) {
 
     if (payment.status === "failed" && (payment.sequenceType === "recurring" || payment.subscriptionId)) {
       const previous = email ? await redisGetAccessRecord(email) : null;
-      const sent = await notifyTelegramOnce(`mollie:${payment.id}:failed`, `${test}💳 Paiement mensuel échoué — Mollie\nL'accès s'arrêtera le ${previous?.accessUntil ? new Date(previous.accessUntil).toLocaleDateString("fr-FR") : "?"} sans nouveau paiement.\n${who}`);
+      const sent = await notifyTelegramOnce(`mollie:${payment.id}:failed`, `${test}💳 Prélèvement échoué (${label}) — Mollie\nL'accès s'arrêtera le ${previous?.accessUntil ? new Date(previous.accessUntil).toLocaleDateString("fr-FR") : "?"} sans nouveau paiement.\n${who}`);
       return done(200, "prélèvement échoué", sent ? "envoyé" : "non envoyé");
     }
 

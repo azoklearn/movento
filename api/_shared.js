@@ -249,8 +249,12 @@ export const externalCheckoutUrls = {
 // the token is in Vercel, the plan stays on Whop, which still grants access.
 export const GUMROAD_M1_FALLBACK_URL = "https://barbelinnoan.gumroad.com/l/vujeq";
 export const GUMROAD_M12_FALLBACK_URL = "https://barbelinnoan.gumroad.com/l/jawns";
+// m3 and lifetime have no Gumroad product yet: GUMROAD_M3_URL and
+// GUMROAD_LIFETIME_URL turn them on once they are created there (49 € every
+// 3 months, 149 € once).
 export const gumroadCheckoutUrls = {
   m1: process.env.GUMROAD_M1_URL || GUMROAD_M1_FALLBACK_URL,
+  m3: process.env.GUMROAD_M3_URL || "",
   m12: process.env.GUMROAD_M12_URL || GUMROAD_M12_FALLBACK_URL,
   lifetime: process.env.GUMROAD_LIFETIME_URL || "",
 };
@@ -259,7 +263,9 @@ export const gumroadCheckoutUrls = {
 // still configured there is an old 99,99 € plan that existing members renew
 // on. So while Gumroad is not ready this plan has no checkout at all, rather
 // than quietly selling the old Whop price.
-const GUMROAD_ONLY_PLANS = new Set(["m12"]);
+// The same goes for the 3 months at 49 € and lifetime at 149 €: the Whop
+// plans under those names charge old prices, so they are never the fallback.
+const GUMROAD_ONLY_PLANS = new Set(["m3", "m12", "lifetime"]);
 export const gumroadWebhookReady = () => Boolean(process.env.GUMROAD_WEBHOOK_TOKEN);
 
 // "paddle" | "whop" | "gumroad" | "external" | "none" for one plan. An explicit
@@ -305,9 +311,10 @@ export const isGumroadUrl = (url) => {
 //   PADDLE_CLIENT_TOKEN    public, sent to the browser (test_… / live_…)
 //   PADDLE_API_KEY         server only: customer emails, subscriptions, cancel
 //   PADDLE_WEBHOOK_SECRET  server only: verifies the notifications
-//   PADDLE_M1_PRICE_ID      the month, 29,99 € recurring
-//   PADDLE_LIFETIME_PRICE_ID lifetime, 89 € one-time (no subscription)
-//   PADDLE_M12_PRICE_ID     optional: only read if the year is ever sold here
+//   PADDLE_M3_PRICE_ID      3 months, 49 € recurring
+//   PADDLE_M12_PRICE_ID     the year, 89 € recurring
+//   PADDLE_LIFETIME_PRICE_ID lifetime, 149 € one-time (no subscription)
+//   PADDLE_M1_PRICE_ID      the month, off sale: kept so its subscribers resolve
 // The site switches to Paddle only with CHECKOUT_PROVIDER=paddle, and only for
 // the plans that have a price id, and only once all three secrets are set: a
 // Paddle buyer whose payment could not be recorded would be paying for nothing.
@@ -336,8 +343,9 @@ export function paddlePriceIdLists() {
   const defaults = paddleEnvironment() === "sandbox" ? PADDLE_SANDBOX_DEFAULT_PRICES : {};
   return {
     m1: priceList(process.env.PADDLE_M1_PRICE_ID || defaults.m1),
-    lifetime: priceList(process.env.PADDLE_LIFETIME_PRICE_ID),
+    m3: priceList(process.env.PADDLE_M3_PRICE_ID),
     m12: priceList(process.env.PADDLE_M12_PRICE_ID),
+    lifetime: priceList(process.env.PADDLE_LIFETIME_PRICE_ID),
   };
 }
 // The price each plan is SOLD at: the first of its list.
@@ -479,16 +487,24 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 // Lifetime is one payment.
 //
 //   MOLLIE_API_KEY          test_… to try, live_… to sell
-//   MOLLIE_M1_PRICE         default 29.99
-//   MOLLIE_LIFETIME_PRICE   default 89.00
+//   MOLLIE_M3_PRICE         default 49.00, every 3 months
+//   MOLLIE_M12_PRICE        default 89.00, every year
+//   MOLLIE_LIFETIME_PRICE   default 149.00, once
+// (m1, 29.99 a month, is off sale; its price stays for the record.)
 // The site switches to Mollie with CHECKOUT_PROVIDER=mollie.
 export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
 export const mollieTestMode = () => String(process.env.MOLLIE_API_KEY || "").startsWith("test_");
 export const MOLLIE_PRICES = {
   m1: Number(process.env.MOLLIE_M1_PRICE || 29.99).toFixed(2),
-  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 89).toFixed(2),
+  m3: Number(process.env.MOLLIE_M3_PRICE || 49).toFixed(2),
+  m12: Number(process.env.MOLLIE_M12_PRICE || 89).toFixed(2),
+  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 149).toFixed(2),
 };
-export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", lifetime: "À vie" };
+export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie" };
+// How many months one payment of each subscription pays for: the Mollie
+// subscription's interval, and how far a paid payment opens the catalogue.
+export const MOLLIE_PLAN_MONTHS = { m1: 1, m3: 3, m12: 12 };
+export const mollieSubscriptionPlans = new Set(Object.keys(MOLLIE_PLAN_MONTHS));
 export const MOLLIE_GRACE_DAYS = 5;
 
 export async function mollieApi(path, { method = "GET", body, fetchImpl = fetch } = {}) {
@@ -507,9 +523,9 @@ export async function mollieApi(path, { method = "GET", body, fetchImpl = fetch 
 
 // A month from a date, then the grace days: how long one paid month of the
 // subscription keeps the catalogue open.
-export function mollieMonthAccessUntil(from = new Date()) {
+export function mollieAccessUntil(months, from = new Date()) {
   const d = new Date(from);
-  d.setUTCMonth(d.getUTCMonth() + 1);
+  d.setUTCMonth(d.getUTCMonth() + months);
   d.setUTCDate(d.getUTCDate() + MOLLIE_GRACE_DAYS);
   return d.toISOString();
 }
@@ -613,14 +629,10 @@ export function bestCheckoutUrl(plan) {
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
 //
-// The line-up depends on who sells it. On Gumroad: the month and the year (m1,
-// m12; lifetime off sale). On Paddle (CHECKOUT_PROVIDER=paddle): the month and
-// lifetime, 89 € once, and no year. The front end reads the same variable at
-// build time (LIFETIME_LINEUP in src/App.jsx), so the cards and this list switch
-// together on the deploy that sets it.
-// Mollie sells the same line-up as Paddle: the month and lifetime.
-export const LIFETIME_LINEUP = CHECKOUT_PROVIDER === "paddle" || CHECKOUT_PROVIDER === "mollie";
-export const RETIRED_PLANS = new Set(LIFETIME_LINEUP ? ["m3", "m12", "monthly", "yearly"] : ["m3", "lifetime", "monthly", "yearly"]);
+// The line-up is now the same whoever sells it: 3 months (49 €), the year
+// (89 €) and lifetime (149 €). The month is off sale; its subscribers keep
+// their access and their renewals.
+export const RETIRED_PLANS = new Set(["m1", "monthly", "yearly"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a
@@ -635,7 +647,7 @@ export function planKindFromPlanId(planId) {
 // SUPPORT_KINDS in src/App.jsx: those decide what the account page shows, these
 // decide what we are willing to store.
 const EBOOK_KINDS = new Set(["m1", "m3", "m12", "lifetime", "yearly"]);
-const SUPPORT_KINDS = new Set(["m1", "m12", "lifetime", "yearly"]);
+const SUPPORT_KINDS = new Set(["m1", "m3", "m12", "lifetime", "yearly"]);
 
 // The kind to keep when a fresh lookup disagrees with the record we already
 // hold. Normally the fresh answer wins; it does not when it would take an extra
@@ -1166,6 +1178,7 @@ function recordAccessLevel(record) {
 export const GUMROAD_PRODUCT_IDS = {
   m1: process.env.GUMROAD_M1_PRODUCT_ID || "V5989XT_MusmMEJ6Lzk1nw==",
   m12: process.env.GUMROAD_M12_PRODUCT_ID || "b8mgW83lQy5Pi_Cr0PJG-g==",
+  m3: process.env.GUMROAD_M3_PRODUCT_ID || "",
 };
 // "pending_cancellation" has asked to stop but has paid to the end of the
 // period; "pending_failure" is a card being retried. Both are still owed the

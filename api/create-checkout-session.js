@@ -34,7 +34,7 @@ export default async function handler(req, res) {
   if (!checkoutUrl) {
     return res.status(400).json({
       error: checkoutProviderFor(plan) === "none" && !RETIRED_PLANS.has(plan)
-        ? "Cette offre n'est pas encore disponible au paiement. Réessaie dans quelques minutes, ou prends l'offre mensuelle."
+        ? "Cette offre n'est pas encore disponible au paiement. Réessaie dans quelques minutes, ou écris-nous à movento.dev@gmail.com."
         : onWhopCheckout()
           ? "Plan invalide ou lien de checkout Whop manquant."
           : "Plan invalide ou lien de checkout manquant pour cette offre.",

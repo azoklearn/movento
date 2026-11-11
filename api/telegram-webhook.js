@@ -17,7 +17,7 @@ export function telegramWebhookSecret(botToken = process.env.TELEGRAM_BOT_TOKEN)
   return createHash("sha256").update(`movento-telegram:${botToken}`).digest("hex").slice(0, 48);
 }
 
-const PLAN_NAMES = { m1: "Mensuel", lifetime: "À vie", m12: "Annuel" };
+const PLAN_NAMES = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", sub: "Abonnement" };
 
 // Midnight in Paris, as a UTC instant, for today or the first of the month.
 export function parisStart(now = new Date(), { month = false } = {}) {
@@ -110,8 +110,9 @@ export function latestReport(sales) {
 // shape saleOf gives Paddle's. No net figure: Mollie's fees are settled apart.
 export function mollieSaleOf(p) {
   if (p.status !== "paid") return null;
-  const plan = p.metadata?.plan || (p.subscriptionId ? "m1" : "");
-  if (plan !== "m1" && plan !== "lifetime") return null;
+  // A renewal may carry no plan of ours: it is still a subscription payment.
+  const plan = p.metadata?.plan || (p.subscriptionId ? "sub" : "");
+  if (!PLAN_NAMES[plan]) return null;
   const paid = Math.round((Number(p.amount?.value || 0) - Number(p.amountRefunded?.value || 0)) * 100);
   return { kind: plan, at: p.paidAt || p.createdAt || "", currency: p.amount?.currency || "EUR", paid, net: NaN, renewal: p.sequenceType === "recurring" || Boolean(p.subscriptionId), email: p.metadata?.email || "" };
 }
@@ -132,10 +133,15 @@ async function mollieList(path, until, maxPages = 10) {
 }
 
 export function mollieSubscribersReport(subs) {
-  const ours = subs.filter((s) => (s.metadata?.plan || "m1") === "m1");
+  const ours = subs.filter((s) => ["m1", "m3", "m12"].includes(s.metadata?.plan || "m1"));
   const active = ours.filter((s) => s.status === "active");
   const suspended = ours.filter((s) => s.status === "suspended");
-  return ["👥 Abonnés Mollie", `${active.length} actif${active.length > 1 ? "s" : ""}`, `${suspended.length} suspendu${suspended.length > 1 ? "s" : ""} (prélèvements en échec)`].join("\n");
+  const byPlan = ["m3", "m12", "m1"].map((k) => [k, active.filter((s) => (s.metadata?.plan || "m1") === k).length]).filter(([, n]) => n);
+  return [
+    "👥 Abonnés Mollie",
+    `${active.length} actif${active.length > 1 ? "s" : ""}${byPlan.length ? ` (${byPlan.map(([k, n]) => `${n} ${PLAN_NAMES[k]}`).join(", ")})` : ""}`,
+    `${suspended.length} suspendu${suspended.length > 1 ? "s" : ""} (prélèvements en échec)`,
+  ].join("\n");
 }
 
 export function subscribersReport(subs) {

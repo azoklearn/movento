@@ -108,7 +108,7 @@ export function paddleDecision(event) {
 // The Telegram line for one processed event, or null when there is nothing
 // worth a ping. Pure, so it can be tested on its own. "previous" is the record
 // as it was before this event, which is what tells a change from a repeat.
-const PLAN_NAMES = { m1: "Mensuel", lifetime: "À vie", m12: "Annuel" };
+const PLAN_NAMES = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie" };
 export function paddleTelegramMessage(event, decision, email, previous) {
   const type = String(event?.event_type || "");
   const data = event?.data || {};

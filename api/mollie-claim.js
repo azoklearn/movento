@@ -67,17 +67,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { subscriptionId } = await grantPaid(payment, email);
+    const { plan, subscriptionId } = await grantPaid(payment, email);
     // The email on Mollie's side too: on the customer (receipts, the
-    // dashboard) and on the subscription the monthly charges come from.
+    // dashboard) and on the subscription the renewals come from.
     if (payment.customerId) {
       await mollieApi(`/customers/${encodeURIComponent(payment.customerId)}`, { method: "PATCH", body: { email } }).catch((e) => console.error("Mollie customer email update failed:", e));
       if (subscriptionId) {
-        await mollieApi(`/customers/${encodeURIComponent(payment.customerId)}/subscriptions/${encodeURIComponent(subscriptionId)}`, { method: "PATCH", body: { metadata: { plan: "m1", email } } }).catch((e) => console.error("Mollie subscription metadata update failed:", e));
+        await mollieApi(`/customers/${encodeURIComponent(payment.customerId)}/subscriptions/${encodeURIComponent(subscriptionId)}`, { method: "PATCH", body: { metadata: { plan, email } } }).catch((e) => console.error("Mollie subscription metadata update failed:", e));
       }
     }
     if (!already) {
-      const plan = payment.metadata?.plan || "m1";
       await notifyTelegramOnce(`mollie:${payment.id}:claimed`, `${mollieTestMode() || payment.mode === "test" ? "🧪 TEST · " : ""}✉️ Email reçu pour la vente Mollie — ${MOLLIE_PLAN_LABELS[plan] || plan}\n${email}`);
     }
     return res.json({ ok: true, email });
