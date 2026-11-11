@@ -2435,7 +2435,7 @@ function PreviewCard({ item, badge, onClick, onPreview, held }) {
           a portrait one a tall tile, and none of them gets letterbox bars. The
           1.35 fallback only holds the space until the media reports its size,
           so the column does not jump as clips arrive. */}
-      <div ref={containerRef} className="relative overflow-hidden rounded-[18px] bg-[#0B0B0D] ring-1 ring-white/[0.06] transition duration-300 group-hover:ring-white/20 group-hover:shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]">
+      <div ref={containerRef} className="relative overflow-hidden rounded-xl bg-[#0B0B0D] ring-1 ring-white/[0.06] transition duration-300 group-hover:ring-white/20 group-hover:shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]">
       {/* One <video> for every viewport. Phones used to get a separate path —
           the static poster instead of the clip, to save bandwidth — but with a
           poster missing for 88 of the 100 clips that path degraded to an empty
@@ -2470,10 +2470,10 @@ function PreviewCard({ item, badge, onClick, onPreview, held }) {
         {!near ? <div className="relative" style={{ aspectRatio: tileRatio }}><PreviewSkeleton item={item} /></div> : hasVideo ? <video ref={videoRef} src={item.preview} poster={posterFor(item.preview)} disablePictureInPicture className="pointer-events-none block h-auto w-full transition duration-500" style={{ aspectRatio: "auto 1.35 / 1" }} autoPlay loop muted playsInline preload="metadata" onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight); }} onLoadedData={() => setLoaded(true)} onError={() => setPreviewFailed(true)} /> : hasImage ? <img className={`block h-auto w-full ${driftClass} transition duration-500`} style={{ aspectRatio: "auto 1.35 / 1" }} src={item.preview} alt={`${item.title} preview`} loading="lazy" decoding="async" onLoad={(e) => { const i = e.currentTarget; setLoaded(true); if (i.naturalWidth && i.naturalHeight) setRatio(i.naturalWidth / i.naturalHeight); }} onError={() => setPreviewFailed(true)} /> : <div className="relative" style={{ aspectRatio: tileRatio }}><GeneratedPreview item={item} /></div>}
         {near && (hasVideo || hasImage) && <LoadingSweep done={loaded} transparent={hasVideo && Boolean(posterFor(item.preview))} />}
       </div>
-      <div className="flex items-center justify-between gap-2 px-1 pb-1 pt-3 sm:gap-3 sm:px-1.5">
-        <div className="min-w-0">
-          <h3 className="truncate text-[13.5px] font-semibold tracking-tight text-[#EDE9E0] sm:text-[15px]">{item.title}</h3>
-          <p className="mt-0.5 truncate text-[11px] text-white/40 sm:text-xs">{item.category}</p>
+      <div className="flex items-center justify-between gap-2 px-0.5 pb-1 pt-2.5 sm:gap-3">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h3 className="truncate text-[14px] font-bold tracking-tight text-white sm:text-[16px]">{item.title}</h3>
+          <p className="hidden flex-none text-xs text-white/50 sm:block">{item.category}</p>
         </div>
         {badge}
       </div>
@@ -2755,6 +2755,11 @@ export default function MoventoSite() {
   // "all" | "new" | a category name. "new" is the top of the catalogue: entries
   // are added at the front of `prompts`, so position is the only recency we have.
   const [galleryFilter, setGalleryFilter] = useState("all");
+  // How the cards are ordered, separate from what they are filtered on:
+  // "featured" is the catalogue's own order (pinned, moving, newest first),
+  // "recent" is purely by the date each prompt was added.
+  const [galleryOrder, setGalleryOrder] = useState("featured");
+  const chipsRef = useRef(null);
   // How many masonry columns to deal the cards into. JS has to know the number
   // because the cards are distributed in JS, not by CSS.
   //
@@ -2765,8 +2770,10 @@ export default function MoventoSite() {
   // every card past the point where the design inside it could be read, and
   // the preview IS the product — a row of thumbnails too small to judge sells
   // nothing. Wider cards on a large monitor are the intended trade.
+  // Five only on wide screens (1536 and up), where a fifth of the row is
+  // still close to 300px of preview.
   const columnsForWidth = () =>
-    typeof window === "undefined" ? 2 : window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 2;
+    typeof window === "undefined" ? 2 : window.innerWidth >= 1536 ? 5 : window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 2;
   const [galleryColumns, setGalleryColumns] = useState(columnsForWidth);
   useEffect(() => {
     const sync = () => setGalleryColumns(columnsForWidth());
@@ -2787,12 +2794,14 @@ export default function MoventoSite() {
   const filtered = useMemo(() => {
     // galleryPrompts is already in display order: newest first by git date.
     const q = query.toLowerCase();
-    return galleryPrompts.filter((p, i) => {
-      if (galleryFilter === "new" && i >= NEW_PROMPT_COUNT) return false;
-      if (galleryFilter !== "all" && galleryFilter !== "new" && p.category !== galleryFilter) return false;
+    const list = galleryPrompts.filter((p) => {
+      if (galleryFilter !== "all" && p.category !== galleryFilter) return false;
       return `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase().includes(q);
     });
-  }, [query, galleryFilter, galleryPrompts]);
+    if (galleryOrder !== "recent") return list;
+    // Stable: same-day additions keep the catalogue's order between them.
+    return list.map((p, i) => ({ p, i })).sort((a, b) => (addedAt(b.p) - addedAt(a.p)) || (a.i - b.i)).map(({ p }) => p);
+  }, [query, galleryFilter, galleryOrder, galleryPrompts]);
 
   async function verifyAccess(email = accessEmail, options = {}) {
     // Emails never contain whitespace, so strip every whitespace/zero-width char
@@ -3036,7 +3045,7 @@ export default function MoventoSite() {
   if (isBackgroundsPage) return <BackgroundsPage hasAccess={hasPremiumAccess} />;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#0A0A0B] text-[#EDE9E0]">
+    <main className="min-h-screen overflow-hidden bg-[#141414] text-[#EDE9E0]">
       <AnimatePresence>
         {showLeadModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowLeadModal(false)}>
@@ -3232,39 +3241,46 @@ export default function MoventoSite() {
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <AuroraBand />
-        <div className="mv-aurora absolute left-1/2 top-[-30%] h-[620px] w-[900px] -translate-x-1/2 rounded-full bg-white/[0.045] blur-[150px]" />
-        <div className="absolute inset-0 opacity-100" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.055) 1px, transparent 0)", backgroundSize: "38px 38px", maskImage: "radial-gradient(ellipse 80% 55% at 50% 0%, #000 30%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 80% 55% at 50% 0%, #000 30%, transparent 100%)" }} />
-      </div>
-
       <SiteNav query={query} setQuery={setQuery} />
 
-      {/* The home opens straight on the grid — no promise, no buttons, no
-          heading above it. The designs are the argument, so nothing stands
-          between the header and the first card. /prompts keeps its own title,
-          which is the one page that still introduces itself. */}
-      {isPromptsPage && (
-        <section className="relative z-10 mx-auto max-w-7xl px-6 pt-10 pb-2 text-center lg:px-8 lg:pt-16">
-          <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mx-auto max-w-3xl text-4xl font-bold leading-[1.02] tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">
-            {t(`${availablePrompts.length} prompts, `, `${availablePrompts.length} prompts, `)}
-            <br className="sm:hidden" />
-            <Highlight>{t(`${availablePrompts.length} sites`, `${availablePrompts.length} sites`)}</Highlight>
-          </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/55 md:text-lg">
-            {t("Click a card to see the design move. Every prompt describes the whole site — fonts, colors, animations, section by section.", "Clique sur une carte pour voir le design bouger. Chaque prompt décrit le site en entier — polices, couleurs, animations, section par section.")}
-          </motion.p>
-        </section>
-      )}
+      {/* The hero: a tag, the promise in two lines, one sentence, one button.
+          Shown on the home and on /prompts alike. */}
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-4 pt-14 text-center sm:pt-20 lg:pt-24">
+        <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="inline-block rounded-full border border-[#F59E6B]/70 bg-[#F59E6B]/[0.08] px-2.5 py-[3px] text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#F7C4A3]">
+          {t("New prompts all the time", "Nouveaux prompts en continu")}
+        </motion.span>
+        <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05 }} className="mt-4 text-[38px] font-black uppercase leading-[0.95] tracking-[-0.045em] text-white sm:text-6xl lg:text-[82px]">
+          {t("Sites ", "Des sites ")}<em className="pr-1 italic">{t("that", "qui")}</em>{t(" move", " bougent")}
+          <br />
+          {t("in one ", "en un ")}
+          <span className="whitespace-nowrap bg-gradient-to-r from-[#FBE3D2] via-[#EBCDF3] to-[#C9B8FF] bg-clip-text text-transparent [filter:drop-shadow(0_0_22px_rgba(214,180,255,0.45))]">{t("copy-paste", "copier-coller")}</span>
+        </motion.h1>
+        <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-[15px] font-medium leading-7 text-white/60 sm:text-[17px]">
+          {t(`${availablePrompts.length} premium landing pages, ready in minutes. Copy the prompt, paste it into Lovable, Cursor or Claude, launch.`, `${availablePrompts.length} landing pages premium, prêtes en quelques minutes. Copie le prompt, colle-le dans Lovable, Cursor ou Claude, lance.`)}
+        </motion.p>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.18 }} className="mt-8 flex flex-col items-center gap-3">
+          {hasPremiumAccess ? (
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/[0.08] px-4 py-2 text-sm font-semibold text-emerald-200">
+              <Icon name="check" className="h-4 w-4" /> {t("Premium access active", "Accès premium actif")}
+            </span>
+          ) : (
+            <>
+              <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-white to-[#D3D8FF] px-8 py-4 text-[17px] font-bold text-[#0A0A0B] shadow-[0_10px_40px_-12px_rgba(190,195,255,0.7)] transition hover:brightness-105">
+                {t("Go unlimited", "Accès illimité")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" />
+              </a>
+              {!trialActive && (
+                <button onClick={() => setShowUnlockModal(true)} className="text-xs font-medium text-white/45 transition hover:text-white/80">
+                  {t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}
+                </button>
+              )}
+            </>
+          )}
+        </motion.div>
+      </section>
 
       {/* Full width, no max: the gallery is the page, and a capped row left a
           band of empty background down each side on anything above 1560. */}
-      <section id="prompts" className={`relative z-10 mx-auto px-6 lg:px-8 ${isPromptsPage ? "pt-10 pb-24 lg:pt-14" : "scroll-mt-24 pb-8 pt-10 lg:pb-12 lg:pt-14"}`}>
-        {/* The page still has to say what it is to a crawler and a screen
-            reader, which the visible heading used to do. */}
-        {!isPromptsPage && (
-          <h1 className="sr-only">{t(`Movento — ${availablePrompts.length} premium website prompts, ready to copy`, `Movento — ${availablePrompts.length} prompts de sites premium, prêts à copier`)}</h1>
-        )}
+      <section id="prompts" className="relative z-10 mx-auto scroll-mt-24 px-4 pb-16 pt-10 sm:px-6 lg:pt-12">
         {/* Mid-trial: what is open, and what the conversion brings. No link to
             /pricing — they are already on the plan. */}
         {TRIAL_DAYS > 0 && trialActive && !hasPremiumAccess && (
@@ -3293,26 +3309,6 @@ export default function MoventoSite() {
             <span className="flex flex-none items-center gap-1.5 rounded-full bg-emerald-400 px-3.5 py-2 text-xs font-bold text-[#04150d]">{t("Start", "Commencer")} <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span>
           </a>
         )}
-        {hasPremiumAccess ? (
-          <div className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.07] p-4 text-sm">
-            <div className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400/[0.1]0 text-white"><Icon name="check" className="h-4 w-4" /></div>
-            <p className="text-white/75">{t("Premium access active", "Accès premium actif")} — <span className="text-white/40">{accessEmail}</span></p>
-          </div>
-        ) : trialActive ? null : (
-          // Hidden mid-trial: the band above has already named them, and
-          // "already a customer?" under "trial running" reads as a doubt about
-          // the access they were just told they have.
-          <button onClick={() => setShowUnlockModal(true)} className="mb-8 flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#121214] px-5 py-4 text-left shadow-sm transition hover:border-white/20 hover:shadow-md">
-            <span className="flex items-center gap-3">
-              <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-white/[0.05] text-white/70"><Icon name="lock" className="h-4 w-4" /></span>
-              <span>
-                <span className="block text-sm font-semibold text-[#EDE9E0]">{t("Already purchased?", "Déjà client ?")}</span>
-                <span className="block text-xs text-white/55">{t("Unlock your access with your checkout email.", "Déverrouille ton accès avec ton email d'achat.")}</span>
-              </span>
-            </span>
-            <span className="flex flex-none items-center gap-1.5 rounded-full bg-white/[0.05] px-3.5 py-2 text-xs font-semibold text-white/80">{t("Unlock", "Déverrouiller")} <Icon name="arrow" className="h-3.5 w-3.5" /></span>
-          </button>
-        )}
         {(accessStatus.message || accessStatus.error) && !isSuccessPage && <div className={`mb-8 flex items-start gap-3 rounded-2xl border p-4 text-sm leading-6 ${accessStatus.error ? "border-red-400/25 bg-red-400/[0.08] text-red-300" : "border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-300"}`}><Icon name={accessStatus.error ? "alert" : "check"} className="mt-1 h-4 w-4 flex-none" /><p>{accessStatus.error || accessStatus.message}</p></div>}
         {unlockNotice && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-white/12 bg-white/[0.05] p-4 text-sm leading-6 text-white/80"><Icon name="sparkles" className="mt-1 h-4 w-4 flex-none" /><p>{unlockNotice}</p></div>}
         {copyError && <div className="mb-8 flex items-start gap-3 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-4 text-sm leading-6 text-red-300"><Icon name="alert" className="mt-1 h-4 w-4 flex-none" /><p>{copyError}</p></div>}
@@ -3331,23 +3327,42 @@ export default function MoventoSite() {
             </p>
           </div>
         )}
-        {/* One row of chips: everything, the latest additions, then the
-            categories that have enough cards to be worth a chip. Scrolls
-            sideways on a phone rather than wrapping into a wall of pills. */}
-        <div className="-mx-6 mb-6 flex gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mb-8 lg:-mx-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
-          {[["all", t("All", "Tous")], ["new", t("New", "Nouveautés")], ...GALLERY_CATEGORIES.map((c) => [c, c])].map(([key, label]) => {
-            const active = galleryFilter === key;
-            return (
+        {/* Two groups on one line: how the cards are ordered, then which
+            category, in its own capsule that scrolls sideways (with an arrow
+            on a mouse). Stacked on a phone. */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-none items-center gap-1 self-start rounded-full border border-white/[0.08] bg-[#1B1B1D] p-1">
+            {[["featured", t("Featured", "À la une")], ["recent", t("Recent", "Récents")]].map(([key, label]) => (
               <button
                 key={key}
-                onClick={() => { setGalleryFilter(key); track("gallery_filter", { filter: key }); }}
-                className={`flex flex-none items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-semibold transition ${active ? "border-[#EDE9E0] bg-[#EDE9E0] text-[#0A0A0B]" : "border-white/10 bg-white/[0.03] text-white/65 hover:border-white/25 hover:text-[#EDE9E0]"}`}
+                onClick={() => { setGalleryOrder(key); track("gallery_order", { order: key }); }}
+                className={`rounded-full px-4 py-2 text-[13px] font-semibold transition sm:px-5 ${galleryOrder === key ? "bg-[#2A2A2E] text-white" : "text-white/60 hover:text-white"}`}
               >
-                {key === "new" && <Icon name="sparkles" className="h-3.5 w-3.5" />}
                 {label}
               </button>
-            );
-          })}
+            ))}
+          </div>
+          <div className="relative min-w-0 flex-1 rounded-full border border-white/[0.08] bg-[#1B1B1D] p-1">
+            <div ref={chipsRef} className="flex gap-1 overflow-x-auto pr-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {[["all", t("All", "Tout")], ...GALLERY_CATEGORIES.map((c) => [c, c])].map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => { setGalleryFilter(key); track("gallery_filter", { filter: key }); }}
+                  className={`flex-none whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition ${galleryFilter === key ? "bg-[#2A2A2E] text-white" : "text-white/60 hover:text-white"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => chipsRef.current?.scrollBy({ left: 240, behavior: "smooth" })}
+              aria-label={t("More categories", "Plus de catégories")}
+              className="absolute right-1.5 top-1/2 hidden h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-[#2A2A2E] text-white/80 shadow-[-12px_0_16px_#1B1B1D] transition hover:text-white sm:grid"
+            >
+              <Icon name="arrow" className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
         {filtered.length === 0 && (
           <p className="py-16 text-center text-sm text-white/45">{t("Nothing here yet.", "Rien ici pour l'instant.")}</p>
@@ -3361,9 +3376,9 @@ export default function MoventoSite() {
             land down the left edge instead of across the top row. Dealing them
             round-robin puts card 1, 2, 3, 4 on the first row, so the order
             above is the order you read. */}
-        <div className="flex items-start gap-3 sm:gap-5 lg:gap-6">
+        <div className="flex items-start gap-3 lg:gap-3.5">
           {Array.from({ length: galleryColumns }, (_, col) => (
-          <div key={col} className="flex min-w-0 flex-1 flex-col gap-3 sm:gap-5 lg:gap-6">
+          <div key={col} className="flex min-w-0 flex-1 flex-col gap-4 lg:gap-5">
           <AnimatePresence>
             {filtered.filter((_, i) => i % galleryColumns === col).map((item) => {
               const isFree = FREE_PROMPT_FILES.has(item.file);
@@ -3529,8 +3544,8 @@ function SiteNav({ query, setQuery, searchLabel }) {
   };
 
   return (
-    <header className="relative z-30 w-full border-b border-white/[0.06] bg-[#121214]/90 backdrop-blur-xl">
-      <div className="flex h-16 items-center gap-6 px-4 sm:px-6">
+    <header className="relative z-30 w-full bg-transparent">
+      <div className="flex h-[72px] items-center gap-6 px-4 sm:px-6">
         <a href="/" className="flex-none transition hover:opacity-85" aria-label="Movento"><Logo /></a>
         <nav className="hidden items-center gap-1 md:flex" aria-label={t("Sections", "Sections")}>
           {NAV_PRIMARY().map((link) => (
@@ -3698,7 +3713,7 @@ function BackgroundsPage({ hasAccess }) {
   }, [clips, query]);
 
   return (
-    <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
+    <main className="min-h-screen bg-[#141414] text-[#EDE9E0]">
       <SiteNav query={query} setQuery={setQuery} searchLabel={t("Search a background…", "Chercher un background…")} />
       <section className="mx-auto max-w-7xl px-6 pb-4 pt-12 text-center lg:px-8 lg:pt-16">
         <h1 className="text-4xl font-bold tracking-[-0.04em] text-[#EDE9E0] md:text-6xl">Backgrounds</h1>
