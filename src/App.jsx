@@ -890,7 +890,7 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 const PLAN_TERMS = [
   { id: "m1", price: 29.99, anchor: 39.99, days: 30, retired: true, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
   // Anchors: the same span bought month by month at the monthly price.
-  { id: "m3", price: 49, anchor: 89.97, days: 90, retired: false, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
+  { id: "m3", price: 69, anchor: 89.97, days: 90, retired: false, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
   { id: "m12", price: 89, anchor: 359.88, days: 365, retired: false, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
@@ -5636,7 +5636,7 @@ const GRANT_PLAN_LABELS = { m1: "mensuel", m3: "3 mois", m12: "annuel", lifetime
 
 const KIND_LABELS = {
   m1: "Mensuel 29,99€ (retiré)",
-  m3: "3 mois 49€",
+  m3: "3 mois",
   m12: "Annuel 89€",
   monthly: "Mensuel 18,99€ (ancien)",
   yearly: "Annuel (ancien)",

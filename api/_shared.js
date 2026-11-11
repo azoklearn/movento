@@ -250,7 +250,7 @@ export const externalCheckoutUrls = {
 export const GUMROAD_M1_FALLBACK_URL = "https://barbelinnoan.gumroad.com/l/vujeq";
 export const GUMROAD_M12_FALLBACK_URL = "https://barbelinnoan.gumroad.com/l/jawns";
 // m3 and lifetime have no Gumroad product yet: GUMROAD_M3_URL and
-// GUMROAD_LIFETIME_URL turn them on once they are created there (49 € every
+// GUMROAD_LIFETIME_URL turn them on once they are created there (69 € every
 // 3 months, 149 € once).
 export const gumroadCheckoutUrls = {
   m1: process.env.GUMROAD_M1_URL || GUMROAD_M1_FALLBACK_URL,
@@ -263,7 +263,7 @@ export const gumroadCheckoutUrls = {
 // still configured there is an old 99,99 € plan that existing members renew
 // on. So while Gumroad is not ready this plan has no checkout at all, rather
 // than quietly selling the old Whop price.
-// The same goes for the 3 months at 49 € and lifetime at 149 €: the Whop
+// The same goes for the 3 months at 69 € and lifetime at 149 €: the Whop
 // plans under those names charge old prices, so they are never the fallback.
 const GUMROAD_ONLY_PLANS = new Set(["m3", "m12", "lifetime"]);
 export const gumroadWebhookReady = () => Boolean(process.env.GUMROAD_WEBHOOK_TOKEN);
@@ -311,7 +311,7 @@ export const isGumroadUrl = (url) => {
 //   PADDLE_CLIENT_TOKEN    public, sent to the browser (test_… / live_…)
 //   PADDLE_API_KEY         server only: customer emails, subscriptions, cancel
 //   PADDLE_WEBHOOK_SECRET  server only: verifies the notifications
-//   PADDLE_M3_PRICE_ID      3 months, 49 € recurring
+//   PADDLE_M3_PRICE_ID      3 months, 69 € recurring
 //   PADDLE_M12_PRICE_ID     the year, 89 € recurring
 //   PADDLE_LIFETIME_PRICE_ID lifetime, 149 € one-time (no subscription)
 //   PADDLE_M1_PRICE_ID      the month, off sale: kept so its subscribers resolve
@@ -487,7 +487,7 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 // Lifetime is one payment.
 //
 //   MOLLIE_API_KEY          test_… to try, live_… to sell
-//   MOLLIE_M3_PRICE         default 49.00, every 3 months
+//   MOLLIE_M3_PRICE         default 69.00, every 3 months
 //   MOLLIE_M12_PRICE        default 89.00, every year
 //   MOLLIE_LIFETIME_PRICE   default 149.00, once
 // (m1, 29.99 a month, is off sale; its price stays for the record.)
@@ -496,7 +496,7 @@ export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
 export const mollieTestMode = () => String(process.env.MOLLIE_API_KEY || "").startsWith("test_");
 export const MOLLIE_PRICES = {
   m1: Number(process.env.MOLLIE_M1_PRICE || 29.99).toFixed(2),
-  m3: Number(process.env.MOLLIE_M3_PRICE || 49).toFixed(2),
+  m3: Number(process.env.MOLLIE_M3_PRICE || 69).toFixed(2),
   m12: Number(process.env.MOLLIE_M12_PRICE || 89).toFixed(2),
   lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 149).toFixed(2),
   // Packs of prompts, paid once: the buyer picks the prompts after paying
@@ -675,7 +675,7 @@ export function bestCheckoutUrl(plan) {
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
 //
-// The line-up is now the same whoever sells it: 3 months (49 €), the year
+// The line-up is now the same whoever sells it: 3 months (69 €), the year
 // (89 €) and lifetime (149 €). The month is off sale; its subscribers keep
 // their access and their renewals.
 export const RETIRED_PLANS = new Set(["m1", "monthly", "yearly"]);

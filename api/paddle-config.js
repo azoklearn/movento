@@ -28,7 +28,7 @@ export default function handler(req, res) {
   if (!process.env.PADDLE_API_KEY) warnings.push("PADDLE_API_KEY manque : le webhook ne pourra pas lire l'email de l'acheteur.");
   if (!process.env.PADDLE_WEBHOOK_SECRET) warnings.push("PADDLE_WEBHOOK_SECRET manque : les paiements ne débloqueront pas l'accès.");
   const prices = paddlePriceIds();
-  if (!prices.m3) warnings.push("PADDLE_M3_PRICE_ID manque (3 mois, 49 €).");
+  if (!prices.m3) warnings.push("PADDLE_M3_PRICE_ID manque (3 mois, 69 €).");
   if (!prices.m12) warnings.push("PADDLE_M12_PRICE_ID manque (annuel, 89 €).");
   if (!prices.lifetime) warnings.push("PADDLE_LIFETIME_PRICE_ID manque (à vie, 149 €).");
   // The likeliest copy-paste mistake: the product id (pro_…) where the price
