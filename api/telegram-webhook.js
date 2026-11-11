@@ -17,7 +17,7 @@ export function telegramWebhookSecret(botToken = process.env.TELEGRAM_BOT_TOKEN)
   return createHash("sha256").update(`movento-telegram:${botToken}`).digest("hex").slice(0, 48);
 }
 
-const PLAN_NAMES = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", sub: "Abonnement" };
+const PLAN_NAMES = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts", sub: "Abonnement" };
 
 // Midnight in Paris, as a UTC instant, for today or the first of the month.
 export function parisStart(now = new Date(), { month = false } = {}) {

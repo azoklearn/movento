@@ -15,7 +15,7 @@
 // What is charged comes from MOLLIE_PRICES, never from the request.
 import { randomBytes } from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { checkoutProviderFor, methodNotAllowed, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
+import { checkoutProviderFor, methodNotAllowed, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
 
 const looksLikeEmail = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 
@@ -74,11 +74,11 @@ export default async function handler(req, res) {
       method: "POST",
       body: {
         amount: { currency: "EUR", value: amount },
-        description: plan === "lifetime" ? "Movento — Accès à vie" : `Movento — ${MOLLIE_PLAN_LABELS[plan]}${offer ? " (offre 1re année)" : ""}`,
+        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? "Movento — Accès à vie" : `Movento — ${MOLLIE_PLAN_LABELS[plan]}${offer ? " (offre 1re année)" : ""}`,
         customerId,
         // A subscription (3 months, the year) stores the card for the charges
         // that follow; lifetime is charged once.
-        sequenceType: plan === "lifetime" ? "oneoff" : "first",
+        sequenceType: plan === "lifetime" || MOLLIE_PACK_SIZES[plan] ? "oneoff" : "first",
         redirectUrl: `${base}/success?provider=mollie&claim=${claim}${knownEmail ? `&email=${encodeURIComponent(knownEmail)}` : ""}`,
         // Back on the pricing page with the claim, which is what lets the page
         // offer the year at the win-back price to someone who left.

@@ -1854,6 +1854,7 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid, fallbackUrl }) {
 // tab without paying can still be offered the year when they come back.
 // Cleared once a purchase is confirmed on /success.
 const PENDING_PAYMENT_KEY = "movento_mollie_started";
+const CHECKOUT_PROVIDER_PUBLIC = String(import.meta.env.CHECKOUT_PROVIDER || "").trim().toLowerCase();
 const WINBACK_SEEN_KEY = "movento_winback_seen";
 function rememberStartedPayment(claim, plan) {
   if (!claim) return;
@@ -1974,6 +1975,80 @@ function WinbackOffer({ claim: explicit = "" }) {
         </motion.div>
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+// Packs of prompts, paid once, for a one-off project: pick a size, pay on
+// Mollie, give the email after paying, then choose the prompts on /choose.
+// Prices are the server's (MOLLIE_PRICES in api/_shared.js); these are only
+// what the card shows. Keep the two in step.
+const PROMPT_PACKS = [
+  { id: "pack2", size: 2, price: 25 },
+  { id: "pack5", size: 5, price: 49 },
+  { id: "pack10", size: 10, price: 79 },
+];
+
+function PromptPacks() {
+  const [pick, setPick] = useState(PROMPT_PACKS[0]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const buy = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/mollie-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: pick.id }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.checkoutUrl) throw new Error(apiError(d, t("The payment could not start. Try again in a moment.", "Le paiement n'a pas pu démarrer. Réessaie dans un instant.")));
+      track("pack_checkout_opened", { pack: pick.id });
+      rememberStartedPayment(d.claim, pick.id);
+      window.location.assign(d.checkoutUrl);
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section id="packs" className="relative z-10 mx-auto grid max-w-4xl scroll-mt-24 items-center gap-10 px-6 py-20 md:grid-cols-[1fr_minmax(0,22rem)] md:gap-14 lg:px-8">
+      <div>
+        <h2 className="text-[34px] font-black uppercase leading-[0.98] tracking-[-0.04em] text-white sm:text-[44px]">{t("Need prompts", "Besoin de prompts")}<br />{t("on your terms?", "à la carte ?")}</h2>
+        <p className="mt-4 max-w-sm text-[15px] leading-7 text-white/55">{t("Buy a pack for a one-off project: pick your prompts, keep them for good, no subscription.", "Prends un pack pour un projet ponctuel : tu choisis tes prompts, tu les gardes pour toujours, sans abonnement.")}</p>
+      </div>
+      <div className="mv-glass relative flex flex-col rounded-[22px] p-6 sm:p-8">
+        <span className="mv-glow" aria-hidden="true"><span className="mv-glow-blob" /><span className="mv-glow-blob" /></span>
+        <h3 className="text-xl font-bold tracking-tight text-[#EDE9E0]">{t("Prompt packs", "Packs de prompts")}</h3>
+        <p className="mt-2 text-sm leading-6 text-white/60">{t("For a one-off site or app, when you don't need a subscription.", "Pour un site ou une app ponctuelle, quand tu n'as pas besoin d'un abonnement.")}</p>
+        <div className="my-6 border-t border-dashed border-white/[0.12]" />
+        <ul className="space-y-3">
+          {[t("Pick from the whole prompt library", "Choisis dans toute la bibliothèque"), t("2 to 10 prompts, yours for good", "2 à 10 prompts, à toi pour toujours"), t("No commitment", "Sans engagement")].map((line) => (
+            <li key={line} className="flex items-start gap-3 text-sm leading-6 text-white/70"><Icon name="tick" className="mt-[5px] h-[14px] w-[14px] flex-none text-white/85" /> {line}</li>
+          ))}
+        </ul>
+        <div role="radiogroup" aria-label={t("Pack size", "Taille du pack")} className="mt-6 grid grid-cols-3 gap-1 rounded-xl border border-white/10 bg-black/20 p-1">
+          {PROMPT_PACKS.map((pack) => (
+            <button
+              key={pack.id}
+              type="button"
+              role="radio"
+              aria-checked={pick.id === pack.id}
+              onClick={() => setPick(pack)}
+              className={`rounded-lg py-2.5 text-sm font-bold transition ${pick.id === pack.id ? "bg-white/[0.08] text-white ring-1 ring-white/60" : "text-white/55 hover:text-white"}`}
+            >
+              {pack.size}
+            </button>
+          ))}
+        </div>
+        <div className="mt-6 flex items-baseline gap-2">
+          <span className="text-[40px] font-bold leading-none tracking-[-0.03em] text-[#EDE9E0]">{eur(pick.price)}</span>
+          <span className="text-sm text-white/45">{t(`for ${pick.size} prompts`, `pour ${pick.size} prompts`)}</span>
+        </div>
+        <button type="button" onClick={buy} disabled={busy} className="mt-6 w-full rounded-full bg-[#EDE9E0] px-4 py-3.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white disabled:opacity-60">
+          {busy ? t("Loading…", "Chargement…") : t("Buy now", "Acheter")}
+        </button>
+        {error && <p className="mt-3 text-center text-xs text-red-300">{error}</p>}
+      </div>
+    </section>
   );
 }
 
@@ -3972,6 +4047,12 @@ function SuccessPage() {
           setEbookEarned(earnedEbook(subData));
           setSupportEarned(earnedSupport(subData));
         } catch { setEbookEarned(true); }
+      } else if (Number(data.credits) > 0) {
+        // A pack: nothing to unlock here, prompts to pick. Straight to the
+        // picker, signed in with this email.
+        window.localStorage.setItem("movento_access_email", normalized);
+        forgetStartedPayment();
+        window.location.assign("/choose");
       } else {
         setStatus({ loading: false, ok: false, error: t("No access found for this email yet. If you just paid, wait a minute and retry — activation can take a moment.", "Aucun accès trouvé pour cet email pour l'instant. Si tu viens de payer, patiente une minute et réessaie — l'activation peut prendre un instant.") });
       }
@@ -4699,6 +4780,7 @@ function CgvPage() {
           <li><strong className="text-white/75">3 mois : {eur(termOf("m3").price)} tous les 3 mois</strong>, renouvelé automatiquement jusqu'à résiliation.</li>
           <li><strong className="text-white/75">Annuel : {eur(termOf("m12").price)} par an</strong>, renouvelé automatiquement chaque année jusqu'à résiliation.</li>
           <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
+          <li><strong className="text-white/75">Packs de prompts : {PROMPT_PACKS.map((p) => `${p.size} prompts ${eur(p.price)}`).join(" · ")}</strong>, en un seul paiement, sans abonnement ; les prompts sont choisis après l'achat et restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
       </div>
@@ -5489,6 +5571,9 @@ function PricingPage() {
           <Reassurance className={showPackOffer ? "mt-9 lg:mt-2" : "mt-9 lg:mt-3"} />
         </div>
       </section>
+
+      {/* Packs only sell on Mollie, which is the only checkout they exist on. */}
+      {CHECKOUT_PROVIDER_PUBLIC === "mollie" && <PromptPacks />}
 
       <PromoPopup onPick={scrollToPlans} />
 

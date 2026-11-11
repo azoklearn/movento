@@ -14,6 +14,7 @@
 // claim.js), which records the email against the payment here.
 import { Redis } from "@upstash/redis";
 import {
+  MOLLIE_PACK_SIZES,
   MOLLIE_PLAN_LABELS,
   MOLLIE_PLAN_MONTHS,
   MOLLIE_PRICES,
@@ -22,6 +23,7 @@ import {
   mollieApi,
   mollieSubscriptionPlans,
   normalizeEmail,
+  redisAddPromptCredit,
   redisGetAccessRecord,
   redisSetAccess,
 } from "./_shared.js";
@@ -137,6 +139,14 @@ export async function grantPaid(payment, email) {
   // Remembered for the customer, so the monthly charges that follow find
   // their subscriber without asking Mollie each time.
   if (payment.customerId) await redis().set(`mollie:customer-email:${payment.customerId}`, email).catch(() => {});
+
+  // A pack: its prompts credited once per payment, whoever calls first (the
+  // webhook or the claim). The credits are spent on /choose.
+  if (MOLLIE_PACK_SIZES[plan]) {
+    const first = await redis().set(`mollie:packdone:${payment.id}`, email, { nx: true });
+    if (first) await redisAddPromptCredit(email, MOLLIE_PACK_SIZES[plan]);
+    return { plan, renewal: false };
+  }
 
   if (plan === "lifetime") {
     await redisSetAccess(email, mollieAccessRecord({ kind: "lifetime", paymentId: payment.id, customerId: payment.customerId }));

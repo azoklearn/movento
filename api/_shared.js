@@ -499,8 +499,14 @@ export const MOLLIE_PRICES = {
   m3: Number(process.env.MOLLIE_M3_PRICE || 49).toFixed(2),
   m12: Number(process.env.MOLLIE_M12_PRICE || 89).toFixed(2),
   lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 149).toFixed(2),
+  // Packs of prompts, paid once: the buyer picks the prompts after paying
+  // (/choose) and keeps them. Sizes in MOLLIE_PACK_SIZES.
+  pack2: Number(process.env.MOLLIE_PACK2_PRICE || 25).toFixed(2),
+  pack5: Number(process.env.MOLLIE_PACK5_PRICE || 49).toFixed(2),
+  pack10: Number(process.env.MOLLIE_PACK10_PRICE || 79).toFixed(2),
 };
-export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie" };
+export const MOLLIE_PACK_SIZES = { pack2: 2, pack5: 5, pack10: 10 };
+export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
 // How many months one payment of each subscription pays for: the Mollie
 // subscription's interval, and how far a paid payment opens the catalogue.
 export const MOLLIE_PLAN_MONTHS = { m1: 1, m3: 3, m12: 12 };
