@@ -1,4 +1,7 @@
+import { Redis } from "@upstash/redis";
 import {
+  FAIR_USE_DAILY_COPIES,
+  FAIR_USE_KINDS,
   customerAccessLevel,
   customerOwnsPrompt,
   extractPrompt,
@@ -8,7 +11,40 @@ import {
   methodNotAllowed,
   normalizeEmail,
   promptAllowedFor,
+  redisGetAccessRecord,
 } from "./_shared.js";
+
+// The day in Paris, so the allowance resets at the buyer's midnight.
+const parisDay = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
+
+// Fair use on the 3-month plan: FAIR_USE_DAILY_COPIES different prompts a day.
+// Copying one already taken today again is free. Answers null when the copy
+// may go ahead, or the refusal to send. A Redis failure lets the copy through:
+// a paying customer is not refused because the counter could not be read.
+async function fairUseRefusal(email, file) {
+  let record;
+  try { record = await redisGetAccessRecord(email); } catch { return null; }
+  // Only the 3 months sold from now on. The older 3-month plan sold on Whop
+  // (its records carry a Whop plan id) was bought as unlimited and stays so.
+  if (!FAIR_USE_KINDS.has(record?.kind) || !/^(mollie|paddle|gumroad|admin_grant)_/.test(String(record.plan || ""))) return null;
+  try {
+    const redis = Redis.fromEnv();
+    const key = `fairuse:${email}:${parisDay()}`;
+    if (await redis.sismember(key, file)) return null;
+    if ((await redis.scard(key)) >= FAIR_USE_DAILY_COPIES) {
+      return {
+        error: `Tu as copié tes ${FAIR_USE_DAILY_COPIES} prompts du jour (offre 3 mois). Reviens demain, ou passe à l'annuel ou à vie pour des copies illimitées.`,
+        errorEn: `You have copied your ${FAIR_USE_DAILY_COPIES} prompts for today (3-month plan). Come back tomorrow, or move to the annual or lifetime plan for unlimited copies.`,
+        fairUse: true,
+      };
+    }
+    await redis.sadd(key, file);
+    await redis.expire(key, 2 * 86400);
+  } catch (error) {
+    console.error("Fair use counter failed:", error);
+  }
+  return null;
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -40,6 +76,13 @@ export default async function handler(req, res) {
       });
     }
     return res.status(403).json({ error: "Premium access required." });
+  }
+
+  // Only for those who hold the catalogue through the 3-month plan: a free
+  // prompt, or one bought on its own, is never counted.
+  if (level === "full" && !isFreePrompt) {
+    const refusal = await fairUseRefusal(email, file);
+    if (refusal) return res.status(429).json(refusal);
   }
 
   try {

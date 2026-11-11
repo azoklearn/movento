@@ -15,7 +15,7 @@
 // What is charged comes from MOLLIE_PRICES, never from the request.
 import { randomBytes } from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { checkoutProviderFor, methodNotAllowed, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, mollieApi, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
+import { checkoutProviderFor, methodNotAllowed, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
 
 const looksLikeEmail = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 
@@ -50,6 +50,20 @@ export default async function handler(req, res) {
   // Optional: used when known, never required.
   const knownEmail = looksLikeEmail(email) ? email : "";
 
+  // The win-back price, only on the plan it is for and only while the
+  // payment the buyer left still earns it (api/_shared.js). Anything else in
+  // `offer` is ignored and the normal price is charged.
+  let offer = null;
+  if (req.body?.offer && plan === MOLLIE_WINBACK.plan) {
+    try {
+      const check = await mollieWinbackEligibility(String(req.body.offer));
+      if (check.eligible) offer = { from: String(req.body.offer) };
+    } catch (error) {
+      console.error("Mollie win-back check failed:", error);
+    }
+  }
+  const amount = offer ? MOLLIE_WINBACK.price : MOLLIE_PRICES[plan];
+
   // The site's own address, as this request reached it.
   const host = req.headers["x-forwarded-host"] || req.headers.host;
   const base = `https://${host}`;
@@ -59,24 +73,26 @@ export default async function handler(req, res) {
     const payment = await mollieApi("/payments", {
       method: "POST",
       body: {
-        amount: { currency: "EUR", value: MOLLIE_PRICES[plan] },
-        description: plan === "lifetime" ? "Movento — Accès à vie" : `Movento — ${MOLLIE_PLAN_LABELS[plan]}`,
+        amount: { currency: "EUR", value: amount },
+        description: plan === "lifetime" ? "Movento — Accès à vie" : `Movento — ${MOLLIE_PLAN_LABELS[plan]}${offer ? " (offre 1re année)" : ""}`,
         customerId,
         // A subscription (3 months, the year) stores the card for the charges
         // that follow; lifetime is charged once.
         sequenceType: plan === "lifetime" ? "oneoff" : "first",
         redirectUrl: `${base}/success?provider=mollie&claim=${claim}${knownEmail ? `&email=${encodeURIComponent(knownEmail)}` : ""}`,
-        cancelUrl: `${base}/pricing`,
+        // Back on the pricing page with the claim, which is what lets the page
+        // offer the year at the win-back price to someone who left.
+        cancelUrl: `${base}/pricing?left=${claim}`,
         webhookUrl: `${base}/api/mollie-webhook`,
         locale: "fr_FR",
-        metadata: { plan, claim, ...(knownEmail ? { email: knownEmail } : {}) },
+        metadata: { plan, claim, ...(offer ? { offer: "winback", offerFrom: offer.from } : {}), ...(knownEmail ? { email: knownEmail } : {}) },
       },
     });
     // Kept 60 days: long enough for a buyer who closes the tab and comes back.
     await Redis.fromEnv().set(`mollie:claim:${claim}`, { paymentId: payment.id, plan }, { ex: 60 * 86400 });
     const checkoutUrl = payment?._links?.checkout?.href;
     if (!checkoutUrl) throw new Error("Mollie returned no checkout link");
-    return res.json({ checkoutUrl });
+    return res.json({ checkoutUrl, claim });
   } catch (error) {
     console.error("Mollie checkout failed:", error);
     return res.status(502).json({ error: "Le paiement n'a pas pu démarrer. Réessaie dans un instant.", errorEn: "The payment could not start. Try again in a moment." });

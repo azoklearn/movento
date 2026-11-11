@@ -1014,10 +1014,17 @@ const PROMPT_PACK_PRICE = 19.99;
 // The catalogue size rounded down to the ten, so the line stays true between
 // two additions without being edited: 226 prompts reads "220+".
 const CATALOGUE_COUNT = `${Math.floor(availablePrompts.length / 10) * 10}+`;
-const FEATURE_BACKGROUNDS = t("Animated backgrounds library", "Bibliothèque de backgrounds animés");
+const FEATURE_BACKGROUNDS = t("Animated backgrounds", "Backgrounds animés");
+const FEATURE_APPS = t("Access to apps", "Accès aux apps");
+// Fair use on the 3-month plan, enforced by api/prompt.js
+// (FAIR_USE_DAILY_COPIES in api/_shared.js): keep the two in step.
+const FAIR_USE_DAILY_COPIES = 3;
+const FEATURE_FAIR_USE = t(`Fair use: ${FAIR_USE_DAILY_COPIES} prompt copies / day`, `Fair use : ${FAIR_USE_DAILY_COPIES} copies de prompts / jour`);
+const FEATURE_UNLIMITED = t("Unlimited prompts access", "Accès illimité aux prompts");
 const FEATURE_CLIENT_WORK = t("For personal & client work", "Pour tes projets perso & clients");
 const CATALOGUE_FEATURES = [
-  t(`Unlimited access to ${CATALOGUE_COUNT} prompts`, `Accès illimité à ${CATALOGUE_COUNT} prompts`),
+  FEATURE_UNLIMITED,
+  FEATURE_APPS,
   FEATURE_BACKGROUNDS,
   t("Prompt + site ready to deploy", "Prompt + site prêt à déployer"),
   t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"),
@@ -1028,7 +1035,7 @@ const CATALOGUE_FEATURES = [
 ];
 // How a feature row is marked on the card: a "new" tag on what was added
 // lately, bold on the line a buyer is looking for before paying.
-const NEW_FEATURES = new Set([FEATURE_BACKGROUNDS]);
+const NEW_FEATURES = new Set([FEATURE_APPS, FEATURE_BACKGROUNDS]);
 const STRONG_FEATURES = new Set([FEATURE_CLIENT_WORK]);
 
 // The subscriptions renew, so they can be stopped. Lifetime is paid once and
@@ -1083,16 +1090,15 @@ const plans = [
     // name the plan they are on, which is what keeps them their ebook.
     hidden: Boolean(termOf("m3").retired),
     name: t("3 months", "3 mois"),
-    subtitle: t("Every prompt, for a season", "Tous les prompts, pour 3 mois"),
+    subtitle: FEATURE_FAIR_USE,
     price: eur(termOf("m3").price),
-    originalPrice: eur(termOf("m3").anchor),
-    discountBadge: `−${discountOf("m3")} %`,
     period: t("/ 3 mo", "/ 3 mois"),
     perDay: perDayOf("m3"),
     billedNote: t("Every 3 months, cancel anytime", "Tous les 3 mois, résiliable à tout moment"),
-    cta: t("Get 3 months", "Prendre 3 mois"),
+    cta: t("Get 3 months access", "Prendre l'accès 3 mois"),
     featured: false,
-    features: [...BASE_FEATURES, t(`That is ${eur((termOf("m3").price / 3).toFixed(2))} a month`, `Soit ${eur((termOf("m3").price / 3).toFixed(2))} par mois`)],
+    // The month's catalogue, with fair use in place of "unlimited".
+    features: BASE_FEATURES.map((f) => (f === FEATURE_UNLIMITED ? FEATURE_FAIR_USE : f)),
     perk: t("Direct support included", "Support direct inclus"),
     // Its Whop product is sold as "Abonnement 3 Mois + EBOOK", so the promise is
     // already made where the buyer pays. EBOOK_KINDS is what honours it.
@@ -1104,20 +1110,18 @@ const plans = [
     // retires a term, and nothing on the page can disagree with it.
     hidden: Boolean(termOf("m12").retired),
     name: t("Annual", "Annuel"),
-    subtitle: t("Every prompt, for a whole year", "Tous les prompts, pendant un an"),
+    subtitle: t("Unlimited prompts, access for a year", "Prompts illimités, accès pendant un an"),
     price: eur(termOf("m12").price),
-    originalPrice: eur(termOf("m12").anchor),
-    discountBadge: `−${discountOf("m12")} %`,
     period: t("/ yr", "/ an"),
     perDay: perDayOf("m12"),
-    billedNote: t("Every year, cancel anytime", "Chaque année, résiliable à tout moment"),
+    billedNote: t("Per year, cancel anytime", "Par an, résiliable à tout moment"),
     // "Best value" rather than "most chosen": the arithmetic is on the card
     // beside it, whereas what other buyers chose is nothing this page measures.
-    cta: t("Get the annual plan", "Prendre l'offre annuelle"),
+    cta: t("Subscribe yearly", "S'abonner à l'année"),
     featured: false,
     // The comparison as a line of its own, derived from both prices so it
     // cannot outlive either of them.
-    features: [...BASE_FEATURES, t(`That is ${eur((termOf("m12").price / 12).toFixed(2))} a month`, `Soit ${eur((termOf("m12").price / 12).toFixed(2))} par mois`)],
+    features: BASE_FEATURES,
     // Tied to the term rather than to the product, so it stays on the card that
     // carries it and nowhere else. SUPPORT_KINDS is what honours it.
     perk: t("Direct support included", "Support direct inclus"),
@@ -1153,7 +1157,7 @@ const plans = [
     // api/_shared.js, which would refuse the checkout while this is hidden.
     hidden: LIFETIME_RETIRED,
     name: t("Lifetime", "À vie"),
-    subtitle: t("Every prompt, yours for life", "Tous les prompts, à toi pour toujours"),
+    subtitle: t("Unlimited prompts, access for life", "Prompts illimités, accès à vie"),
     price: eur(PRICE_LIFETIME),
     originalPrice: eur(PRICE_LIFETIME_ANCHOR),
     // No chip: struck against two years of the annual its reduction is small
@@ -1161,17 +1165,19 @@ const plans = [
     period: t("forever", "à vie"),
     // No per-day figure: the term it would divide by is the rest of your life.
     // The line the other cards use for their renewal says so instead.
-    billedNote: t("One payment, lifetime access", "Un seul paiement, accès à vie"),
-    cta: t("Get lifetime access", "Prendre l'accès à vie"),
+    billedNote: t("Lifetime access · one-time payment", "Accès à vie · paiement unique"),
+    cta: t("Pay once, enjoy for life", "Paie une fois, profite à vie"),
     // Only one ribbon per row. It is the lifetime's: of the two offers it is
     // the one worth steering a buyer to, and "best value" is arithmetic anyone
     // can check against the card beside it — unlike "most chosen", which would
     // be a claim about other buyers that nothing here measures.
-    badge: t("Best value", "Meilleur rapport"),
+    badge: t("Best deal", "Meilleure offre"),
     featured: true,
     // The comparison stated as a line of its own, derived from both prices so
     // it cannot outlive either of them.
-    features: [...CATALOGUE_FEATURES, t("Lifetime updates", "Mises à jour à vie"), t("Cheaper than the annual from year 2", "Plus rentable que l'annuel dès la 2e année")],
+    // Its two extras go after support and the ebook, as the last rows.
+    features: CATALOGUE_FEATURES,
+    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Cheaper than the annual from year 2", "Plus rentable que l'annuel dès la 2e année")],
     // Stated plainly rather than buried in the list above. The descriptions the
     // card used to carry are gone: they were most of its height, and beside
     // three shorter cards that read as a mistake rather than as generosity.
@@ -1229,7 +1235,7 @@ const planGridLg = visiblePlans.length === 1 ? "lg:grid-cols-1" : visiblePlans.l
 // Two cards stretched over the three-card width read as oversized banners, so
 // the row narrows with the number of plans on sale — and widens for a fourth,
 // which at max-w-5xl would have left four columns too narrow for their prices.
-const planGridWidth = visiblePlans.length === 1 ? "max-w-sm lg:max-w-2xl" : visiblePlans.length === 2 ? "max-w-3xl lg:max-w-5xl" : visiblePlans.length === 4 ? "max-w-3xl lg:max-w-7xl" : "max-w-5xl";
+const planGridWidth = visiblePlans.length === 1 ? "max-w-sm lg:max-w-2xl" : visiblePlans.length === 2 ? "max-w-3xl lg:max-w-5xl" : visiblePlans.length === 4 ? "max-w-3xl lg:max-w-7xl" : "max-w-6xl";
 // With one offer on sale there is nothing to choose between and nothing to be
 // the best value of, so the comparison copy steps aside. Derived rather than
 // hardcoded: bringing a plan back out of hiding restores it on its own.
@@ -1266,72 +1272,53 @@ const monthlyPlan = plans.find((plan) => plan.id === "monthly" && !plan.hidden);
 // nothing is dropped to make it look calm.
 function PlanCard({ plan, onBuy, loading, featured }) {
   // Nothing to line up with, and no other card to be the best of.
-  const alone = isSinglePlan;
+  const highlight = featured && !isSinglePlan;
+  // One list, one tick per row, in the order a buyer reads it: the catalogue,
+  // support and the ebook, then what only this plan adds.
+  const rows = [...(plan.features || []), plan.perk, plan.bonus, ...(plan.extras || [])].filter(Boolean);
   return (
-    <div className="mv-glass relative flex flex-col rounded-xl px-5 pb-6 pt-9 sm:p-7">
-      {/* The travelling light along the card's own edge. Two lamps, half a turn
-          apart, seen through a 1.5px ring — see .mv-glow. */}
-      <span className="mv-glow" aria-hidden="true">
+    <div className={`mv-glass relative flex flex-col rounded-[22px] p-6 sm:p-8 ${highlight ? "shadow-[0_0_70px_-18px_rgba(160,120,255,0.6)]" : ""}`}>
+      {/* The travelling light along the card's own edge — violet and faster on
+          the plan the page puts forward. */}
+      <span className="mv-glow" aria-hidden="true" style={highlight ? { "--mv-glow-color": "#b9a4ff", "--mv-glow-duration": "6s" } : undefined}>
         <span className="mv-glow-blob" />
         <span className="mv-glow-blob" />
       </span>
-      {featured && !alone && <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{plan.badge || t("Best value", "Meilleur choix")}</span>}
 
-      {/* Identity: the name with its discount, then one line on what the plan is. */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        <h3 className="text-lg font-semibold tracking-tight text-[#EDE9E0]">{plan.name}</h3>
-        {plan.discountBadge && <span className="mv-chip flex-none rounded-full px-2 py-[3px] text-[11px] font-semibold leading-[1.5] text-[#EDE9E0]">{plan.discountBadge}</span>}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h3 className="text-xl font-bold tracking-tight text-[#EDE9E0]">{plan.name}</h3>
+        {highlight && <span className="rounded-full bg-gradient-to-r from-[#F0566B] via-[#B04BF0] to-[#7C8CFF] px-2.5 py-1 text-[11px] font-bold text-white">{plan.badge || t("Best deal", "Meilleure offre")}</span>}
       </div>
-      {(plan.subtitle || plan.description) && <p className="mt-1.5 text-[13px] leading-6 text-white/55">{plan.subtitle || plan.description}</p>}
+      {(plan.subtitle || plan.description) && <p className="mt-2 text-sm leading-6 text-white/60">{plan.subtitle || plan.description}</p>}
 
-      <div className="my-5 border-t border-dashed border-white/[0.12]" />
+      <div className="my-6 border-t border-dashed border-white/[0.12]" />
 
-      {/* Both prices on one baseline, the old one first and struck: read left
-          to right it is the discount. Wraps rather than overflow at 320px. */}
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        {plan.originalPrice && <span className="text-base leading-none text-white/35 line-through sm:text-lg">{plan.originalPrice}</span>}
-        <span className="text-[34px] font-bold leading-none tracking-[-0.03em] text-[#EDE9E0] sm:text-[40px]">{plan.price}</span>
+      {/* Only the plan the page puts forward carries a struck price: the old
+          figure beside the new one, same size, so the drop reads at a glance. */}
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        {plan.originalPrice && <span className="text-[34px] font-bold leading-none tracking-[-0.03em] text-white/30 line-through decoration-2 sm:text-[42px]">{plan.originalPrice}</span>}
+        <span className="text-[34px] font-bold leading-none tracking-[-0.03em] text-[#EDE9E0] sm:text-[42px]">{plan.price}</span>
       </div>
-      {plan.billedNote && <p className="mt-2 text-[13px] text-white/45">{plan.billedNote}</p>}
+      {plan.billedNote && <p className="mt-2.5 text-sm text-white/55">{plan.billedNote}</p>}
 
       <button
         onClick={() => onBuy(plan)}
         disabled={loading}
-        style={{ "--mv-glow-color": "#ffa582", "--mv-glow-duration": "6s", "--mv-glow-opacity": 0.85 }}
-        className="mv-cta group mt-5 flex w-full items-center justify-center gap-1.5 rounded-full px-4 py-3 text-[13px] font-semibold text-[#EDE9E0] sm:mt-6 sm:gap-2 sm:py-3.5 sm:text-sm disabled:cursor-not-allowed disabled:opacity-60"
+        className={`mt-6 flex w-full items-center justify-center rounded-full px-4 py-3.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${highlight ? "bg-gradient-to-r from-[#F0566B] via-[#5B5BF7] to-[#C58CFF] text-white shadow-[0_14px_40px_-14px_rgba(123,92,255,0.85)] hover:brightness-110" : "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white"}`}
       >
-        {/* Its own pair of lamps, warm this time — the same device as the card
-            at a quarter the size, which is what ties the two together. */}
-        <span className="mv-glow" aria-hidden="true">
-          <span className="mv-glow-blob" />
-          <span className="mv-glow-blob" />
-        </span>
         {loading ? t("Loading…", "Chargement…") : plan.cta}
-        <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
       </button>
 
-      {/* One list: what the plan buys, then support and the ebook in their own
-          colours, which is what still marks them as the reason to pick it. */}
-      <ul className="mt-6 space-y-2.5">
-        {(plan.features || []).map((feat) => (
-          <li key={feat} className={`flex items-start gap-2.5 text-[13px] leading-6 ${STRONG_FEATURES.has(feat) ? "font-semibold text-[#EDE9E0]" : "text-white/65"}`}>
-            <Icon name="tick" className="mt-[5px] h-[13px] w-[13px] flex-none text-[#EDE9E0]" />
+      <ul className="mt-7 space-y-3">
+        {rows.map((feat) => (
+          <li key={feat} className={`flex items-start gap-3 text-sm leading-6 ${STRONG_FEATURES.has(feat) ? "font-semibold text-[#EDE9E0]" : "text-white/70"}`}>
+            <Icon name="tick" className="mt-[5px] h-[14px] w-[14px] flex-none text-white/85" />
             <span>
               {feat}
-              {NEW_FEATURES.has(feat) && <span className="mv-chip ml-2 inline-block -translate-y-px rounded-full px-1.5 py-px align-middle text-[9px] font-bold uppercase tracking-[0.08em] text-[#EDE9E0]">New</span>}
+              {NEW_FEATURES.has(feat) && <span className="ml-2 inline-block -translate-y-px rounded-full border border-[#F0566B]/80 px-1.5 py-px align-middle text-[9px] font-bold uppercase tracking-[0.06em] text-[#FF8A8A]">New</span>}
             </span>
           </li>
         ))}
-        {plan.perk && (
-          <li className="flex items-start gap-2.5 text-[13px] font-semibold leading-6 text-emerald-200">
-            <Icon name="chat" className="mt-1 h-4 w-4 flex-none text-emerald-300" /> {plan.perk}
-          </li>
-        )}
-        {plan.bonus && (
-          <li className="flex items-start gap-2.5 text-[13px] font-semibold leading-6 text-amber-200">
-            <Icon name="gift" className="mt-1 h-4 w-4 flex-none text-amber-300" /> {plan.bonus}
-          </li>
-        )}
       </ul>
     </div>
   );
@@ -1863,6 +1850,133 @@ function PaddleCheckout({ cfg, plan, prefillEmail, onPaid, fallbackUrl }) {
 //
 // No VAT line: the seller is under the French VAT franchise, so the price is
 // the whole price.
+// The Mollie payment this browser last opened, so a visitor who closes the
+// tab without paying can still be offered the year when they come back.
+// Cleared once a purchase is confirmed on /success.
+const PENDING_PAYMENT_KEY = "movento_mollie_started";
+const WINBACK_SEEN_KEY = "movento_winback_seen";
+function rememberStartedPayment(claim, plan) {
+  if (!claim) return;
+  try { window.localStorage.setItem(PENDING_PAYMENT_KEY, JSON.stringify({ claim, plan, at: Date.now() })); } catch {}
+}
+function forgetStartedPayment() {
+  try { window.localStorage.removeItem(PENDING_PAYMENT_KEY); } catch {}
+}
+
+// "Tu pars déjà ?" — the year at the win-back price, offered to someone who
+// opened a payment and left it. Which payment: `claim` when the page knows it
+// (the success page), else ?left= (Mollie's cancel button lands there), else
+// the one this browser last opened. The server decides whether it still
+// qualifies (api/mollie-offer.js) and is what charges the price; this only
+// shows it. Shown once per abandoned payment.
+function WinbackOffer({ claim: explicit = "" }) {
+  const [offer, setOffer] = useState(null);
+  const [claim, setClaim] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    // ?left= from Mollie's cancel button, ?claim= on /success (a payment
+    // that failed comes back there): the server only offers on a payment
+    // that is over, so a buyer who paid never sees it.
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("left") || params.get("claim") || "";
+    let stored = null;
+    try { stored = JSON.parse(window.localStorage.getItem(PENDING_PAYMENT_KEY) || "null"); } catch {}
+    const candidate = explicit || fromUrl || stored?.claim || "";
+    if (!candidate) return undefined;
+    let seen = "";
+    try { seen = window.localStorage.getItem(WINBACK_SEEN_KEY) || ""; } catch {}
+    if (seen === candidate) return undefined;
+    let alive = true;
+    // A short pause: the offer reads as a reply to leaving, not as a pop-up
+    // thrown at the page the moment it opens.
+    const timer = setTimeout(async () => {
+      try {
+        const r = await fetch(`${API_BASE_URL}/api/mollie-offer?claim=${encodeURIComponent(candidate)}`);
+        const d = await r.json().catch(() => ({}));
+        if (!alive || !d.eligible) return;
+        setClaim(candidate);
+        setOffer(d);
+        try { window.localStorage.setItem(WINBACK_SEEN_KEY, candidate); } catch {}
+        track("winback_shown", { plan: d.plan });
+      } catch {}
+    }, 900);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [explicit]);
+
+  useEffect(() => {
+    if (!offer) return undefined;
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, [offer]);
+
+  if (!offer) return null;
+  const close = () => { setOffer(null); track("winback_dismissed", {}); };
+  const left = Math.max(0, new Date(offer.expiresAt).getTime() - now);
+  const hours = Math.floor(left / 3600000);
+  const minutes = Math.floor((left % 3600000) / 60000);
+  const percent = Math.round((1 - Number(offer.price) / Number(offer.regular)) * 100);
+
+  const take = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/mollie-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: offer.plan, offer: claim }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.checkoutUrl) throw new Error(apiError(d, t("The payment could not start. Try again in a moment.", "Le paiement n'a pas pu démarrer. Réessaie dans un instant.")));
+      track("winback_taken", { plan: offer.plan });
+      rememberStartedPayment(d.claim, offer.plan);
+      window.location.assign(d.checkoutUrl);
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[90] flex items-end justify-center px-3 pb-3 sm:items-center sm:px-4 sm:pb-0" onClick={close}>
+        <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: "spring", stiffness: 280, damping: 26 }}
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("Offer on the annual plan", "Offre sur l'annuel")}
+          className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-[#B9A4FF]/40 bg-[#141218] p-7 text-center shadow-[0_0_80px_-12px_rgba(150,120,255,0.55)] sm:p-8"
+        >
+          <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#7C5CFF]/25 to-transparent" />
+          <button onClick={close} aria-label={t("Close", "Fermer")} className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full border border-white/10 text-white/50 transition hover:text-white"><Icon name="close" className="h-4 w-4" /></button>
+          <span className="relative inline-block rounded-full bg-gradient-to-r from-[#F0566B] via-[#B04BF0] to-[#7C8CFF] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-white">{t(`−${percent}% just for you`, `−${percent}% rien que pour toi`)}</span>
+          <h2 className="relative mt-4 text-[26px] font-black leading-tight tracking-[-0.03em] text-white">{t("Leaving already?", "Tu pars déjà ?")}</h2>
+          <p className="relative mt-2 text-sm leading-6 text-white/60">{t("Here is the annual plan at a price we don't show anywhere else, for your first year.", "Voici l'annuel à un prix qu'on n'affiche nulle part ailleurs, pour ta première année.")}</p>
+          <div className="relative mt-6 flex items-baseline justify-center gap-3">
+            <span className="text-xl text-white/35 line-through">{eur(offer.regular)}</span>
+            <span className="text-[52px] font-black leading-none tracking-[-0.04em] text-white">{eur(offer.price)}</span>
+          </div>
+          <p className="relative mt-1.5 text-[13px] text-white/50">{t(`the first year, then ${eur(offer.regular)} a year · cancel anytime`, `la première année, puis ${eur(offer.regular)} par an · résiliable à tout moment`)}</p>
+          <ul className="relative mx-auto mt-5 max-w-xs space-y-1.5 text-left text-[13px] text-white/70">
+            {[t(`Unlimited access to ${CATALOGUE_COUNT} prompts`, `Accès illimité à ${CATALOGUE_COUNT} prompts`), FEATURE_BACKGROUNDS, t("Direct support + free ebook", "Support direct + ebook offert")].map((line) => (
+              <li key={line} className="flex items-start gap-2"><Icon name="tick" className="mt-[5px] h-[13px] w-[13px] flex-none text-[#C9B8FF]" /> {line}</li>
+            ))}
+          </ul>
+          <button type="button" onClick={take} disabled={busy} className="relative mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-white to-[#D3D8FF] px-5 py-4 text-[15px] font-bold text-[#0A0A0B] shadow-[0_10px_40px_-12px_rgba(190,195,255,0.7)] transition hover:brightness-105 disabled:opacity-60">
+            {busy ? t("Loading…", "Chargement…") : t(`Get the annual for ${eur(offer.price)}`, `Prendre l'annuel à ${eur(offer.price)}`)} {!busy && <Icon name="arrow" className="h-4 w-4" />}
+          </button>
+          {error && <p className="relative mt-3 text-xs text-red-300">{error}</p>}
+          {left > 0 && <p className="relative mt-3 text-xs text-white/40"><Icon name="clock" className="mr-1 inline h-3.5 w-3.5 -translate-y-px" />{t(`Offer valid for ${hours} h ${String(minutes).padStart(2, "0")} min`, `Offre valable encore ${hours} h ${String(minutes).padStart(2, "0")} min`)}</p>}
+          <button type="button" onClick={close} className="relative mt-2 text-xs font-medium text-white/40 underline-offset-4 transition hover:text-white/70 hover:underline">{t("No thanks", "Non merci")}</button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 function MollieCheckout({ cfg, plan, prefillEmail }) {
   const [st, setSt] = useState({ loading: true, error: "" });
   const startedRef = useRef(false);
@@ -1875,6 +1989,7 @@ function MollieCheckout({ cfg, plan, prefillEmail }) {
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.checkoutUrl) throw new Error(apiError(d, t("The payment could not start. Try again in a moment.", "Le paiement n'a pas pu démarrer. Réessaie dans un instant.")));
       track("checkout_opened_on_mollie", { plan: plan.id });
+      rememberStartedPayment(d.claim, plan.id);
       window.location.assign(d.checkoutUrl);
     } catch (err) {
       setSt({ loading: false, error: err.message });
@@ -2524,6 +2639,10 @@ function fetchPromptText(item, email) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ file: item.file, email }),
   }).then(async (response) => {
+    if (response.status === 429) {
+      const data = await response.json().catch(() => ({}));
+      throw Object.assign(new Error(apiError(data, t("Daily limit reached.", "Limite du jour atteinte."))), { name: "FairUseLimit" });
+    }
     if (!response.ok) throw new Error("Prompt not found");
     const data = await response.json();
     return data.prompt;
@@ -2876,7 +2995,9 @@ export default function MoventoSite() {
     const name = error?.name || "";
     const msg = String(error?.message || "");
     let message;
-    if (msg === "Prompt not found") {
+    if (name === "FairUseLimit") {
+      message = msg;
+    } else if (msg === "Prompt not found") {
       message = t("Prompt not found on the server (404). This is not your clipboard — please let us know.", "Prompt introuvable sur le serveur (erreur 404). Ce n'est pas votre presse-papiers — signalez-le nous.");
     } else if (name === "TypeError" || msg.toLowerCase().includes("fetch") || msg.toLowerCase().includes("network")) {
       message = t("Cannot reach the server. Check your connection and try again.", "Connexion au serveur impossible. Vérifiez votre réseau et réessayez.");
@@ -3038,6 +3159,7 @@ export default function MoventoSite() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#141414] text-[#EDE9E0]">
+      <WinbackOffer />
       <AnimatePresence>
         {showLeadModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowLeadModal(false)}>
@@ -3838,6 +3960,7 @@ function SuccessPage() {
       if (!response.ok) throw new Error(data.error || "error");
       if (data.hasAccess) {
         window.localStorage.setItem("movento_access_email", normalized);
+        forgetStartedPayment();
         setStatus({ loading: false, ok: true, error: "" });
         try {
           const sub = await fetch(`${API_BASE_URL}/api/subscription-status`, {
@@ -3859,6 +3982,7 @@ function SuccessPage() {
 
   return (
     <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
+      <WinbackOffer />
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-1/2 top-[-20%] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-white/[0.05] blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-white/[0.04] blur-[120px]" />
@@ -4993,9 +5117,9 @@ function PricingBanner({ onPick }) {
             <Icon name="clock" className="h-4 w-4" />
           </span>
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
-            {/* The term the page pushes, priced exactly as its card states it. */}
-            {t("Every prompt", "Tous les prompts")} — <span className="font-bold">{eur(FEATURED_OFFER.price)}</span>
-            {` ${FEATURED_OFFER.banner}`}{tail ? ` — ${tail}` : ""}
+            {/* The plan the page puts forward, priced exactly as its card is. */}
+            {t("Lifetime access", "Accès à vie")} — <span className="line-through opacity-70">{eur(PRICE_LIFETIME_ANCHOR)}</span> <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
+            {` ${t("one-time payment", "en un seul paiement")}`}{tail ? ` — ${tail}` : ""}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
         </span>
@@ -5253,6 +5377,7 @@ function PricingPage() {
 
   return (
     <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
+      <WinbackOffer />
       <AnimatePresence>
         {checkoutPlan && (
           <CheckoutOverlay
@@ -5295,9 +5420,9 @@ function PricingPage() {
               reading. The percentage is the best of the three cards, derived,
               so the page cannot announce a discount no card offers. */}
           <span className="mv-chip inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#EDE9E0]">
-            <span className="text-[13px] tracking-normal">−{BEST_DISCOUNT} %</span>
+            <span className="text-[13px] tracking-normal"><span className="text-white/45 line-through">{eur(PRICE_LIFETIME_ANCHOR)}</span> {eur(PRICE_LIFETIME)}</span>
             <span className="h-3 w-px bg-white/20" />
-            {t("Your discount is reserved", "Ta réduction est réservée")}
+            {t("Lifetime access, paid once", "Accès à vie, payé une fois")}
           </span>
           <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
             {/* Nothing to choose between with one offer on sale, so the

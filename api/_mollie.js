@@ -110,8 +110,9 @@ export async function ensureSubscription(payment, email) {
     const sub = await mollieApi(`/customers/${encodeURIComponent(payment.customerId)}/subscriptions`, {
       method: "POST",
       body: {
-        // What the first payment charged, so the renewals charge the same.
-        amount: { currency: "EUR", value: payment.amount?.value || MOLLIE_PRICES[plan] },
+        // What the first payment charged, so the renewals charge the same —
+        // except after the win-back offer, which is the first year only.
+        amount: { currency: "EUR", value: payment.metadata?.offer ? MOLLIE_PRICES[plan] : payment.amount?.value || MOLLIE_PRICES[plan] },
         interval: months === 1 ? "1 month" : `${months} months`,
         startDate: nextChargeDate(payment.paidAt, months),
         description: `Movento — ${MOLLIE_PLAN_LABELS[plan]}`,

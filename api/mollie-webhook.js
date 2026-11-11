@@ -72,7 +72,7 @@ export default async function handler(req, res) {
   if (!MOLLIE_PLAN_LABELS[plan]) return done(200, "ignoré : pas une offre Movento");
   const email = await emailForPayment(payment);
   const test = mollieTestMode() || payment.mode === "test" ? "🧪 TEST · " : "";
-  const label = MOLLIE_PLAN_LABELS[plan];
+  const label = `${MOLLIE_PLAN_LABELS[plan]}${payment.metadata?.offer ? " (offre de relance)" : ""}`;
   const who = email || "email pas encore donné par le client";
 
   try {

@@ -507,6 +507,46 @@ export const MOLLIE_PLAN_MONTHS = { m1: 1, m3: 3, m12: 12 };
 export const mollieSubscriptionPlans = new Set(Object.keys(MOLLIE_PLAN_MONTHS));
 export const MOLLIE_GRACE_DAYS = 5;
 
+// Fair use on the 3-month plan: this many different prompts copied a day
+// (api/prompt.js). The year and lifetime are unlimited. Keep in step with the
+// card in src/App.jsx.
+export const FAIR_USE_DAILY_COPIES = 3;
+export const FAIR_USE_KINDS = new Set(["m3"]);
+
+// The win-back offer: someone who opened a Mollie payment and left without
+// paying is offered the year at a lower price, for its first year only (the
+// renewals are at the normal price). Valid for WINDOW_HOURS after the payment
+// they left, once per abandoned payment, and never on a payment that was
+// itself the offer.
+export const MOLLIE_WINBACK = {
+  plan: "m12",
+  price: Number(process.env.MOLLIE_WINBACK_M12_PRICE || 69).toFixed(2),
+  windowHours: 48,
+};
+
+// Whether the payment behind a claim code still earns the offer. Returns the
+// reason when it does not, so the endpoint can say nothing more than "no".
+export async function mollieWinbackEligibility(claim, { now = Date.now() } = {}) {
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(String(claim || ""))) return { eligible: false, reason: "bad claim" };
+  let entry = null;
+  try {
+    entry = await Redis.fromEnv().get(`mollie:claim:${claim}`);
+    if (typeof entry === "string") entry = JSON.parse(entry);
+  } catch {}
+  if (!entry?.paymentId) return { eligible: false, reason: "unknown claim" };
+  const payment = await mollieApi(`/payments/${encodeURIComponent(entry.paymentId)}`);
+  if (payment.metadata?.claim !== claim) return { eligible: false, reason: "claim mismatch" };
+  if (payment.metadata?.offer) return { eligible: false, reason: "already the offer" };
+  const age = now - new Date(payment.createdAt || 0).getTime();
+  // Only a payment that is over: cancelled, expired or failed, or still open
+  // after a quarter of an hour (the tab was closed). A payment open for less
+  // than that may be paid any second, and its buyer must not see an offer.
+  const over = ["canceled", "expired", "failed"].includes(payment.status) || (payment.status === "open" && age > 15 * 60 * 1000);
+  if (!over) return { eligible: false, reason: `status ${payment.status}` };
+  if (!(age >= 0 && age <= MOLLIE_WINBACK.windowHours * 3600 * 1000)) return { eligible: false, reason: "expired" };
+  return { eligible: true, payment, expiresAt: new Date(new Date(payment.createdAt).getTime() + MOLLIE_WINBACK.windowHours * 3600 * 1000).toISOString() };
+}
+
 export async function mollieApi(path, { method = "GET", body, fetchImpl = fetch } = {}) {
   const key = process.env.MOLLIE_API_KEY;
   if (!key) throw new Error("MOLLIE_API_KEY is not set");
