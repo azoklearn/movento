@@ -2476,6 +2476,90 @@ function LiveSitePreview({ item }) {
   );
 }
 
+// An open prompt, shown big at the top of the gallery: the preview on the
+// left with a way back, and on the right the name, the category, the tags,
+// the copy button and how to use it. Opened from any card; Escape or the
+// arrow closes it. Scrolled into view when it opens, since the card clicked
+// may be far down the page.
+function PromptFeature({ item, onClose, onCopy, copied, access, live }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.scrollY - 16;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.file]);
+
+  const isFree = FREE_PROMPT_FILES.has(item.file);
+  const unlocked = access.hasPremiumAccess || access.owned;
+  const locked = !unlocked && !isFree && access.credits === 0;
+  const label = copied
+    ? [<Icon key="i" name="check" className="h-4 w-4" />, t("Copied", "Copié")]
+    : unlocked ? [<Icon key="i" name="copy" className="h-4 w-4" />, t("Copy prompt", "Copier le prompt")]
+    : isFree ? [<Icon key="i" name="gift" className="h-4 w-4" />, t("Copy for free", "Copier gratuitement")]
+    : access.credits > 0 ? [<Icon key="i" name="gift" className="h-4 w-4" />, t("Choose it", "Le choisir")]
+    : [<Icon key="i" name="lock" className="h-4 w-4" />, t("Unlock", "Débloquer")];
+
+  return (
+    <motion.div ref={ref} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#0F0F11] md:flex-row">
+      <div className="relative min-w-0 bg-[#0B0B0D] md:flex md:flex-1 md:flex-col md:justify-center">
+        <PromptPopupMedia key={item.file} item={item} live={live} />
+        <button onClick={onClose} aria-label={t("Back to the gallery", "Retour à la galerie")} className="absolute left-3 top-3 z-20 grid h-10 w-10 place-items-center rounded-full bg-black/70 text-white backdrop-blur transition hover:bg-black/90">
+          <Icon name="arrow" className="h-4 w-4 rotate-180" />
+        </button>
+      </div>
+      <div className="flex flex-col gap-5 p-5 md:w-[260px] md:flex-none lg:w-[280px] lg:p-6">
+        <div>
+          <h2 className="text-xl font-bold leading-tight tracking-tight text-white">{item.title}</h2>
+          <p className="mt-1 text-sm text-white/50">{item.category}</p>
+          {item.tags?.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {item.tags.slice(0, 4).map((tag) => <span key={tag} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/60">{tag}</span>)}
+            </div>
+          )}
+        </div>
+        <button onClick={onCopy} className={`flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold transition ${copied ? "bg-emerald-400/15 text-emerald-300" : "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white"}`}>
+          {label}
+        </button>
+        {/* Deliberately not `link`, which REPLACES the copy action: a demo is
+            the finished site to look at before copying. */}
+        {SHOW_DEMO_LINKS && item.demo && (
+          <a href={item.demo} target="_blank" rel="noopener noreferrer" onClick={() => track("prompt_demo_opened", { prompt: item.title, category: item.category })} className="-mt-2 inline-flex items-center gap-1.5 self-start text-sm font-semibold text-white/70 transition hover:text-white">
+            {t("See the live site", "Voir le site en ligne")} <Icon name="arrow" className="h-3.5 w-3.5 -rotate-45" />
+          </a>
+        )}
+        {locked && (
+          <a href={`/pricing?from=${encodeURIComponent(slugify(item.title))}`} onClick={() => track("paywall_shown", { prompt: item.title, category: item.category, source: "prompt_panel", ...refProps() })} className="group rounded-2xl bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] p-4 transition hover:brightness-110">
+            <span className="block text-sm font-bold text-white">{t("Unlock every prompt", "Débloque tous les prompts")}</span>
+            <span className="mt-0.5 block text-xs leading-5 text-white/85">{t(`All ${availablePrompts.length} prompts + free ebook + support.`, `Les ${availablePrompts.length} prompts + ebook offert + support.`)}</span>
+            <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-white">{t("See the plans", "Voir les offres")} <Icon name="arrow" className="h-3 w-3 transition group-hover:translate-x-0.5" /></span>
+          </a>
+        )}
+        <div className="border-t border-white/[0.07] pt-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/35">{t("How to use it", "Comment l'utiliser")}</p>
+          <ol className="mt-3 space-y-2">
+            {[
+              t("Copy the prompt.", "Copie le prompt."),
+              t("Paste it into Lovable, Cursor or Claude.", "Colle-le dans Lovable, Cursor ou Claude."),
+              t("Ask for your changes: name, copy, images.", "Demande tes modifs : nom, textes, images."),
+            ].map((step, i) => (
+              <li key={step} className="flex gap-2.5 text-[13px] leading-snug text-white/55">
+                <span className="mt-px grid h-[18px] w-[18px] flex-none place-items-center rounded-full bg-white/[0.07] text-[10px] font-semibold text-white/70">{i + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // What sits above the title in the popup: the clip, or — for the addresses that
 // get them — the live site, with one tap back to the clip. The switch is not a
 // nicety: a site that sends X-Frame-Options or a frame-ancestors policy frames
@@ -2494,7 +2578,7 @@ function PromptPopupMedia({ item, live }) {
         <LiveSitePreview item={item} />
         <button
           onClick={() => setMode("clip")}
-          className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-black/85"
+          className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-black/85"
         >
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {t("Live — show the clip", "En direct — voir le clip")}
         </button>
@@ -2515,7 +2599,7 @@ function PromptPopupMedia({ item, live }) {
       {live && (
         <button
           onClick={() => setMode("live")}
-          className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-black/85"
+          className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-black/85"
         >
           <Icon name="arrow" className="h-3 w-3 -rotate-45" /> {t("Show the live site", "Voir en direct")}
         </button>
@@ -3289,121 +3373,6 @@ export default function MoventoSite() {
             </motion.div>
           </motion.div>
         )}
-        {previewItem && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden overscroll-contain px-4 py-6" onClick={closePreview}>
-            <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#121214] shadow-2xl shadow-black/60" onClick={(e) => e.stopPropagation()}>
-              <button onClick={closePreview} className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur transition hover:bg-black/80"><Icon name="close" className="h-4 w-4" /></button>
-              {/* The popup opens for every card, so it renders whatever the
-                  preview happens to be — clip, animated image, or nothing — and
-                  the live site itself for the addresses that get it. Keyed on
-                  the file so opening another prompt starts from its own
-                  default rather than inheriting the last one's mode. */}
-              <PromptPopupMedia
-                key={previewItem.file}
-                item={previewItem}
-                live={SHOW_DEMO_LINKS && Boolean(previewItem.demo) && canSeeLivePreviews(accessEmail)}
-              />
-              {/* Everything under the media scrolls: four steps plus the title
-                  row overflow a short phone in landscape, and the popup itself
-                  is clipped to 92dvh. */}
-              {/* overscroll-contain, like the checkout overlay: without it a
-                  drag that reaches the end of this panel carries on into the
-                  gallery behind it, and the reader closes the card somewhere
-                  other than where they opened it. */}
-              <div className="flex min-h-0 flex-col overflow-y-auto overscroll-contain">
-                <div className="flex items-center justify-between gap-3 p-5">
-                  <div className="min-w-0">
-                    <h3 className="truncate text-base font-semibold text-[#EDE9E0]">{previewItem.title}</h3>
-                    <p className="mt-0.5 text-xs text-white/40">{previewItem.category}</p>
-                    {/* Deliberately not `link`, which REPLACES the copy action.
-                        A demo is the finished site to look at before copying —
-                        the prompt still has to end up on the clipboard. */}
-                    {SHOW_DEMO_LINKS && previewItem.demo && (
-                      <a href={previewItem.demo} target="_blank" rel="noopener noreferrer" onClick={() => track("prompt_demo_opened", { prompt: previewItem.title, category: previewItem.category })} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/25 hover:text-[#EDE9E0]">
-                        <Icon name="arrow" className="h-3 w-3 -rotate-45" /> {t("See the live site", "Voir le site en ligne")}
-                      </a>
-                    )}
-                  </div>
-                  {/* Copying no longer closes the popup. The visitor came here to
-                      read the preview; throwing them back to the grid the moment
-                      they take the prompt loses their place for nothing. The
-                      button confirms in place and the toast says what happened. */}
-                  <button onClick={() => copyPrompt(previewItem)} className={`flex flex-none items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition hover:scale-[1.02] ${copiedCard === previewItem.title ? "bg-emerald-400/15 text-emerald-300" : "bg-[#08080A] text-white hover:bg-[#141418]"}`}>
-                    {copiedCard === previewItem.title ? <><Icon name="check" className="h-4 w-4" /> {t("Copied", "Copié")}</> : hasPremiumAccess || ownedPrompts.has(previewItem.file) ? <><Icon name="copy" className="h-4 w-4" /> {t("Copy", "Copier")}</> : FREE_PROMPT_FILES.has(previewItem.file) ? <><Icon name="gift" className="h-4 w-4" /> {t("Copy for free", "Copier gratuitement")}</> : promptCredits > 0 ? <><Icon name="gift" className="h-4 w-4" /> {t("Choose it", "Le choisir")}</> : <><Icon name="lock" className="h-4 w-4" /> {t("Unlock", "Débloquer")}</>}
-                  </button>
-                </div>
-                {/* One way out, no price. The offer lives on /pricing and
-                    nowhere else: quoting it here put a second, slightly
-                    different pricing surface in front of a buyer who then had
-                    to go to that page anyway. Only for a locked prompt —
-                    someone with full access, a free prompt, a prompt already
-                    bought or an unspent purchase has nothing to buy here. */}
-                {/* Mid-trial this block is only ever reached by a prompt the
-                    trial does NOT cover — the four it does are in ownedPrompts
-                    and never get here. So it says when this one opens, and does
-                    not sell a plan the visitor is already on. */}
-                {trialActive && !hasPremiumAccess && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (
-                  <div className="border-t border-white/[0.07] px-5 pb-4 pt-4">
-                    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                      <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-white/[0.06] text-white/60"><Icon name="lock" className="h-4 w-4" /></span>
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-[#EDE9E0]">{t("Unlocks when your trial ends", "Arrive à la fin de ton essai")}</span>
-                        <span className="mt-0.5 block text-xs leading-5 text-white/55">{t(`Your ${TRIAL_DAYS} free days cover ${SHOWCASE_FILES.length} prompts. The rest opens with the monthly plan, at ${eur(termOf("m1").price)} a month.`, `Tes ${TRIAL_DAYS} jours gratuits couvrent ${SHOWCASE_FILES.length} prompts. Le reste s'ouvre avec le mensuel, à ${eur(termOf("m1").price)} par mois.`)}</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
-                {!trialActive && !hasPremiumAccess && !FREE_PROMPT_FILES.has(previewItem.file) && !ownedPrompts.has(previewItem.file) && promptCredits === 0 && (
-                  <div className="border-t border-white/[0.07] px-5 pb-4 pt-4">
-                    <button
-                      onClick={() => {
-                        track("paywall_shown", { prompt: previewItem.title, category: previewItem.category, source: "prompt_popup", ...refProps() });
-                        window.location.assign(`/pricing?from=${encodeURIComponent(slugify(previewItem.title))}`);
-                      }}
-                      // The launch banner's gradient, so the offer reads as the
-                      // same thing the visitor has already seen at the foot of
-                      // every page.
-                      className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] px-4 py-3 text-left transition hover:brightness-110"
-                    >
-                      <span className="min-w-0">
-                        {/* Only the four say "this one is free": claiming it
-                            over prompt 187 would be selling something the
-                            trial does not include. */}
-                        <span className="block text-sm font-bold text-white">{TRIAL_DAYS > 0 && SHOWCASE_SET.has(previewItem.file) ? t(`This one is free for ${TRIAL_DAYS} days`, `Celui-ci est gratuit ${TRIAL_DAYS} jours`) : t("Unlock every prompt", "Débloquer tous les prompts")}</span>
-                        <span className="mt-0.5 block text-xs leading-5 text-white/85">{TRIAL_DAYS > 0 ? t(`${SHOWCASE_FILES.length} prompts for €0, then all ${availablePrompts.length} at ${eur(termOf("m1").price)} a month.`, `${SHOWCASE_FILES.length} prompts pour 0€, puis les ${availablePrompts.length} à ${eur(termOf("m1").price)} par mois.`) : t(`All ${availablePrompts.length} prompts + free ebook + 7/7 support.`, `Les ${availablePrompts.length} prompts + ebook offert + support 7j/7.`)}</span>
-                      </span>
-                      <span className="flex flex-none items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0A0A0B]">
-                        {t("See the plans", "Voir les offres")}
-                        <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-                      </span>
-                    </button>
-                  </div>
-                )}
-                {/* The one moment the visitor actually needs the instructions:
-                    they are holding the prompt and have nowhere to put it. */}
-                <div className="border-t border-white/[0.07] px-5 pb-5 pt-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/35">{t("How to use it", "Comment l'utiliser")}</p>
-                  <ol className="mt-3 space-y-2.5">
-                    {[
-                      // Deliberately does not name the button: it reads "Copy",
-                      // "Copy for free" or "Unlock" depending on the visitor.
-                      t("Copy the prompt in one click — it goes to your clipboard.", "Copie le prompt en un clic — il part dans ton presse-papiers."),
-                      t("Paste it into Lovable, v0, Bolt, Cursor or Claude.", "Colle-le dans Lovable, v0, Bolt, Cursor ou Claude."),
-                      t("Let the AI generate the whole site.", "Laisse l'IA générer le site en entier."),
-                      t("Then ask it for your changes: name, copy, images.", "Demande-lui ensuite tes modifications : nom, textes, images."),
-                    ].map((step, i) => (
-                      <li key={step} className="flex gap-3 text-sm leading-snug text-white/60">
-                        <span className="mt-px grid h-5 w-5 flex-none place-items-center rounded-full bg-white/[0.07] text-[11px] font-semibold text-white/70">{i + 1}</span>
-                        <span>{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
       </AnimatePresence>
       {/* One line, no buttons, gone in a second and a half. Above the checkout
           modal (z-70) so it is never the thing hidden behind something else,
@@ -3565,11 +3534,9 @@ export default function MoventoSite() {
             land down the left edge instead of across the top row. Dealing them
             round-robin puts card 1, 2, 3, 4 on the first row, so the order
             above is the order you read. */}
-        <div className="flex items-start gap-3 lg:gap-3.5">
-          {Array.from({ length: galleryColumns }, (_, col) => (
-          <div key={col} className="flex min-w-0 flex-1 flex-col gap-4 lg:gap-5">
-          <AnimatePresence>
-            {filtered.filter((_, i) => i % galleryColumns === col).map((item) => {
+        {(() => {
+          // One card, as the masonry deals it.
+          const renderCard = (item) => {
               const isFree = FREE_PROMPT_FILES.has(item.file);
               const ownedAlone = ownedPrompts.has(item.file);
               const unlocked = hasPremiumAccess || isFree || ownedAlone;
@@ -3595,11 +3562,50 @@ export default function MoventoSite() {
                   } />
                 </motion.div>
               );
-            })}
-          </AnimatePresence>
-          </div>
-          ))}
-        </div>
+          };
+          const column = (items, key) => (
+            <div key={key} className="flex min-w-0 flex-1 flex-col gap-4 lg:gap-5">
+              <AnimatePresence>{items.map(renderCard)}</AnimatePresence>
+            </div>
+          );
+          // With a prompt open, it is shown big at the top of the gallery and
+          // the other cards flow around it: under it on the left, beside it on
+          // the right (from four columns up), under it everywhere below that.
+          const rest = previewItem ? filtered.filter((p) => p.file !== previewItem.file) : filtered;
+          const cols = galleryColumns;
+          const span = previewItem ? (cols >= 4 ? 3 : cols) : 0;
+          const dealt = Array.from({ length: cols }, (_, col) => rest.filter((_, i) => i % cols === col));
+          const panel = previewItem && (
+            <PromptFeature
+              key={previewItem.file}
+              item={previewItem}
+              onClose={closePreview}
+              onCopy={() => copyPrompt(previewItem)}
+              copied={copiedCard === previewItem.title}
+              access={{ hasPremiumAccess, owned: ownedPrompts.has(previewItem.file), credits: promptCredits }}
+              live={SHOW_DEMO_LINKS && Boolean(previewItem.demo) && canSeeLivePreviews(accessEmail)}
+            />
+          );
+          if (!previewItem || span === cols) {
+            return (
+              <>
+                {panel && <div className="mb-4 lg:mb-5">{panel}</div>}
+                <div className="flex items-start gap-3 lg:gap-3.5">{dealt.map((items, col) => column(items, col))}</div>
+              </>
+            );
+          }
+          return (
+            <div className="flex items-start gap-3 lg:gap-3.5">
+              <div className="flex min-w-0 flex-col gap-4 lg:gap-5" style={{ flex: `${span} 1 0%` }}>
+                {panel}
+                <div className="flex items-start gap-3 lg:gap-3.5">{dealt.slice(0, span).map((items, col) => column(items, col))}</div>
+              </div>
+              <div className="flex min-w-0 items-start gap-3 lg:gap-3.5" style={{ flex: `${cols - span} 1 0%` }}>
+                {dealt.slice(span).map((items, col) => column(items, span + col))}
+              </div>
+            </div>
+          );
+        })()}
       </section>
 
       <footer className="relative z-10 border-t border-white/10 py-10">
