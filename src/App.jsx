@@ -1177,7 +1177,7 @@ const plans = [
     // it cannot outlive either of them.
     // Its two extras go after support and the ebook, as the last rows.
     features: CATALOGUE_FEATURES,
-    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Cheaper than the annual from year 2", "Plus rentable que l'annuel dès la 2e année")],
+    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés"), t("Cheaper than the annual from year 2", "Plus rentable que l'annuel dès la 2e année")],
     // Stated plainly rather than buried in the list above. The descriptions the
     // card used to carry are gone: they were most of its height, and beside
     // three shorter cards that read as a mistake rather than as generosity.
