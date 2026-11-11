@@ -1012,17 +1012,29 @@ const PROMPT_PACK_PRICE = 19.99;
 // What the catalogue gives whoever holds it, on any plan. Every card states
 // the whole offer rather than a price alone, so this is repeated on all of
 // them and what a card adds under it is exactly what the plan buys.
+// The catalogue size rounded down to the ten, so the line stays true between
+// two additions without being edited: 226 prompts reads "220+".
+const CATALOGUE_COUNT = `${Math.floor(availablePrompts.length / 10) * 10}+`;
+const FEATURE_BACKGROUNDS = t("Animated backgrounds library", "Bibliothèque de backgrounds animés");
+const FEATURE_CLIENT_WORK = t("For personal & client work", "Pour tes projets perso & clients");
 const CATALOGUE_FEATURES = [
-  t("Full Movento catalog", "Catalogue Movento complet"),
-  t("Ready-to-launch site ideas", "Idées de sites prêtes à lancer"),
+  t(`Unlimited access to ${CATALOGUE_COUNT} prompts`, `Accès illimité à ${CATALOGUE_COUNT} prompts`),
+  FEATURE_BACKGROUNDS,
   t("Prompt + site ready to deploy", "Prompt + site prêt à déployer"),
   t("Optimized for Lovable, Cursor, Claude & Shopify", "Optimisé pour Lovable, Cursor, Claude & Shopify"),
   t("New prompts added continuously", "Nouveaux prompts en continu"),
+  // The licence in the CGV (section 8): sites for yourself or for clients,
+  // commercial use included.
+  FEATURE_CLIENT_WORK,
 ];
+// How a feature row is marked on the card: a "new" tag on what was added
+// lately, bold on the line a buyer is looking for before paying.
+const NEW_FEATURES = new Set([FEATURE_BACKGROUNDS]);
+const STRONG_FEATURES = new Set([FEATURE_CLIENT_WORK]);
 
 // The subscriptions renew, so they can be stopped. Lifetime is paid once and
 // has nothing to cancel, which is why it does not share this list.
-const BASE_FEATURES = [...CATALOGUE_FEATURES, t("Cancel anytime", "Résiliation à tout moment")];
+const BASE_FEATURES = CATALOGUE_FEATURES;
 
 const plans = [
   {
@@ -1033,6 +1045,7 @@ const plans = [
     // button the checkout refuses.
     hidden: Boolean(termOf("m1").retired),
     name: t("Monthly", "Mensuel"),
+    subtitle: t("Every prompt, month by month", "Tous les prompts, au mois"),
     price: eur(termOf("m1").price),
     originalPrice: eur(termOf("m1").anchor),
     discountBadge: `−${discountOf("m1")} %`,
@@ -1046,7 +1059,7 @@ const plans = [
     // would be the half that is not even true.
     billedNote: TRIAL_DAYS > 0
       ? t(`${TRIAL_DAYS} days free on ${SHOWCASE_FILES.length} prompts, then ${eur(termOf("m1").price)} a month`, `${TRIAL_DAYS} jours gratuits sur ${SHOWCASE_FILES.length} prompts, puis ${eur(termOf("m1").price)} par mois`)
-      : t("renewed every month", "renouvelé chaque mois"),
+      : t("Every month, cancel anytime", "Chaque mois, résiliable à tout moment"),
     badge: TRIAL_DAYS > 0 ? t(`${TRIAL_DAYS} days free`, `${TRIAL_DAYS} jours offerts`) : undefined,
     cta: TRIAL_DAYS > 0
       ? t(`Start the ${TRIAL_DAYS} free days`, `Commencer les ${TRIAL_DAYS} jours gratuits`)
@@ -1090,12 +1103,13 @@ const plans = [
     // retires a term, and nothing on the page can disagree with it.
     hidden: Boolean(termOf("m12").retired),
     name: t("Annual", "Annuel"),
+    subtitle: t("Every prompt, for a whole year", "Tous les prompts, pendant un an"),
     price: eur(termOf("m12").price),
     originalPrice: eur(termOf("m12").anchor),
     discountBadge: `−${discountOf("m12")} %`,
     period: t("/ yr", "/ an"),
     perDay: perDayOf("m12"),
-    billedNote: t("renewed every year", "renouvelé chaque année"),
+    billedNote: t("Every year, cancel anytime", "Chaque année, résiliable à tout moment"),
     // "Best value" rather than "most chosen": the arithmetic is on the card
     // beside it, whereas what other buyers chose is nothing this page measures.
     badge: t("Best value", "Meilleur rapport"),
@@ -1139,13 +1153,14 @@ const plans = [
     // api/_shared.js, which would refuse the checkout while this is hidden.
     hidden: LIFETIME_RETIRED,
     name: t("Lifetime", "À vie"),
+    subtitle: t("Every prompt, yours for life", "Tous les prompts, à toi pour toujours"),
     price: eur(PRICE_LIFETIME),
     originalPrice: eur(PRICE_LIFETIME_ANCHOR),
     discountBadge: `−${LIFETIME_DISCOUNT} %`,
     period: t("forever", "à vie"),
     // No per-day figure: the term it would divide by is the rest of your life.
     // The line the other cards use for their renewal says so instead.
-    billedNote: t("one payment, never again", "un seul paiement, jamais renouvelé"),
+    billedNote: t("One payment, lifetime access", "Un seul paiement, accès à vie"),
     cta: t("Get lifetime access", "Prendre l'accès à vie"),
     // Only one ribbon per row. It is the lifetime's: of the two offers it is
     // the one worth steering a buyer to, and "best value" is arithmetic anyone
@@ -1155,7 +1170,7 @@ const plans = [
     featured: true,
     // The comparison stated as a line of its own, derived from both prices so
     // it cannot outlive either of them.
-    features: [...CATALOGUE_FEATURES, t(`Cheaper from month ${LIFETIME_MONTHS}`, `Rentable dès le ${LIFETIME_MONTHS}e mois`), t("Paid once, yours for life", "Payé une fois, à toi à vie")],
+    features: [...CATALOGUE_FEATURES, t("Lifetime updates", "Mises à jour à vie"), t(`Cheaper from month ${LIFETIME_MONTHS}`, `Rentable dès le ${LIFETIME_MONTHS}e mois`)],
     // Stated plainly rather than buried in the list above. The descriptions the
     // card used to carry are gone: they were most of its height, and beside
     // three shorter cards that read as a mistake rather than as generosity.
@@ -1251,103 +1266,50 @@ const monthlyPlan = plans.find((plan) => plan.id === "monthly" && !plan.hidden);
 function PlanCard({ plan, onBuy, loading, featured }) {
   // Nothing to line up with, and no other card to be the best of.
   const alone = isSinglePlan;
+  const highlight = featured && !alone;
+  // One list, one tick per row: what the plan buys, then the support and the
+  // ebook it carries, said in the same voice as the rest.
+  const rows = [...(plan.features || []), plan.perk, plan.bonus].filter(Boolean);
   return (
-    <div className="mv-glass relative flex flex-col rounded-xl px-5 pb-5 pt-9 sm:p-6 lg:p-[23px]">
-      {/* The travelling light along the card's own edge. Two lamps, half a turn
-          apart, seen through a 1.5px ring — see .mv-glow. */}
-      <span className="mv-glow" aria-hidden="true">
-        <span className="mv-glow-blob" />
-        <span className="mv-glow-blob" />
-      </span>
-      {featured && !alone && <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#08080A] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm shadow-black/40">{plan.badge || t("Best value", "Meilleur choix")}</span>}
+    <div className={`relative flex flex-col rounded-[26px] bg-[#1A1A1D] p-6 sm:p-8 ${highlight ? "ring-1 ring-white/[0.12]" : "ring-1 ring-white/[0.05]"}`}>
+      {/* Identity: the name, the ribbon beside it rather than over the card's
+          edge, and one line saying what the plan is. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h3 className="text-xl font-bold tracking-tight text-[#EDE9E0]">{plan.name}</h3>
+        {highlight && (
+          <span className="rounded-full bg-gradient-to-r from-[#F0566B] via-[#B04BF0] to-[#7C8CFF] px-2.5 py-1 text-[11px] font-bold text-white">{plan.badge || t("Best value", "Meilleur choix")}</span>
+        )}
+      </div>
+      {(plan.subtitle || plan.description) && <p className="mt-2 text-sm leading-6 text-white/55">{plan.subtitle || plan.description}</p>}
 
-      <div className="flex items-center gap-2 sm:gap-3">
-        <h3 className="text-base font-semibold tracking-tight text-[#EDE9E0] sm:text-lg">{plan.name}</h3>
-        {plan.discountBadge && <span className="mv-chip flex-none rounded-full px-2 py-[3px] text-[11px] font-semibold leading-[1.5] text-[#EDE9E0]">{plan.discountBadge}</span>}
-      </div>
-      {/* Reserved height for the longest description in the grid, so the rule,
-          the price and the button land on the same line across the cards. A
-          lone card has nothing to line up with, and the reserve then only
-          pushes the rest of it further down the screen — same below sm, where
-          the cards stack and each one is on its own. */}
-      {plan.description && <p className={alone ? "mt-1.5 text-[12.5px] leading-6 text-white/55 sm:text-[13px]" : "mt-1.5 text-[12.5px] leading-6 text-white/55 sm:min-h-[4.5rem] sm:text-[13px] lg:min-h-[2.5rem]"}>{plan.description}</p>}
+      <div className="my-6 border-t border-dashed border-white/[0.12]" />
 
-      {/* Both prices on one baseline, the old one first and struck: read left
-          to right it is the discount, in the order a reader takes it. Stacking
-          them made the 159€ a footnote nobody weighed against the 89€. */}
-      {/* Wraps on purpose: at 320px the period label sat 14px past the card and
-          pushed the page into horizontal scroll. */}
-      <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        {plan.originalPrice && <span className="text-base leading-none text-white/35 line-through sm:text-lg lg:text-[14px]">{plan.originalPrice}</span>}
-        <span className="text-[32px] font-bold leading-none tracking-[-0.03em] text-[#EDE9E0] sm:text-[40px] lg:text-[30px]">{plan.price}</span>
-        <span className="text-xs text-white/40 sm:text-sm">{plan.period}</span>
+      {/* The old price struck before the new one, on one baseline: read left
+          to right it is the discount. Wraps rather than overflow at 320px. */}
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        {plan.originalPrice && <span className="text-[30px] font-bold leading-none tracking-[-0.03em] text-white/30 line-through decoration-2 sm:text-[38px]">{plan.originalPrice}</span>}
+        <span className="text-[38px] font-bold leading-none tracking-[-0.03em] text-[#EDE9E0] sm:text-[46px]">{plan.price}</span>
       </div>
-      {/* Same reasoning as the description: the plans carry a different number
-          of price lines, and without a floor the buttons sit at different
-          heights. Dropped for a lone card and below sm, same as above. */}
-      <div className={alone ? "mt-1.5" : "mt-1.5 sm:min-h-[2.5rem]"}>
-        {/* The same price said the smallest way it can be said. Cream rather
-            than the muted grey the billing line uses: it is an argument, not a
-            detail. */}
-        {plan.perDay && <p className="text-[13px] font-semibold text-[#EDE9E0] sm:text-sm">{plan.perDay}</p>}
-        {plan.billedNote && <p className="text-xs text-white/40 sm:text-[13px]">{plan.billedNote}</p>}
-      </div>
+      {plan.billedNote && <p className="mt-2.5 text-sm text-white/55">{plan.billedNote}</p>}
 
       <button
         onClick={() => onBuy(plan)}
         disabled={loading}
-        style={{ "--mv-glow-color": "#ffa582", "--mv-glow-duration": "6s", "--mv-glow-opacity": 0.85 }}
-        className="mv-cta group mt-5 flex w-full items-center justify-center gap-1.5 rounded-full px-4 py-3 text-[13px] font-semibold text-[#EDE9E0] sm:mt-6 sm:gap-2 sm:py-3.5 sm:text-sm disabled:cursor-not-allowed disabled:opacity-60"
+        className={`group mt-6 flex w-full items-center justify-center gap-2 rounded-full px-4 py-3.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${highlight ? "bg-gradient-to-r from-[#F0566B] via-[#5B5BF7] to-[#C58CFF] text-white shadow-[0_14px_40px_-14px_rgba(123,92,255,0.8)] hover:brightness-110" : "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white"}`}
       >
-        {/* Its own pair of lamps, warm this time — the same device as the card
-            at a quarter the size, which is what ties the two together. */}
-        <span className="mv-glow" aria-hidden="true">
-          <span className="mv-glow-blob" />
-          <span className="mv-glow-blob" />
-        </span>
         {loading ? t("Loading…", "Chargement…") : plan.cta}
-        <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
       </button>
 
-      {/* One flowing list instead of a checklist plus one or two separate boxed
-          callouts underneath: fewer dividers, fewer distinct shapes on the
-          card, and no more empty void under the shorter plan when the grid
-          stretches every card to the tallest one's height. Perk and bonus
-          keep their colour — that is what still marks them as the reason to
-          pick this plan over the other — but they are rows in the same list,
-          spanning both columns at lg instead of a two-column short phrase. */}
-      {/* The three terms share BASE_FEATURES and differ only by the coloured
-          rows under it. Repeating the list on each card is the point: a buyer
-          reads one card, not three, and a short term that listed nothing would
-          read as a lesser catalogue rather than a shorter one. */}
-      {/* One column at every width. Two columns fitted the short phrases the
-          cards used to carry; these wrap onto two and three lines, and a grid
-          row is as tall as its tallest cell, so the list opened gaps between
-          every pair. One column is also the shorter of the two here. */}
-      <ul className="mt-5 space-y-2.5 sm:mt-6">
-        {(plan.features || []).map((feat) => (
-          <li key={feat} className="flex items-start gap-2 text-[12.5px] leading-6 text-white/65 sm:gap-2.5 sm:text-[13px]">
-            <Icon name="tick" className="mt-[5px] h-[13px] w-[13px] flex-none text-[#EDE9E0]" /> {feat}
+      <ul className="mt-7 space-y-3">
+        {rows.map((feat) => (
+          <li key={feat} className={`flex items-start gap-3 text-sm leading-6 ${STRONG_FEATURES.has(feat) ? "font-semibold text-[#EDE9E0]" : "text-white/65"}`}>
+            <Icon name="tick" className="mt-[5px] h-[14px] w-[14px] flex-none text-white/80" />
+            <span>
+              {feat}
+              {NEW_FEATURES.has(feat) && <span className="ml-2 inline-block -translate-y-px rounded-full border border-[#F0566B]/70 px-1.5 py-px align-middle text-[9px] font-bold uppercase tracking-[0.08em] text-[#FF8A8A]">New</span>}
+            </span>
           </li>
         ))}
-        {plan.perk && (
-          <li className="flex items-start gap-2 sm:gap-3">
-            <Icon name="chat" className="mt-1 h-4 w-4 flex-none text-emerald-300" />
-            <span className="min-w-0">
-              <span className="block text-[12.5px] font-semibold leading-5 text-emerald-200 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5">{plan.perk}</span>
-              {plan.perkDesc && <span className="mt-0.5 block text-[12px] leading-5 text-white/45 sm:text-[13px] sm:leading-6 lg:text-xs lg:leading-[1.35]">{plan.perkDesc}</span>}
-            </span>
-          </li>
-        )}
-        {plan.bonus && (
-          <li className="flex items-start gap-2 sm:gap-3">
-            <Icon name="gift" className="mt-1 h-4 w-4 flex-none text-amber-300" />
-            <span className="min-w-0">
-              <span className="block text-[12.5px] font-semibold leading-5 text-amber-200 sm:text-sm sm:leading-6 lg:text-[13px] lg:leading-5">{plan.bonus}</span>
-              {plan.bonusDesc && <span className="mt-0.5 block text-[12px] leading-5 text-white/45 sm:text-[13px] sm:leading-6 lg:text-xs lg:leading-[1.35]">{plan.bonusDesc}</span>}
-            </span>
-          </li>
-        )}
       </ul>
     </div>
   );
@@ -5345,7 +5307,7 @@ function PricingPage() {
         {/* lg had 16px, which put the "le plus choisi" ribbon — which hangs 12
             above its card — four pixels under the rating pill. */}
         <div className="mt-14 lg:mt-9">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 items-start gap-3 sm:gap-5 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 items-stretch gap-4 sm:gap-6 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
             {visiblePlans.map((plan) => (
               <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
             ))}
