@@ -151,6 +151,99 @@
         <div style="width:24px;height:24px;border:2.5px solid rgba(255,255,255,0.12);border-top-color:rgba(237,233,224,0.85);border-radius:50%;animation:mv-spin .7s linear infinite"></div>
       </div>
     </div>
+    <!-- In-app browsers (TikTok, Instagram, Facebook, Snapchat) break the
+         site: video autoplay, the clipboard and the payment redirect all
+         misbehave there. Detected from the user agent and answered BEFORE the
+         app loads, in plain script, so it shows even if the app itself fails:
+         a full-screen page that says to open Movento in the real browser
+         (the ••• menu, top right), with a Chrome button on Android, a copy
+         link button, and a way to carry on anyway (remembered for the tab). -->
+    <script>
+      (function () {
+        try {
+          var ua = navigator.userAgent || "";
+          var app = /musical_ly|BytedanceWebview|TikTok|trill_/i.test(ua) ? "TikTok"
+            : /Instagram/i.test(ua) ? "Instagram"
+            : /FBAN|FBAV|FB_IAB/i.test(ua) ? "Facebook"
+            : /Snapchat/i.test(ua) ? "Snapchat" : "";
+          if (!app) return;
+          if (sessionStorage.getItem("mv_inapp_ok") === "1") return;
+          var android = /Android/i.test(ua);
+          var fr = !/^en/i.test(navigator.language || "fr") || /[?&]lang=fr/.test(location.search);
+          if (/[?&]lang=en/.test(location.search)) fr = false;
+          var T = fr ? {
+            title: "Ouvre Movento dans ton navigateur",
+            lead: "Le navigateur de " + app + " bloque les vidéos, la copie des prompts et le paiement.",
+            s1: "Appuie sur les <b>3 petits points</b> en haut à droite",
+            s2: "Choisis <b>« Ouvrir dans le navigateur »</b>",
+            chrome: "Ouvrir dans Chrome",
+            copy: "Copier le lien",
+            copied: "Lien copié ✓ colle-le dans Safari ou Chrome",
+            skip: "Continuer quand même"
+          } : {
+            title: "Open Movento in your browser",
+            lead: app + "'s browser blocks the videos, prompt copying and checkout.",
+            s1: "Tap the <b>three dots</b> at the top right",
+            s2: "Choose <b>“Open in browser”</b>",
+            chrome: "Open in Chrome",
+            copy: "Copy the link",
+            copied: "Link copied ✓ paste it into Safari or Chrome",
+            skip: "Continue anyway"
+          };
+          var url = location.href;
+          var css = "#mv-inapp{position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:28px 24px;background:#141414;color:#EDE9E0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;text-align:center;overflow:auto}"
+            + "#mv-inapp .arrow{position:fixed;top:10px;right:18px;width:64px;height:64px;animation:mvbob 1.1s ease-in-out infinite}"
+            + "@keyframes mvbob{0%,100%{transform:translate(0,0)}50%{transform:translate(4px,-8px)}}"
+            + "#mv-inapp h1{margin:0;font-size:26px;line-height:1.1;font-weight:800;letter-spacing:-0.03em;max-width:320px}"
+            + "#mv-inapp p{margin:0;font-size:15px;line-height:1.5;color:rgba(237,233,224,.6);max-width:320px}"
+            + "#mv-inapp ol{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px}"
+            + "#mv-inapp li{display:flex;align-items:center;gap:12px;text-align:left;background:#1d1d20;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 14px;font-size:15px;line-height:1.35}"
+            + "#mv-inapp li span{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#EDE9E0;color:#0A0A0B;font-weight:800;font-size:14px}"
+            + "#mv-inapp li i{font-style:normal;letter-spacing:2px;font-weight:900}"
+            + "#mv-inapp a.btn,#mv-inapp button{display:block;width:100%;max-width:320px;box-sizing:border-box;border:0;border-radius:999px;padding:15px 18px;font:700 15px system-ui,-apple-system,sans-serif;text-decoration:none;cursor:pointer}"
+            + "#mv-inapp .primary{background:linear-gradient(90deg,#F0566B,#5B5BF7,#C58CFF);color:#fff}"
+            + "#mv-inapp .secondary{background:#EDE9E0;color:#0A0A0B}"
+            + "#mv-inapp .skip{background:none;color:rgba(237,233,224,.4);font-weight:500;font-size:13px;padding:6px}";
+          var style = document.createElement("style");
+          style.textContent = css;
+          document.head.appendChild(style);
+          var el = document.createElement("div");
+          el.id = "mv-inapp";
+          el.setAttribute("role", "dialog");
+          el.setAttribute("aria-modal", "true");
+          var chromeHref = "intent://" + url.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(url) + ";end";
+          el.innerHTML =
+            '<svg class="arrow" viewBox="0 0 64 64" fill="none" stroke="#EDE9E0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 56C14 34 26 20 50 12"/><path d="M36 10l14 2-4 13"/></svg>'
+            + '<img src="/logo.png?v=3" alt="" width="52" height="52" style="width:52px;height:52px;object-fit:contain">'
+            + "<h1>" + T.title + "</h1>"
+            + "<p>" + T.lead + "</p>"
+            + "<ol><li><span>1</span><div>" + T.s1 + " <i>•••</i></div></li><li><span>2</span><div>" + T.s2 + "</div></li></ol>"
+            + (android ? '<a class="btn primary" href="' + chromeHref + '">' + T.chrome + "</a>" : "")
+            + '<button type="button" class="' + (android ? "secondary" : "primary") + '" id="mv-inapp-copy">' + T.copy + "</button>"
+            + '<button type="button" class="skip" id="mv-inapp-skip">' + T.skip + "</button>";
+          var mount = function () {
+            document.body.appendChild(el);
+            document.getElementById("mv-inapp-skip").onclick = function () {
+              try { sessionStorage.setItem("mv_inapp_ok", "1"); } catch (e) {}
+              el.parentNode.removeChild(el);
+            };
+            var copyBtn = document.getElementById("mv-inapp-copy");
+            copyBtn.onclick = function () {
+              var done = function () { copyBtn.textContent = T.copied; };
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(done, function () { window.prompt(T.copy, url); });
+              } else {
+                var ta = document.createElement("textarea");
+                ta.value = url; document.body.appendChild(ta); ta.select();
+                try { document.execCommand("copy"); done(); } catch (e) { window.prompt(T.copy, url); }
+                document.body.removeChild(ta);
+              }
+            };
+          };
+          if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount);
+        } catch (e) {}
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
