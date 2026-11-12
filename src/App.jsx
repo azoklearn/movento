@@ -889,10 +889,10 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 // stays because the anchors below are struck against it, and its subscribers
 // keep renewing. Mirror any change in RETIRED_PLANS (api/_shared.js).
 const PLAN_TERMS = [
-  { id: "m1", price: 29.99, anchor: 39.99, days: 30, retired: true, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
+  { id: "m1", price: 29.99, anchor: 39.99, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
   // Anchors: the same span bought month by month at the monthly price.
-  { id: "m3", price: 69, anchor: 89.97, days: 90, retired: false, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
-  { id: "m12", price: 89, anchor: 359.88, days: 365, retired: false, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
+  { id: "m3", price: 69, anchor: 89.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
+  { id: "m12", price: 89, anchor: 359.88, days: 365, retired: true, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
@@ -911,14 +911,18 @@ const discountOf = (id) => {
 // On sale with every processor. Off sale, lifetime members
 // keep their access, their ebook and their support.
 const LIFETIME_RETIRED = false;
-const PRICE_LIFETIME = 149;
+const PRICE_LIFETIME = 89;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
 // Rounded because binary floating point does not keep cents: 29.9 * 12 came
 // out as 358.79999999999995. 29.99 * 12 happens to land on 359.88, which is
 // luck, not a reason to drop the rounding.
 // Struck against two years of the annual, the plan it is weighed against.
-const PRICE_LIFETIME_ANCHOR = Math.round(termOf("m12").price * 2 * 100) / 100;
+// The launch price is struck against the price lifetime moves to once the
+// launch is over. That price has to be real: when the launch ends, set
+// PRICE_LIFETIME to it (and MOLLIE_LIFETIME_PRICE in api/_shared.js). A
+// struck price that is never charged is a misleading reference price.
+const PRICE_LIFETIME_ANCHOR = 349;
 const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
 
 // The figure the page leads with — the best of everything a button actually
@@ -1052,10 +1056,8 @@ const plans = [
     // button the checkout refuses.
     hidden: Boolean(termOf("m1").retired),
     name: t("Monthly", "Mensuel"),
-    subtitle: t("Every prompt, month by month", "Tous les prompts, au mois"),
+    subtitle: t("Unlimited prompts, month by month", "Prompts illimités, au mois"),
     price: eur(termOf("m1").price),
-    originalPrice: eur(termOf("m1").anchor),
-    discountBadge: `−${discountOf("m1")} %`,
     period: t("/ mo", "/ mois"),
     perDay: perDayOf("m1"),
     // What the buyer is actually agreeing to, in the line directly under the
@@ -1166,7 +1168,7 @@ const plans = [
     period: t("forever", "à vie"),
     // No per-day figure: the term it would divide by is the rest of your life.
     // The line the other cards use for their renewal says so instead.
-    billedNote: t("Lifetime access · one-time payment", "Accès à vie · paiement unique"),
+    billedNote: t("Launch price · one-time payment", "Prix de lancement · paiement unique"),
     cta: t("Pay once, enjoy for life", "Paie une fois, profite à vie"),
     // Only one ribbon per row. It is the lifetime's: of the two offers it is
     // the one worth steering a buyer to, and "best value" is arithmetic anyone
@@ -1178,7 +1180,7 @@ const plans = [
     // it cannot outlive either of them.
     // Its two extras go after support and the ebook, as the last rows.
     features: CATALOGUE_FEATURES,
-    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés"), t("Cheaper than the annual from year 2", "Plus rentable que l'annuel dès la 2e année")],
+    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés"), t(`Cheaper than the monthly from month ${Math.ceil(89 / 29.99)}`, `Rentable dès le ${Math.ceil(89 / 29.99)}e mois`)],
     // Stated plainly rather than buried in the list above. The descriptions the
     // card used to carry are gone: they were most of its height, and beside
     // three shorter cards that read as a mistake rather than as generosity.
@@ -2833,15 +2835,11 @@ async function copyTextToClipboard(text) {
 }
 
 function runSelfTests() {
-  // The three offers, mirroring RETIRED_PLANS in api/_shared.js.
-  console.assert(["m3", "m12", "lifetime"].every(validatePlanId), "3 months, the year and lifetime are the offers and must be purchasable");
-  console.assert(["m1", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
-  console.assert(FEATURED_TERM === termOf("m12") && FEATURED_OFFER.price === termOf("m12").price, "the bar and the anchor quote the year");
-  // Each anchor is the same span bought month by month, not an invented price.
-  console.assert(termOf("m12").anchor === Math.round(termOf("m1").price * 12 * 100) / 100 && termOf("m3").anchor === Math.round(termOf("m1").price * 3 * 100) / 100, "the terms are struck against real months");
-  console.assert(termOf("m12").price < 4 * termOf("m3").price, "a year must cost less than four quarters");
-  console.assert(PRICE_LIFETIME > termOf("m12").price && PRICE_LIFETIME < PRICE_LIFETIME_ANCHOR, "lifetime must cost more than one year and less than two, which is what its card says");
-  console.assert(BEST_DISCOUNT === discountOf("m12") && BEST_DISCOUNT === 75, "the page leads with the best discount on sale");
+  // The two offers, mirroring RETIRED_PLANS in api/_shared.js.
+  console.assert(["m1", "lifetime"].every(validatePlanId), "the month and lifetime are the offers and must be purchasable");
+  console.assert(["m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
+  console.assert(FEATURED_TERM === termOf("m1"), "the bar and the anchor quote the month");
+  console.assert(PRICE_LIFETIME > termOf("m1").price && PRICE_LIFETIME < 12 * termOf("m1").price && PRICE_LIFETIME < PRICE_LIFETIME_ANCHOR, "lifetime costs more than a month, less than a year of months, and less than the price it moves to");
   console.assert(visiblePlans.some((plan) => plan.id === "lifetime") && visiblePlans.filter((plan) => plan.featured).length === 1, "lifetime is on sale, and exactly one card is featured");
   // A card may not promise an extra its kind is not granted: the card is the
   // promise, EBOOK_KINDS and SUPPORT_KINDS are what keep it, and the two going
@@ -4676,7 +4674,7 @@ function MentionsLegales() {
 
           <div>
             <h2 className="mb-3 text-base font-semibold text-[#EDE9E0]">5. Payment</h2>
-            <p>Payments are securely processed by our payment provider, named on your receipt. 3-month and annual subscriptions renew automatically and can be cancelled at any time from your account; access continues until the end of the period already paid. Lifetime access is a one-time purchase with no subscription.</p>
+            <p>Payments are securely processed by our payment provider, named on your receipt. Monthly subscriptions renew automatically and can be cancelled at any time from your account; access continues until the end of the period already paid. Lifetime access is a one-time purchase with no subscription.</p>
             <p className="mt-3">You can cancel your subscription at any time from your account with the provider named on your receipt, or by emailing <span className="text-white/75">movento.dev@gmail.com</span> from the address used at checkout.</p>
             <p className="mt-3">Movento reserves the right to modify subscription prices at any time.</p>
           </div>
@@ -4784,9 +4782,8 @@ function CgvPage() {
       <div>
         <h2>3. Offres et prix</h2>
         <ul>
-          <li><strong className="text-white/75">3 mois : {eur(termOf("m3").price)} tous les 3 mois</strong>, renouvelé automatiquement jusqu'à résiliation.</li>
-          <li><strong className="text-white/75">Annuel : {eur(termOf("m12").price)} par an</strong>, renouvelé automatiquement chaque année jusqu'à résiliation.</li>
-          <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
+          <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
+          <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement. Prix de lancement : l'accès à vie passera à {eur(PRICE_LIFETIME_ANCHOR)} à la fin de la période de lancement.</li>
           <li><strong className="text-white/75">Packs de prompts : {PROMPT_PACKS.map((p) => `${p.size} prompts ${eur(p.price)}`).join(" · ")}</strong>, en un seul paiement, sans abonnement ; les prompts sont choisis après l'achat et restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
@@ -4832,7 +4829,7 @@ function RefundPage() {
     <LegalPage title="Politique de remboursement">
       <div>
         <h2>Satisfait ou remboursé {LEGAL.refundDays} jours</h2>
-        <p>Si Movento ne te convient pas, tu peux demander le remboursement de ton premier achat (3 mois, annuel ou à vie) dans les <strong className="text-white/75">{LEGAL.refundDays} jours</strong> qui suivent le paiement, sans avoir à te justifier.</p>
+        <p>Si Movento ne te convient pas, tu peux demander le remboursement de ton premier achat (mensuel ou à vie) dans les <strong className="text-white/75">{LEGAL.refundDays} jours</strong> qui suivent le paiement, sans avoir à te justifier.</p>
       </div>
       <div>
         <h2>Comment demander</h2>
@@ -5207,7 +5204,7 @@ function PricingBanner({ onPick }) {
           </span>
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
             {/* The plan the page puts forward, priced exactly as its card is. */}
-            {t("Lifetime access", "Accès à vie")} — <span className="line-through opacity-70">{eur(PRICE_LIFETIME_ANCHOR)}</span> <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
+            {t("Launch price, lifetime access", "Prix de lancement, accès à vie")} — <span className="line-through opacity-70">{eur(PRICE_LIFETIME_ANCHOR)}</span> <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
             {` ${t("one-time payment", "en un seul paiement")}`}{tail ? ` — ${tail}` : ""}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
@@ -5511,7 +5508,7 @@ function PricingPage() {
           <span className="mv-chip inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#EDE9E0]">
             <span className="text-[13px] tracking-normal"><span className="text-white/45 line-through">{eur(PRICE_LIFETIME_ANCHOR)}</span> {eur(PRICE_LIFETIME)}</span>
             <span className="h-3 w-px bg-white/20" />
-            {t("Lifetime access, paid once", "Accès à vie, payé une fois")}
+            {t("Lifetime launch price", "Prix de lancement à vie")}
           </span>
           <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
             {/* Nothing to choose between with one offer on sale, so the
@@ -5636,7 +5633,7 @@ const MONTHLY_EQUIV = {
 const GRANT_PLAN_LABELS = { m1: "mensuel", m3: "3 mois", m12: "annuel", lifetime: "à vie" };
 
 const KIND_LABELS = {
-  m1: "Mensuel 29,99€ (retiré)",
+  m1: "Mensuel 29,99€",
   m3: "3 mois",
   m12: "Annuel",
   monthly: "Mensuel 18,99€ (ancien)",
@@ -5956,7 +5953,7 @@ function AdminLeadsPage() {
   const [grant, setGrant] = useState({ confirming: false, loading: false, error: "" });
   // Which plan a manual grant records. Monthly by default: it is what a
   // Gumroad buyer whose sale did not reach the site has bought.
-  const [grantPlan, setGrantPlan] = useState("m3");
+  const [grantPlan, setGrantPlan] = useState("m1");
 
   async function fetchLookup(value) {
     setLookup({ loading: true, error: "", data: null });
@@ -6310,7 +6307,7 @@ function AdminLeadsPage() {
                 {/* The plan the grant records. Re-granting on another plan
                     replaces the record, which is how a grant is corrected. */}
                 <div className="mb-3 flex flex-wrap gap-1.5" role="radiogroup" aria-label="Offre à donner">
-                  {[["m3", "3 mois"], ["m12", "Annuel"], ["lifetime", "À vie"], ["m1", "Mensuel"]].map(([id, label]) => (
+                  {[["m1", "Mensuel"], ["lifetime", "À vie"], ["m3", "3 mois"], ["m12", "Annuel"]].map(([id, label]) => (
                     <button
                       key={id}
                       type="button"

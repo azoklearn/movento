@@ -489,7 +489,7 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 //   MOLLIE_API_KEY          test_… to try, live_… to sell
 //   MOLLIE_M3_PRICE         default 69.00, every 3 months
 //   MOLLIE_M12_PRICE        default 89.00, every year
-//   MOLLIE_LIFETIME_PRICE   default 149.00, once
+//   MOLLIE_LIFETIME_PRICE   default 89.00, once (launch price; 349 after)
 // (m1, 29.99 a month, is off sale; its price stays for the record.)
 // The site switches to Mollie with CHECKOUT_PROVIDER=mollie.
 export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
@@ -498,7 +498,7 @@ export const MOLLIE_PRICES = {
   m1: Number(process.env.MOLLIE_M1_PRICE || 29.99).toFixed(2),
   m3: Number(process.env.MOLLIE_M3_PRICE || 69).toFixed(2),
   m12: Number(process.env.MOLLIE_M12_PRICE || 89).toFixed(2),
-  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 149).toFixed(2),
+  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 89).toFixed(2),
   // Packs of prompts, paid once: the buyer picks the prompts after paying
   // (/choose) and keeps them. Sizes in MOLLIE_PACK_SIZES.
   pack2: Number(process.env.MOLLIE_PACK2_PRICE || 25).toFixed(2),
@@ -525,7 +525,7 @@ export const FAIR_USE_KINDS = new Set(["m3"]);
 // never on a payment that was itself the offer.
 export const MOLLIE_WINBACK = {
   plan: "lifetime",
-  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 119).toFixed(2),
+  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 69).toFixed(2),
   windowHours: 48,
 };
 
@@ -674,10 +674,10 @@ export function bestCheckoutUrl(plan) {
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
 //
-// The line-up is now the same whoever sells it: 3 months (69 €), the year
-// (89 €) and lifetime (149 €). The month is off sale; its subscribers keep
-// their access and their renewals.
-export const RETIRED_PLANS = new Set(["m1", "monthly", "yearly"]);
+// On sale, whoever sells it: the month (29.99 €) and lifetime (89 € launch
+// price). 3 months and the year are off sale; their subscribers keep their
+// access and their renewals.
+export const RETIRED_PLANS = new Set(["m3", "m12", "monthly", "yearly"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a
