@@ -6271,7 +6271,17 @@ function AdminLeadsPage() {
               {!lookup.data.whop.configured && <p className="text-white/40">Clé API Whop non configurée — vérification limitée à Redis.</p>}
               {lookup.data.whop.error && <p className="text-red-300/80">Whop: {lookup.data.whop.error}</p>}
               {(lookup.data.packCredits > 0 || lookup.data.ownedPrompts.length > 0) && (
-                <p className="text-white/55">Pack: {lookup.data.packCredits} crédit(s) restant(s), {lookup.data.ownedPrompts.length} prompt(s) débloqué(s).</p>
+                <div className="text-white/55">
+                  <p>Pack: {lookup.data.packCredits} crédit(s) restant(s), {lookup.data.ownedPrompts.length} prompt(s) débloqué(s).</p>
+                  {lookup.data.ownedPrompts.length > 0 && (
+                    <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-white/70">
+                      {lookup.data.ownedPrompts.map((file) => {
+                        const item = prompts.find((p) => p.file === file);
+                        return <li key={file}>{item ? <a href={promptPath(item)} target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:underline">{item.title}</a> : file}</li>;
+                      })}
+                    </ul>
+                  )}
+                </div>
               )}
               <p className={lookup.data.webhookSecretConfigured ? "text-white/40" : "font-semibold text-red-300"}>
                 {lookup.data.webhookSecretConfigured ? "Signature du webhook Whop vérifiée." : "⚠ WHOP_WEBHOOK_SECRET absent — le webhook accepte des requêtes non signées."}

@@ -7,6 +7,7 @@ import {
   redisClaimPrompt,
   redisGetOwnedPrompts,
   redisGetPromptCredits,
+  notifyTelegram,
 } from "./_shared.js";
 
 // Spends one single-prompt credit on the prompt the buyer picks.
@@ -51,6 +52,12 @@ export default async function handler(req, res) {
     }
 
     const credits = await redisGetPromptCredits(email);
+    // Which prompt a pack buyer picked, as it happens. Only a real pick:
+    // re-opening a prompt already theirs spends nothing and says nothing.
+    if (!result.alreadyOwned) {
+      const name = file.replace(/\.md$/, "").replace(/_/g, " ");
+      await notifyTelegram(`🎯 Prompt choisi (pack) — ${name}\n${email}\n${credits} crédit${credits > 1 ? "s" : ""} restant${credits > 1 ? "s" : ""}`).catch(() => {});
+    }
     return res.json({ prompt: extractPrompt(md), owned: result.owned, credits, alreadyOwned: result.alreadyOwned });
   } catch (error) {
     console.error("Prompt claim failed:", error);
