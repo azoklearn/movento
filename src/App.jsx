@@ -918,8 +918,8 @@ const PRICE_LIFETIME = 89;
 // out as 358.79999999999995. 29.99 * 12 happens to land on 359.88, which is
 // luck, not a reason to drop the rounding.
 // Struck against two years of the annual, the plan it is weighed against.
-// The launch price is struck against the price lifetime moves to once the
-// launch is over. That price has to be real: when the launch ends, set
+// The Black Friday price is struck against the price lifetime moves to once
+// the offer is over. That price has to be real: when the launch ends, set
 // PRICE_LIFETIME to it (and MOLLIE_LIFETIME_PRICE in api/_shared.js). A
 // struck price that is never charged is a misleading reference price.
 const PRICE_LIFETIME_ANCHOR = 349;
@@ -1168,13 +1168,13 @@ const plans = [
     period: t("forever", "à vie"),
     // No per-day figure: the term it would divide by is the rest of your life.
     // The line the other cards use for their renewal says so instead.
-    billedNote: t("Launch price · one-time payment", "Prix de lancement · paiement unique"),
+    billedNote: t("Black Friday deal · one-time payment", "Offre Black Friday · paiement unique"),
     cta: t("Pay once, enjoy for life", "Paie une fois, profite à vie"),
     // Only one ribbon per row. It is the lifetime's: of the two offers it is
     // the one worth steering a buyer to, and "best value" is arithmetic anyone
     // can check against the card beside it — unlike "most chosen", which would
     // be a claim about other buyers that nothing here measures.
-    badge: t("Best deal", "Meilleure offre"),
+    badge: "Black Friday",
     featured: true,
     // The comparison stated as a line of its own, derived from both prices so
     // it cannot outlive either of them.
@@ -1280,7 +1280,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
   // support and the ebook, then what only this plan adds.
   const rows = [...(plan.features || []), plan.perk, plan.bonus, ...(plan.extras || [])].filter(Boolean);
   return (
-    <div className={`mv-glass relative flex flex-col rounded-[22px] p-6 sm:p-8 ${highlight ? "shadow-[0_0_70px_-18px_rgba(160,120,255,0.6)]" : ""}`}>
+    <div className={`mv-glass relative flex flex-col rounded-[22px] p-6 sm:p-8 ${highlight ? "order-first shadow-[0_0_70px_-18px_rgba(160,120,255,0.6)] sm:order-none" : ""}`}>
       {/* The travelling light along the card's own edge — violet and faster on
           the plan the page puts forward. */}
       <span className="mv-glow" aria-hidden="true" style={highlight ? { "--mv-glow-color": "#b9a4ff", "--mv-glow-duration": "6s" } : undefined}>
@@ -4783,7 +4783,7 @@ function CgvPage() {
         <h2>3. Offres et prix</h2>
         <ul>
           <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
-          <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement. Prix de lancement : l'accès à vie passera à {eur(PRICE_LIFETIME_ANCHOR)} à la fin de la période de lancement.</li>
+          <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement. Offre Black Friday : l'accès à vie passera à {eur(PRICE_LIFETIME_ANCHOR)} à la fin de l'offre.</li>
           <li><strong className="text-white/75">Packs de prompts : {PROMPT_PACKS.map((p) => `${p.size} prompts ${eur(p.price)}`).join(" · ")}</strong>, en un seul paiement, sans abonnement ; les prompts sont choisis après l'achat et restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
@@ -5204,7 +5204,7 @@ function PricingBanner({ onPick }) {
           </span>
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
             {/* The plan the page puts forward, priced exactly as its card is. */}
-            {t("Launch price, lifetime access", "Prix de lancement, accès à vie")} — <span className="line-through opacity-70">{eur(PRICE_LIFETIME_ANCHOR)}</span> <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
+            {t("Black Friday deal, lifetime access", "Offre Black Friday, accès à vie")} — <span className="line-through opacity-70">{eur(PRICE_LIFETIME_ANCHOR)}</span> <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
             {` ${t("one-time payment", "en un seul paiement")}`}{tail ? ` — ${tail}` : ""}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
@@ -5508,7 +5508,7 @@ function PricingPage() {
           <span className="mv-chip inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#EDE9E0]">
             <span className="text-[13px] tracking-normal"><span className="text-white/45 line-through">{eur(PRICE_LIFETIME_ANCHOR)}</span> {eur(PRICE_LIFETIME)}</span>
             <span className="h-3 w-px bg-white/20" />
-            {t("Lifetime launch price", "Prix de lancement à vie")}
+            {t("Black Friday on lifetime", "Black Friday sur l'accès à vie")}
           </span>
           <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
             {/* Nothing to choose between with one offer on sale, so the
