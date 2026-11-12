@@ -3056,9 +3056,15 @@ export default function MoventoSite() {
   const galleryPrompts = useMemo(
     () => {
       const mine = privatePromptsFor(accessEmail || leadEmail);
-      return mine.length ? [...mine, ...availablePrompts] : availablePrompts;
+      const all = mine.length ? [...mine, ...availablePrompts] : availablePrompts;
+      // A pack buyer (or anyone holding prompts one by one, without the whole
+      // catalogue) finds the prompts they picked first, in the order they
+      // appear in the catalogue. With full access every prompt is theirs and
+      // the order stays the catalogue's.
+      if (hasPremiumAccess || !ownedPrompts.size) return all;
+      return [...all.filter((p) => ownedPrompts.has(p.file)), ...all.filter((p) => !ownedPrompts.has(p.file))];
     },
-    [accessEmail, leadEmail],
+    [accessEmail, leadEmail, hasPremiumAccess, ownedPrompts],
   );
   const filtered = useMemo(() => {
     // galleryPrompts is already in display order: newest first by git date.
