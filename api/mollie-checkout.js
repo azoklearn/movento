@@ -15,7 +15,7 @@
 // What is charged comes from MOLLIE_PRICES, never from the request.
 import { randomBytes } from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { checkoutProviderFor, methodNotAllowed, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
+import { checkoutProviderFor, methodNotAllowed, MOLLIE_LIFETIME_PROMO, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, strikeText, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
 
 const looksLikeEmail = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 
@@ -36,6 +36,15 @@ async function customerFor(email) {
   const customer = await mollieApi("/customers", { method: "POST", body: { email, metadata: { source: "movento.dev" } } });
   try { await redis?.set(key, customer.id); } catch {}
   return customer.id;
+}
+
+// What Mollie's checkout shows for lifetime: the offer, the struck price and
+// the price paid, e.g. "Movento — Accès à vie · Black Friday 3̶4̶9̶€ → 89€".
+function lifetimeDescription(amount, offer) {
+  const paid = `${Number(amount).toFixed(2).replace(/\.00$/, "").replace(".", ",")}€`;
+  const { anchor, label } = MOLLIE_LIFETIME_PROMO;
+  if (offer) return `Movento — Accès à vie · offre spéciale${anchor ? ` ${strikeText(`${anchor}€`)} → ${paid}` : ""}`;
+  return anchor ? `Movento — Accès à vie · ${label} ${strikeText(`${anchor}€`)} → ${paid}` : "Movento — Accès à vie";
 }
 
 export default async function handler(req, res) {
@@ -74,7 +83,7 @@ export default async function handler(req, res) {
       method: "POST",
       body: {
         amount: { currency: "EUR", value: amount },
-        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? `Movento — Accès à vie${offer ? " (offre spéciale)" : ""}` : `Movento — ${MOLLIE_PLAN_LABELS[plan]}`,
+        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? lifetimeDescription(amount, offer) : `Movento — ${MOLLIE_PLAN_LABELS[plan]}`,
         customerId,
         // A subscription (3 months, the year) stores the card for the charges
         // that follow; lifetime is charged once.

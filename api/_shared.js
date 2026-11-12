@@ -506,6 +506,17 @@ export const MOLLIE_PRICES = {
   pack10: Number(process.env.MOLLIE_PACK10_PRICE || 79).toFixed(2),
 };
 export const MOLLIE_PACK_SIZES = { pack2: 2, pack5: 5, pack10: 10 };
+// The struck price shown in Mollie's checkout for lifetime, and the name of
+// the offer. Mollie's page only shows the payment's description and amount,
+// so the struck figure is written into the description with combining long
+// strokes (U+0336), which render as a strikethrough. Keep in step with
+// PRICE_LIFETIME_ANCHOR in src/App.jsx; an empty MOLLIE_LIFETIME_ANCHOR turns
+// it off.
+export const MOLLIE_LIFETIME_PROMO = {
+  anchor: process.env.MOLLIE_LIFETIME_ANCHOR === undefined ? "349" : String(process.env.MOLLIE_LIFETIME_ANCHOR).trim(),
+  label: process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Black Friday",
+};
+export const strikeText = (text) => [...String(text)].map((c) => `${c}\u0336`).join("");
 export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
 // How many months one payment of each subscription pays for: the Mollie
 // subscription's interval, and how far a paid payment opens the catalogue.

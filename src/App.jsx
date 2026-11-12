@@ -1667,7 +1667,7 @@ function OrderSummary({ plan, totals, provider, priceNote }) {
           {plan.discountBadge && <span className="rounded-full border border-[#ffa582]/25 bg-[#ffa582]/[0.08] px-2 py-0.5 text-[11px] font-semibold text-[#ffb89c]">{plan.discountBadge}</span>}
         </div>
         <div className="mt-2 flex items-baseline gap-2">
-          {plan.originalPrice && <span className="text-sm text-white/35 line-through">{plan.originalPrice}</span>}
+          {plan.originalPrice && <span className="text-2xl font-bold tracking-[-0.03em] text-white/30 line-through decoration-2">{plan.originalPrice}</span>}
           <span className="text-4xl font-bold tracking-[-0.03em] text-[#EDE9E0]">{plan.price}</span>
           <span className="text-sm text-white/45">{plan.period}</span>
         </div>
