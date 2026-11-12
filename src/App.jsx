@@ -1024,7 +1024,7 @@ const FEATURE_APPS = t("Access to apps", "Accès aux apps");
 // Fair use on the 3-month plan, enforced by api/prompt.js
 // (FAIR_USE_DAILY_COPIES in api/_shared.js): keep the two in step.
 const FAIR_USE_DAILY_COPIES = 3;
-const FEATURE_FAIR_USE = t(`Fair use: ${FAIR_USE_DAILY_COPIES} prompt copies / day`, `Fair use : ${FAIR_USE_DAILY_COPIES} copies de prompts / jour`);
+const FEATURE_FAIR_USE = t(`${FAIR_USE_DAILY_COPIES} prompt copies / day`, `${FAIR_USE_DAILY_COPIES} copies de prompts / jour`);
 const FEATURE_UNLIMITED = t("Unlimited prompts access", "Accès illimité aux prompts");
 const FEATURE_CLIENT_WORK = t("For personal & client work", "Pour tes projets perso & clients");
 const CATALOGUE_FEATURES = [
