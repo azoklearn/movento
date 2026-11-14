@@ -108,6 +108,10 @@ const prompts = [
   // existed — a still on purpose (a clip here lagged), so `lead` is what puts
   // it first.
   { title: "Ciao Energy — 3D Can Carousel", category: "E-commerce", type: "Landing", file: "Ciao_Energy_3D_Can_Carousel.md", pinned: true, lead: true, preview: "https://res.cloudinary.com/rkke23vr/image/upload/v1793821572/Capture_d_e%CC%81cran_2026-11-04_a%CC%80_20.44.41.png", tags: ["Three.js", "Scroll Camera", "3D Cans"], gradient: "from-[#9089D3] via-[#3D2B68] to-[#000000]" },
+  { title: "OVRA — Every Workout", category: "E-commerce", type: "Landing", file: "Ovra_Every_Workout.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/ovra-full.mp4", tags: ["Strip Reveal", "Stencil Type", "Marquee Card"], gradient: "from-[#E4D0EA] via-[#CDB4D6] to-[#26132A]" },
+  { title: "Glaze — Crafted for Motion", category: "SaaS", type: "Landing", file: "Glaze_Crafted_For_Motion.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/glaze-motion.mp4", tags: ["3D Keychain", "Physics", "Timeline FLIP"], gradient: "from-[#dbe3ee] via-[#ff5512] to-[#12151b]" },
+  { title: "Nectarline — Crystal Koi Studio", category: "AI / SaaS", type: "Landing", file: "Nectarline_Koi_Supply_Studio.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/nectarline-landing.mp4", tags: ["3D Koi", "Ripple Lens", "Dashboard"], gradient: "from-[#6f78ff] via-[#160c40] to-[#0d0830]" },
+  { title: "Foldwild — Paper Craft Studio", category: "Portfolio", type: "Landing", file: "Foldwild_Paper_Craft_Studio.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/foldwild-tour-b.mp4", tags: ["Slider Morph", "Intro Film", "Paper 3D"], gradient: "from-[#F7C6B2] via-[#B7D3F3] to-[#BEE5D3]" },
   { title: "Kolibrie — Golden Hour Studio", category: "Agency", type: "Landing", file: "Kolibrie_Studio_Golden_Hour.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/kolibrie-landing.mp4", tags: ["3D Card Stack", "Cursor Card", "Scroll Theme"], gradient: "from-[#faf3e4] via-[#ef4a23] to-[#141110]" },
   { title: "LUNE — Bag Slots Story", category: "Social", type: "Story", file: "Lune_Bag_Slots_Story.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/bag-slots-hero.mp4", tags: ["Slot Reels", "Frame Scrub", "Packshot"], gradient: "from-[#d4d5d3] via-[#b9a8ef] to-[#16161a]" },
   { title: "Main Character Mode — Life-Sim Post", category: "Social", type: "Post", file: "Main_Character_Mode_Life_Sim.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/main-character-hero.mp4", tags: ["Pie Menu", "Spinning Gem", "Game UI"], gradient: "from-[#3f8fd8] via-[#7ad14a] to-[#1f3f8f]" },
@@ -419,6 +423,10 @@ const AVAILABLE_FILES = new Set([
   "Leon_Vasari_Curved_VHS_Archive.md",
   "VirtualFit_Spatial_TryOn_Arc.md",
   "Ciao_Energy_3D_Can_Carousel.md",
+  "Ovra_Every_Workout.md",
+  "Glaze_Crafted_For_Motion.md",
+  "Nectarline_Koi_Supply_Studio.md",
+  "Foldwild_Paper_Craft_Studio.md",
   "Kolibrie_Studio_Golden_Hour.md",
   "Lune_Bag_Slots_Story.md",
   "Main_Character_Mode_Life_Sim.md",
