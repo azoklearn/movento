@@ -108,6 +108,7 @@ const prompts = [
   // existed — a still on purpose (a clip here lagged), so `lead` is what puts
   // it first.
   { title: "Ciao Energy — 3D Can Carousel", category: "E-commerce", type: "Landing", file: "Ciao_Energy_3D_Can_Carousel.md", pinned: true, lead: true, preview: "https://res.cloudinary.com/rkke23vr/image/upload/v1793821572/Capture_d_e%CC%81cran_2026-11-04_a%CC%80_20.44.41.png", tags: ["Three.js", "Scroll Camera", "3D Cans"], gradient: "from-[#9089D3] via-[#3D2B68] to-[#000000]" },
+  { title: "Poke Pal — Build Your Bowl", category: "E-commerce", type: "Landing", file: "Poke_Pal_Build_Your_Bowl.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/poke-pal-hero.mp4", tags: ["Drag & Drop", "Glove Cursor", "Sauce Drawing"], gradient: "from-[#f2766a] via-[#d5efec] to-[#0d6a6e]" },
   { title: "OVRA — Every Workout", category: "E-commerce", type: "Landing", file: "Ovra_Every_Workout.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/ovra-full.mp4", tags: ["Strip Reveal", "Stencil Type", "Marquee Card"], gradient: "from-[#E4D0EA] via-[#CDB4D6] to-[#26132A]" },
   { title: "Glaze — Crafted for Motion", category: "SaaS", type: "Landing", file: "Glaze_Crafted_For_Motion.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/glaze-motion.mp4", tags: ["3D Keychain", "Physics", "Timeline FLIP"], gradient: "from-[#dbe3ee] via-[#ff5512] to-[#12151b]" },
   { title: "Nectarline — Crystal Koi Studio", category: "AI / SaaS", type: "Landing", file: "Nectarline_Koi_Supply_Studio.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/nectarline-landing.mp4", tags: ["3D Koi", "Ripple Lens", "Dashboard"], gradient: "from-[#6f78ff] via-[#160c40] to-[#0d0830]" },
@@ -423,6 +424,7 @@ const AVAILABLE_FILES = new Set([
   "Leon_Vasari_Curved_VHS_Archive.md",
   "VirtualFit_Spatial_TryOn_Arc.md",
   "Ciao_Energy_3D_Can_Carousel.md",
+  "Poke_Pal_Build_Your_Bowl.md",
   "Ovra_Every_Workout.md",
   "Glaze_Crafted_For_Motion.md",
   "Nectarline_Koi_Supply_Studio.md",
