@@ -109,6 +109,7 @@ const prompts = [
   // it first.
   { title: "Ciao Energy — 3D Can Carousel", category: "E-commerce", type: "Landing", file: "Ciao_Energy_3D_Can_Carousel.md", pinned: true, lead: true, preview: "https://res.cloudinary.com/rkke23vr/image/upload/v1793821572/Capture_d_e%CC%81cran_2026-11-04_a%CC%80_20.44.41.png", tags: ["Three.js", "Scroll Camera", "3D Cans"], gradient: "from-[#9089D3] via-[#3D2B68] to-[#000000]" },
   { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", pinned: true, demo: "https://fizzy-display-magic.lovable.app/soda.html", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
+  { title: "Letterbloom — Poppy Type Garden", category: "Component", type: "Page", file: "Letterbloom_Poppy_Type_Garden.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/letterbloom-poppy.mp4", tags: ["Generative Type", "Canvas", "Poster Export"], gradient: "from-[#D9603A] via-[#A8A08A] to-[#1C1C1B]" },
   { title: "Krung Travel — Welcome to Bangkok", category: "Landing Page", type: "Landing", file: "Krung_Travel_Bangkok.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/bangkok-travel-hero.mp4", tags: ["Misty Wipe", "Cloud Layers", "Shared Element"], gradient: "from-[#f7d9c6] via-[#f39419] to-[#5c5156]" },
   { title: "Night ’26 Shell — Shop the Look", category: "E-commerce", type: "Section", file: "Night_26_Shell_Runway_Look.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/runway-look-hero.mp4", tags: ["Depth Carousel", "Skeleton Swap", "Add to Bag"], gradient: "from-[#1f4dff] via-[#1b1d21] to-[#0d0e10]" },
   { title: "Noa Ellsworth — 66,000 Dots", category: "Portfolio", type: "Hero", file: "Noa_Ellsworth_Point_Cloud_Portrait.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/noa-made-of-dots.mp4", tags: ["Point Cloud", "Three.js", "Cursor Light"], gradient: "from-[#c9d4b8] via-[#7fa8a3] to-[#0f110d]" },
@@ -428,6 +429,7 @@ const AVAILABLE_FILES = new Set([
   "Leon_Vasari_Curved_VHS_Archive.md",
   "VirtualFit_Spatial_TryOn_Arc.md",
   "Ciao_Energy_3D_Can_Carousel.md",
+  "Letterbloom_Poppy_Type_Garden.md",
   "Krung_Travel_Bangkok.md",
   "Night_26_Shell_Runway_Look.md",
   "Noa_Ellsworth_Point_Cloud_Portrait.md",
