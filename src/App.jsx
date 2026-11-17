@@ -3426,40 +3426,7 @@ export default function MoventoSite() {
       </AnimatePresence>
       <SiteNav query={query} setQuery={setQuery} />
 
-      {/* The hero: a tag, the promise in two lines, one sentence, one button.
-          Shown on the home and on /prompts alike. */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-4 pt-14 text-center sm:pt-20 lg:pt-24">
-        <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="inline-block rounded-full border border-[#F59E6B]/70 bg-[#F59E6B]/[0.08] px-2.5 py-[3px] text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#F7C4A3]">
-          {t("New prompts all the time", "Nouveaux prompts en continu")}
-        </motion.span>
-        <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05 }} className="mt-4 text-[38px] font-black uppercase leading-[0.95] tracking-[-0.045em] text-white sm:text-6xl lg:text-[82px]">
-          {t("Sites ", "Des sites ")}<em className="pr-1 italic">{t("that", "qui")}</em>{t(" move", " bougent")}
-          <br />
-          {t("in one ", "en un ")}
-          <span className="whitespace-nowrap bg-gradient-to-r from-[#FBE3D2] via-[#EBCDF3] to-[#C9B8FF] bg-clip-text text-transparent [filter:drop-shadow(0_0_22px_rgba(214,180,255,0.45))]">{t("copy-paste", "copier-coller")}</span>
-        </motion.h1>
-        <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.12 }} className="mx-auto mt-5 max-w-xl text-[15px] font-medium leading-7 text-white/60 sm:text-[17px]">
-          {t(`${availablePrompts.length} premium landing pages, ready in minutes. Copy the prompt, paste it into Lovable, Cursor or Claude, launch.`, `${availablePrompts.length} landing pages premium, prêtes en quelques minutes. Copie le prompt, colle-le dans Lovable, Cursor ou Claude, lance.`)}
-        </motion.p>
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.18 }} className="mt-8 flex flex-col items-center gap-3">
-          {hasPremiumAccess ? (
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/[0.08] px-4 py-2 text-sm font-semibold text-emerald-200">
-              <Icon name="check" className="h-4 w-4" /> {t("Premium access active", "Accès premium actif")}
-            </span>
-          ) : (
-            <>
-              <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-white to-[#D3D8FF] px-8 py-4 text-[17px] font-bold text-[#0A0A0B] shadow-[0_10px_40px_-12px_rgba(190,195,255,0.7)] transition hover:brightness-105">
-                {t("Go unlimited", "Accès illimité")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" />
-              </a>
-              {!trialActive && (
-                <button onClick={() => setShowUnlockModal(true)} className="text-xs font-medium text-white/45 transition hover:text-white/80">
-                  {t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}
-                </button>
-              )}
-            </>
-          )}
-        </motion.div>
-      </section>
+      <BlackFridayHero hasPremiumAccess={hasPremiumAccess} trialActive={trialActive} onUnlock={() => setShowUnlockModal(true)} />
 
       {/* Full width, no max: the gallery is the page, and a capped row left a
           band of empty background down each side on anything above 1560. */}
@@ -3738,6 +3705,170 @@ const NAV_SECONDARY = () => [
   { href: "/pricing", label: t("Pricing", "Tarifs") },
   { href: "/subscription", label: t("My subscription", "Mon abonnement") },
 ];
+
+// The promo hero over the gallery: a wall of dark rounded tiles lit by two
+// pink light beams that sweep slowly across it, tiles lifting under the
+// cursor, a pink glow behind a two-line headline, and one button. Drawn on a
+// 2D canvas (no 3D library): about 150 tiles, redrawn only while on screen,
+// and a single still frame under reduced motion.
+function PromoTileField() {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const ctx = canvas.getContext("2d");
+    const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    let w = 0, h = 0, dpr = 1, cell = 66, tiles = [], raf = 0, visible = true, last = 0;
+    const pointer = { x: -9999, y: -9999, on: false };
+    const start = performance.now();
+
+    const layout = () => {
+      const r = canvas.getBoundingClientRect();
+      w = r.width; h = r.height;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+      cell = w < 640 ? 46 : 66;
+      const cols = Math.ceil(w / cell) + 1, rows = Math.ceil(h / cell) + 1;
+      const ox = (w - cols * cell) / 2, oy = -cell * 0.35;
+      tiles = [];
+      for (let j = 0; j < rows; j += 1) for (let i = 0; i < cols; i += 1) tiles.push({ x: ox + i * cell, y: oy + j * cell, lift: 0 });
+    };
+
+    const roundRect = (x, y, s, r) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.lineTo(x + s - r, y); ctx.quadraticCurveTo(x + s, y, x + s, y + r);
+      ctx.lineTo(x + s, y + s - r); ctx.quadraticCurveTo(x + s, y + s, x + s - r, y + s);
+      ctx.lineTo(x + r, y + s); ctx.quadraticCurveTo(x, y + s, x, y + s - r);
+      ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+    };
+
+    // Two beams through a point near the centre, rising to the right, each
+    // swinging a few degrees on its own slow period.
+    const beams = (t) => [
+      { a: -0.42 + Math.sin(t * 0.00023) * 0.07, cx: w * 0.55 + Math.sin(t * 0.00017) * w * 0.05, cy: h * 0.42, width: 70, power: 1 },
+      { a: -0.62 + Math.sin(t * 0.00031 + 1.3) * 0.06, cx: w * 0.6, cy: h * 0.38, width: 34, power: 0.75 },
+    ];
+    const beamLight = (bs, x, y) => {
+      let v = 0;
+      for (const b of bs) {
+        const d = (x - b.cx) * Math.sin(b.a) - (y - b.cy) * Math.cos(b.a);
+        v += b.power * Math.exp(-(d * d) / (2 * b.width * b.width));
+      }
+      const gx = (x - w * 0.5) / (w * 0.32), gy = (y - h * 0.42) / (h * 0.42);
+      return v + 0.55 * Math.exp(-(gx * gx + gy * gy));
+    };
+
+    const draw = (now) => {
+      const t = reduced ? 0 : now - start;
+      const dt = Math.min(64, now - (last || now)); last = now;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const bs = beams(t);
+      const gap = cell * 0.09, size = cell - gap, rad = cell * 0.2;
+      for (const tile of tiles) {
+        const cx = tile.x + cell / 2, cy = tile.y + cell / 2;
+        const d = pointer.on ? Math.hypot(cx - pointer.x, cy - pointer.y) : 1e9;
+        const target = d < cell * 2.6 ? Math.pow(1 - d / (cell * 2.6), 1.5) : 0;
+        tile.lift += (target - tile.lift) * (reduced ? 1 : 1 - Math.exp(-dt / 90));
+        const light = Math.min(1.4, beamLight(bs, cx, cy));
+        const lift = tile.lift;
+        const x = tile.x + gap / 2 - lift * 5, y = tile.y + gap / 2 - lift * 5;
+        if (lift > 0.02) {
+          // The side of a raised tile, seen down and to the right.
+          roundRect(x + lift * 8, y + lift * 8, size, rad);
+          ctx.fillStyle = `rgba(${40 + light * 90},${8 + light * 10},${22 + light * 30},${0.55 + lift * 0.3})`;
+          ctx.fill();
+        }
+        roundRect(x, y, size, rad);
+        const g = ctx.createLinearGradient(x, y, x + size, y + size);
+        g.addColorStop(0, `rgba(${9 + light * 26},${8 + light * 5},${10 + light * 12},1)`);
+        g.addColorStop(1, "rgba(2,2,3,1)");
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.lineWidth = 1 + lift;
+        ctx.strokeStyle = `rgba(255,${60 + lift * 80},${130 + lift * 40},${Math.min(0.9, 0.035 + light * 0.5 + lift * 0.45)})`;
+        ctx.stroke();
+      }
+      // The beams themselves, added on top as light.
+      ctx.globalCompositeOperation = "lighter";
+      const reach = Math.hypot(w, h);
+      for (const b of bs) {
+        const dx = Math.cos(b.a) * reach, dy = Math.sin(b.a) * reach;
+        for (const [lw, alpha] of [[b.width * 1.6, 0.06], [b.width * 0.5, 0.1], [b.width * 0.12, 0.22]]) {
+          const g = ctx.createLinearGradient(b.cx - dx, b.cy - dy, b.cx + dx, b.cy + dy);
+          g.addColorStop(0.25, "rgba(255,42,119,0)");
+          g.addColorStop(0.5, `rgba(255,42,119,${alpha * b.power})`);
+          g.addColorStop(0.78, `rgba(255,90,160,${alpha * b.power * 0.8})`);
+          g.addColorStop(1, "rgba(255,42,119,0)");
+          ctx.strokeStyle = g; ctx.lineWidth = lw; ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(b.cx - dx, b.cy - dy); ctx.lineTo(b.cx + dx, b.cy + dy); ctx.stroke();
+        }
+      }
+      ctx.globalCompositeOperation = "source-over";
+      if (!reduced && visible) raf = requestAnimationFrame(draw);
+    };
+
+    const kick = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); };
+    layout(); kick();
+    const ro = new ResizeObserver(() => { layout(); kick(); });
+    ro.observe(canvas);
+    const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) kick(); });
+    io.observe(canvas);
+    const onMove = (e) => {
+      const r = canvas.getBoundingClientRect();
+      pointer.x = e.clientX - r.left; pointer.y = e.clientY - r.top;
+      pointer.on = pointer.y > -40 && pointer.y < r.height + 40;
+      if (reduced) kick();
+    };
+    const onLeave = () => { pointer.on = false; };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", onLeave);
+    return () => {
+      cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
+      window.removeEventListener("pointermove", onMove);
+      document.documentElement.removeEventListener("pointerleave", onLeave);
+    };
+  }, []);
+  return <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />;
+}
+
+function BlackFridayHero({ hasPremiumAccess, trialActive, onUnlock }) {
+  return (
+    <header className="relative isolate z-10 flex flex-col items-center px-5 pb-10 pt-12 text-center sm:pt-16">
+      <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-80px] -z-10 h-[460px] w-screen -translate-x-1/2 overflow-hidden [mask-image:linear-gradient(180deg,#000_62%,transparent)]">
+        <div className="absolute inset-0 bg-[radial-gradient(45%_40%_at_50%_40%,rgba(255,42,119,0.45),rgba(156,11,71,0.18)_45%,transparent_75%)]" />
+        <PromoTileField />
+      </div>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative mb-6 py-2">
+        <h1 className="font-['Roboto_Flex',system-ui,sans-serif] text-[44px] font-extrabold uppercase leading-[0.95] tracking-[-0.04em] text-white [text-shadow:0_0_18px_rgba(255,42,119,0.7),0_0_46px_rgba(255,42,119,0.45)] sm:text-[72px]">
+          Black Friday
+          <span className="block text-[#FFDBE8]">{t(`${LIFETIME_DISCOUNT}% off`, `−${LIFETIME_DISCOUNT} %`)}</span>
+        </h1>
+        <p className="mt-3 text-sm text-white/80">
+          {t(`Lifetime access for ${eur(PRICE_LIFETIME)} instead of ${eur(PRICE_LIFETIME_ANCHOR)}.`, `L'accès à vie pour ${eur(PRICE_LIFETIME)} au lieu de ${eur(PRICE_LIFETIME_ANCHOR)}.`)}
+        </p>
+      </motion.div>
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.12 }} className="flex flex-col items-center gap-3">
+        {hasPremiumAccess ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/[0.08] px-4 py-2 text-sm font-semibold text-emerald-200">
+            <Icon name="check" className="h-4 w-4" /> {t("Premium access active", "Accès premium actif")}
+          </span>
+        ) : (
+          <>
+            <a href="/pricing" className="flex h-14 items-center justify-center gap-1 rounded-full border-t-2 border-white bg-[linear-gradient(to_top,#cfdef6_20%,#fafafa_80%)] px-8 py-2 text-lg font-semibold text-[#09090b] transition-opacity hover:opacity-90">
+              {t("Go unlimited →", "Accès illimité →")}
+            </a>
+            {!trialActive && (
+              <button onClick={onUnlock} className="text-xs font-medium text-white/45 transition hover:text-white/80">
+                {t("Already purchased? Unlock your access", "Déjà client ? Déverrouille ton accès")}
+              </button>
+            )}
+          </>
+        )}
+      </motion.div>
+    </header>
+  );
+}
 
 function SiteNav({ query, setQuery, searchLabel }) {
   const [menuOpen, setMenuOpen] = useState(false);
