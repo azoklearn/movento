@@ -19,7 +19,13 @@ const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_UR
 // Never make this relative to the visitor's first view: a timer that restarts
 // on every reload is a lie the visitor catches the moment they come back, and
 // it costs more than the urgency is worth.
-const LAUNCH_OFFER_ENDS_AT = null;
+// The Black Friday offer (lifetime at PRICE_LIFETIME instead of
+// PRICE_LIFETIME_ANCHOR) ends here: the countdown bar at the bottom of the
+// gallery and the /pricing banner both count down to it, and the bar goes away
+// on its own once it has passed. The prices, the hero and the pricing page do
+// NOT change by themselves: on that date lifetime must really go back to the
+// anchor price, or the struck price becomes a false reference price.
+const LAUNCH_OFFER_ENDS_AT = "2026-11-18T06:20:00+01:00";
 
 // Support address, shown wherever a visitor is told to write to us.
 const SUPPORT_EMAIL = "movento.dev@gmail.com";
@@ -3600,7 +3606,7 @@ export default function MoventoSite() {
         })()}
       </section>
 
-      <footer className="relative z-10 border-t border-white/10 py-10">
+      <footer className="relative z-10 border-t border-white/10 pb-20 pt-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
           <Logo />
           <p className="text-sm text-white/40">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
@@ -3616,6 +3622,7 @@ export default function MoventoSite() {
           </div>
         </div>
       </footer>
+      {!hasPremiumAccess && <BlackFridayBar />}
     </main>
   );
 }
@@ -4081,6 +4088,7 @@ function BackgroundsPage({ hasAccess }) {
           <p className="py-20 text-center text-sm text-white/45">{t("No background matches this search.", "Aucun background ne correspond à cette recherche.")}</p>
         )}
       </section>
+      {!hasAccess && <BlackFridayBar />}
     </main>
   );
 }
@@ -5315,7 +5323,7 @@ function Testimonials({ items = TESTIMONIALS }) {
 // Ticks once a second while a real deadline is ahead. Returns null when there
 // is no deadline or it has passed, so callers drop the countdown entirely
 // rather than freezing on 00:00:00.
-function useCountdown(iso) {
+function useCountdownParts(iso) {
   const target = useMemo(() => {
     if (!iso) return null;
     const ms = Date.parse(iso);
@@ -5333,10 +5341,97 @@ function useCountdown(iso) {
 
   if (!target || left <= 0) return null;
   const total = Math.floor(left / 1000);
-  const pad = (n) => String(n).padStart(2, "0");
-  const days = Math.floor(total / 86400);
-  const clock = `${pad(Math.floor((total % 86400) / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
-  return days > 0 ? `${days}${t("d", "j")} ${clock}` : clock;
+  return { d: Math.floor(total / 86400), h: Math.floor((total % 86400) / 3600), m: Math.floor((total % 3600) / 60), s: total % 60 };
+}
+
+const pad2 = (n) => String(n).padStart(2, "0");
+
+function useCountdown(iso) {
+  const parts = useCountdownParts(iso);
+  if (!parts) return null;
+  const clock = `${pad2(parts.h)}:${pad2(parts.m)}:${pad2(parts.s)}`;
+  return parts.d > 0 ? `${parts.d}${t("d", "j")} ${clock}` : clock;
+}
+
+// The white bar pinned to the bottom of the gallery and /backgrounds: the
+// Black Friday deal, the time left on it, and a link to /pricing. Only while
+// the offer runs, and never for someone who already has access.
+function BlackFridayBar() {
+  const parts = useCountdownParts(LAUNCH_OFFER_ENDS_AT);
+  if (!parts) return null;
+  const segments = [
+    ...(parts.d > 0 ? [[parts.d, t("d", "j")]] : []),
+    [pad2(parts.h), "h"],
+    [pad2(parts.m), "m"],
+    ...(parts.d > 0 ? [] : [[pad2(parts.s), "s"]]),
+  ];
+  return (
+    <a
+      href="/pricing"
+      onClick={() => track("bf_bar_click", refProps())}
+      className="group fixed inset-x-0 bottom-0 z-40 flex h-9 items-center justify-center gap-3 overflow-hidden bg-white px-4 text-[13px] text-black shadow-[0_-8px_24px_rgba(0,0,0,0.35)] transition-[filter] duration-200 hover:brightness-[0.97]"
+    >
+      <span aria-hidden="true" className="mv-bf-sweep pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-[linear-gradient(90deg,transparent,rgba(216,152,255,0.35),transparent)]" />
+      <PercentBalloon className="relative h-[22px] w-auto shrink-0 -rotate-6 transition-transform duration-300 group-hover:rotate-0" />
+      <span className="relative font-semibold">Black Friday</span>
+      <span className="relative hidden text-black/60 sm:inline">
+        {t(`Lifetime access for ${eur(PRICE_LIFETIME)} instead of ${eur(PRICE_LIFETIME_ANCHOR)}`, `L'accès à vie pour ${eur(PRICE_LIFETIME)} au lieu de ${eur(PRICE_LIFETIME_ANCHOR)}`)}
+      </span>
+      <span role="timer" aria-label={t("Time left in the sale", "Temps restant de l'offre")} className="relative hidden items-center gap-[3px] md:flex">
+        <span className="mr-1.5 text-black/50">{t("Ends in", "Fin dans")}</span>
+        {segments.map(([value, unit]) => (
+          <span key={unit} className="inline-flex h-[22px] min-w-[34px] items-center justify-center rounded-[5px] bg-black/[0.07] px-[5px]">
+            <span className="whitespace-nowrap leading-[18px]"><span className="font-semibold tabular-nums">{value}</span><span className="ml-px text-[11px] text-black/50">{unit}</span></span>
+          </span>
+        ))}
+      </span>
+      <span className="relative inline-flex items-center gap-1 font-semibold">
+        {t("See the deal", "Voir l'offre")}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
+      </span>
+    </a>
+  );
+}
+
+// A gold "%" drawn like a foil balloon: dark offset copy for depth, the gold
+// gradient, then white highlights.
+function PercentBalloon({ className }) {
+  const shape = (
+    <>
+      <path d="M30.5 6.5 L13.5 33.5" />
+      <circle cx="12" cy="11.5" r="6.2" />
+      <circle cx="32" cy="28.5" r="6.2" />
+    </>
+  );
+  return (
+    <svg viewBox="0 0 44 40" className={className} aria-hidden="true">
+      <defs>
+        <linearGradient id="mv-bf-balloon" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff3c4" />
+          <stop offset="0.35" stopColor="#f2cf6e" />
+          <stop offset="0.8" stopColor="#c99329" />
+          <stop offset="1" stopColor="#7a5410" />
+        </linearGradient>
+        <filter id="mv-bf-balloon-shadow" x="-20%" y="-20%" width="140%" height="150%">
+          <feDropShadow dx="0.6" dy="1.4" stdDeviation="0.9" floodColor="#000" floodOpacity="0.35" />
+        </filter>
+      </defs>
+      <g filter="url(#mv-bf-balloon-shadow)" fill="none" strokeLinecap="round">
+        <g stroke="#7a5410" strokeWidth="6.4" transform="translate(0.7 1.1)">{shape}</g>
+        <g stroke="url(#mv-bf-balloon)" strokeWidth="6.4">{shape}</g>
+        <g stroke="#fff" strokeOpacity="0.75" strokeWidth="1.5">
+          <path d="M28.6 7.6 L22.8 16.9" />
+          <path d="M7.6 9.6 A5 5 0 0 1 11 6.6" />
+          <path d="M27.6 26.6 A5 5 0 0 1 31 23.6" />
+        </g>
+        <g fill="#fff" fillOpacity="0.9" stroke="none">
+          <circle cx="30" cy="6.3" r="0.9" />
+          <circle cx="9.3" cy="7.3" r="0.7" />
+          <circle cx="29.3" cy="24.3" r="0.7" />
+        </g>
+      </g>
+    </svg>
+  );
 }
 
 // Sticky offer bar at the bottom of /pricing. The countdown is appended only

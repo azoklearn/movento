@@ -343,3 +343,14 @@ video::-webkit-media-controls-start-playback-button {
      stops travelling. */
   .mv-glow-blob { animation: none; }
 }
+
+/* Black Friday bar: a soft violet light crossing the white bar, left to right,
+   then a pause. It starts a third of the width off the left edge and travels
+   four of its own widths, so it leaves fully off the right edge. */
+@keyframes mv-bf-sweep {
+  0% { transform: translateX(0); }
+  70%, 100% { transform: translateX(400%); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mv-bf-sweep { animation: mv-bf-sweep 4.5s ease-in-out infinite; }
+}
