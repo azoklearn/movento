@@ -3630,7 +3630,7 @@ export default function MoventoSite() {
           </div>
         </div>
       </footer>
-      {!hasPremiumAccess && <BlackFridayBar />}
+      <BlackFridayBar />
     </main>
   );
 }
