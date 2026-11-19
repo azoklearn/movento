@@ -3718,130 +3718,57 @@ const NAV_SECONDARY = () => [
   { href: "/subscription", label: t("My subscription", "Mon abonnement") },
 ];
 
-// The promo hero over the gallery: a wall of dark rounded tiles lit by two
-// pink light beams that sweep slowly across it, tiles lifting under the
-// cursor, a pink glow behind a two-line headline, and one button. Drawn on a
-// 2D canvas (no 3D library): about 150 tiles, redrawn only while on screen,
-// and a single still frame under reduced motion.
-function PromoTileField() {
+// The tile wall behind the hero (src/tileWall.js, three.js, loaded on demand):
+// glossy dark tiles backlit in pink, a ripple from the title on load, tiles
+// lifting under the pointer. Only on a fine pointer without reduced motion;
+// elsewhere the pink glow alone stands in for it.
+function TileWallBackdrop({ lightRef }) {
   const canvasRef = useRef(null);
+  const [ready, setReady] = useState(false);
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return undefined;
-    const ctx = canvas.getContext("2d");
-    const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    let w = 0, h = 0, dpr = 1, cell = 66, tiles = [], raf = 0, visible = true, last = 0;
-    const pointer = { x: -9999, y: -9999, on: false };
-    const start = performance.now();
-
-    const layout = () => {
-      const r = canvas.getBoundingClientRect();
-      w = r.width; h = r.height;
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
-      cell = w < 640 ? 46 : 66;
-      const cols = Math.ceil(w / cell) + 1, rows = Math.ceil(h / cell) + 1;
-      const ox = (w - cols * cell) / 2, oy = -cell * 0.35;
-      tiles = [];
-      for (let j = 0; j < rows; j += 1) for (let i = 0; i < cols; i += 1) tiles.push({ x: ox + i * cell, y: oy + j * cell, lift: 0 });
-    };
-
-    const roundRect = (x, y, s, r) => {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y); ctx.lineTo(x + s - r, y); ctx.quadraticCurveTo(x + s, y, x + s, y + r);
-      ctx.lineTo(x + s, y + s - r); ctx.quadraticCurveTo(x + s, y + s, x + s - r, y + s);
-      ctx.lineTo(x + r, y + s); ctx.quadraticCurveTo(x, y + s, x, y + s - r);
-      ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
-    };
-
-    // Two beams through a point near the centre, rising to the right, each
-    // swinging a few degrees on its own slow period.
-    const beams = (t) => [
-      { a: -0.42 + Math.sin(t * 0.00023) * 0.07, cx: w * 0.55 + Math.sin(t * 0.00017) * w * 0.05, cy: h * 0.42, width: 70, power: 1 },
-      { a: -0.62 + Math.sin(t * 0.00031 + 1.3) * 0.06, cx: w * 0.6, cy: h * 0.38, width: 34, power: 0.75 },
-    ];
-    const beamLight = (bs, x, y) => {
-      let v = 0;
-      for (const b of bs) {
-        const d = (x - b.cx) * Math.sin(b.a) - (y - b.cy) * Math.cos(b.a);
-        v += b.power * Math.exp(-(d * d) / (2 * b.width * b.width));
-      }
-      const gx = (x - w * 0.5) / (w * 0.32), gy = (y - h * 0.42) / (h * 0.42);
-      return v + 0.55 * Math.exp(-(gx * gx + gy * gy));
-    };
-
-    const draw = (now) => {
-      const t = reduced ? 0 : now - start;
-      const dt = Math.min(64, now - (last || now)); last = now;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, w, h);
-      const bs = beams(t);
-      const gap = cell * 0.09, size = cell - gap, rad = cell * 0.2;
-      for (const tile of tiles) {
-        const cx = tile.x + cell / 2, cy = tile.y + cell / 2;
-        const d = pointer.on ? Math.hypot(cx - pointer.x, cy - pointer.y) : 1e9;
-        const target = d < cell * 2.6 ? Math.pow(1 - d / (cell * 2.6), 1.5) : 0;
-        tile.lift += (target - tile.lift) * (reduced ? 1 : 1 - Math.exp(-dt / 90));
-        const light = Math.min(1.4, beamLight(bs, cx, cy));
-        const lift = tile.lift;
-        const x = tile.x + gap / 2 - lift * 5, y = tile.y + gap / 2 - lift * 5;
-        if (lift > 0.02) {
-          // The side of a raised tile, seen down and to the right.
-          roundRect(x + lift * 8, y + lift * 8, size, rad);
-          ctx.fillStyle = `rgba(${40 + light * 90},${8 + light * 10},${22 + light * 30},${0.55 + lift * 0.3})`;
-          ctx.fill();
-        }
-        roundRect(x, y, size, rad);
-        const g = ctx.createLinearGradient(x, y, x + size, y + size);
-        g.addColorStop(0, `rgba(${9 + light * 26},${8 + light * 5},${10 + light * 12},1)`);
-        g.addColorStop(1, "rgba(2,2,3,1)");
-        ctx.fillStyle = g;
-        ctx.fill();
-        ctx.lineWidth = 1 + lift;
-        ctx.strokeStyle = `rgba(255,${60 + lift * 80},${130 + lift * 40},${Math.min(0.9, 0.035 + light * 0.5 + lift * 0.45)})`;
-        ctx.stroke();
-      }
-      // The beams themselves, added on top as light.
-      ctx.globalCompositeOperation = "lighter";
-      const reach = Math.hypot(w, h);
-      for (const b of bs) {
-        const dx = Math.cos(b.a) * reach, dy = Math.sin(b.a) * reach;
-        for (const [lw, alpha] of [[b.width * 1.6, 0.06], [b.width * 0.5, 0.1], [b.width * 0.12, 0.22]]) {
-          const g = ctx.createLinearGradient(b.cx - dx, b.cy - dy, b.cx + dx, b.cy + dy);
-          g.addColorStop(0.25, "rgba(255,42,119,0)");
-          g.addColorStop(0.5, `rgba(255,42,119,${alpha * b.power})`);
-          g.addColorStop(0.78, `rgba(255,90,160,${alpha * b.power * 0.8})`);
-          g.addColorStop(1, "rgba(255,42,119,0)");
-          ctx.strokeStyle = g; ctx.lineWidth = lw; ctx.lineCap = "round";
-          ctx.beginPath(); ctx.moveTo(b.cx - dx, b.cy - dy); ctx.lineTo(b.cx + dx, b.cy + dy); ctx.stroke();
-        }
-      }
-      ctx.globalCompositeOperation = "source-over";
-      if (!reduced && visible) raf = requestAnimationFrame(draw);
-    };
-
-    const kick = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); };
-    layout(); kick();
-    const ro = new ResizeObserver(() => { layout(); kick(); });
-    ro.observe(canvas);
-    const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) kick(); });
-    io.observe(canvas);
-    const onMove = (e) => {
-      const r = canvas.getBoundingClientRect();
-      pointer.x = e.clientX - r.left; pointer.y = e.clientY - r.top;
-      pointer.on = pointer.y > -40 && pointer.y < r.height + 40;
-      if (reduced) kick();
-    };
-    const onLeave = () => { pointer.on = false; };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    document.documentElement.addEventListener("pointerleave", onLeave);
-    return () => {
-      cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
-      window.removeEventListener("pointermove", onMove);
-      document.documentElement.removeEventListener("pointerleave", onLeave);
-    };
-  }, []);
-  return <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />;
+    if (!canvas || typeof window === "undefined") return undefined;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    let cancelled = false;
+    let cleanup = () => {};
+    import("./tileWall.js")
+      .then(async ({ createTileWall }) => {
+        if (cancelled) return;
+        const wall = createTileWall(canvas);
+        const frame = () => {
+          const box = canvas.getBoundingClientRect();
+          const light = lightRef.current?.getBoundingClientRect();
+          wall.setFrame({
+            width: canvas.offsetWidth,
+            height: canvas.offsetHeight,
+            lightX: light ? light.left - box.left + light.width / 2 : box.width / 2,
+            lightY: light ? light.top - box.top + light.height / 2 : 160,
+          });
+        };
+        const ro = new ResizeObserver(frame);
+        ro.observe(canvas);
+        frame();
+        const onMove = (e) => {
+          const box = canvas.getBoundingClientRect();
+          const inside = e.clientX >= box.left && e.clientX <= box.right && e.clientY >= box.top && e.clientY <= box.bottom;
+          wall.setPointer(inside ? { x: ((e.clientX - box.left) / box.width) * 2 - 1, y: -((e.clientY - box.top) / box.height) * 2 + 1 } : null);
+        };
+        window.addEventListener("pointermove", onMove, { passive: true });
+        cleanup = () => { ro.disconnect(); window.removeEventListener("pointermove", onMove); wall.dispose(); };
+        await wall.warmUp();
+        if (cancelled) return;
+        setReady(true);
+        window.setTimeout(() => wall.playRipple(), 250);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; cleanup(); };
+  }, [lightRef]);
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-80px] -z-10 h-[460px] w-screen -translate-x-1/2 overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,#000_0%,#000_50%,transparent_100%)] [mask-image:linear-gradient(to_bottom,#000_0%,#000_50%,transparent_100%)]">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_45%_40%_at_50%_40%,rgba(255,42,119,0.45),rgba(156,11,71,0.18)_45%,transparent_75%)]" />
+      <canvas ref={canvasRef} className={`absolute inset-0 h-full w-full transition-opacity duration-700 ${ready ? "opacity-100" : "opacity-0"}`} />
+    </div>
+  );
 }
 
 // The landing hero, in the Black Friday look: the tile field, "BLACK FRIDAY /
@@ -3850,18 +3777,16 @@ function PromoTileField() {
 // that is on sale (2 × the annual), labelled as such. A struck "former price"
 // that was never charged would be a false reference price.
 function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
+  const lightRef = useRef(null);
   return (
     <header className="relative isolate z-10 flex flex-col items-center px-5 pb-10 pt-12 text-center sm:pt-16">
-      <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-80px] -z-10 h-[460px] w-screen -translate-x-1/2 overflow-hidden [mask-image:linear-gradient(180deg,#000_62%,transparent)]">
-        <div className="absolute inset-0 bg-[radial-gradient(45%_40%_at_50%_40%,rgba(255,42,119,0.45),rgba(156,11,71,0.18)_45%,transparent_75%)]" />
-        <PromoTileField />
-      </div>
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative mb-6 py-2">
-        <h1 className="font-['Roboto_Flex',system-ui,sans-serif] text-[40px] font-extrabold uppercase leading-[0.95] tracking-[-0.04em] text-white [text-shadow:0_0_18px_rgba(255,42,119,0.7),0_0_46px_rgba(255,42,119,0.45)] sm:text-[72px]">
+      <TileWallBackdrop lightRef={lightRef} />
+      <motion.div ref={lightRef} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative mb-6 py-2">
+        <h1 className="font-['Roboto_Flex',system-ui,sans-serif] text-[40px] font-extrabold uppercase leading-[0.95] tracking-[-0.04em] text-white sm:text-[72px]" style={{ fontVariationSettings: '"wdth" 151', textShadow: "0 0 18px rgba(255,42,119,0.9), 0 0 42px rgba(255,42,119,0.55), 0 0 90px rgba(156,11,71,0.6)" }}>
           Black Friday
           <span className="block text-[#FFDBE8]">{t("Lifetime access", "Accès à vie")}</span>
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-sm text-white/80">
+        <p className="mx-auto mt-3 max-w-md font-['Roboto_Flex',system-ui,sans-serif] text-sm text-white/80" style={{ fontVariationSettings: '"wdth" 110' }}>
           {t("Lifetime access for", "L'accès à vie pour")} <strong className="text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/60">{eur(termOf("m12").price * 2)}</span> {t("(2 years of the annual plan).", "(2 ans d'abonnement annuel).")}
         </p>
       </motion.div>
