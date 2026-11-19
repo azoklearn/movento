@@ -31,7 +31,7 @@ const SHOWCASE_FILES = [
 // button, this one decides whether /api/prompt actually hands the markdown
 // over, so a name in only one of them is either a button that fails or a
 // prompt given away in silence.
-export const FREE_PROMPT_FILES = new Set(["Mapple_Headphone_Store.md", "Vantage_Dashboard_Signal_Hero.md", "Lithos_Geology_Reveal_Hero.md"]);
+export const FREE_PROMPT_FILES = new Set(["Tidewell_Tides_In_Motion.md", "Unit0_Robot_Eye_Loader.md", "Kyne_Aero_Vision_Sunglasses.md"]);
 // Whether a given prompt may be handed over. Pure, and separate from the
 // endpoint, because this is the one decision in the codebase that both gives
 // away paid work and withholds work already paid for — it is worth being able

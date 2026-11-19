@@ -830,7 +830,7 @@ const SHOWCASE_SET = new Set(SHOWCASE_FILES);
 //
 // The same names must be in the set in api/_shared.js, which is what actually
 // lets /api/prompt hand them over — this one only unlocks the copy button.
-const FREE_PROMPT_FILES = new Set(["Mapple_Headphone_Store.md", "Vantage_Dashboard_Signal_Hero.md", "Lithos_Geology_Reveal_Hero.md"]);
+const FREE_PROMPT_FILES = new Set(["Tidewell_Tides_In_Motion.md", "Unit0_Robot_Eye_Loader.md", "Kyne_Aero_Vision_Sunglasses.md"]);
 
 // Whether the card moves BY ITSELF — a clip or a gif, as against a still that
 // only gets the Ken Burns pan, and against an entry with no preview at all,
@@ -3842,8 +3842,11 @@ function PromoTileField() {
   return <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />;
 }
 
-// The landing hero: the promise in two lines over the tile field, the size of
-// the catalogue, and the two ways in: buy, or copy one of the free prompts.
+// The landing hero, in the Black Friday look: the tile field, "BLACK FRIDAY /
+// ACCÈS À VIE", and the lifetime price set against a year of the monthly plan.
+// That comparison is the only struck figure: it is real arithmetic on a plan
+// that is on sale (12 × the monthly), labelled as such. A struck "former price"
+// that was never charged would be a false reference price.
 function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
   return (
     <header className="relative isolate z-10 flex flex-col items-center px-5 pb-10 pt-12 text-center sm:pt-16">
@@ -3853,11 +3856,11 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
       </div>
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative mb-6 py-2">
         <h1 className="font-['Roboto_Flex',system-ui,sans-serif] text-[40px] font-extrabold uppercase leading-[0.95] tracking-[-0.04em] text-white [text-shadow:0_0_18px_rgba(255,42,119,0.7),0_0_46px_rgba(255,42,119,0.45)] sm:text-[72px]">
-          {t("One prompt.", "Un prompt.")}
-          <span className="block text-[#FFDBE8]">{t("One animated site.", "Un site animé.")}</span>
+          Black Friday
+          <span className="block text-[#FFDBE8]">{t("Lifetime access", "Accès à vie")}</span>
         </h1>
         <p className="mx-auto mt-3 max-w-md text-sm text-white/80">
-          {t(`${availablePrompts.length} premium animated-site prompts to paste into Lovable, Claude or Cursor. 3 are free.`, `${availablePrompts.length} prompts de sites animés premium à coller dans Lovable, Claude ou Cursor. 3 sont gratuits.`)}
+          {t("Lifetime access for", "L'accès à vie pour")} <strong className="text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/60">{eur(Math.round(termOf("m1").price * 12 * 100) / 100)}</span> {t("(12 months of the monthly plan).", "(12 mois d'abonnement mensuel).")}
         </p>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.12 }} className="flex flex-col items-center gap-3">
