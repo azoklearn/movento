@@ -31,7 +31,38 @@ const SHOWCASE_FILES = [
 // button, this one decides whether /api/prompt actually hands the markdown
 // over, so a name in only one of them is either a button that fails or a
 // prompt given away in silence.
-export const FREE_PROMPT_FILES = new Set(["Tidewell_Tides_In_Motion.md", "Unit0_Robot_Eye_Loader.md", "Kyne_Aero_Vision_Sunglasses.md"]);
+export const FREE_PROMPT_FILES = new Set(["Ovra_Every_Workout.md", "Leon_Vasari_VHS_Filmography_Hero.md", "Oda_Nobunaga_Unifiers_Hero.md"]);
+
+// Free copies, counted for /admin: how many times each free prompt was copied
+// and by how many different people (an anonymous id the browser keeps, never
+// an email). Redis: hash freecopy:copies (file -> copies), set
+// freecopy:people:<file> and set freecopy:people (everyone, all prompts).
+// Never throws: a counter that fails must not stop the copy.
+export async function recordFreeCopy(file, visitor) {
+  const id = /^[a-z0-9]{8,40}$/.test(String(visitor || "")) ? String(visitor) : null;
+  try {
+    const redis = Redis.fromEnv();
+    const ops = [redis.hincrby("freecopy:copies", file, 1)];
+    if (id) ops.push(redis.sadd(`freecopy:people:${file}`, id), redis.sadd("freecopy:people", id));
+    await Promise.all(ops);
+  } catch (error) {
+    console.error("Free copy counter failed:", error);
+  }
+}
+
+export async function readFreeCopies() {
+  const redis = Redis.fromEnv();
+  const copies = (await redis.hgetall("freecopy:copies").catch(() => null)) || {};
+  const files = [...new Set([...FREE_PROMPT_FILES, ...Object.keys(copies)])];
+  const people = await Promise.all(files.map((f) => redis.scard(`freecopy:people:${f}`).catch(() => 0)));
+  return {
+    people: Number(await redis.scard("freecopy:people").catch(() => 0)) || 0,
+    copies: Object.values(copies).reduce((sum, n) => sum + (Number(n) || 0), 0),
+    prompts: files
+      .map((file, i) => ({ file, free: FREE_PROMPT_FILES.has(file), copies: Number(copies[file]) || 0, people: Number(people[i]) || 0 }))
+      .sort((a, b) => b.people - a.people || b.copies - a.copies),
+  };
+}
 // Whether a given prompt may be handed over. Pure, and separate from the
 // endpoint, because this is the one decision in the codebase that both gives
 // away paid work and withholds work already paid for — it is worth being able

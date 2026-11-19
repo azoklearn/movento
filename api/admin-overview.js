@@ -1,5 +1,5 @@
 import { Redis } from "@upstash/redis";
-import { auditAccessPayments, isAdminAuthorized, readWebhookStatus, whopConfigured } from "./_shared.js";
+import { auditAccessPayments, isAdminAuthorized, readFreeCopies, readWebhookStatus, whopConfigured } from "./_shared.js";
 
 // One read for the whole business, behind /admin.
 //
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     const midnight = new Date();
     midnight.setHours(0, 0, 0, 0);
 
-    const [audit, leadTotal, perDay, leadEmails] = await Promise.all([
+    const [audit, leadTotal, perDay, leadEmails, freeCopies] = await Promise.all([
       auditAccessPayments(),
       redis.zcard("leads").catch(() => 0),
       leadsPerDay(redis, days),
@@ -61,6 +61,7 @@ export default async function handler(req, res) {
       // rather than a zscore per customer. Capped: past this many the
       // conversion figure is reported as partial rather than silently wrong.
       redis.zrange("leads", 0, 4999, { rev: true }).catch(() => []),
+      readFreeCopies().catch(() => null),
     ]);
 
     const rows = audit.rows || [];
@@ -165,6 +166,8 @@ export default async function handler(req, res) {
         matchedAgainst: leadSet.size,
         partial: Number(leadTotal) > leadSet.size,
       },
+      // Who took the free prompts: people (anonymous browser ids) and copies.
+      freeCopies,
       // Everything that silently changes behaviour when it is missing. Not
       // "is the site up" — it plainly is, you are reading this — but the
       // settings whose absence shows up as a customer complaint days later.

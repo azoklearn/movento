@@ -7,6 +7,7 @@ import {
   extractPrompt,
   fetchPromptMarkdown,
   FREE_PROMPT_FILES,
+  recordFreeCopy,
   isSafePromptFile,
   methodNotAllowed,
   normalizeEmail,
@@ -88,6 +89,9 @@ export default async function handler(req, res) {
   try {
     const md = await fetchPromptMarkdown(file);
     if (md === null) return res.status(404).json({ error: "Prompt not found." });
+
+    // A free prompt taken by someone without the catalogue: counted for /admin.
+    if (isFreePrompt && level !== "full") await recordFreeCopy(file, req.body?.visitor);
 
     return res.json({ prompt: extractPrompt(md) });
   } catch (error) {

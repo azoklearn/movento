@@ -832,7 +832,7 @@ const SHOWCASE_SET = new Set(SHOWCASE_FILES);
 //
 // The same names must be in the set in api/_shared.js, which is what actually
 // lets /api/prompt hand them over — this one only unlocks the copy button.
-const FREE_PROMPT_FILES = new Set(["Tidewell_Tides_In_Motion.md", "Unit0_Robot_Eye_Loader.md", "Kyne_Aero_Vision_Sunglasses.md"]);
+const FREE_PROMPT_FILES = new Set(["Ovra_Every_Workout.md", "Leon_Vasari_VHS_Filmography_Hero.md", "Oda_Nobunaga_Unifiers_Hero.md"]);
 
 // Whether the card moves BY ITSELF — a clip or a gif, as against a still that
 // only gets the Ken Burns pan, and against an entry with no preview at all,
@@ -2836,11 +2836,26 @@ function getStoredLeadEmail() {
   return window.localStorage.getItem("movento_lead_email") || "";
 }
 
+// An anonymous id this browser keeps, sent with free copies only, so /admin
+// can count the people who took a free prompt without knowing who they are.
+function visitorId() {
+  try {
+    let id = window.localStorage.getItem("movento_vid");
+    if (!/^[a-z0-9]{8,40}$/.test(id || "")) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}${Math.random()}`).replace(/[^a-z0-9]/gi, "").toLowerCase().slice(0, 32);
+      window.localStorage.setItem("movento_vid", id);
+    }
+    return id;
+  } catch {
+    return null;
+  }
+}
+
 function fetchPromptText(item, email) {
   return fetch(`${API_BASE_URL}/api/prompt`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ file: item.file, email }),
+    body: JSON.stringify({ file: item.file, email, ...(FREE_PROMPT_FILES.has(item.file) ? { visitor: visitorId() } : {}) }),
   }).then(async (response) => {
     if (response.status === 429) {
       const data = await response.json().catch(() => ({}));
@@ -5929,6 +5944,28 @@ function AdminOverview({ token }) {
         {tile("Essais en cours", c.trialing, "pas encore facturés")}
         {tile("Catalogue", catalogue.shown, `${catalogue.withVideo} vidéos${catalogue.free ? ` · ${catalogue.free} gratuits` : ""}${catalogue.hidden ? ` · ${catalogue.hidden} masqués` : ""}`)}
       </div>
+
+      {/* Free prompts: how many people took one, and which. */}
+      {d.freeCopies && (
+        <div className="mt-3 rounded-2xl border border-white/10 bg-[#121214] p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Prompts gratuits copiés</p>
+            <p className="text-sm text-white/70"><span className="text-lg font-bold text-[#EDE9E0]">{d.freeCopies.people}</span> personne(s) · {d.freeCopies.copies} copie(s)</p>
+          </div>
+          <table className="mt-3 w-full text-left text-sm">
+            <thead><tr className="text-[11px] uppercase tracking-wide text-white/35"><th className="pb-2 font-medium">Prompt</th><th className="pb-2 text-right font-medium">Personnes</th><th className="pb-2 text-right font-medium">Copies</th></tr></thead>
+            <tbody>
+              {d.freeCopies.prompts.map((row) => (
+                <tr key={row.file} className="border-t border-white/[0.06]">
+                  <td className="py-2 pr-2 text-white/80">{prompts.find((p) => p.file === row.file)?.title || row.file}{!row.free && <span className="ml-2 text-[11px] text-white/35">(plus gratuit)</span>}</td>
+                  <td className="py-2 text-right font-semibold text-[#EDE9E0]">{row.people}</td>
+                  <td className="py-2 text-right text-white/60">{row.copies}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {alerts.length > 0 && (
         <div className="mt-3 rounded-2xl border border-white/10 bg-[#121214] p-4">
