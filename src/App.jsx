@@ -926,10 +926,12 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 // stays because the anchors below are struck against it, and its subscribers
 // keep renewing. Mirror any change in RETIRED_PLANS (api/_shared.js).
 const PLAN_TERMS = [
-  { id: "m1", price: 29.99, anchor: 39.99, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
-  // Anchors: the same span bought month by month at the monthly price.
-  { id: "m3", price: 69, anchor: 89.97, days: 90, retired: true, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
-  { id: "m12", price: 89, anchor: 359.88, days: 365, retired: true, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
+  // The month is off sale: the line-up is MotionSites' (3 months, a year,
+  // lifetime). Its subscribers keep renewing at the price they took.
+  { id: "m1", price: 29.99, anchor: 29.99, days: 30, retired: true, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
+  // Anchors: the same span bought quarter by quarter at the 3-month price.
+  { id: "m3", price: 129, anchor: 129, days: 90, retired: false, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
+  { id: "m12", price: 279, anchor: 516, days: 365, retired: false, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
@@ -948,7 +950,7 @@ const discountOf = (id) => {
 // On sale with every processor. Off sale, lifetime members
 // keep their access, their ebook and their support.
 const LIFETIME_RETIRED = false;
-const PRICE_LIFETIME = 249;
+const PRICE_LIFETIME = 399;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
 // Rounded because binary floating point does not keep cents: 29.9 * 12 came
@@ -1213,7 +1215,7 @@ const plans = [
     // it cannot outlive either of them.
     // Its two extras go after support and the ebook, as the last rows.
     features: CATALOGUE_FEATURES,
-    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés"), t(`Cheaper than the monthly from month ${Math.ceil(PRICE_LIFETIME / termOf("m1").price)}`, `Rentable dès le ${Math.ceil(PRICE_LIFETIME / termOf("m1").price)}e mois`)],
+    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés"), t(`Cheaper than the annual from year ${Math.ceil(PRICE_LIFETIME / termOf("m12").price)}`, `Rentable dès la ${Math.ceil(PRICE_LIFETIME / termOf("m12").price)}e année`)],
     // Stated plainly rather than buried in the list above. The descriptions the
     // card used to carry are gone: they were most of its height, and beside
     // three shorter cards that read as a mistake rather than as generosity.
@@ -2019,9 +2021,9 @@ function WinbackOffer({ claim: explicit = "" }) {
 // Prices are the server's (MOLLIE_PRICES in api/_shared.js); these are only
 // what the card shows. Keep the two in step.
 const PROMPT_PACKS = [
-  { id: "pack2", size: 2, price: 25 },
-  { id: "pack5", size: 5, price: 49 },
-  { id: "pack10", size: 10, price: 79 },
+  { id: "pack2", size: 2, price: 49 },
+  { id: "pack5", size: 5, price: 99 },
+  { id: "pack10", size: 10, price: 149 },
 ];
 
 function PromptPacks() {
@@ -2869,10 +2871,10 @@ async function copyTextToClipboard(text) {
 
 function runSelfTests() {
   // The two offers, mirroring RETIRED_PLANS in api/_shared.js.
-  console.assert(["m1", "lifetime"].every(validatePlanId), "the month and lifetime are the offers and must be purchasable");
-  console.assert(["m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
-  console.assert(FEATURED_TERM === termOf("m1"), "the bar and the anchor quote the month");
-  console.assert(PRICE_LIFETIME > termOf("m1").price && PRICE_LIFETIME < 12 * termOf("m1").price, "lifetime costs more than a month and less than a year of months");
+  console.assert(["m3", "m12", "lifetime"].every(validatePlanId), "3 months, the year and lifetime are the offers and must be purchasable");
+  console.assert(["m1", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
+  console.assert(FEATURED_TERM === termOf("m12"), "the bar and the anchor quote the year");
+  console.assert(PRICE_LIFETIME > termOf("m12").price && PRICE_LIFETIME < 2 * termOf("m12").price, "lifetime costs more than a year and less than two");
   console.assert(visiblePlans.some((plan) => plan.id === "lifetime") && visiblePlans.filter((plan) => plan.featured).length === 1, "lifetime is on sale, and exactly one card is featured");
   // A card may not promise an extra its kind is not granted: the card is the
   // promise, EBOOK_KINDS and SUPPORT_KINDS are what keep it, and the two going
@@ -3843,9 +3845,9 @@ function PromoTileField() {
 }
 
 // The landing hero, in the Black Friday look: the tile field, "BLACK FRIDAY /
-// ACCÈS À VIE", and the lifetime price set against a year of the monthly plan.
+// ACCÈS À VIE", and the lifetime price set against two years of the annual.
 // That comparison is the only struck figure: it is real arithmetic on a plan
-// that is on sale (12 × the monthly), labelled as such. A struck "former price"
+// that is on sale (2 × the annual), labelled as such. A struck "former price"
 // that was never charged would be a false reference price.
 function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
   return (
@@ -3860,7 +3862,7 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
           <span className="block text-[#FFDBE8]">{t("Lifetime access", "Accès à vie")}</span>
         </h1>
         <p className="mx-auto mt-3 max-w-md text-sm text-white/80">
-          {t("Lifetime access for", "L'accès à vie pour")} <strong className="text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/60">{eur(Math.round(termOf("m1").price * 12 * 100) / 100)}</span> {t("(12 months of the monthly plan).", "(12 mois d'abonnement mensuel).")}
+          {t("Lifetime access for", "L'accès à vie pour")} <strong className="text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/60">{eur(termOf("m12").price * 2)}</span> {t("(2 years of the annual plan).", "(2 ans d'abonnement annuel).")}
         </p>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.12 }} className="flex flex-col items-center gap-3">
@@ -4957,7 +4959,8 @@ function CgvPage() {
       <div>
         <h2>3. Offres et prix</h2>
         <ul>
-          <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
+          <li><strong className="text-white/75">3 mois : {eur(termOf("m3").price)} tous les 3 mois</strong>, renouvelé automatiquement tous les 3 mois jusqu'à résiliation, avec une limite d'usage raisonnable de {FAIR_USE_DAILY_COPIES} copies de prompts par jour.</li>
+          <li><strong className="text-white/75">Annuel : {eur(termOf("m12").price)} par an</strong>, renouvelé automatiquement chaque année jusqu'à résiliation, copies illimitées.</li>
           <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
           <li><strong className="text-white/75">Packs de prompts : {PROMPT_PACKS.map((p) => `${p.size} prompts ${eur(p.price)}`).join(" · ")}</strong>, en un seul paiement, sans abonnement ; les prompts sont choisis après l'achat et restent accessibles sans limite de durée.</li>
         </ul>
@@ -5707,7 +5710,7 @@ function PricingPage() {
             ? soloTerm
               ? t(`All ${availablePrompts.length} premium prompts and every one added next. Cancel whenever you like, no commitment.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Résiliation quand tu veux, sans engagement.`)
               : t(`All ${availablePrompts.length} premium prompts and every one added next. One payment, no subscription, no renewal.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Un seul paiement, pas d'abonnement, pas de renouvellement.`)
-            : t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it by the month, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le au mois, ou garde-le pour toujours.`)}</p>
+            : t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it for 3 months, for a year, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le pour 3 mois, pour un an, ou garde-le pour toujours.`)}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
