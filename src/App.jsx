@@ -115,6 +115,9 @@ const prompts = [
   // it first.
   { title: "Ciao Energy — 3D Can Carousel", category: "E-commerce", type: "Landing", file: "Ciao_Energy_3D_Can_Carousel.md", pinned: true, lead: true, preview: "https://res.cloudinary.com/rkke23vr/image/upload/v1793821572/Capture_d_e%CC%81cran_2026-11-04_a%CC%80_20.44.41.png", tags: ["Three.js", "Scroll Camera", "3D Cans"], gradient: "from-[#9089D3] via-[#3D2B68] to-[#000000]" },
   { title: "Soda 3D Flavor", category: "E-commerce", type: "Hero", file: "Soda_3D_Flavor_Hero.md", pinned: true, demo: "https://fizzy-display-magic.lovable.app/soda.html", preview: "https://storage.getlayers.ai/templates/soda-preview.mp4", tags: ["Three.js", "Product 3D", "Drink"], gradient: "from-lime-200 via-emerald-500 to-[#062012]" },
+  // Fictional placeholder, visible only to the team address (onlyFor): not in
+  // the public gallery or any count.
+  { title: "GTA 6 — Vice Coast Teaser", category: "Hero Section", type: "Hero", file: "GTA_6_Vice_Teaser_Hero.md", pinned: true, onlyFor: "teammoventoino1@gmail.com", preview: "https://res.cloudinary.com/klc0oxsz/image/upload/v1795056214/Capture_d_e%CC%81cran_2026-11-19_a%CC%80_03.41.46.png", tags: ["Synthwave Sun", "Parallax", "Fan Concept"], gradient: "from-[#ff2e88] via-[#ff8a3d] to-[#0b0614]" },
   { title: "KYNE AERO.VISION — Chrome Sunglasses", category: "E-commerce", type: "Landing", file: "Kyne_Aero_Vision_Sunglasses.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/kyne-vision-hero.mp4", tags: ["Chroma Key", "Scene Transitions", "Bubble Morph"], gradient: "from-[#c6ff3d] via-[#3a3a46] to-[#000000]" },
   { title: "UNIT/0 — Robot-Eye ASCII Loader", category: "Agency", type: "Hero", file: "Unit0_Robot_Eye_Loader.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/unit0-eye-loader.mp4", tags: ["ASCII Canvas", "Pixel Dissolve", "Magazine Covers"], gradient: "from-[#f3ead8] via-[#ff8f5a] to-[#0c0907]" },
   { title: "Tidewell — Tides in Motion", category: "Agency", type: "Landing", file: "Tidewell_Tides_In_Motion.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/tides-in-motion.mp4", tags: ["Pixel Icons", "Card Wheel", "Scroll Story"], gradient: "from-[#EFCEBE] via-[#C0C9D9] to-[#12141B]" },
@@ -443,6 +446,7 @@ const AVAILABLE_FILES = new Set([
   "VirtualFit_Spatial_TryOn_Arc.md",
   "Ciao_Energy_3D_Can_Carousel.md",
   "Letterbloom_Poppy_Type_Garden.md",
+  "GTA_6_Vice_Teaser_Hero.md",
   "Kyne_Aero_Vision_Sunglasses.md",
   "Unit0_Robot_Eye_Loader.md",
   "Tidewell_Tides_In_Motion.md",
