@@ -932,8 +932,8 @@ const PLAN_TERMS = [
   // lifetime). Its subscribers keep renewing at the price they took.
   { id: "m1", price: 29.99, anchor: 29.99, days: 30, retired: true, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
   // Anchors: the same span bought quarter by quarter at the 3-month price.
-  { id: "m3", price: 129, anchor: 129, days: 90, retired: false, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
-  { id: "m12", price: 279, anchor: 516, days: 365, retired: false, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
+  { id: "m3", price: 109, anchor: 109, days: 90, retired: false, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
+  { id: "m12", price: 239, anchor: 436, days: 365, retired: false, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
@@ -952,7 +952,7 @@ const discountOf = (id) => {
 // On sale with every processor. Off sale, lifetime members
 // keep their access, their ebook and their support.
 const LIFETIME_RETIRED = false;
-const PRICE_LIFETIME = 399;
+const PRICE_LIFETIME = 259;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
 // Rounded because binary floating point does not keep cents: 29.9 * 12 came
@@ -1150,7 +1150,7 @@ const plans = [
     // Off sale, from the term's own flag like the two above it — one place
     // retires a term, and nothing on the page can disagree with it.
     hidden: Boolean(termOf("m12").retired),
-    name: t("Annual", "Annuel"),
+    name: t("Yearly access", "Accès annuel"),
     subtitle: t("Unlimited prompts, access for a year", "Prompts illimités, accès pendant un an"),
     price: eur(termOf("m12").price),
     period: t("/ yr", "/ an"),
@@ -1197,15 +1197,19 @@ const plans = [
     // featured offer cannot disagree about it. Mirrored by RETIRED_PLANS in
     // api/_shared.js, which would refuse the checkout while this is hidden.
     hidden: LIFETIME_RETIRED,
-    name: t("Lifetime", "À vie"),
+    name: t("Lifetime access", "Accès à vie"),
     subtitle: t("Unlimited prompts, access for life", "Prompts illimités, accès à vie"),
     price: eur(PRICE_LIFETIME),
+    // Struck against two years of the annual, the plan it replaces — a real
+    // figure, named as such in the line under the price. Never a "former
+    // price": lifetime has not been sold above this one.
+    originalPrice: eur(termOf("m12").price * 2),
     // No chip: struck against two years of the annual its reduction is small
     // beside the terms', and the card sells on "paid once" instead.
     period: t("forever", "à vie"),
     // No per-day figure: the term it would divide by is the rest of your life.
     // The line the other cards use for their renewal says so instead.
-    billedNote: t("One-time payment, no subscription", "Paiement unique, sans abonnement"),
+    billedNote: t("One-time payment · struck: 2 years of the annual", "Paiement unique · barré : 2 ans d'annuel"),
     cta: t("Pay once, enjoy for life", "Paie une fois, profite à vie"),
     // Only one ribbon per row. It is the lifetime's: of the two offers it is
     // the one worth steering a buyer to, and "best value" is arithmetic anyone

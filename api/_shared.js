@@ -487,18 +487,18 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 // Lifetime is one payment.
 //
 //   MOLLIE_API_KEY          test_… to try, live_… to sell
-//   MOLLIE_M3_PRICE         default 129.00, every 3 months (3 copies a day)
-//   MOLLIE_M12_PRICE        default 279.00, every year
-//   MOLLIE_LIFETIME_PRICE   default 399.00, once
+//   MOLLIE_M3_PRICE         default 109.00, every 3 months (3 copies a day)
+//   MOLLIE_M12_PRICE        default 239.00, every year
+//   MOLLIE_LIFETIME_PRICE   default 259.00, once
 // (m1, 29.99 a month, is off sale; its price stays for its renewals.)
 // The site switches to Mollie with CHECKOUT_PROVIDER=mollie.
 export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
 export const mollieTestMode = () => String(process.env.MOLLIE_API_KEY || "").startsWith("test_");
 export const MOLLIE_PRICES = {
   m1: Number(process.env.MOLLIE_M1_PRICE || 29.99).toFixed(2),
-  m3: Number(process.env.MOLLIE_M3_PRICE || 129).toFixed(2),
-  m12: Number(process.env.MOLLIE_M12_PRICE || 279).toFixed(2),
-  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 399).toFixed(2),
+  m3: Number(process.env.MOLLIE_M3_PRICE || 109).toFixed(2),
+  m12: Number(process.env.MOLLIE_M12_PRICE || 239).toFixed(2),
+  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 259).toFixed(2),
   // Packs of prompts, paid once: the buyer picks the prompts after paying
   // (/choose) and keeps them. Sizes in MOLLIE_PACK_SIZES.
   pack2: Number(process.env.MOLLIE_PACK2_PRICE || 49).toFixed(2),
@@ -535,7 +535,7 @@ export const FAIR_USE_KINDS = new Set(["m3"]);
 // never on a payment that was itself the offer.
 export const MOLLIE_WINBACK = {
   plan: "lifetime",
-  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 319).toFixed(2),
+  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 209).toFixed(2),
   windowHours: 48,
 };
 
@@ -684,8 +684,8 @@ export function bestCheckoutUrl(plan) {
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
 //
-// On sale: 3 months (129 €), the year (279 €) and lifetime (399 €), the
-// MotionSites line-up. The month is off sale; its subscribers keep their
+// On sale: 3 months (109 €), the year (239 €) and lifetime (259 €), the
+// MotionSites line-up converted to euros. The month is off sale; its subscribers keep their
 // access and their renewals.
 export const RETIRED_PLANS = new Set(["m1", "monthly", "yearly"]);
 
