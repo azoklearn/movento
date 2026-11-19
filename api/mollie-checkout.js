@@ -39,11 +39,13 @@ async function customerFor(email) {
 }
 
 // What Mollie's checkout shows for lifetime: the offer, the struck price and
-// the price paid, e.g. "Movento — Accès à vie · Black Friday 3̶4̶9̶€ → 89€".
+// the price paid, e.g. "Movento — Accès à vie · Offre 3̶4̶9̶€ → 249€" when MOLLIE_LIFETIME_ANCHOR is set.
 function lifetimeDescription(amount, offer) {
   const paid = `${Number(amount).toFixed(2).replace(/\.00$/, "").replace(".", ",")}€`;
   const { anchor, label } = MOLLIE_LIFETIME_PROMO;
-  if (offer) return `Movento — Accès à vie · offre spéciale${anchor ? ` ${strikeText(`${anchor}€`)} → ${paid}` : ""}`;
+  // The win-back is struck against the regular lifetime price, which is real.
+  const regular = `${Number(MOLLIE_PRICES.lifetime).toFixed(2).replace(/\.00$/, "").replace(".", ",")}€`;
+  if (offer) return `Movento — Accès à vie · offre spéciale ${strikeText(anchor ? `${anchor}€` : regular)} → ${paid}`;
   return anchor ? `Movento — Accès à vie · ${label} ${strikeText(`${anchor}€`)} → ${paid}` : "Movento — Accès à vie";
 }
 

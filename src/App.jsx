@@ -19,13 +19,9 @@ const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_UR
 // Never make this relative to the visitor's first view: a timer that restarts
 // on every reload is a lie the visitor catches the moment they come back, and
 // it costs more than the urgency is worth.
-// The Black Friday offer (lifetime at PRICE_LIFETIME instead of
-// PRICE_LIFETIME_ANCHOR) ends here: the countdown bar at the bottom of the
-// gallery and the /pricing banner both count down to it, and the bar goes away
-// on its own once it has passed. The prices, the hero and the pricing page do
-// NOT change by themselves: on that date lifetime must really go back to the
-// anchor price, or the struck price becomes a false reference price.
-const LAUNCH_OFFER_ENDS_AT = "2026-11-18T06:20:00+01:00";
+// No offer is running: lifetime is sold at its regular price, with no struck
+// price and no countdown. A future offer sets a real, fixed end date here.
+const LAUNCH_OFFER_ENDS_AT = null;
 
 // Support address, shown wherever a visitor is told to write to us.
 const SUPPORT_EMAIL = "movento.dev@gmail.com";
@@ -827,17 +823,14 @@ const SHOWCASE_FILES = [
   "Kimi_Grido1_Racing_Systems.md",
 ];
 const SHOWCASE_SET = new Set(SHOWCASE_FILES);
-// EMPTY: nothing is given away any more. The four showcase prompts used to be
-// handed over for an email address; they are now locked like every other one.
+// Three prompts anyone can copy, with no account and no email: the sample the
+// whole market gives before its paywall, so a visitor can judge what a Movento
+// prompt produces before paying. They sit right after the lead card for
+// visitors without access, with a "Free" badge.
 //
-// That giveaway was the site's ONLY lead magnet: the email gate on a free copy
-// is the single caller of /api/collect-lead, so with this set empty no new
-// addresses are collected at all, and the admin funnel stops counting.
-//
-// Putting a filename back here re-opens it, and the same name must go into the
-// set in api/_shared.js, which is what actually enforces access — this one only
-// unlocks the copy button.
-const FREE_PROMPT_FILES = new Set();
+// The same names must be in the set in api/_shared.js, which is what actually
+// lets /api/prompt hand them over — this one only unlocks the copy button.
+const FREE_PROMPT_FILES = new Set(["Mapple_Headphone_Store.md", "Vantage_Dashboard_Signal_Hero.md", "Lithos_Geology_Reveal_Hero.md"]);
 
 // Whether the card moves BY ITSELF — a clip or a gif, as against a still that
 // only gets the Ken Burns pan, and against an entry with no preview at all,
@@ -955,26 +948,23 @@ const discountOf = (id) => {
 // On sale with every processor. Off sale, lifetime members
 // keep their access, their ebook and their support.
 const LIFETIME_RETIRED = false;
-const PRICE_LIFETIME = 89;
+const PRICE_LIFETIME = 249;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
 // Rounded because binary floating point does not keep cents: 29.9 * 12 came
 // out as 358.79999999999995. 29.99 * 12 happens to land on 359.88, which is
 // luck, not a reason to drop the rounding.
 // Struck against two years of the annual, the plan it is weighed against.
-// The Black Friday price is struck against the price lifetime moves to once
-// the offer is over. That price has to be real: when the launch ends, set
-// PRICE_LIFETIME to it (and MOLLIE_LIFETIME_PRICE in api/_shared.js). A
-// struck price that is never charged is a misleading reference price.
-const PRICE_LIFETIME_ANCHOR = 349;
-const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_ANCHOR) * 100);
+// Lifetime is sold at its regular price, so nothing is struck against it. Keep
+// in step with MOLLIE_PRICES.lifetime in api/_shared.js and the JSON-LD offer
+// in index.html.
 
 // The figure the page leads with — the best of everything a button actually
 // offers, so it can never promise a reduction no card gives. Lifetime counts
 // only while it is on sale; it used to be spread in unconditionally, which was
 // right while it was the one offer and wrong the moment it was not.
 const LIVE_TERMS = PLAN_TERMS.filter((term) => !term.retired);
-const LIVE_DISCOUNTS = [...LIVE_TERMS.map((term) => discountOf(term.id)), ...(LIFETIME_RETIRED ? [] : [LIFETIME_DISCOUNT])];
+const LIVE_DISCOUNTS = LIVE_TERMS.map((term) => discountOf(term.id));
 // Math.max of nothing is -Infinity, so the list is counted before it is spread:
 // with nothing on sale the chip has to read 0, not minus infinity.
 const BEST_DISCOUNT = LIVE_DISCOUNTS.length ? Math.max(...LIVE_DISCOUNTS) : 0;
@@ -1206,25 +1196,24 @@ const plans = [
     name: t("Lifetime", "À vie"),
     subtitle: t("Unlimited prompts, access for life", "Prompts illimités, accès à vie"),
     price: eur(PRICE_LIFETIME),
-    originalPrice: eur(PRICE_LIFETIME_ANCHOR),
     // No chip: struck against two years of the annual its reduction is small
     // beside the terms', and the card sells on "paid once" instead.
     period: t("forever", "à vie"),
     // No per-day figure: the term it would divide by is the rest of your life.
     // The line the other cards use for their renewal says so instead.
-    billedNote: t("Black Friday deal · one-time payment", "Offre Black Friday · paiement unique"),
+    billedNote: t("One-time payment, no subscription", "Paiement unique, sans abonnement"),
     cta: t("Pay once, enjoy for life", "Paie une fois, profite à vie"),
     // Only one ribbon per row. It is the lifetime's: of the two offers it is
     // the one worth steering a buyer to, and "best value" is arithmetic anyone
     // can check against the card beside it — unlike "most chosen", which would
     // be a claim about other buyers that nothing here measures.
-    badge: "Black Friday",
+    badge: t("Best value", "Meilleur choix"),
     featured: true,
     // The comparison stated as a line of its own, derived from both prices so
     // it cannot outlive either of them.
     // Its two extras go after support and the ebook, as the last rows.
     features: CATALOGUE_FEATURES,
-    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés"), t(`Cheaper than the monthly from month ${Math.ceil(89 / 29.99)}`, `Rentable dès le ${Math.ceil(89 / 29.99)}e mois`)],
+    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés"), t(`Cheaper than the monthly from month ${Math.ceil(PRICE_LIFETIME / termOf("m1").price)}`, `Rentable dès le ${Math.ceil(PRICE_LIFETIME / termOf("m1").price)}e mois`)],
     // Stated plainly rather than buried in the list above. The descriptions the
     // card used to carry are gone: they were most of its height, and beside
     // three shorter cards that read as a mistake rather than as generosity.
@@ -2883,7 +2872,7 @@ function runSelfTests() {
   console.assert(["m1", "lifetime"].every(validatePlanId), "the month and lifetime are the offers and must be purchasable");
   console.assert(["m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
   console.assert(FEATURED_TERM === termOf("m1"), "the bar and the anchor quote the month");
-  console.assert(PRICE_LIFETIME > termOf("m1").price && PRICE_LIFETIME < 12 * termOf("m1").price && PRICE_LIFETIME < PRICE_LIFETIME_ANCHOR, "lifetime costs more than a month, less than a year of months, and less than the price it moves to");
+  console.assert(PRICE_LIFETIME > termOf("m1").price && PRICE_LIFETIME < 12 * termOf("m1").price, "lifetime costs more than a month and less than a year of months");
   console.assert(visiblePlans.some((plan) => plan.id === "lifetime") && visiblePlans.filter((plan) => plan.featured).length === 1, "lifetime is on sale, and exactly one card is featured");
   // A card may not promise an extra its kind is not granted: the card is the
   // promise, EBOOK_KINDS and SUPPORT_KINDS are what keep it, and the two going
@@ -2906,11 +2895,8 @@ function runSelfTests() {
   // The popup names whatever is free, so the two have to agree. Not compared
   // against api/_shared.js here — that set is not imported — so the mirror is
   // checked by a script before each commit instead.
-  // Nothing is free. Not a temporary state to be tolerated: a non-empty set
-  // here means a prompt is being handed out, and that is now always a mistake
-  // unless someone deliberately re-opened one.
-  console.assert(FREE_PROMPT_FILES.size === 0, "no prompt is given away any more");
-  console.assert(freePromptItems.length === 0, "and none is listed as a giveaway");
+  // Three prompts are the free sample, all of them in the catalogue.
+  console.assert(FREE_PROMPT_FILES.size === 3 && freePromptItems.length === 3, "exactly three prompts are free, and all three are on display");
   console.assert(SHOWCASE_FILES.every((f) => prompts.some((item) => item.file === f)), "every showcase filename must belong to a catalogue entry");
   console.assert(freePromptItems.every((item) => isPromptAvailable(item) && item.title), "a free prompt with no markdown or no title would be a badge promising a 404");
   // The badge, the sort and the API all key on FREE_PROMPT_FILES, so a name in
@@ -3100,7 +3086,14 @@ export default function MoventoSite() {
   const galleryPrompts = useMemo(
     () => {
       const mine = privatePromptsFor(accessEmail || leadEmail);
-      const all = mine.length ? [...mine, ...availablePrompts] : availablePrompts;
+      const base = mine.length ? [...mine, ...availablePrompts] : availablePrompts;
+      // Without access, the three free prompts come right after the lead card:
+      // the sample is the first thing a visitor can actually use.
+      const all = hasPremiumAccess ? base : [
+        ...base.filter((p) => p.lead),
+        ...base.filter((p) => !p.lead && FREE_PROMPT_FILES.has(p.file)),
+        ...base.filter((p) => !p.lead && !FREE_PROMPT_FILES.has(p.file)),
+      ];
       // A pack buyer (or anyone holding prompts one by one, without the whole
       // catalogue) finds the prompts they picked first, in the order they
       // appear in the catalogue. With full access every prompt is theirs and
@@ -3284,15 +3277,8 @@ export default function MoventoSite() {
       return;
     }
 
-    if (isFree && !accessEmail && !leadEmail) {
-      // The preview popup no longer closes itself on copy, so close it here:
-      // this is the one branch that answers with another modal, and two of them
-      // stacked is a dead end — the lead form sits under the preview.
-      closePreview();
-      setPendingFreeItem(item);
-      setShowLeadModal(true);
-      return;
-    }
+    // A free prompt is copied straight away: no account, no email.
+    if (isFree && !hasPremiumAccess) track("free_prompt_copied", { prompt: item.title, ...refProps() });
 
     if (item.link) {
       window.open(item.link, "_blank", "noopener,noreferrer");
@@ -3450,7 +3436,7 @@ export default function MoventoSite() {
       </AnimatePresence>
       <SiteNav query={query} setQuery={setQuery} />
 
-      <BlackFridayHero hasPremiumAccess={hasPremiumAccess} trialActive={trialActive} onUnlock={() => setShowUnlockModal(true)} />
+      <LandingHero hasPremiumAccess={hasPremiumAccess} trialActive={trialActive} onUnlock={() => setShowUnlockModal(true)} />
 
       {/* Full width, no max: the gallery is the page, and a capped row left a
           band of empty background down each side on anything above 1560. */}
@@ -3640,7 +3626,6 @@ export default function MoventoSite() {
           </div>
         </div>
       </footer>
-      <BlackFridayBar />
     </main>
   );
 }
@@ -3857,7 +3842,9 @@ function PromoTileField() {
   return <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />;
 }
 
-function BlackFridayHero({ hasPremiumAccess, trialActive, onUnlock }) {
+// The landing hero: the promise in two lines over the tile field, the size of
+// the catalogue, and the two ways in: buy, or copy one of the free prompts.
+function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
   return (
     <header className="relative isolate z-10 flex flex-col items-center px-5 pb-10 pt-12 text-center sm:pt-16">
       <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-80px] -z-10 h-[460px] w-screen -translate-x-1/2 overflow-hidden [mask-image:linear-gradient(180deg,#000_62%,transparent)]">
@@ -3865,12 +3852,12 @@ function BlackFridayHero({ hasPremiumAccess, trialActive, onUnlock }) {
         <PromoTileField />
       </div>
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative mb-6 py-2">
-        <h1 className="font-['Roboto_Flex',system-ui,sans-serif] text-[44px] font-extrabold uppercase leading-[0.95] tracking-[-0.04em] text-white [text-shadow:0_0_18px_rgba(255,42,119,0.7),0_0_46px_rgba(255,42,119,0.45)] sm:text-[72px]">
-          Black Friday
-          <span className="block text-[#FFDBE8]">{t(`${LIFETIME_DISCOUNT}% off`, `−${LIFETIME_DISCOUNT} %`)}</span>
+        <h1 className="font-['Roboto_Flex',system-ui,sans-serif] text-[40px] font-extrabold uppercase leading-[0.95] tracking-[-0.04em] text-white [text-shadow:0_0_18px_rgba(255,42,119,0.7),0_0_46px_rgba(255,42,119,0.45)] sm:text-[72px]">
+          {t("One prompt.", "Un prompt.")}
+          <span className="block text-[#FFDBE8]">{t("One animated site.", "Un site animé.")}</span>
         </h1>
-        <p className="mt-3 text-sm text-white/80">
-          {t(`Lifetime access for ${eur(PRICE_LIFETIME)} instead of ${eur(PRICE_LIFETIME_ANCHOR)}.`, `L'accès à vie pour ${eur(PRICE_LIFETIME)} au lieu de ${eur(PRICE_LIFETIME_ANCHOR)}.`)}
+        <p className="mx-auto mt-3 max-w-md text-sm text-white/80">
+          {t(`${availablePrompts.length} premium animated-site prompts to paste into Lovable, Claude or Cursor. 3 are free.`, `${availablePrompts.length} prompts de sites animés premium à coller dans Lovable, Claude ou Cursor. 3 sont gratuits.`)}
         </p>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.12 }} className="flex flex-col items-center gap-3">
@@ -3882,6 +3869,9 @@ function BlackFridayHero({ hasPremiumAccess, trialActive, onUnlock }) {
           <>
             <a href="/pricing" className="flex h-14 items-center justify-center gap-1 rounded-full border-t-2 border-white bg-[linear-gradient(to_top,#cfdef6_20%,#fafafa_80%)] px-8 py-2 text-lg font-semibold text-[#09090b] transition-opacity hover:opacity-90">
               {t("Go unlimited →", "Accès illimité →")}
+            </a>
+            <a href="#prompts" className="text-sm font-semibold text-white/80 underline decoration-white/30 underline-offset-4 transition hover:text-white">
+              {t("Try a free prompt", "Essayer un prompt gratuit")}
             </a>
             {!trialActive && (
               <button onClick={onUnlock} className="text-xs font-medium text-white/45 transition hover:text-white/80">
@@ -4106,7 +4096,6 @@ function BackgroundsPage({ hasAccess }) {
           <p className="py-20 text-center text-sm text-white/45">{t("No background matches this search.", "Aucun background ne correspond à cette recherche.")}</p>
         )}
       </section>
-      {!hasAccess && <BlackFridayBar />}
     </main>
   );
 }
@@ -4966,7 +4955,7 @@ function CgvPage() {
         <h2>3. Offres et prix</h2>
         <ul>
           <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
-          <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement. Offre Black Friday : l'accès à vie passera à {eur(PRICE_LIFETIME_ANCHOR)} à la fin de l'offre.</li>
+          <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
           <li><strong className="text-white/75">Packs de prompts : {PROMPT_PACKS.map((p) => `${p.size} prompts ${eur(p.price)}`).join(" · ")}</strong>, en un seul paiement, sans abonnement ; les prompts sont choisis après l'achat et restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
@@ -5371,86 +5360,6 @@ function useCountdown(iso) {
   return parts.d > 0 ? `${parts.d}${t("d", "j")} ${clock}` : clock;
 }
 
-// The white bar pinned to the bottom of the gallery and /backgrounds: the
-// Black Friday deal, the time left on it, and a link to /pricing. Only while
-// the offer runs, and never for someone who already has access.
-function BlackFridayBar() {
-  const parts = useCountdownParts(LAUNCH_OFFER_ENDS_AT);
-  if (!parts) return null;
-  const segments = [
-    ...(parts.d > 0 ? [[parts.d, t("d", "j")]] : []),
-    [pad2(parts.h), "h"],
-    [pad2(parts.m), "m"],
-    ...(parts.d > 0 ? [] : [[pad2(parts.s), "s"]]),
-  ];
-  return (
-    <a
-      href="/pricing"
-      onClick={() => track("bf_bar_click", refProps())}
-      className="group fixed inset-x-0 bottom-0 z-40 flex h-9 items-center justify-center gap-3 overflow-hidden bg-white px-4 text-[13px] text-black shadow-[0_-8px_24px_rgba(0,0,0,0.35)] transition-[filter] duration-200 hover:brightness-[0.97]"
-    >
-      <span aria-hidden="true" className="mv-bf-sweep pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-[linear-gradient(90deg,transparent,rgba(216,152,255,0.35),transparent)]" />
-      <PercentBalloon className="relative h-[22px] w-auto shrink-0 -rotate-6 transition-transform duration-300 group-hover:rotate-0" />
-      <span className="relative font-semibold">Black Friday</span>
-      <span className="relative hidden text-black/60 sm:inline">
-        {t(`Lifetime access for ${eur(PRICE_LIFETIME)} instead of ${eur(PRICE_LIFETIME_ANCHOR)}`, `L'accès à vie pour ${eur(PRICE_LIFETIME)} au lieu de ${eur(PRICE_LIFETIME_ANCHOR)}`)}
-      </span>
-      <span role="timer" aria-label={t("Time left in the sale", "Temps restant de l'offre")} className="relative hidden items-center gap-[3px] md:flex">
-        <span className="mr-1.5 text-black/50">{t("Ends in", "Fin dans")}</span>
-        {segments.map(([value, unit]) => (
-          <span key={unit} className="inline-flex h-[22px] min-w-[34px] items-center justify-center rounded-[5px] bg-black/[0.07] px-[5px]">
-            <span className="whitespace-nowrap leading-[18px]"><span className="font-semibold tabular-nums">{value}</span><span className="ml-px text-[11px] text-black/50">{unit}</span></span>
-          </span>
-        ))}
-      </span>
-      <span className="relative inline-flex items-center gap-1 font-semibold">
-        {t("See the deal", "Voir l'offre")}
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
-      </span>
-    </a>
-  );
-}
-
-// A gold "%" drawn like a foil balloon: dark offset copy for depth, the gold
-// gradient, then white highlights.
-function PercentBalloon({ className }) {
-  const shape = (
-    <>
-      <path d="M30.5 6.5 L13.5 33.5" />
-      <circle cx="12" cy="11.5" r="6.2" />
-      <circle cx="32" cy="28.5" r="6.2" />
-    </>
-  );
-  return (
-    <svg viewBox="0 0 44 40" className={className} aria-hidden="true">
-      <defs>
-        <linearGradient id="mv-bf-balloon" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#fff3c4" />
-          <stop offset="0.35" stopColor="#f2cf6e" />
-          <stop offset="0.8" stopColor="#c99329" />
-          <stop offset="1" stopColor="#7a5410" />
-        </linearGradient>
-        <filter id="mv-bf-balloon-shadow" x="-20%" y="-20%" width="140%" height="150%">
-          <feDropShadow dx="0.6" dy="1.4" stdDeviation="0.9" floodColor="#000" floodOpacity="0.35" />
-        </filter>
-      </defs>
-      <g filter="url(#mv-bf-balloon-shadow)" fill="none" strokeLinecap="round">
-        <g stroke="#7a5410" strokeWidth="6.4" transform="translate(0.7 1.1)">{shape}</g>
-        <g stroke="url(#mv-bf-balloon)" strokeWidth="6.4">{shape}</g>
-        <g stroke="#fff" strokeOpacity="0.75" strokeWidth="1.5">
-          <path d="M28.6 7.6 L22.8 16.9" />
-          <path d="M7.6 9.6 A5 5 0 0 1 11 6.6" />
-          <path d="M27.6 26.6 A5 5 0 0 1 31 23.6" />
-        </g>
-        <g fill="#fff" fillOpacity="0.9" stroke="none">
-          <circle cx="30" cy="6.3" r="0.9" />
-          <circle cx="9.3" cy="7.3" r="0.7" />
-          <circle cx="29.3" cy="24.3" r="0.7" />
-        </g>
-      </g>
-    </svg>
-  );
-}
 
 // Sticky offer bar at the bottom of /pricing. The countdown is appended only
 // when a real deadline is configured; otherwise the offer stands on its own
@@ -5474,7 +5383,7 @@ function PricingBanner({ onPick }) {
           </span>
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
             {/* The plan the page puts forward, priced exactly as its card is. */}
-            {t("Black Friday deal, lifetime access", "Offre Black Friday, accès à vie")} — <span className="line-through opacity-70">{eur(PRICE_LIFETIME_ANCHOR)}</span> <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
+            {t("Lifetime access", "Accès à vie")} — <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
             {` ${t("one-time payment", "en un seul paiement")}`}{tail ? ` — ${tail}` : ""}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
@@ -5776,9 +5685,9 @@ function PricingPage() {
               reading. The percentage is the best of the three cards, derived,
               so the page cannot announce a discount no card offers. */}
           <span className="mv-chip inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#EDE9E0]">
-            <span className="text-[13px] tracking-normal"><span className="text-white/45 line-through">{eur(PRICE_LIFETIME_ANCHOR)}</span> {eur(PRICE_LIFETIME)}</span>
+            <span className="text-[13px] tracking-normal">{eur(PRICE_LIFETIME)}</span>
             <span className="h-3 w-px bg-white/20" />
-            {t("Black Friday on lifetime", "Black Friday sur l'accès à vie")}
+            {t("Lifetime access, paid once", "Accès à vie, payé une fois")}
           </span>
           <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
             {/* Nothing to choose between with one offer on sale, so the

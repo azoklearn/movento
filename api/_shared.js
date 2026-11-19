@@ -26,12 +26,12 @@ const SHOWCASE_FILES = [
   "Lithos_Geology_Reveal_Hero.md",
   "Kimi_Grido1_Racing_Systems.md",
 ];
-// EMPTY: nothing is served without a purchase any more. Keep identical to
-// FREE_PROMPT_FILES in src/App.jsx — that one unlocks the copy button, this one
-// decides whether /api/prompt actually hands the markdown over, so a name in
-// only one of them is either a button that fails or a prompt given away in
-// silence.
-export const FREE_PROMPT_FILES = new Set();
+// The three free prompts, served to anyone with no account and no email. Keep
+// identical to FREE_PROMPT_FILES in src/App.jsx — that one unlocks the copy
+// button, this one decides whether /api/prompt actually hands the markdown
+// over, so a name in only one of them is either a button that fails or a
+// prompt given away in silence.
+export const FREE_PROMPT_FILES = new Set(["Mapple_Headphone_Store.md", "Vantage_Dashboard_Signal_Hero.md", "Lithos_Geology_Reveal_Hero.md"]);
 // Whether a given prompt may be handed over. Pure, and separate from the
 // endpoint, because this is the one decision in the codebase that both gives
 // away paid work and withholds work already paid for — it is worth being able
@@ -489,7 +489,7 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 //   MOLLIE_API_KEY          test_… to try, live_… to sell
 //   MOLLIE_M3_PRICE         default 69.00, every 3 months
 //   MOLLIE_M12_PRICE        default 89.00, every year
-//   MOLLIE_LIFETIME_PRICE   default 89.00, once (launch price; 349 after)
+//   MOLLIE_LIFETIME_PRICE   default 249.00, once
 // (m1, 29.99 a month, is off sale; its price stays for the record.)
 // The site switches to Mollie with CHECKOUT_PROVIDER=mollie.
 export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
@@ -498,7 +498,7 @@ export const MOLLIE_PRICES = {
   m1: Number(process.env.MOLLIE_M1_PRICE || 29.99).toFixed(2),
   m3: Number(process.env.MOLLIE_M3_PRICE || 69).toFixed(2),
   m12: Number(process.env.MOLLIE_M12_PRICE || 89).toFixed(2),
-  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 89).toFixed(2),
+  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 249).toFixed(2),
   // Packs of prompts, paid once: the buyer picks the prompts after paying
   // (/choose) and keeps them. Sizes in MOLLIE_PACK_SIZES.
   pack2: Number(process.env.MOLLIE_PACK2_PRICE || 25).toFixed(2),
@@ -506,15 +506,14 @@ export const MOLLIE_PRICES = {
   pack10: Number(process.env.MOLLIE_PACK10_PRICE || 79).toFixed(2),
 };
 export const MOLLIE_PACK_SIZES = { pack2: 2, pack5: 5, pack10: 10 };
-// The struck price shown in Mollie's checkout for lifetime, and the name of
-// the offer. Mollie's page only shows the payment's description and amount,
-// so the struck figure is written into the description with combining long
-// strokes (U+0336), which render as a strikethrough. Keep in step with
-// PRICE_LIFETIME_ANCHOR in src/App.jsx; an empty MOLLIE_LIFETIME_ANCHOR turns
-// it off.
+// A struck price in Mollie's checkout for lifetime, and the name of the offer.
+// Mollie's page only shows the payment's description and amount, so the struck
+// figure is written into the description with combining long strokes (U+0336).
+// Off by default: lifetime is sold at its regular price. A future offer sets
+// MOLLIE_LIFETIME_ANCHOR (the real price it returns to) and a label.
 export const MOLLIE_LIFETIME_PROMO = {
-  anchor: process.env.MOLLIE_LIFETIME_ANCHOR === undefined ? "349" : String(process.env.MOLLIE_LIFETIME_ANCHOR).trim(),
-  label: process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Black Friday",
+  anchor: String(process.env.MOLLIE_LIFETIME_ANCHOR || "").trim(),
+  label: process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Offre",
 };
 export const strikeText = (text) => [...String(text)].map((c) => `${c}\u0336`).join("");
 export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
@@ -536,7 +535,7 @@ export const FAIR_USE_KINDS = new Set(["m3"]);
 // never on a payment that was itself the offer.
 export const MOLLIE_WINBACK = {
   plan: "lifetime",
-  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 69).toFixed(2),
+  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 199).toFixed(2),
   windowHours: 48,
 };
 
