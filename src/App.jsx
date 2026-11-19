@@ -114,6 +114,7 @@ const prompts = [
   // Fictional placeholder, visible only to the team address (onlyFor): not in
   // the public gallery or any count.
   { title: "GTA 6 — Vice Coast Teaser", category: "Hero Section", type: "Hero", file: "GTA_6_Vice_Teaser_Hero.md", pinned: true, onlyFor: "teammoventoino1@gmail.com", preview: "https://res.cloudinary.com/klc0oxsz/image/upload/v1795056214/Capture_d_e%CC%81cran_2026-11-19_a%CC%80_03.41.46.png", tags: ["Synthwave Sun", "Parallax", "Fan Concept"], gradient: "from-[#ff2e88] via-[#ff8a3d] to-[#0b0614]" },
+  { title: "Verane — Invest in Skyline", category: "Landing Page", type: "Landing", file: "Verane_Invest_In_Skyline.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/skyline-window-estate.mp4", tags: ["Window Pull-back", "Chroma Key", "Property Cards"], gradient: "from-[#e3a0b4] via-[#6372c8] to-[#151f3f]" },
   { title: "KYNE AERO.VISION — Chrome Sunglasses", category: "E-commerce", type: "Landing", file: "Kyne_Aero_Vision_Sunglasses.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/kyne-vision-hero.mp4", tags: ["Chroma Key", "Scene Transitions", "Bubble Morph"], gradient: "from-[#c6ff3d] via-[#3a3a46] to-[#000000]" },
   { title: "UNIT/0 — Robot-Eye ASCII Loader", category: "Agency", type: "Hero", file: "Unit0_Robot_Eye_Loader.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/unit0-eye-loader.mp4", tags: ["ASCII Canvas", "Pixel Dissolve", "Magazine Covers"], gradient: "from-[#f3ead8] via-[#ff8f5a] to-[#0c0907]" },
   { title: "Tidewell — Tides in Motion", category: "Agency", type: "Landing", file: "Tidewell_Tides_In_Motion.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/tides-in-motion.mp4", tags: ["Pixel Icons", "Card Wheel", "Scroll Story"], gradient: "from-[#EFCEBE] via-[#C0C9D9] to-[#12141B]" },
@@ -442,6 +443,7 @@ const AVAILABLE_FILES = new Set([
   "VirtualFit_Spatial_TryOn_Arc.md",
   "Ciao_Energy_3D_Can_Carousel.md",
   "Letterbloom_Poppy_Type_Garden.md",
+  "Verane_Invest_In_Skyline.md",
   "GTA_6_Vice_Teaser_Hero.md",
   "Kyne_Aero_Vision_Sunglasses.md",
   "Unit0_Robot_Eye_Loader.md",
