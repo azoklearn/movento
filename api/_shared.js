@@ -520,7 +520,7 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 //   MOLLIE_API_KEY          test_… to try, live_… to sell
 //   MOLLIE_M3_PRICE         default 109.00, every 3 months (3 copies a day)
 //   MOLLIE_M12_PRICE        default 239.00, every year
-//   MOLLIE_LIFETIME_PRICE   default 259.00, once
+//   MOLLIE_LIFETIME_PRICE   default 29.99, once (the one offer on sale)
 // (m1, 29.99 a month, is off sale; its price stays for its renewals.)
 // The site switches to Mollie with CHECKOUT_PROVIDER=mollie.
 export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
@@ -529,7 +529,7 @@ export const MOLLIE_PRICES = {
   m1: Number(process.env.MOLLIE_M1_PRICE || 29.99).toFixed(2),
   m3: Number(process.env.MOLLIE_M3_PRICE || 109).toFixed(2),
   m12: Number(process.env.MOLLIE_M12_PRICE || 239).toFixed(2),
-  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 259).toFixed(2),
+  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 29.99).toFixed(2),
   // Packs of prompts, paid once: the buyer picks the prompts after paying
   // (/choose) and keeps them. Sizes in MOLLIE_PACK_SIZES.
   pack2: Number(process.env.MOLLIE_PACK2_PRICE || 49).toFixed(2),
@@ -540,11 +540,12 @@ export const MOLLIE_PACK_SIZES = { pack2: 2, pack5: 5, pack10: 10 };
 // A struck price in Mollie's checkout for lifetime, and the name of the offer.
 // Mollie's page only shows the payment's description and amount, so the struck
 // figure is written into the description with combining long strokes (U+0336).
-// Off by default: lifetime is sold at its regular price. A future offer sets
-// MOLLIE_LIFETIME_ANCHOR (the real price it returns to) and a label.
+// The anchor is 89 €, the price lifetime was really sold at before this
+// reduction (PRICE_LIFETIME_REFERENCE in src/App.jsx). An empty
+// MOLLIE_LIFETIME_ANCHOR turns the struck price off.
 export const MOLLIE_LIFETIME_PROMO = {
-  anchor: String(process.env.MOLLIE_LIFETIME_ANCHOR || "").trim(),
-  label: process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Offre",
+  anchor: process.env.MOLLIE_LIFETIME_ANCHOR === undefined ? "89" : String(process.env.MOLLIE_LIFETIME_ANCHOR).trim(),
+  label: process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Black Friday",
 };
 export const strikeText = (text) => [...String(text)].map((c) => `${c}\u0336`).join("");
 export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
@@ -566,13 +567,17 @@ export const FAIR_USE_KINDS = new Set(["m3"]);
 // never on a payment that was itself the offer.
 export const MOLLIE_WINBACK = {
   plan: "lifetime",
-  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 209).toFixed(2),
+  // Off by default: at 29,99 € there is no lower price to come back for. Set
+  // MOLLIE_WINBACK_LIFETIME_PRICE below the lifetime price to turn it on.
+  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 0).toFixed(2),
   windowHours: 48,
 };
 
 // Whether the payment behind a claim code still earns the offer. Returns the
 // reason when it does not, so the endpoint can say nothing more than "no".
 export async function mollieWinbackEligibility(claim, { now = Date.now() } = {}) {
+  // No offer unless it is a real reduction on the price charged today.
+  if (!(Number(MOLLIE_WINBACK.price) > 0 && Number(MOLLIE_WINBACK.price) < Number(MOLLIE_PRICES[MOLLIE_WINBACK.plan]))) return { eligible: false, reason: "no reduction" };
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(String(claim || ""))) return { eligible: false, reason: "bad claim" };
   let entry = null;
   try {
@@ -715,10 +720,10 @@ export function bestCheckoutUrl(plan) {
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
 //
-// On sale: 3 months (109 €), the year (239 €) and lifetime (259 €), the
-// MotionSites line-up converted to euros. The month is off sale; its subscribers keep their
+// On sale: lifetime only (29,99 €). Every subscription and the prompt packs
+// are off sale; The month is off sale; its subscribers keep their
 // access and their renewals.
-export const RETIRED_PLANS = new Set(["m1", "monthly", "yearly"]);
+export const RETIRED_PLANS = new Set(["m1", "m3", "m12", "monthly", "yearly", "pack2", "pack5", "pack10"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a

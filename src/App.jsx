@@ -934,12 +934,12 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 // stays because the anchors below are struck against it, and its subscribers
 // keep renewing. Mirror any change in RETIRED_PLANS (api/_shared.js).
 const PLAN_TERMS = [
-  // The month is off sale: the line-up is MotionSites' (3 months, a year,
-  // lifetime). Its subscribers keep renewing at the price they took.
+  // Every subscription is off sale: lifetime is the one offer. Subscribers
+  // keep renewing on the terms they took.
   { id: "m1", price: 29.99, anchor: 29.99, days: 30, retired: true, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
   // Anchors: the same span bought quarter by quarter at the 3-month price.
-  { id: "m3", price: 109, anchor: 109, days: 90, retired: false, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
-  { id: "m12", price: 239, anchor: 436, days: 365, retired: false, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
+  { id: "m3", price: 109, anchor: 109, days: 90, retired: true, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
+  { id: "m12", price: 239, anchor: 436, days: 365, retired: true, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
 ];
 const termOf = (id) => PLAN_TERMS.find((term) => term.id === id);
 const discountOf = (id) => {
@@ -958,16 +958,21 @@ const discountOf = (id) => {
 // On sale with every processor. Off sale, lifetime members
 // keep their access, their ebook and their support.
 const LIFETIME_RETIRED = false;
-const PRICE_LIFETIME = 259;
+const PRICE_LIFETIME = 29.99;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
 // Rounded because binary floating point does not keep cents: 29.9 * 12 came
 // out as 358.79999999999995. 29.99 * 12 happens to land on 359.88, which is
 // luck, not a reason to drop the rounding.
 // Struck against two years of the annual, the plan it is weighed against.
-// Lifetime is sold at its regular price, so nothing is struck against it. Keep
-// in step with MOLLIE_PRICES.lifetime in api/_shared.js and the JSON-LD offer
-// in index.html.
+// The struck price: 89 €, the lowest price lifetime was actually sold at in the
+// 30 days before this reduction (it was charged until 19 November 2026). That
+// is the reference French and EU law asks for, so the reduction shown is real.
+// Remove the struck price when the offer stops being presented as a reduction.
+// Keep in step with MOLLIE_PRICES.lifetime and MOLLIE_LIFETIME_PROMO in
+// api/_shared.js, and the JSON-LD offer in index.html.
+const PRICE_LIFETIME_REFERENCE = 89;
+const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_REFERENCE) * 100);
 
 // The figure the page leads with — the best of everything a button actually
 // offers, so it can never promise a reduction no card gives. Lifetime counts
@@ -1206,28 +1211,26 @@ const plans = [
     name: t("Lifetime access", "Accès à vie"),
     subtitle: t("Unlimited prompts, access for life", "Prompts illimités, accès à vie"),
     price: eur(PRICE_LIFETIME),
-    // Struck against two years of the annual, the plan it replaces — a real
-    // figure, named as such in the line under the price. Never a "former
-    // price": lifetime has not been sold above this one.
-    originalPrice: eur(termOf("m12").price * 2),
+    // Struck against PRICE_LIFETIME_REFERENCE, a price really charged.
+    originalPrice: eur(PRICE_LIFETIME_REFERENCE),
     // No chip: struck against two years of the annual its reduction is small
     // beside the terms', and the card sells on "paid once" instead.
     period: t("forever", "à vie"),
     // No per-day figure: the term it would divide by is the rest of your life.
     // The line the other cards use for their renewal says so instead.
-    billedNote: t("One-time payment · struck: 2 years of the annual", "Paiement unique · barré : 2 ans d'annuel"),
+    billedNote: t("Black Friday deal · one-time payment, no subscription", "Offre Black Friday · paiement unique, sans abonnement"),
     cta: t("Pay once, enjoy for life", "Paie une fois, profite à vie"),
     // Only one ribbon per row. It is the lifetime's: of the two offers it is
     // the one worth steering a buyer to, and "best value" is arithmetic anyone
     // can check against the card beside it — unlike "most chosen", which would
     // be a claim about other buyers that nothing here measures.
-    badge: t("Best value", "Meilleur choix"),
+    badge: "Black Friday",
     featured: true,
     // The comparison stated as a line of its own, derived from both prices so
     // it cannot outlive either of them.
     // Its two extras go after support and the ebook, as the last rows.
     features: CATALOGUE_FEATURES,
-    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés"), t(`Cheaper than the annual from year ${Math.ceil(PRICE_LIFETIME / termOf("m12").price)}`, `Rentable dès la ${Math.ceil(PRICE_LIFETIME / termOf("m12").price)}e année`)],
+    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés")],
     // Stated plainly rather than buried in the list above. The descriptions the
     // card used to carry are gone: they were most of its height, and beside
     // three shorter cards that read as a mistake rather than as generosity.
@@ -2032,6 +2035,10 @@ function WinbackOffer({ claim: explicit = "" }) {
 // Mollie, give the email after paying, then choose the prompts on /choose.
 // Prices are the server's (MOLLIE_PRICES in api/_shared.js); these are only
 // what the card shows. Keep the two in step.
+// Off sale: with lifetime at 29,99 € a pack of prompts costs more than the
+// whole catalogue. Past buyers keep their prompts and their unused credits.
+// Mirrored by RETIRED_PLANS in api/_shared.js.
+const PROMPT_PACKS_ON_SALE = false;
 const PROMPT_PACKS = [
   { id: "pack2", size: 2, price: 49 },
   { id: "pack5", size: 5, price: 99 },
@@ -2898,10 +2905,10 @@ async function copyTextToClipboard(text) {
 
 function runSelfTests() {
   // The two offers, mirroring RETIRED_PLANS in api/_shared.js.
-  console.assert(["m3", "m12", "lifetime"].every(validatePlanId), "3 months, the year and lifetime are the offers and must be purchasable");
-  console.assert(["m1", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
-  console.assert(FEATURED_TERM === termOf("m12"), "the bar and the anchor quote the year");
-  console.assert(PRICE_LIFETIME > termOf("m12").price && PRICE_LIFETIME < 2 * termOf("m12").price, "lifetime costs more than a year and less than two");
+  console.assert(validatePlanId("lifetime") && isSinglePlan, "lifetime is the one offer and must be purchasable");
+  console.assert(["m1", "m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every subscription is retired and none should be purchasable");
+  console.assert(FEATURED_TERM === null && FEATURED_OFFER.price === PRICE_LIFETIME, "with no term on sale, the bar and the anchor quote lifetime");
+  console.assert(PRICE_LIFETIME < PRICE_LIFETIME_REFERENCE && LIFETIME_DISCOUNT > 0 && LIFETIME_DISCOUNT < 100, "the struck price is above the price charged");
   console.assert(visiblePlans.some((plan) => plan.id === "lifetime") && visiblePlans.filter((plan) => plan.featured).length === 1, "lifetime is on sale, and exactly one card is featured");
   // A card may not promise an extra its kind is not granted: the card is the
   // promise, EBOOK_KINDS and SUPPORT_KINDS are what keep it, and the two going
@@ -3799,10 +3806,8 @@ function TileWallBackdrop({ lightRef }) {
 }
 
 // The landing hero, in the Black Friday look: the tile field, "BLACK FRIDAY /
-// ACCÈS À VIE", and the lifetime price set against two years of the annual.
-// That comparison is the only struck figure: it is real arithmetic on a plan
-// that is on sale (2 × the annual), labelled as such. A struck "former price"
-// that was never charged would be a false reference price.
+// −N %", and the lifetime price against PRICE_LIFETIME_REFERENCE, the price it
+// was really sold at before this reduction.
 function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
   const lightRef = useRef(null);
   return (
@@ -3811,10 +3816,10 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
       <motion.div ref={lightRef} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative mb-6 py-2">
         <h1 className="font-['Roboto_Flex',system-ui,sans-serif] text-[40px] font-extrabold uppercase leading-[0.95] tracking-[-0.04em] text-white sm:text-[72px]" style={{ fontVariationSettings: '"wdth" 151', textShadow: "0 0 18px rgba(255,42,119,0.9), 0 0 42px rgba(255,42,119,0.55), 0 0 90px rgba(156,11,71,0.6)" }}>
           Black Friday
-          <span className="block text-[#FFDBE8]">{t("Lifetime access", "Accès à vie")}</span>
+          <span className="block text-[#FFDBE8]">{t(`${LIFETIME_DISCOUNT}% off`, `−${LIFETIME_DISCOUNT} %`)}</span>
         </h1>
         <p className="mx-auto mt-3 max-w-md font-['Roboto_Flex',system-ui,sans-serif] text-sm text-white/80" style={{ fontVariationSettings: '"wdth" 110' }}>
-          {t("Lifetime access for", "L'accès à vie pour")} <strong className="text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/60">{eur(termOf("m12").price * 2)}</span> {t("(2 years of the annual plan).", "(2 ans d'abonnement annuel).")}
+          {t("Lifetime access for", "L'accès à vie pour")} <strong className="text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/60">{eur(PRICE_LIFETIME_REFERENCE)}</span>. {t("One payment, no subscription.", "Un seul paiement, sans abonnement.")}
         </p>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.12 }} className="flex flex-col items-center gap-3">
@@ -4911,10 +4916,8 @@ function CgvPage() {
       <div>
         <h2>3. Offres et prix</h2>
         <ul>
-          <li><strong className="text-white/75">3 mois : {eur(termOf("m3").price)} tous les 3 mois</strong>, renouvelé automatiquement tous les 3 mois jusqu'à résiliation, avec une limite d'usage raisonnable de {FAIR_USE_DAILY_COPIES} copies de prompts par jour.</li>
-          <li><strong className="text-white/75">Annuel : {eur(termOf("m12").price)} par an</strong>, renouvelé automatiquement chaque année jusqu'à résiliation, copies illimitées.</li>
-          <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
-          <li><strong className="text-white/75">Packs de prompts : {PROMPT_PACKS.map((p) => `${p.size} prompts ${eur(p.price)}`).join(" · ")}</strong>, en un seul paiement, sans abonnement ; les prompts sont choisis après l'achat et restent accessibles sans limite de durée.</li>
+          <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement. C'est la seule offre en vente.</li>
+          <li>Les abonnements (mensuel, 3 mois, annuel) et les packs de prompts ne sont plus proposés à l'achat. Ceux déjà souscrits restent valables aux conditions de leur souscription : les abonnements se renouvellent jusqu'à résiliation, et les prompts d'un pack restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
       </div>
@@ -5341,7 +5344,7 @@ function PricingBanner({ onPick }) {
           </span>
           <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
             {/* The plan the page puts forward, priced exactly as its card is. */}
-            {t("Lifetime access", "Accès à vie")} — <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
+            {t("Black Friday, lifetime access", "Black Friday, accès à vie")} — <span className="line-through opacity-70">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
             {` ${t("one-time payment", "en un seul paiement")}`}{tail ? ` — ${tail}` : ""}
           </span>
           <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
@@ -5643,9 +5646,9 @@ function PricingPage() {
               reading. The percentage is the best of the three cards, derived,
               so the page cannot announce a discount no card offers. */}
           <span className="mv-chip inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#EDE9E0]">
-            <span className="text-[13px] tracking-normal">{eur(PRICE_LIFETIME)}</span>
+            <span className="text-[13px] tracking-normal"><span className="text-white/45 line-through">{eur(PRICE_LIFETIME_REFERENCE)}</span> {eur(PRICE_LIFETIME)}</span>
             <span className="h-3 w-px bg-white/20" />
-            {t("Lifetime access, paid once", "Accès à vie, payé une fois")}
+            {t("Black Friday · lifetime access", "Black Friday · accès à vie")}
           </span>
           <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#EDE9E0] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
             {/* Nothing to choose between with one offer on sale, so the
@@ -5714,7 +5717,7 @@ function PricingPage() {
       </section>
 
       {/* Packs only sell on Mollie, which is the only checkout they exist on. */}
-      {CHECKOUT_PROVIDER_PUBLIC === "mollie" && <PromptPacks />}
+      {PROMPT_PACKS_ON_SALE && CHECKOUT_PROVIDER_PUBLIC === "mollie" && <PromptPacks />}
 
       <PromoPopup onPick={scrollToPlans} />
 
