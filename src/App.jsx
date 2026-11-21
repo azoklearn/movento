@@ -2104,6 +2104,14 @@ const ADDONS = [
     desc: t("Access for 5 people: you and 4 teammates, each with their own email.", "L'accès pour 5 personnes : toi et 4 membres de ton équipe, chacun avec son email."),
     open: t("Invite my team", "Inviter mon équipe"),
   },
+  {
+    id: "leads",
+    price: 39,
+    href: "/leads",
+    name: t("We find your clients", "On trouve tes clients"),
+    desc: t("Answer three questions (the trade you target, your city) and get a list of real local businesses to contact, with a ready-made message.", "Réponds à 3 questions (le métier que tu vises, ta ville) et reçois une liste de vraies entreprises à démarcher, avec un message prêt à envoyer."),
+    open: t("Find my prospects", "Trouver mes prospects"),
+  },
 ];
 // Sold on Mollie only: it is the one checkout that adds them to the payment.
 const ADDONS_ON_SALE = CHECKOUT_PROVIDER_PUBLIC === "mollie";
@@ -3127,6 +3135,7 @@ export default function MoventoSite() {
   const isBackgroundsPage = typeof window !== "undefined" && window.location.pathname === "/backgrounds";
   const isKitPage = typeof window !== "undefined" && window.location.pathname === "/kit";
   const isTeamPage = typeof window !== "undefined" && window.location.pathname === "/team";
+  const isLeadsPage = typeof window !== "undefined" && window.location.pathname === "/leads";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -3464,6 +3473,7 @@ export default function MoventoSite() {
   if (isBackgroundsPage) return <BackgroundsPage hasAccess={hasPremiumAccess} />;
   if (isKitPage) return <KitPage />;
   if (isTeamPage) return <TeamPage />;
+  if (isLeadsPage) return <LeadsPage />;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#141414] text-[#EDE9E0]">
@@ -3804,7 +3814,7 @@ function AddonCards({ addons, email, className = "" }) {
       {owned.map((addon) => (
         <div key={addon.id} className="rounded-[28px] border border-emerald-400/25 bg-emerald-400/[0.06] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7">
           <div className="flex items-center gap-3">
-            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name={addon.id === "kit" ? "layers" : "sparkles"} className="h-4 w-4" /></span>
+            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name={addon.id === "kit" ? "layers" : addon.id === "leads" ? "search" : "sparkles"} className="h-4 w-4" /></span>
             <h2 className="text-lg font-semibold text-[#EDE9E0]">{addon.name}</h2>
           </div>
           <p className="mt-3 text-sm leading-6 text-white/60">{addon.desc}</p>
@@ -4023,6 +4033,187 @@ function TeamPage() {
   return (
     <AddonPage title={t("Agency licence", "Licence agence")} lede={t("Your access for 5 people: you and 4 teammates.", "Ton accès pour 5 personnes : toi et 4 membres de ton équipe.")}>
       {(email) => <TeamContent email={email} />}
+    </AddonPage>
+  );
+}
+
+// The leads finder (api/_leads.js), for an email that bought it: a three-
+// question form, then real businesses from OpenStreetMap, the ones with no
+// website listed first, each with a message ready to send.
+const LEAD_STATUS = {
+  none: { label: t("No website listed", "Aucun site référencé"), tone: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300" },
+  social: { label: t("Social page only", "Réseaux sociaux seulement"), tone: "border-amber-400/40 bg-amber-400/10 text-amber-300" },
+  site: { label: t("Already has a site", "A déjà un site"), tone: "border-white/15 bg-white/[0.04] text-white/55" },
+};
+// The first message, filled in for one business. Says only what is known:
+// that no site was found, never that there is none.
+const leadMessage = (lead, noun, city) => (lead.status === "site"
+  ? `Bonjour,\n\nJe suis tombé sur ${lead.name} en cherchant ${noun} à ${city}. J'ai regardé votre site et j'ai une idée pour le moderniser : plus rapide, mieux adapté au téléphone, avec des animations qui donnent envie de vous contacter.\n\nJe crée des sites pour des entreprises comme la vôtre. Je peux vous préparer gratuitement une maquette de votre nouvelle page d'accueil. Est-ce que ça vous intéresse ?\n\nBonne journée,\n[Ton prénom]\n[Ton téléphone]`
+  : `Bonjour,\n\nJe suis tombé sur ${lead.name} en cherchant ${noun} à ${city}. Je n'ai pas trouvé de site internet à votre nom, et c'est dommage : la plupart de vos clients vous cherchent d'abord sur leur téléphone.\n\nJe crée des sites modernes pour des entreprises comme la vôtre. Je peux vous préparer gratuitement une maquette de votre page d'accueil, pour vous montrer ce que ça donnerait. Est-ce que ça vous intéresse ?\n\nBonne journée,\n[Ton prénom]\n[Ton téléphone]`);
+
+function LeadsContent({ email }) {
+  const [form, loadForm] = useAddons(email, "leads-form");
+  const [trade, setTrade] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("France");
+  const [onlyNoSite, setOnlyNoSite] = useState(true);
+  const [search, setSearch] = useState({ loading: false, error: "", data: null });
+  const [history, setHistory] = useState([]);
+  const [left, setLeft] = useState(null);
+  const [copied, setCopied] = useState("");
+  useEffect(() => { loadForm().then((d) => { if (d) { setHistory(d.history || []); setLeft(d.left); } }); }, [loadForm]);
+
+  const run = async (params) => {
+    setSearch({ loading: true, error: "", data: null });
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/addons`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, action: "leads", ...params }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(apiError(d, t("The search did not work. Try again in a minute.", "La recherche n'a pas abouti. Réessaie dans une minute.")));
+      setSearch({ loading: false, error: "", data: d });
+      setHistory(d.history || []);
+      setLeft(d.left);
+      track("leads_search", { trade: params.trade, found: d.counts?.total || 0 });
+    } catch (err) {
+      setSearch({ loading: false, error: err.message, data: null });
+    }
+  };
+  const submit = (e) => {
+    e.preventDefault();
+    if (trade && city.trim()) run({ trade, city: city.trim(), country, onlyNoSite });
+  };
+  const reopen = (h) => {
+    setTrade(h.trade); setCity(h.city); setCountry(h.country);
+    run({ trade: h.trade, city: h.city, country: h.country, onlyNoSite });
+  };
+
+  if (form.loading && !form.data) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
+  if (!form.data) {
+    return <AddonMissing message={form.status === 403
+      ? t(`The leads finder is not on ${email}. It is an option of the lifetime access, ticked when ordering.`, `L'option « On trouve tes clients » n'est pas sur ${email}. C'est une option de l'accès à vie, à cocher au moment de la commande.`)
+      : form.error} />;
+  }
+  const trades = form.data.trades || [];
+  const tradeLabel = (id) => { const tr = trades.find((x) => x.id === id); return tr ? t(tr.labelEn, tr.label) : id; };
+  const data = search.data;
+  const copy = async (key, text) => {
+    if (await copyTextToClipboard(text)) { setCopied(key); setTimeout(() => setCopied(""), 1600); track("lead_message_copied"); }
+  };
+  const exportCsv = () => {
+    const cell = (v) => `"${String(v || "").replace(/"/g, '""')}"`;
+    const rows = [["Nom", "Statut", "Téléphone", "Email", "Site", "Réseaux", "Adresse", "Carte"], ...data.leads.map((l) => [l.name, LEAD_STATUS[l.status]?.label, l.phone, l.email, l.website, l.social, l.address, l.map])];
+    // Semicolons and a BOM: what a French Excel opens without a wizard.
+    const url = URL.createObjectURL(new Blob(["﻿" + rows.map((r) => r.map(cell).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `prospects-${data.trade.id}-${data.place.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    track("leads_exported");
+  };
+  const field = "w-full rounded-2xl border border-white/10 bg-[#0A0A0B] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35";
+
+  return (
+    <div className="mt-8">
+      <form onSubmit={submit} className="rounded-[28px] border border-white/10 bg-[#121214] p-6 md:p-7">
+        <div className="grid gap-5 md:grid-cols-2">
+          <label className="block md:col-span-2">
+            <span className="text-sm font-semibold text-[#EDE9E0]">{t("1. Which businesses do you want to reach?", "1. Quel type de commerce veux-tu démarcher ?")}</span>
+            <select value={trade} onChange={(e) => setTrade(e.target.value)} required className={`${field} mt-2`}>
+              <option value="">{t("Pick a trade…", "Choisis un métier…")}</option>
+              {trades.map((tr) => <option key={tr.id} value={tr.id}>{t(tr.labelEn, tr.label)}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-sm font-semibold text-[#EDE9E0]">{t("2. In which city?", "2. Dans quelle ville ?")}</span>
+            <input value={city} onChange={(e) => setCity(e.target.value)} required maxLength={80} placeholder={t("e.g. Lyon", "ex. Lyon")} className={`${field} mt-2`} />
+          </label>
+          <label className="block">
+            <span className="text-sm font-semibold text-[#EDE9E0]">{t("Country", "Pays")}</span>
+            <select value={country} onChange={(e) => setCountry(e.target.value)} className={`${field} mt-2`}>
+              {(form.data.countries || ["France"]).map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </label>
+          <fieldset className="md:col-span-2">
+            <legend className="text-sm font-semibold text-[#EDE9E0]">{t("3. Which ones do you want?", "3. Lesquelles veux-tu ?")}</legend>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {[[true, t("Without a website listed", "Sans site web référencé"), t("The easiest to convince.", "Les plus faciles à convaincre.")], [false, t("All of them", "Toutes"), t("Including those to redesign.", "Y compris les sites à refaire.")]].map(([value, label, hint]) => (
+                <label key={String(value)} className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 transition ${onlyNoSite === value ? "border-emerald-400/50 bg-emerald-400/[0.07]" : "border-white/12 hover:border-white/30"}`}>
+                  <input type="radio" name="which" checked={onlyNoSite === value} onChange={() => setOnlyNoSite(value)} className="mt-1 h-4 w-4 flex-none accent-emerald-400" />
+                  <span><span className="block text-sm font-semibold text-[#EDE9E0]">{label}</span><span className="block text-xs text-white/50">{hint}</span></span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+        <div className="mt-6 flex flex-wrap items-center gap-4">
+          <button type="submit" disabled={search.loading} className="rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white disabled:opacity-60">{search.loading ? t("Searching…", "Recherche en cours…") : t("Find my prospects", "Trouver mes prospects")}</button>
+          {left !== null && <span className="text-xs text-white/40">{t(`${left} new searches left today`, `${left} nouvelle(s) recherche(s) possible(s) aujourd'hui`)}</span>}
+        </div>
+        {search.loading && <p className="mt-4 text-xs leading-5 text-white/50">{t("Reading the map of the city. It can take up to a minute.", "Lecture de la carte de la ville. Ça peut prendre jusqu'à une minute.")}</p>}
+        {search.error && <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-amber-300"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{search.error}</p>}
+      </form>
+
+      {history.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-white/40">{t("Past searches:", "Recherches précédentes :")}</span>
+          {history.map((h) => (
+            <button key={`${h.trade}-${h.city}-${h.country}`} type="button" disabled={search.loading} onClick={() => reopen(h)} className="rounded-full border border-white/12 px-3 py-1.5 text-xs font-semibold text-white/65 transition hover:border-white/30 hover:text-[#EDE9E0] disabled:opacity-50">{tradeLabel(h.trade)} · {h.city}</button>
+          ))}
+        </div>
+      )}
+
+      {data && (
+        <div className="mt-10">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">{t(`${data.leads.length} prospects in ${data.place.name}`, `${data.leads.length} prospects à ${data.place.name}`)}</h2>
+              <p className="mt-1 text-sm text-white/55">{t(`${data.counts.total} businesses found: ${data.counts.none} with no website listed, ${data.counts.social} with a social page only, ${data.counts.site} with a site.`, `${data.counts.total} entreprises trouvées : ${data.counts.none} sans site référencé, ${data.counts.social} avec seulement une page sur les réseaux, ${data.counts.site} avec un site.`)}{data.more > 0 ? t(` Showing the first ${data.leads.length}.`, ` Les ${data.leads.length} premières sont affichées.`) : ""}</p>
+            </div>
+            {data.leads.length > 0 && <button type="button" onClick={exportCsv} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/75 transition hover:border-white/35 hover:text-[#EDE9E0]"><Icon name="download" className="h-3.5 w-3.5" /> {t("Export as CSV", "Exporter en CSV")}</button>}
+          </div>
+          <p className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-200/90">{t("Check each business before writing: “no website listed” means none is recorded on the map, not that none exists. Introduce yourself, write to the business, and stop if asked to.", "Vérifie chaque fiche avant d'écrire : « aucun site référencé » veut dire qu'aucun site n'est enregistré sur la carte, pas qu'il n'en existe pas. Présente-toi, écris à l'entreprise, et arrête si on te le demande.")}</p>
+          {data.leads.length === 0 && <p className="mt-6 text-sm text-white/55">{t("Nothing matches. Try “All of them”, a larger city nearby or another trade.", "Aucune entreprise ne correspond. Essaie « Toutes », une ville voisine plus grande ou un autre métier.")}</p>}
+          <ul className="mt-5 space-y-3">
+            {data.leads.map((lead) => {
+              const q = encodeURIComponent(`${lead.name} ${data.place.name}`);
+              return (
+                <li key={lead.id} className="rounded-[22px] border border-white/10 bg-[#121214] p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-base font-semibold text-[#EDE9E0]">{lead.name}</h3>
+                      {lead.address && <p className="mt-0.5 text-xs text-white/50">{lead.address}</p>}
+                    </div>
+                    <span className={`flex-none rounded-full border px-2.5 py-1 text-[11px] font-semibold ${LEAD_STATUS[lead.status]?.tone}`}>{LEAD_STATUS[lead.status]?.label}</span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+                    {lead.phone && <a href={`tel:${lead.phone.replace(/[^+\d]/g, "")}`} className="text-white/80 underline decoration-white/25 underline-offset-4 hover:text-white">{lead.phone}</a>}
+                    {lead.email && <a href={`mailto:${lead.email}`} className="text-white/80 underline decoration-white/25 underline-offset-4 hover:text-white">{lead.email}</a>}
+                    {lead.website && <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-white/80 underline decoration-white/25 underline-offset-4 hover:text-white">{t("Website", "Site web")}</a>}
+                    {lead.social && <a href={lead.social} target="_blank" rel="noopener noreferrer" className="text-white/80 underline decoration-white/25 underline-offset-4 hover:text-white">{t("Social page", "Page réseaux")}</a>}
+                    {!lead.phone && !lead.email && <span className="text-white/40">{t("No contact details on the map", "Pas de coordonnées sur la carte")}</span>}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => copy(lead.id, leadMessage(lead, data.trade.noun, data.place.name))} className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${copied === lead.id ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300" : "border-white/15 text-white/75 hover:border-white/35 hover:text-[#EDE9E0]"}`}>
+                      <Icon name={copied === lead.id ? "check" : "copy"} className="h-3.5 w-3.5" /> {copied === lead.id ? t("Message copied", "Message copié") : t("Copy the message", "Copier le message")}
+                    </button>
+                    <a href={`https://www.google.com/search?q=${q}`} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/15 px-3.5 py-1.5 text-xs font-semibold text-white/75 transition hover:border-white/35 hover:text-[#EDE9E0]">{t("Check on Google", "Vérifier sur Google")}</a>
+                    {lead.map && <a href={lead.map} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/15 px-3.5 py-1.5 text-xs font-semibold text-white/75 transition hover:border-white/35 hover:text-[#EDE9E0]">{t("See on the map", "Voir sur la carte")}</a>}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-6 text-xs text-white/35">{t("Data © OpenStreetMap contributors (ODbL).", "Données © les contributeurs d'OpenStreetMap (ODbL).")}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LeadsPage() {
+  return (
+    <AddonPage title={t("We find your clients", "On trouve tes clients")} lede={t("Three questions, and you get real local businesses to contact, the ones without a website first.", "Trois questions, et tu reçois de vraies entreprises locales à démarcher, celles sans site web en premier.")}>
+      {(email) => <LeadsContent email={email} />}
     </AddonPage>
   );
 }
@@ -5233,7 +5424,7 @@ function CgvPage() {
         <h2>3. Offres et prix</h2>
         <ul>
           <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement. C'est la seule offre en vente.</li>
-          <li><strong className="text-white/75">Options, au moment de la commande</strong> : le Kit freelance ({eur(ADDONS[0].price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) et la Licence agence ({eur(ADDONS[1].price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email). Elles sont payées une seule fois, avec l'accès à vie, et suivent son sort en cas de remboursement.</li>
+          <li><strong className="text-white/75">Options, au moment de la commande</strong> : le Kit freelance ({eur(ADDONS[0].price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) la Licence agence ({eur(ADDONS[1].price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email) et l'option « On trouve tes clients » ({eur(ADDONS[2].price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial). Elles sont payées une seule fois, avec l'accès à vie, et suivent son sort en cas de remboursement.</li>
           <li>Les abonnements (mensuel, 3 mois, annuel) et les packs de prompts ne sont plus proposés à l'achat. Ceux déjà souscrits restent valables aux conditions de leur souscription : les abonnements se renouvellent jusqu'à résiliation, et les prompts d'un pack restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>

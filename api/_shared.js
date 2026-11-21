@@ -543,12 +543,18 @@ export const MOLLIE_PACK_SIZES = { pack2: 2, pack5: 5, pack10: 10 };
 //         read on /kit (content in api/_kit.js)
 //   team  the agency licence: the buyer plus TEAM_SEATS teammates share the
 //         catalogue, managed on /team
+//   leads the leads finder: real businesses to contact, by trade and city,
+//         from a short questionnaire on /leads (api/_leads.js)
 // Prices come from here, never from the request. Keep in step with ADDONS in
 // src/App.jsx.
 export const MOLLIE_ADDONS = {
   kit: { price: Number(process.env.MOLLIE_ADDON_KIT_PRICE || 19).toFixed(2), label: "Kit freelance" },
   team: { price: Number(process.env.MOLLIE_ADDON_TEAM_PRICE || 29).toFixed(2), label: "Licence agence" },
+  leads: { price: Number(process.env.MOLLIE_ADDON_LEADS_PRICE || 39).toFixed(2), label: "On trouve tes clients" },
 };
+// New leads searches one buyer can run in a day (a search already in the
+// cache is free): the data comes from free community servers.
+export const LEADS_DAILY_SEARCHES = 10;
 // Teammates besides the buyer: 5 people in all. A seat can be given to
 // someone else, but only TEAM_MAX_INVITES invitations are allowed in all, so
 // a licence cannot be passed around without end.
