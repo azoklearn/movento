@@ -846,7 +846,7 @@ const SHOWCASE_SET = new Set(SHOWCASE_FILES);
 //
 // The same names must be in the set in api/_shared.js, which is what actually
 // lets /api/prompt hand them over — this one only unlocks the copy button.
-const FREE_PROMPT_FILES = new Set(["Ovra_Every_Workout.md", "Leon_Vasari_VHS_Filmography_Hero.md", "Oda_Nobunaga_Unifiers_Hero.md"]);
+const FREE_PROMPT_FILES = new Set(["Ovra_Every_Workout.md", "Leon_Vasari_VHS_Filmography_Hero.md", "Oda_Nobunaga_Unifiers_Hero.md", "Folio_Room_Book_Orbit.md", "Meadowbell_Hero.md"]);
 
 // Whether the card moves BY ITSELF — a clip or a gif, as against a still that
 // only gets the Ken Burns pan, and against an entry with no preview at all,
@@ -3015,8 +3015,8 @@ function runSelfTests() {
   // The popup names whatever is free, so the two have to agree. Not compared
   // against api/_shared.js here — that set is not imported — so the mirror is
   // checked by a script before each commit instead.
-  // Three prompts are the free sample, all of them in the catalogue.
-  console.assert(FREE_PROMPT_FILES.size === 3 && freePromptItems.length === 3, "exactly three prompts are free, and all three are on display");
+  // Five prompts are the free sample, all of them in the catalogue.
+  console.assert(FREE_PROMPT_FILES.size === 5 && freePromptItems.length === 5, "exactly five prompts are free, and all five are on display");
   console.assert(SHOWCASE_FILES.every((f) => prompts.some((item) => item.file === f)), "every showcase filename must belong to a catalogue entry");
   console.assert(freePromptItems.every((item) => isPromptAvailable(item) && item.title), "a free prompt with no markdown or no title would be a badge promising a 404");
   // The badge, the sort and the API all key on FREE_PROMPT_FILES, so a name in
@@ -3210,7 +3210,7 @@ export default function MoventoSite() {
     () => {
       const mine = privatePromptsFor(accessEmail || leadEmail);
       const base = mine.length ? [...mine, ...availablePrompts] : availablePrompts;
-      // Without access, the three free prompts come right after the lead card:
+      // Without access, the free prompts come right after the lead card:
       // the sample is the first thing a visitor can actually use.
       const all = hasPremiumAccess ? base : [
         ...base.filter((p) => p.lead),
