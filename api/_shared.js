@@ -566,6 +566,13 @@ export async function redisGrantAddons(email, addons) {
   const list = parseAddons(addons);
   if (list.length) await Redis.fromEnv().sadd(`addons:${email}`, ...list);
 }
+export async function redisClearAddons(email) {
+  try {
+    await Redis.fromEnv().del(`addons:${email}`);
+  } catch {
+    // Redis unavailable — nothing to clear.
+  }
+}
 export async function redisGetAddons(email) {
   try {
     return parseAddons(await Redis.fromEnv().smembers(`addons:${email}`));

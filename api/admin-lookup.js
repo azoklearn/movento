@@ -4,13 +4,17 @@ import {
   findWhopMembership,
   isAdminAuthorized,
   membershipPlanKind,
+  MOLLIE_ADDONS,
   normalizeEmail,
+  parseAddons,
   redisClearAccess,
+  redisClearAddons,
   redisGetAccessRecord,
   redisGetAddons,
   teamOwnerFor,
   redisGetOwnedPrompts,
   redisGetPromptCredits,
+  redisGrantAddons,
   redisIsBlocked,
   redisSetAccess,
   redisUnblockEmail,
@@ -110,8 +114,8 @@ async function buildLookup(email) {
 //
 // POST { email, action } — "revoke" (the default) or "grant".
 //
-// revoke only ever deletes our own access:{email} record; it never touches
-// Whop. A live Whop membership (a trial included) re-grants itself through the
+// revoke only ever deletes our own records (access:{email} and the options in
+// addons:{email}); it never touches Whop. A live Whop membership (a trial included) re-grants itself through the
 // very fallback this endpoint reads from, the next time that email is checked
 // — so revoking here is the fix for a stray Redis record, not a substitute for
 // canceling the membership on Whop when one exists.
@@ -124,6 +128,11 @@ async function buildLookup(email) {
 // subscription" sends the holder to Gumroad to manage it. It also lifts a block on that
 // email: blocks are checked before anything else, so granting to a blocked
 // address would otherwise write a record that changes nothing.
+//
+// A lifetime grant may carry `addons` (["kit", "team", "leads"]): the options
+// sold with lifetime at checkout, given the same way a purchase records them.
+// They are only sold with lifetime, so they are only given with it. Revoking
+// takes them back along with the access.
 //
 // The response after a POST is a fresh lookup, so the caller sees immediately
 // what the account looks like now.
@@ -157,6 +166,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Offre invalide." });
   }
 
+  // Named add-ons must all exist: a typo silently dropped would be a gift the
+  // admin believes was made.
+  const rawAddons = action === "grant" && Array.isArray(req.body?.addons) ? req.body.addons.map(String) : [];
+  const grantAddons = parseAddons(rawAddons);
+  if (rawAddons.some((id) => !Object.hasOwn(MOLLIE_ADDONS, id))) {
+    return res.status(400).json({ error: "Option inconnue." });
+  }
+  if (grantAddons.length && grantPlan !== "lifetime") {
+    return res.status(400).json({ error: "Les options ne se donnent qu'avec l'accès à vie." });
+  }
+
   try {
     if (action === "grant") {
       await redisUnblockEmail(email);
@@ -173,9 +193,11 @@ export default async function handler(req, res) {
         ...(lifetime ? {} : { provider: "gumroad" }),
         grantedAt: new Date().toISOString(),
       });
-      console.log("Access granted via admin lookup:", email, grantPlan);
+      await redisGrantAddons(email, grantAddons);
+      console.log("Access granted via admin lookup:", email, grantPlan, grantAddons.join("+") || "no add-on");
     } else if (action === "revoke") {
       await redisClearAccess(email);
+      await redisClearAddons(email);
       console.log("Access revoked via admin lookup:", email);
     }
 

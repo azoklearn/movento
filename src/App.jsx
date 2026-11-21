@@ -6645,6 +6645,8 @@ function AdminLeadsPage() {
   // Which plan a manual grant records. Monthly by default: it is what a
   // Gumroad buyer whose sale did not reach the site has bought.
   const [grantPlan, setGrantPlan] = useState("m1");
+  // The options given with a lifetime grant (kit, team, leads).
+  const [grantAddons, setGrantAddons] = useState([]);
 
   async function fetchLookup(value) {
     setLookup({ loading: true, error: "", data: null });
@@ -6707,7 +6709,7 @@ function AdminLeadsPage() {
       const response = await fetch(`${API_BASE_URL}/api/admin-lookup`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ email: lookup.data.email, action: "grant", plan: grantPlan }),
+        body: JSON.stringify({ email: lookup.data.email, action: "grant", plan: grantPlan, ...(grantPlan === "lifetime" && grantAddons.length ? { addons: grantAddons } : {}) }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Attribution impossible.");
@@ -7023,20 +7025,41 @@ function AdminLeadsPage() {
                     </button>
                   ))}
                 </div>
+                {/* The options sold with lifetime, given with it: same record
+                    as a purchase, so /kit, /team and /leads open for this
+                    email. Already-held options stay; a grant only adds. */}
+                {grantPlan === "lifetime" && (
+                  <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2" role="group" aria-label="Options à donner">
+                    {ADDONS.map((addon) => (
+                      <label key={addon.id} className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-white/70">
+                        <input
+                          type="checkbox"
+                          checked={grantAddons.includes(addon.id)}
+                          onChange={(e) => { setGrantAddons((list) => (e.target.checked ? [...list, addon.id] : list.filter((id) => id !== addon.id))); setGrant({ confirming: false, loading: false, error: "" }); }}
+                          className="h-4 w-4 accent-emerald-400"
+                        />
+                        {addon.name}
+                      </label>
+                    ))}
+                    <button type="button" onClick={() => { setGrantAddons(grantAddons.length === ADDONS.length ? [] : ADDONS.map((a) => a.id)); setGrant({ confirming: false, loading: false, error: "" }); }} className="text-xs font-semibold text-emerald-300 hover:text-emerald-200">
+                      {grantAddons.length === ADDONS.length ? "Aucune option" : "Toutes les options"}
+                    </button>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={runGrant}
                   disabled={grant.loading}
                   className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${grant.confirming ? "bg-emerald-500 text-white hover:bg-emerald-400" : "border border-emerald-400/30 bg-emerald-400/[0.08] text-emerald-300 hover:bg-emerald-400/[0.14]"}`}
                 >
-                  {grant.loading ? "…" : `${grant.confirming ? "Confirmer" : "Donner"} l'accès ${GRANT_PLAN_LABELS[grantPlan]}`}
+                  {grant.loading ? "…" : `${grant.confirming ? "Confirmer" : "Donner"} l'accès ${GRANT_PLAN_LABELS[grantPlan]}${grantPlan === "lifetime" && grantAddons.length ? ` + ${grantAddons.length} option${grantAddons.length > 1 ? "s" : ""}` : ""}`}
                 </button>
                 {grant.confirming && !grant.loading && (
                   <button type="button" onClick={() => setGrant({ confirming: false, loading: false, error: "" })} className="ml-2 text-sm text-white/40 hover:text-white/70">Annuler</button>
                 )}
                 <p className="mt-2 text-xs text-white/40">
                   {grantPlan === "lifetime"
-                    ? "Tout le catalogue et l'ebook, pour toujours, sans paiement"
+                    ? `Tout le catalogue et l'ebook, pour toujours, sans paiement${grantAddons.length ? `, avec ${grantAddons.map((id) => ADDONS.find((x) => x.id === id)?.name || id).join(", ")}` : ""}`
                     : "Tout le catalogue et l'ebook, enregistré comme un abonnement Gumroad : la page « Mon abonnement » renvoie vers Gumroad pour le gérer"}
                   {lookup.data.redis ? " — remplace l'accès déjà enregistré" : ""}
                   {lookup.data.blocked ? " — et le blocage de cet email sera levé." : "."}
