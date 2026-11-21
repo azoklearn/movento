@@ -939,14 +939,14 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 // reads for RETIRED_PLANS, so the cards and the checkout switch together on
 // the deploy that sets it:
 //   (Historical: the line-up once depended on the processor; it no longer does.)
-// The line-up is the same whoever sells it: 3 months, the year, lifetime.
-// The month is off sale (a month on its own was not worth taking); its price
-// stays because the anchors below are struck against it, and its subscribers
-// keep renewing. Mirror any change in RETIRED_PLANS (api/_shared.js).
+// The line-up is the same whoever sells it: the month and lifetime.
+// 3 months and the year are off sale; their prices stay because their
+// subscribers keep renewing. Mirror any change in RETIRED_PLANS
+// (api/_shared.js).
 const PLAN_TERMS = [
-  // Every subscription is off sale: lifetime is the one offer. Subscribers
-  // keep renewing on the terms they took.
-  { id: "m1", price: 29.99, anchor: 29.99, days: 30, retired: true, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
+  // On sale: the month, beside lifetime. 3 months and the year are off sale;
+  // their subscribers keep renewing on the terms they took.
+  { id: "m1", price: 29.99, anchor: 29.99, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
   // Anchors: the same span bought quarter by quarter at the 3-month price.
   { id: "m3", price: 109, anchor: 109, days: 90, retired: true, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
   { id: "m12", price: 239, anchor: 436, days: 365, retired: true, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
@@ -998,7 +998,10 @@ const BEST_DISCOUNT = LIVE_DISCOUNTS.length ? Math.max(...LIVE_DISCOUNTS) : 0;
 // page pushes while one is on sale, and the lifetime once none is. FEATURED_TERM
 // is null in that case rather than pointing at a retired plan — nothing should
 // have to guess which of the plans nobody can buy is the "featured" one.
-const FEATURED_TERM = LIVE_TERMS.find((term) => term.id === "m12") || LIVE_TERMS[0] || null;
+// The month is on sale but is not what the page pushes while lifetime is: at
+// 49 € once, lifetime costs less than two months, and the hero, the featured
+// card and the anchor all lead with it.
+const FEATURED_TERM = LIVE_TERMS.find((term) => term.id === "m12") || (LIFETIME_RETIRED ? LIVE_TERMS[0] : null) || null;
 // Falls back to the lifetime only because something has to be quoted when no
 // term is on sale. While the lifetime is retired too, nothing is for sale at
 // all and the sticky bar is moot.
@@ -2991,9 +2994,10 @@ async function copyTextToClipboard(text) {
 
 function runSelfTests() {
   // The two offers, mirroring RETIRED_PLANS in api/_shared.js.
-  console.assert(validatePlanId("lifetime") && isSinglePlan, "lifetime is the one offer and must be purchasable");
-  console.assert(["m1", "m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every subscription is retired and none should be purchasable");
-  console.assert(FEATURED_TERM === null && FEATURED_OFFER.price === PRICE_LIFETIME, "with no term on sale, the bar and the anchor quote lifetime");
+  console.assert(["m1", "lifetime"].every(validatePlanId) && visiblePlans.length === 2, "the month and lifetime are the offers and must be purchasable");
+  console.assert(["m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
+  console.assert(FEATURED_TERM === null && FEATURED_OFFER.price === PRICE_LIFETIME, "while lifetime is the offer pushed, the bar and the anchor quote it, not the month");
+  console.assert(termOf("m1").price === 29.99 && PRICE_LIFETIME < 2 * termOf("m1").price, "the month is 29,99 €, and lifetime costs less than two of them");
   console.assert(PRICE_LIFETIME < PRICE_LIFETIME_REFERENCE && LIFETIME_DISCOUNT > 0 && LIFETIME_DISCOUNT < 100, "the struck price is above the price charged");
   console.assert(visiblePlans.some((plan) => plan.id === "lifetime") && visiblePlans.filter((plan) => plan.featured).length === 1, "lifetime is on sale, and exactly one card is featured");
   // A card may not promise an extra its kind is not granted: the card is the
@@ -5444,9 +5448,10 @@ function CgvPage() {
       <div>
         <h2>3. Offres et prix</h2>
         <ul>
-          <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement. C'est la seule offre en vente.</li>
-          <li><strong className="text-white/75">Options, au moment de la commande</strong> : le Kit freelance ({eur(ADDONS[0].price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) la Licence agence ({eur(ADDONS[1].price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email) et l'option « On trouve tes clients » ({eur(ADDONS[2].price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial). Elles sont payées une seule fois, avec l'accès à vie, et suivent son sort en cas de remboursement.</li>
-          <li>Les abonnements (mensuel, 3 mois, annuel) et les packs de prompts ne sont plus proposés à l'achat. Ceux déjà souscrits restent valables aux conditions de leur souscription : les abonnements se renouvellent jusqu'à résiliation, et les prompts d'un pack restent accessibles sans limite de durée.</li>
+          <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
+          <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
+          <li><strong className="text-white/75">Options, au moment de la commande de l'accès à vie</strong> : le Kit freelance ({eur(ADDONS[0].price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) la Licence agence ({eur(ADDONS[1].price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email) et l'option « On trouve tes clients » ({eur(ADDONS[2].price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial). Elles sont payées une seule fois, avec l'accès à vie, et suivent son sort en cas de remboursement.</li>
+          <li>Les abonnements de 3 mois et annuel, ainsi que les packs de prompts, ne sont plus proposés à l'achat. Ceux déjà souscrits restent valables aux conditions de leur souscription : les abonnements se renouvellent jusqu'à résiliation, et les prompts d'un pack restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
       </div>
@@ -6194,7 +6199,7 @@ function PricingPage() {
             ? soloTerm
               ? t(`All ${availablePrompts.length} premium prompts and every one added next. Cancel whenever you like, no commitment.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Résiliation quand tu veux, sans engagement.`)
               : t(`All ${availablePrompts.length} premium prompts and every one added next. One payment, no subscription, no renewal.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Un seul paiement, pas d'abonnement, pas de renouvellement.`)
-            : t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it for 3 months, for a year, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le pour 3 mois, pour un an, ou garde-le pour toujours.`)}</p>
+            : t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it by the month, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le au mois, ou garde-le pour toujours.`)}</p>
           {fromPrompt && (
             <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}

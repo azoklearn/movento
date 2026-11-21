@@ -518,10 +518,10 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 // Lifetime is one payment.
 //
 //   MOLLIE_API_KEY          test_… to try, live_… to sell
-//   MOLLIE_M3_PRICE         default 109.00, every 3 months (3 copies a day)
-//   MOLLIE_M12_PRICE        default 239.00, every year
-//   MOLLIE_LIFETIME_PRICE   default 49.00, once (the one offer on sale: -45 % on 89)
-// (m1, 29.99 a month, is off sale; its price stays for its renewals.)
+//   MOLLIE_M1_PRICE         default 29.99, every month
+//   MOLLIE_LIFETIME_PRICE   default 49.00, once (-45 % on 89)
+// (3 months, 109.00, and the year, 239.00, are off sale; MOLLIE_M3_PRICE and
+// MOLLIE_M12_PRICE stay for their renewals.)
 // The site switches to Mollie with CHECKOUT_PROVIDER=mollie.
 export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
 export const mollieTestMode = () => String(process.env.MOLLIE_API_KEY || "").startsWith("test_");
@@ -782,10 +782,10 @@ export function bestCheckoutUrl(plan) {
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
 //
-// On sale: lifetime only (49 €). Every subscription and the prompt packs
-// are off sale; The month is off sale; its subscribers keep their
-// access and their renewals.
-export const RETIRED_PLANS = new Set(["m1", "m3", "m12", "monthly", "yearly", "pack2", "pack5", "pack10"]);
+// On sale: the month (29,99 €) and lifetime (49 €). 3 months, the year and
+// the prompt packs are off sale; their subscribers keep their access and
+// their renewals.
+export const RETIRED_PLANS = new Set(["m3", "m12", "monthly", "yearly", "pack2", "pack5", "pack10"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a
