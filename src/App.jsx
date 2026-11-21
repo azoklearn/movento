@@ -113,6 +113,9 @@ const prompts = [
   // Fictional placeholder, visible only to the team address (onlyFor): not in
   // the public gallery or any count.
   { title: "GTA 6 — Vice Coast Teaser", category: "Hero Section", type: "Hero", file: "GTA_6_Vice_Teaser_Hero.md", pinned: true, onlyFor: "teammoventoino1@gmail.com", preview: "https://res.cloudinary.com/klc0oxsz/image/upload/v1795056214/Capture_d_e%CC%81cran_2026-11-19_a%CC%80_03.41.46.png", tags: ["Synthwave Sun", "Parallax", "Fan Concept"], gradient: "from-[#ff2e88] via-[#ff8a3d] to-[#0b0614]" },
+  { title: "VEKTOR LAB — Curved WebGL Gallery", category: "Portfolio", type: "Landing", file: "Vektor_Lab_Curved_Gallery.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/vektor-lab-gallery.mp4", tags: ["Glass Refraction", "Smile Strip", "Code Scramble"], gradient: "from-[#c9b8ff] via-[#5a6bd6] to-[#0f0e14]" },
+  { title: "Folio Room — 3D Book Orbit", category: "E-commerce", type: "Hero", file: "Folio_Room_Book_Orbit.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/folio-room-library.mp4", tags: ["CSS 3D Books", "Spring Physics", "Drag & Throw"], gradient: "from-[#f4f1ea] via-[#f26b1d] to-[#141414]" },
+  { title: "MONS — Unmask Trail Hero", category: "E-commerce", type: "Hero", file: "Mons_Unmask_Trail_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/mons-unmask-hero.mp4", tags: ["WebGL Reveal", "Magnetic Parallax", "Glitch Loader"], gradient: "from-[#E6E8EA] via-[#E0313F] to-[#111012]" },
   { title: "Logios — Dithered Marble Bust", category: "Hero Section", type: "Hero", file: "Logios_Dithered_Bust_Hero.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/logios-hero.mp4", tags: ["WebGL Dither", "Sprite Turntable", "Pointer Wake"], gradient: "from-[#EFE6D5] via-[#962614] to-[#3a0d06]" },
   { title: "Avelon Drive — Scroll Film Car Rental", category: "Landing Page", type: "Landing", file: "Avelon_Drive_Scroll_Film.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/avelon-drive-landing.mp4", tags: ["Frame Sequence", "GSAP ScrollTrigger", "Fleet Carousel"], gradient: "from-[#f2f2f2] via-[#8e8e8e] to-[#000000]" },
   { title: "Sunbrew — Kombucha Bottle Wheel", category: "E-commerce", type: "Landing", file: "Sunbrew_Bottle_Wheel.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/sunbrew-bottle-arc.mp4", tags: ["Bottle Wheel", "Shared Element", "Drag Gallery"], gradient: "from-[#fcf8ed] via-[#ffd04a] to-[#ce4e17]" },
@@ -446,6 +449,9 @@ const AVAILABLE_FILES = new Set([
   "VirtualFit_Spatial_TryOn_Arc.md",
   "Ciao_Energy_3D_Can_Carousel.md",
   "Letterbloom_Poppy_Type_Garden.md",
+  "Vektor_Lab_Curved_Gallery.md",
+  "Folio_Room_Book_Orbit.md",
+  "Mons_Unmask_Trail_Hero.md",
   "Logios_Dithered_Bust_Hero.md",
   "Avelon_Drive_Scroll_Film.md",
   "Sunbrew_Bottle_Wheel.md",
