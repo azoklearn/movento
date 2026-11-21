@@ -4453,6 +4453,22 @@ function SiteNav({ query, setQuery, searchLabel }) {
   );
 }
 
+// "Movento" repeated on a slant across a background clip. Drawn as an SVG tile
+// in a CSS background, so it is one node however many times the word repeats,
+// and white with a thin dark edge so it reads on a pale clip and on a dark one.
+// It marks the preview on the page; the file behind the link is untouched.
+const WATERMARK_TILE = `url("data:image/svg+xml,${encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' width='220' height='128'>" +
+    "<g font-family='Inter,system-ui,-apple-system,Segoe UI,sans-serif' font-weight='700' font-size='19' letter-spacing='-0.4' fill='#fff' fill-opacity='.26' stroke='#000' stroke-opacity='.16' stroke-width='.6' paint-order='stroke'>" +
+      "<text x='6' y='40' transform='rotate(-22 46 34)'>Movento</text>" +
+      "<text x='116' y='104' transform='rotate(-22 156 98)'>Movento</text>" +
+    "</g>" +
+  "</svg>",
+)}")`;
+function Watermark() {
+  return <div aria-hidden="true" data-watermark className="pointer-events-none absolute inset-0 z-[1] select-none" style={{ backgroundImage: WATERMARK_TILE, backgroundSize: "220px 128px" }} />;
+}
+
 // One background clip: mounted only near the viewport and played only on it,
 // like the gallery cards, since a page of autoplaying clips is the one thing
 // that brings a phone to its knees. A clip that fails to load drops out.
@@ -4501,6 +4517,7 @@ function BackgroundTile({ clip, hasAccess }) {
       <div ref={ref} className="relative aspect-video overflow-hidden rounded-[16px] bg-[#0B0B0D] ring-1 ring-white/[0.06] transition duration-300 group-hover:ring-white/20">
         {near && <video ref={videoRef} src={clip.url} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture onLoadedData={() => setLoaded(true)} onError={() => setFailed(true)} className="pointer-events-none absolute inset-0 h-full w-full object-cover" />}
         <LoadingSweep done={near && loaded} />
+        {near && loaded && <Watermark />}
         <div className="absolute inset-x-0 bottom-0 z-[2] flex items-center gap-2 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-10 opacity-100 transition duration-300 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
           {hasAccess ? (
             <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 rounded-full bg-[#EDE9E0] px-3.5 py-2 text-xs font-bold text-[#0A0A0B] transition hover:bg-white">
