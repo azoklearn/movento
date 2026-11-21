@@ -15,7 +15,7 @@
 // What is charged comes from MOLLIE_PRICES, never from the request.
 import { randomBytes } from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { checkoutProviderFor, methodNotAllowed, MOLLIE_LIFETIME_PROMO, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, strikeText, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
+import { checkoutProviderFor, methodNotAllowed, MOLLIE_ADDONS, parseAddons, MOLLIE_LIFETIME_PROMO, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, strikeText, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
 
 const looksLikeEmail = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 
@@ -73,11 +73,15 @@ export default async function handler(req, res) {
       console.error("Mollie win-back check failed:", error);
     }
   }
-  const amount = offer ? MOLLIE_WINBACK.price : MOLLIE_PRICES[plan];
+  const base = offer ? MOLLIE_WINBACK.price : MOLLIE_PRICES[plan];
+  // Add-ons ticked on the card: with lifetime only, at the server's prices.
+  const addons = plan === "lifetime" ? parseAddons(req.body?.addons) : [];
+  const amount = (Number(base) + addons.reduce((sum, a) => sum + Number(MOLLIE_ADDONS[a].price), 0)).toFixed(2);
+  const addonText = addons.map((a) => ` + ${MOLLIE_ADDONS[a].label}`).join("");
 
   // The site's own address, as this request reached it.
   const host = req.headers["x-forwarded-host"] || req.headers.host;
-  const base = `https://${host}`;
+  const site = `https://${host}`;
   try {
     const customerId = await customerFor(knownEmail);
     const claim = randomBytes(18).toString("base64url");
@@ -85,18 +89,18 @@ export default async function handler(req, res) {
       method: "POST",
       body: {
         amount: { currency: "EUR", value: amount },
-        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? lifetimeDescription(amount, offer) : `Movento — ${MOLLIE_PLAN_LABELS[plan]}`,
+        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? `${lifetimeDescription(base, offer)}${addonText}` : `Movento — ${MOLLIE_PLAN_LABELS[plan]}`,
         customerId,
         // A subscription (3 months, the year) stores the card for the charges
         // that follow; lifetime is charged once.
         sequenceType: plan === "lifetime" || MOLLIE_PACK_SIZES[plan] ? "oneoff" : "first",
-        redirectUrl: `${base}/success?provider=mollie&claim=${claim}${knownEmail ? `&email=${encodeURIComponent(knownEmail)}` : ""}`,
+        redirectUrl: `${site}/success?provider=mollie&claim=${claim}${knownEmail ? `&email=${encodeURIComponent(knownEmail)}` : ""}`,
         // Back on the pricing page with the claim, which is what lets the page
         // offer the year at the win-back price to someone who left.
-        cancelUrl: `${base}/pricing?left=${claim}`,
-        webhookUrl: `${base}/api/mollie-webhook`,
+        cancelUrl: `${site}/pricing?left=${claim}`,
+        webhookUrl: `${site}/api/mollie-webhook`,
         locale: "fr_FR",
-        metadata: { plan, claim, ...(offer ? { offer: "winback", offerFrom: offer.from } : {}), ...(knownEmail ? { email: knownEmail } : {}) },
+        metadata: { plan, claim, ...(addons.length ? { addons: addons.join(",") } : {}), ...(offer ? { offer: "winback", offerFrom: offer.from } : {}), ...(knownEmail ? { email: knownEmail } : {}) },
       },
     });
     // Kept 60 days: long enough for a buyer who closes the tab and comes back.

@@ -1329,6 +1329,16 @@ function PlanCard({ plan, onBuy, loading, featured }) {
   // One list, one tick per row, in the order a buyer reads it: the catalogue,
   // support and the ebook, then what only this plan adds.
   const rows = [...(plan.features || []), plan.perk, plan.bonus, ...(plan.extras || [])].filter(Boolean);
+  // The order bumps: add-ons ticked here ride along in plan.addons and are
+  // added to the same payment.
+  const bumps = ADDONS_ON_SALE && plan.id === "lifetime" ? ADDONS : [];
+  const [picked, setPicked] = useState([]);
+  const extra = addonsTotal(picked);
+  const toggle = (id) => {
+    const on = !picked.includes(id);
+    track("addon_toggled", { addon: id, on });
+    setPicked((list) => (on ? [...list, id] : list.filter((x) => x !== id)));
+  };
   return (
     <div className={`mv-glass relative flex flex-col rounded-[22px] p-6 sm:p-8 ${highlight ? "order-first shadow-[0_0_70px_-18px_rgba(160,120,255,0.6)] sm:order-none" : ""}`}>
       {/* The travelling light along the card's own edge — violet and faster on
@@ -1354,12 +1364,35 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       </div>
       {plan.billedNote && <p className="mt-2.5 text-sm text-white/55">{plan.billedNote}</p>}
 
+      {bumps.length > 0 && (
+        <fieldset className="mt-6">
+          <legend className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">{t("Add to your order", "Ajoute à ta commande")}</legend>
+          <div className="mt-2.5 space-y-2">
+            {bumps.map((addon) => {
+              const on = picked.includes(addon.id);
+              return (
+                <label key={addon.id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 transition ${on ? "border-emerald-400/50 bg-emerald-400/[0.07]" : "border-dashed border-white/20 bg-white/[0.02] hover:border-white/40"}`}>
+                  <input type="checkbox" checked={on} onChange={() => toggle(addon.id)} className="mt-1 h-4 w-4 flex-none accent-emerald-400" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="text-sm font-semibold text-[#EDE9E0]">{addon.name}</span>
+                      <span className="flex-none text-sm font-bold text-[#EDE9E0]">+{eur(addon.price)}</span>
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-5 text-white/55">{addon.desc}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+      )}
+
       <button
-        onClick={() => onBuy(plan)}
+        onClick={() => onBuy(picked.length ? { ...plan, addons: picked } : plan)}
         disabled={loading}
         className={`mt-6 flex w-full items-center justify-center rounded-full px-4 py-3.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${highlight ? "bg-gradient-to-r from-[#F0566B] via-[#5B5BF7] to-[#C58CFF] text-white shadow-[0_14px_40px_-14px_rgba(123,92,255,0.85)] hover:brightness-110" : "bg-[#EDE9E0] text-[#0A0A0B] hover:bg-white"}`}
       >
-        {loading ? t("Loading…", "Chargement…") : plan.cta}
+        {loading ? t("Loading…", "Chargement…") : extra ? t(`Pay ${eur(PRICE_LIFETIME + extra)}`, `Payer ${eur(PRICE_LIFETIME + extra)}`) : plan.cta}
       </button>
 
       <ul className="mt-7 space-y-3">
@@ -1708,6 +1741,8 @@ function OrderSummary({ plan, totals, provider, priceNote }) {
   const tax = totals ? formatMoney(totals.tax, totals.currency) : "";
   const subtotal = totals ? formatMoney(totals.subtotal, totals.currency) : "";
   const included = [...(plan.features || []).filter((f) => f !== t("Cancel anytime", "Résiliation à tout moment")).slice(0, 5), plan.perk, plan.bonus].filter(Boolean);
+  // Add-ons ticked on the card, charged with the plan.
+  const addons = ADDONS.filter((a) => (plan.addons || []).includes(a.id));
   return (
       <aside className="relative self-start overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-4 sm:p-6">
         <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#ffa582]/[0.08] blur-3xl" />
@@ -1748,9 +1783,17 @@ function OrderSummary({ plan, totals, provider, priceNote }) {
               <div className="flex justify-between text-white/50"><dt>{t("VAT", "TVA")}{totals.country ? ` (${totals.country})` : ""}</dt><dd>{tax}</dd></div>
             </>
           )}
+          {addons.length > 0 && (
+            <>
+              <div className="flex justify-between text-white/50"><dt>Movento · {plan.name}</dt><dd>{plan.price}</dd></div>
+              {addons.map((a) => (
+                <div key={a.id} className="flex justify-between text-white/50"><dt>{a.name}</dt><dd>+{eur(a.price)}</dd></div>
+              ))}
+            </>
+          )}
           <div className="flex items-baseline justify-between pt-1 text-[#EDE9E0]">
             <dt className="font-semibold">{t("Total today", "Total aujourd'hui")}</dt>
-            <dd className="text-lg font-bold">{total || plan.price}</dd>
+            <dd className="text-lg font-bold">{total || (addons.length ? eur(PRICE_LIFETIME + addonsTotal(plan.addons)) : plan.price)}</dd>
           </div>
           {!total && <p className="text-xs text-white/40">{priceNote || t("VAT included, worked out for your country.", "TVA incluse, calculée selon ton pays.")}</p>}
         </dl>
@@ -2035,6 +2078,31 @@ function WinbackOffer({ claim: explicit = "" }) {
 // Mollie, give the email after paying, then choose the prompts on /choose.
 // Prices are the server's (MOLLIE_PRICES in api/_shared.js); these are only
 // what the card shows. Keep the two in step.
+// Add-ons ticked on the lifetime card and charged in the same Mollie payment.
+// What is charged is the server's (MOLLIE_ADDONS in api/_shared.js); these are
+// what the card shows. Keep the two in step.
+const ADDONS = [
+  {
+    id: "kit",
+    price: 19,
+    href: "/kit",
+    name: t("Freelance kit", "Kit freelance"),
+    desc: t("Quote template, contract, outreach messages and price grid to sell a site to a client (in French).", "Modèle de devis, contrat type, messages de prospection et grille de prix pour vendre un site à un client."),
+    open: t("Open the kit", "Ouvrir le kit"),
+  },
+  {
+    id: "team",
+    price: 29,
+    href: "/team",
+    name: t("Agency licence", "Licence agence"),
+    desc: t("Access for 5 people: you and 4 teammates, each with their own email.", "L'accès pour 5 personnes : toi et 4 membres de ton équipe, chacun avec son email."),
+    open: t("Invite my team", "Inviter mon équipe"),
+  },
+];
+// Sold on Mollie only: it is the one checkout that adds them to the payment.
+const ADDONS_ON_SALE = CHECKOUT_PROVIDER_PUBLIC === "mollie";
+const addonsTotal = (ids) => ADDONS.filter((a) => (ids || []).includes(a.id)).reduce((sum, a) => sum + a.price, 0);
+
 // Off sale: with lifetime at 29,99 € a pack of prompts costs more than the
 // whole catalogue. Past buyers keep their prompts and their unused credits.
 // Mirrored by RETIRED_PLANS in api/_shared.js.
@@ -2117,16 +2185,16 @@ function MollieCheckout({ cfg, plan, prefillEmail }) {
     setSt({ loading: true, error: "" });
     try {
       const known = cleanEmail(prefillEmail || "");
-      const r = await fetch(`${API_BASE_URL}/api/mollie-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: plan.id, ...(known ? { email: known } : {}) }) });
+      const r = await fetch(`${API_BASE_URL}/api/mollie-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: plan.id, ...(known ? { email: known } : {}), ...(plan.addons?.length ? { addons: plan.addons } : {}) }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.checkoutUrl) throw new Error(apiError(d, t("The payment could not start. Try again in a moment.", "Le paiement n'a pas pu démarrer. Réessaie dans un instant.")));
-      track("checkout_opened_on_mollie", { plan: plan.id });
+      track("checkout_opened_on_mollie", { plan: plan.id, addons: (plan.addons || []).join("+") || "none" });
       rememberStartedPayment(d.claim, plan.id);
       window.location.assign(d.checkoutUrl);
     } catch (err) {
       setSt({ loading: false, error: err.message });
     }
-  }, [plan.id, prefillEmail]);
+  }, [plan.id, plan.addons, prefillEmail]);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -3051,6 +3119,8 @@ export default function MoventoSite() {
   const isChoosePage = typeof window !== "undefined" && window.location.pathname === "/choose";
   const isPaddleTestPage = typeof window !== "undefined" && window.location.pathname === "/paddle-test";
   const isBackgroundsPage = typeof window !== "undefined" && window.location.pathname === "/backgrounds";
+  const isKitPage = typeof window !== "undefined" && window.location.pathname === "/kit";
+  const isTeamPage = typeof window !== "undefined" && window.location.pathname === "/team";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -3386,6 +3456,8 @@ export default function MoventoSite() {
   if (isPaddleTestPage) return <PaddleTestPage />;
   if (isSuccessPage) return <SuccessPage />;
   if (isBackgroundsPage) return <BackgroundsPage hasAccess={hasPremiumAccess} />;
+  if (isKitPage) return <KitPage />;
+  if (isTeamPage) return <TeamPage />;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#141414] text-[#EDE9E0]">
@@ -3716,6 +3788,239 @@ function SupportCard({ className = "" }) {
 
 // Shown on /success right after the purchase AND on "My subscription", because
 // a buyer who closes the success tab had no other way to get the ebook back.
+// What was bought with the access, as cards that open it: shown after the
+// purchase and under "My subscription", so the pages stay reachable.
+function AddonCards({ addons, email, className = "" }) {
+  const owned = ADDONS.filter((a) => (addons || []).includes(a.id));
+  if (!owned.length) return null;
+  return (
+    <div className={`space-y-4 ${className}`}>
+      {owned.map((addon) => (
+        <div key={addon.id} className="rounded-[28px] border border-emerald-400/25 bg-emerald-400/[0.06] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7">
+          <div className="flex items-center gap-3">
+            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name={addon.id === "kit" ? "layers" : "sparkles"} className="h-4 w-4" /></span>
+            <h2 className="text-lg font-semibold text-[#EDE9E0]">{addon.name}</h2>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-white/60">{addon.desc}</p>
+          <a href={`${addon.href}${email ? `?email=${encodeURIComponent(email)}` : ""}`} onClick={() => track("addon_opened", { addon: addon.id })} className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3 text-sm font-semibold text-[#04150d] transition hover:scale-[1.02] hover:bg-emerald-300">
+            {addon.open} <Icon name="arrow" className="h-4 w-4" />
+          </a>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// The frame the two add-on pages share: the bar, a title, and the email the
+// page works for. The email comes from the link (?email=) or from the access
+// already unlocked on this device; with neither, the page asks for it.
+function AddonPage({ title, lede, children }) {
+  const [email, setEmail] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return cleanEmail(new URLSearchParams(window.location.search).get("email") || getStoredAccessEmail() || "");
+  });
+  const [typed, setTyped] = useState("");
+  return (
+    <main className="min-h-screen bg-[#0A0A0B] text-[#EDE9E0]">
+      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <a href="/"><Logo /></a>
+        <div className="flex items-center gap-3">
+          <LangSwitch />
+          <a href="/#prompts" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 transition hover:border-white/25 hover:text-[#EDE9E0]">{t("Go to the gallery", "Aller à la galerie")}</a>
+        </div>
+      </header>
+      <section className="mx-auto max-w-3xl px-6 pb-24 pt-6 lg:px-8">
+        <h1 className="text-3xl font-bold tracking-tight md:text-5xl">{title}</h1>
+        {lede && <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55 md:text-base">{lede}</p>}
+        {email ? children(email) : (
+          <form onSubmit={(e) => { e.preventDefault(); setEmail(cleanEmail(typed)); }} className="mt-8 rounded-[28px] border border-white/10 bg-[#121214] p-6 md:p-7">
+            <p className="text-sm leading-6 text-white/60">{t("Enter the email you bought with.", "Entre l'email utilisé lors de l'achat.")}</p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <input value={typed} onChange={(e) => setTyped(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#0A0A0B] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35" />
+              <button type="submit" className="rounded-2xl bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Continue", "Continuer")}</button>
+            </div>
+          </form>
+        )}
+      </section>
+    </main>
+  );
+}
+
+// What an add-on page shows to an email that does not hold the add-on.
+function AddonMissing({ message }) {
+  return (
+    <div className="mt-8 rounded-[28px] border border-white/10 bg-[#121214] p-6 md:p-7">
+      <p className="text-sm leading-6 text-white/65">{message}</p>
+      <div className="mt-5 flex flex-wrap gap-3">
+        <a href="/pricing" className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the offer", "Voir l'offre")}</a>
+        <a href={supportUrl()} className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/35 hover:text-[#EDE9E0]">{t("Write to us", "Nous écrire")}</a>
+      </div>
+    </div>
+  );
+}
+
+function useAddons(email, action) {
+  const [state, setState] = useState({ loading: true, error: "", status: 0, data: null });
+  const load = useCallback(async (extra) => {
+    setState((s) => ({ ...s, loading: true, error: "" }));
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/addons`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, action, ...(extra || {}) }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setState((s) => ({ ...s, loading: false, status: r.status, error: apiError(d, t("Not possible right now. Try again in a moment.", "Impossible pour le moment. Réessaie dans un instant.")) })); return null; }
+      setState({ loading: false, error: "", status: 200, data: d });
+      return d;
+    } catch {
+      setState((s) => ({ ...s, loading: false, status: 0, error: t("Not possible right now. Try again in a moment.", "Impossible pour le moment. Réessaie dans un instant.") }));
+      return null;
+    }
+  }, [email, action]);
+  return [state, load];
+}
+
+// The freelance kit (api/_kit.js), for an email that bought it: each model in
+// its own block, copied as is, and the whole kit as one text file.
+function KitContent({ email }) {
+  const [state, load] = useAddons(email, "kit");
+  const [copied, setCopied] = useState("");
+  useEffect(() => { load(); }, [load]);
+  const kit = state.data?.kit;
+  if (state.loading && !kit) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
+  if (!kit) {
+    return <AddonMissing message={state.status === 403
+      ? t(`The freelance kit is not on ${email}. It is an option of the lifetime access, ticked when ordering.`, `Le Kit freelance n'est pas sur ${email}. C'est une option de l'accès à vie, à cocher au moment de la commande.`)
+      : state.error} />;
+  }
+  const copy = async (key, text) => {
+    if (await copyTextToClipboard(text)) { setCopied(key); setTimeout(() => setCopied(""), 1600); track("kit_block_copied", { block: key }); }
+  };
+  const download = () => {
+    const text = [kit.title, kit.intro, kit.notice, ...kit.sections.flatMap((sec) => ["", "=".repeat(60), sec.title, sec.intro, ...sec.blocks.flatMap((b) => ["", `--- ${b.title} ---`, b.text])])].join("\n");
+    const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "kit-freelance-movento.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+    track("kit_downloaded");
+  };
+  return (
+    <div className="mt-6">
+      <p className="text-sm leading-6 text-white/65">{kit.intro}</p>
+      <p className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-200/90">{kit.notice}</p>
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        <button type="button" onClick={download} className="inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white"><Icon name="download" className="h-4 w-4" /> {t("Download everything (.txt)", "Tout télécharger (.txt)")}</button>
+        {kit.sections.map((sec) => (
+          <a key={sec.id} href={`#${sec.id}`} className="rounded-full border border-white/12 px-3.5 py-2 text-xs font-semibold text-white/65 transition hover:border-white/30 hover:text-[#EDE9E0]">{sec.title}</a>
+        ))}
+      </div>
+      {kit.sections.map((sec) => (
+        <section key={sec.id} id={sec.id} className="mt-12 scroll-mt-6">
+          <h2 className="text-2xl font-bold tracking-tight">{sec.title}</h2>
+          <p className="mt-2 text-sm leading-6 text-white/55">{sec.intro}</p>
+          {sec.blocks.map((block) => {
+            const key = `${sec.id}:${block.title}`;
+            return (
+              <div key={key} className="mt-4 rounded-[22px] border border-white/10 bg-[#121214] p-5 md:p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-base font-semibold text-[#EDE9E0]">{block.title}</h3>
+                  <button type="button" onClick={() => copy(key, block.text)} className={`inline-flex flex-none items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${copied === key ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300" : "border-white/15 text-white/70 hover:border-white/35 hover:text-[#EDE9E0]"}`}>
+                    <Icon name={copied === key ? "check" : "copy"} className="h-3.5 w-3.5" /> {copied === key ? t("Copied", "Copié") : t("Copy", "Copier")}
+                  </button>
+                </div>
+                <pre className="mt-4 whitespace-pre-wrap break-words font-sans text-sm leading-6 text-white/75">{block.text}</pre>
+              </div>
+            );
+          })}
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function KitPage() {
+  return (
+    <AddonPage title={t("Freelance kit", "Kit freelance")} lede={t("Everything to sell a site to a client (in French).", "Tout pour vendre un site à un client.")}>
+      {(email) => <KitContent email={email} />}
+    </AddonPage>
+  );
+}
+
+// The agency licence: the buyer invites teammates by email, and each of them
+// then unlocks the catalogue with their own address.
+function TeamContent({ email }) {
+  const [state, load] = useAddons(email, "status");
+  const [member, setMember] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [team, setTeam] = useState(null);
+  useEffect(() => { load().then((d) => setTeam(d?.team || null)); }, [load]);
+
+  const change = async (action, address) => {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/addons`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, action, member: cleanEmail(address) }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(apiError(d, t("Not possible right now. Try again in a moment.", "Impossible pour le moment. Réessaie dans un instant.")));
+      setTeam(d.team);
+      if (action === "team-add") setMember("");
+      track(action === "team-add" ? "team_member_added" : "team_member_removed");
+    } catch (err) {
+      setError(err.message);
+    }
+    setBusy(false);
+  };
+
+  if (state.loading && !state.data) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
+  if (!state.data) return <AddonMissing message={state.error} />;
+  if (!team) {
+    return <AddonMissing message={state.data.memberOf
+      ? t(`${email} is on the team of ${state.data.memberOf}: the catalogue is open to you. Only the buyer of the licence manages the team.`, `${email} fait partie de l'équipe de ${state.data.memberOf} : le catalogue t'est ouvert. Seul l'acheteur de la licence gère l'équipe.`)
+      : t(`The agency licence is not on ${email}. It is an option of the lifetime access, ticked when ordering.`, `La Licence agence n'est pas sur ${email}. C'est une option de l'accès à vie, à cocher au moment de la commande.`)} />;
+  }
+  const free = team.seats - team.members.length;
+  return (
+    <div className="mt-8 rounded-[28px] border border-white/10 bg-[#121214] p-6 md:p-7">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-lg font-semibold">{t("Your team", "Ton équipe")}</h2>
+        <p className="text-sm text-white/55">{t(`${team.members.length} of ${team.seats} seats used`, `${team.members.length} place(s) sur ${team.seats} utilisée(s)`)}</p>
+      </div>
+      <ul className="mt-4 divide-y divide-white/[0.07] rounded-2xl border border-white/[0.07]">
+        <li className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+          <span className="min-w-0 truncate text-[#EDE9E0]">{email}</span>
+          <span className="flex-none text-xs text-white/40">{t("You (buyer)", "Toi (acheteur)")}</span>
+        </li>
+        {team.members.map((m) => (
+          <li key={m} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+            <span className="min-w-0 truncate text-white/80">{m}</span>
+            <button type="button" disabled={busy} onClick={() => change("team-remove", m)} className="flex-none rounded-full border border-white/12 px-3 py-1 text-xs font-semibold text-white/60 transition hover:border-red-400/40 hover:text-red-300 disabled:opacity-50">{t("Remove", "Retirer")}</button>
+          </li>
+        ))}
+      </ul>
+      {free > 0 && team.invitesLeft > 0 ? (
+        <form onSubmit={(e) => { e.preventDefault(); if (member.trim()) change("team-add", member); }} className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <input value={member} onChange={(e) => setMember(e.target.value)} type="email" inputMode="email" autoCapitalize="none" spellCheck={false} placeholder={t("teammate@agency.com", "collegue@agence.fr")} className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#0A0A0B] px-4 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/40 focus:border-white/35" />
+          <button type="submit" disabled={busy} className="rounded-2xl bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white disabled:opacity-60">{busy ? t("Adding…", "Ajout…") : t("Add", "Ajouter")}</button>
+        </form>
+      ) : (
+        <p className="mt-5 text-sm text-white/55">{free > 0
+          ? t("This licence has used all its invitations. Write to us to change a seat.", "Cette licence a utilisé toutes ses invitations. Écris-nous pour changer une place.")
+          : t("All seats are taken. Remove someone to free one.", "Toutes les places sont prises. Retire quelqu'un pour en libérer une.")}</p>
+      )}
+      {error && <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-amber-300"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{error}</p>}
+      <p className="mt-5 text-xs leading-5 text-white/40">{t(`Each teammate opens movento.dev, clicks "Already purchased? Unlock your access" and enters their own email. No password, nothing to install. A seat can be given to someone else ${team.invitesLeft} more time(s).`, `Chaque membre ouvre movento.dev, clique sur « Déjà client ? Déverrouille ton accès » et entre son propre email. Pas de mot de passe, rien à installer. Une place peut encore être attribuée ${team.invitesLeft} fois.`)}</p>
+    </div>
+  );
+}
+
+function TeamPage() {
+  return (
+    <AddonPage title={t("Agency licence", "Licence agence")} lede={t("Your access for 5 people: you and 4 teammates.", "Ton accès pour 5 personnes : toi et 4 membres de ton équipe.")}>
+      {(email) => <TeamContent email={email} />}
+    </AddonPage>
+  );
+}
+
 function EbookCard({ className = "" }) {
   return (
     <div className={`rounded-[28px] border border-amber-400/25 bg-amber-400/[0.06] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7 ${className}`}>
@@ -4072,6 +4377,8 @@ function SuccessPage() {
   // Support follows SUPPORT_KINDS, and an unidentified plan does NOT get the
   // contact block — promising support we did not sell is the worse mistake here.
   const [supportEarned, setSupportEarned] = useState(false);
+  // The add-ons paid with the access (freelance kit, agency licence).
+  const [addons, setAddons] = useState([]);
 
   // What Whop says happened. The embedded checkout sends every finished
   // checkout here, not only the paid ones: an off-site step that was declined
@@ -4175,6 +4482,7 @@ function SuccessPage() {
       if (data.hasAccess) {
         window.localStorage.setItem("movento_access_email", normalized);
         forgetStartedPayment();
+        setAddons(Array.isArray(data.addons) ? data.addons : []);
         setStatus({ loading: false, ok: true, error: "" });
         try {
           const sub = await fetch(`${API_BASE_URL}/api/subscription-status`, {
@@ -4272,6 +4580,8 @@ function SuccessPage() {
             </>
           )}
         </div>
+
+        {status.ok && <AddonCards addons={addons} email={clean(email)} className="mt-4" />}
 
         {/* Bonus ebook — on the plans EBOOK_KINDS grants it to */}
         {status.ok && ebookEarned && <EbookCard className="mt-4" />}
@@ -4917,6 +5227,7 @@ function CgvPage() {
         <h2>3. Offres et prix</h2>
         <ul>
           <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement. C'est la seule offre en vente.</li>
+          <li><strong className="text-white/75">Options, au moment de la commande</strong> : le Kit freelance ({eur(ADDONS[0].price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) et la Licence agence ({eur(ADDONS[1].price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email). Elles sont payées une seule fois, avec l'accès à vie, et suivent son sort en cas de remboursement.</li>
           <li>Les abonnements (mensuel, 3 mois, annuel) et les packs de prompts ne sont plus proposés à l'achat. Ceux déjà souscrits restent valables aux conditions de leur souscription : les abonnements se renouvellent jusqu'à résiliation, et les prompts d'un pack restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
@@ -6432,6 +6743,8 @@ function AdminLeadsPage() {
               )}
               {!lookup.data.whop.configured && <p className="text-white/40">Clé API Whop non configurée — vérification limitée à Redis.</p>}
               {lookup.data.whop.error && <p className="text-red-300/80">Whop: {lookup.data.whop.error}</p>}
+              {lookup.data.addons?.length > 0 && <p className="text-white/70">Options : {lookup.data.addons.map((id) => ADDONS.find((a) => a.id === id)?.name || id).join(" · ")}</p>}
+              {lookup.data.teamOwner && <p className="text-white/70">Membre de l'équipe de {lookup.data.teamOwner} (Licence agence).</p>}
               {(lookup.data.packCredits > 0 || lookup.data.ownedPrompts.length > 0) && (
                 <div className="text-white/55">
                   <p>Pack: {lookup.data.packCredits} crédit(s) restant(s), {lookup.data.ownedPrompts.length} prompt(s) débloqué(s).</p>
@@ -6858,6 +7171,7 @@ function SubscriptionPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState({ loading: false, error: "", data: null, checked: false });
   const [cancel, setCancel] = useState({ confirming: false, loading: false, done: false, error: "", renewalDate: null });
+  const [addons, setAddons] = useState([]);
 
   const clean = (v) => String(v).replace(/[\s\u00AD\u200B-\u200D\u2060\uFEFF]/g, "").toLowerCase();
 
@@ -6892,6 +7206,11 @@ function SubscriptionPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Error");
       setStatus({ loading: false, error: "", data, checked: true });
+      // The add-ons bought with the access, so their pages stay reachable.
+      fetch(`${API_BASE_URL}/api/addons`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: normalized, action: "status" }) })
+        .then((r) => r.json())
+        .then((d) => setAddons(Array.isArray(d.addons) ? d.addons : []))
+        .catch(() => setAddons([]));
     } catch (error) {
       setStatus({ loading: false, error: t("Unable to retrieve your subscription. Please try again.", "Impossible de récupérer votre abonnement. Réessayez."), data: null, checked: true });
     }
@@ -7009,6 +7328,7 @@ function SubscriptionPage() {
 
         {/* The ebook and the support link live here too, so they survive
             closing the success page. */}
+        {status.checked && data && data.found && <AddonCards addons={addons} email={clean(email)} className="mt-4" />}
         {status.checked && data && data.found && earnedSupport(data) && <SupportCard className="mt-4" />}
         {status.checked && data && data.found && earnedEbook(data) && <EbookCard className="mt-4" />}
       </section>

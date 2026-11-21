@@ -1,4 +1,4 @@
-import { customerAccessLevel, methodNotAllowed, normalizeEmail, redisGetOwnedPrompts, redisGetPromptCredits, redisIsBlocked, syncPackCreditsFromWhop, TRIAL_PROMPT_FILES } from "./_shared.js";
+import { customerAccessLevel, redisGetAddons, methodNotAllowed, normalizeEmail, redisGetOwnedPrompts, redisGetPromptCredits, redisIsBlocked, syncPackCreditsFromWhop, TRIAL_PROMPT_FILES } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -19,7 +19,9 @@ export default async function handler(req, res) {
     // Someone with full access owns everything, so the per-prompt lists are only
     // worth reading for everyone else. `credits` lets the gallery offer the
     // claim to a buyer who paid but has not picked their prompt yet.
-    if (level === "full") return res.json({ hasAccess: true, trial: false, owned: [], credits: 0 });
+    // `addons` lists what was bought with the access (the freelance kit, the
+    // agency licence), so the page can link to them.
+    if (level === "full") return res.json({ hasAccess: true, trial: false, owned: [], credits: 0, addons: await redisGetAddons(email) });
 
     const onTrial = level === "trial";
     let [owned, credits] = await Promise.all([redisGetOwnedPrompts(email), redisGetPromptCredits(email)]);

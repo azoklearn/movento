@@ -537,6 +537,55 @@ export const MOLLIE_PRICES = {
   pack10: Number(process.env.MOLLIE_PACK10_PRICE || 149).toFixed(2),
 };
 export const MOLLIE_PACK_SIZES = { pack2: 2, pack5: 5, pack10: 10 };
+
+// Add-ons ticked on the lifetime card, charged in the same payment:
+//   kit   the freelance kit (quote, contract, outreach messages, price grid),
+//         read on /kit (content in api/_kit.js)
+//   team  the agency licence: the buyer plus TEAM_SEATS teammates share the
+//         catalogue, managed on /team
+// Prices come from here, never from the request. Keep in step with ADDONS in
+// src/App.jsx.
+export const MOLLIE_ADDONS = {
+  kit: { price: Number(process.env.MOLLIE_ADDON_KIT_PRICE || 19).toFixed(2), label: "Kit freelance" },
+  team: { price: Number(process.env.MOLLIE_ADDON_TEAM_PRICE || 29).toFixed(2), label: "Licence agence" },
+};
+// Teammates besides the buyer: 5 people in all. A seat can be given to
+// someone else, but only TEAM_MAX_INVITES invitations are allowed in all, so
+// a licence cannot be passed around without end.
+export const TEAM_SEATS = 4;
+export const TEAM_MAX_INVITES = 12;
+export const parseAddons = (value) => [...new Set((Array.isArray(value) ? value : String(value || "").split(",")).map((a) => String(a).trim()).filter((a) => Object.hasOwn(MOLLIE_ADDONS, a)))];
+
+export async function redisGrantAddons(email, addons) {
+  const list = parseAddons(addons);
+  if (list.length) await Redis.fromEnv().sadd(`addons:${email}`, ...list);
+}
+export async function redisGetAddons(email) {
+  try {
+    return parseAddons(await Redis.fromEnv().smembers(`addons:${email}`));
+  } catch {
+    return [];
+  }
+}
+
+// The team a teammate was invited to: its owner's email, if that owner still
+// holds the licence, still lists this address and still has the catalogue.
+export async function teamOwnerFor(email) {
+  try {
+    const redis = Redis.fromEnv();
+    const owner = normalizeEmail(await redis.get(`teamof:${email}`));
+    if (!owner || owner === email) return null;
+    if (!(await redis.sismember(`team:${owner}`, email))) return null;
+    if (!(await redisGetAddons(owner)).includes("team")) return null;
+    if (await redisIsBlocked(owner)) return null;
+    const record = await redisGetAccessRecord(owner);
+    if (!record || (record.accessUntil && Date.now() > Date.parse(record.accessUntil))) return null;
+    return recordAccessLevel(record) === "full" ? owner : null;
+  } catch (error) {
+    console.error("Team lookup failed:", error);
+    return null;
+  }
+}
 // A struck price in Mollie's checkout for lifetime, and the name of the offer.
 // Mollie's page only shows the payment's description and amount, so the struck
 // figure is written into the description with combining long strokes (U+0336).
@@ -1345,6 +1394,9 @@ export async function customerAccessLevel(email) {
   // payment. Past it, the record is spent and the sources below decide.
   const expired = record?.accessUntil && Date.now() > Date.parse(record.accessUntil);
   if (record && !expired) return recordAccessLevel(record);
+
+  // A teammate on someone's agency licence shares that buyer's catalogue.
+  if (await teamOwnerFor(normalizedEmail)) return "full";
 
   // Paddle, for a buyer whose notification has not landed (yet, or at all).
   const paddle = paddleGrantAllowed(normalizedEmail) ? await findPaddleSubscriber(normalizedEmail) : null;

@@ -23,6 +23,8 @@ import {
   mollieApi,
   mollieSubscriptionPlans,
   normalizeEmail,
+  parseAddons,
+  redisGrantAddons,
   redisAddPromptCredit,
   redisGetAccessRecord,
   redisSetAccess,
@@ -150,7 +152,11 @@ export async function grantPaid(payment, email) {
 
   if (plan === "lifetime") {
     await redisSetAccess(email, mollieAccessRecord({ kind: "lifetime", paymentId: payment.id, customerId: payment.customerId }));
-    return { plan, renewal };
+    // The add-ons paid for in the same payment (a set: granting twice is the
+    // same as once).
+    const addons = parseAddons(payment.metadata?.addons);
+    await redisGrantAddons(email, addons);
+    return { plan, renewal, addons };
   }
   const subscriptionId = payment.subscriptionId || (payment.sequenceType === "first" ? await ensureSubscription(payment, email) : previous?.subscriptionId || null);
   // A lifetime member keeps the lifetime; the month is still set up and paid.

@@ -7,6 +7,8 @@ import {
   normalizeEmail,
   redisClearAccess,
   redisGetAccessRecord,
+  redisGetAddons,
+  teamOwnerFor,
   redisGetOwnedPrompts,
   redisGetPromptCredits,
   redisIsBlocked,
@@ -19,12 +21,14 @@ import {
 const GRANT_PLANS = new Set(["m1", "m3", "m12", "lifetime"]);
 
 async function buildLookup(email) {
-  const [redisRecord, owned, credits, hasAccess, blocked] = await Promise.all([
+  const [redisRecord, owned, credits, hasAccess, blocked, addons, teamOwner] = await Promise.all([
     redisGetAccessRecord(email),
     redisGetOwnedPrompts(email),
     redisGetPromptCredits(email),
     customerHasWhopAccess(email),
     redisIsBlocked(email),
+    redisGetAddons(email),
+    teamOwnerFor(email),
   ]);
 
   let membership = null;
@@ -78,6 +82,10 @@ async function buildLookup(email) {
     },
     packCredits: credits,
     ownedPrompts: owned,
+    // Bought with the access (kit, team), and whose agency licence this
+    // address is on, if any.
+    addons,
+    teamOwner,
     whop: {
       configured: whopConfigured(),
       error: whopError,

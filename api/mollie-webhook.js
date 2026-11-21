@@ -23,6 +23,8 @@
 import { emailForPayment, ensureSubscription, grantPaid, planOfPayment, wasRefunded } from "./_mollie.js";
 import {
   formatMinorAmount,
+  MOLLIE_ADDONS,
+  parseAddons,
   MOLLIE_PLAN_LABELS,
   mollieApi,
   mollieTestMode,
@@ -72,7 +74,7 @@ export default async function handler(req, res) {
   if (!MOLLIE_PLAN_LABELS[plan]) return done(200, "ignoré : pas une offre Movento");
   const email = await emailForPayment(payment);
   const test = mollieTestMode() || payment.mode === "test" ? "🧪 TEST · " : "";
-  const label = `${MOLLIE_PLAN_LABELS[plan]}${payment.metadata?.offer ? " (offre de relance)" : ""}`;
+  const label = `${MOLLIE_PLAN_LABELS[plan]}${payment.metadata?.offer ? " (offre de relance)" : ""}${parseAddons(payment.metadata?.addons).map((a) => ` + ${MOLLIE_ADDONS[a].label}`).join("")}`;
   const who = email || "email pas encore donné par le client";
 
   try {
@@ -88,6 +90,8 @@ export default async function handler(req, res) {
           await mollieApi(`/customers/${encodeURIComponent(previous.customerId)}/subscriptions/${encodeURIComponent(previous.subscriptionId)}`, { method: "DELETE" }).catch((e) => console.error("Mollie subscription cancel after refund failed:", e));
         }
         await redisClearAccess(email);
+        // The add-ons paid in the same payment go with it.
+        if (parseAddons(payment.metadata?.addons).length) await Redis.fromEnv().del(`addons:${email}`).catch(() => {});
       }
       const sent = await notifyTelegramOnce(`mollie:${payment.id}:${chargedBack ? "chargeback" : "refund"}`, `${test}${chargedBack ? "⚠️ Litige bancaire (chargeback)" : "↩️ Remboursement"} Mollie — ${label}\n${money(chargedBack ? payment.amountChargedBack : payment.amountRefunded)}\n${who}`);
       return done(200, ours ? "remboursé : accès retiré" : "remboursé : aucun accès lié", sent ? "envoyé" : "non envoyé");
