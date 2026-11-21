@@ -964,7 +964,7 @@ const discountOf = (id) => {
 // On sale with every processor. Off sale, lifetime members
 // keep their access, their ebook and their support.
 const LIFETIME_RETIRED = false;
-const PRICE_LIFETIME = 29.99;
+const PRICE_LIFETIME = 53.4;
 // A year of the subscription — a real figure a visitor can check against the
 // card beside it, not a reference price invented to print a bigger reduction.
 // Rounded because binary floating point does not keep cents: 29.9 * 12 came
@@ -2109,7 +2109,7 @@ const ADDONS = [
 const ADDONS_ON_SALE = CHECKOUT_PROVIDER_PUBLIC === "mollie";
 const addonsTotal = (ids) => ADDONS.filter((a) => (ids || []).includes(a.id)).reduce((sum, a) => sum + a.price, 0);
 
-// Off sale: with lifetime at 29,99 € a pack of prompts costs more than the
+// Off sale: with lifetime at 53,40 € a pack of prompts costs about as much as the
 // whole catalogue. Past buyers keep their prompts and their unused credits.
 // Mirrored by RETIRED_PLANS in api/_shared.js.
 const PROMPT_PACKS_ON_SALE = false;
