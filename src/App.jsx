@@ -4944,25 +4944,126 @@ const NAV_SECONDARY = () => [
   { href: "/account", label: t("My account", "Mon compte") },
 ];
 
-// One of the small glass cards floating beside the hero's title, tilted, each
-// drifting slowly on its own beat. Decoration: hidden from readers and from
-// phones, where the title has the width to itself. Each one says "exemple":
-// they illustrate the use, they are not live figures.
-function HeroChip({ className, rotate, delay, icon, label, value, valueClass = "text-white", caption }) {
+// The marks of the tools the prompts are written for (24 × 24, one path
+// each): Lovable, Cursor, Claude, v0 and Shopify are their own marks, from the
+// open icon sets (Simple Icons, CC0; LobeHub Icons, MIT); Bolt carries the
+// lightning of StackBlitz, its publisher, the open sets having no Bolt mark.
+// Shown to say which tools a prompt works with, nothing more.
+const TOOL_LOGOS = [
+  { name: "Lovable", d: "M7.082 0c3.91 0 7.081 3.179 7.081 7.1v2.7h2.357c3.91 0 7.082 3.178 7.082 7.1 0 3.923-3.17 7.1-7.082 7.1H0V7.1C0 3.18 3.17 0 7.082 0z" },
+  { name: "Cursor", d: "M11.503.131 1.891 5.678a.84.84 0 0 0-.42.726v11.188c0 .3.162.575.42.724l9.609 5.55a1 1 0 0 0 .998 0l9.61-5.55a.84.84 0 0 0 .42-.724V6.404a.84.84 0 0 0-.42-.726L12.497.131a1.01 1.01 0 0 0-.996 0M2.657 6.338h18.55c.263 0 .43.287.297.515L12.23 22.918c-.062.107-.229.064-.229-.06V12.335a.59.59 0 0 0-.295-.51l-9.11-5.257c-.109-.063-.064-.23.061-.23" },
+  { name: "Claude", d: "m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z" },
+  { name: "v0", d: "M14.066 6.028v2.22h5.729q.075-.001.148.005l-5.853 5.752a2 2 0 0 1-.024-.309V8.247h-2.353v5.45c0 2.322 1.935 4.222 4.258 4.222h5.675v-2.22h-5.675q-.03 0-.059-.003l5.729-5.629q.006.082.006.166v5.465H24v-5.465a4.204 4.204 0 0 0-4.205-4.205zM0 8.245l8.28 9.266c.839.94 2.396.346 2.396-.914V8.245H8.19v5.44l-4.86-5.44Z" },
+  { name: "Bolt", d: "M10.797 14.182H3.635L16.728 0l-3.525 9.818h7.162L7.272 24l3.524-9.818Z" },
+  { name: "Shopify", d: "M15.337 23.979l7.216-1.561s-2.604-17.613-2.625-17.73c-.018-.116-.114-.192-.211-.192s-1.929-.136-1.929-.136-1.275-1.274-1.439-1.411c-.045-.037-.075-.057-.121-.074l-.914 21.104h.023zM11.71 11.305s-.81-.424-1.774-.424c-1.447 0-1.504.906-1.504 1.141 0 1.232 3.24 1.715 3.24 4.629 0 2.295-1.44 3.76-3.406 3.76-2.354 0-3.54-1.465-3.54-1.465l.646-2.086s1.245 1.066 2.28 1.066c.675 0 .975-.545.975-.932 0-1.619-2.654-1.694-2.654-4.359-.034-2.237 1.571-4.416 4.827-4.416 1.257 0 1.875.361 1.875.361l-.945 2.715-.02.01zM11.17.83c.136 0 .271.038.405.135-.984.465-2.064 1.639-2.508 3.992-.656.213-1.293.405-1.889.578C7.697 3.75 8.951.84 11.17.84V.83zm1.235 2.949v.135c-.754.232-1.583.484-2.394.736.466-1.777 1.333-2.645 2.085-2.971.193.501.309 1.176.309 2.1zm.539-2.234c.694.074 1.141.867 1.429 1.755-.349.114-.735.231-1.158.366v-.252c0-.752-.096-1.371-.271-1.871v.002zm2.992 1.289c-.02 0-.06.021-.078.021s-.289.075-.714.21c-.423-1.233-1.176-2.37-2.508-2.37h-.115C12.135.209 11.669 0 11.265 0 8.159 0 6.675 3.877 6.21 5.846c-1.194.365-2.063.636-2.16.674-.675.213-.694.232-.772.87-.075.462-1.83 14.063-1.83 14.063L15.009 24l.927-21.166z" },
+];
+
+function ToolLogo({ tool, className = "" }) {
   return (
-    <div aria-hidden="true" className={`pointer-events-none absolute hidden xl:block ${className}`} style={{ transform: `rotate(${rotate}deg)` }}>
-      <div className="mv-float flex items-center gap-3.5 rounded-[20px] bg-[linear-gradient(140deg,rgba(46,58,92,0.5),rgba(12,16,28,0.78))] py-3 pl-3.5 pr-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.11),inset_0_1px_0_rgba(255,255,255,0.14),0_34px_70px_-24px_rgba(50,100,255,0.4)] backdrop-blur-md" style={{ animationDelay: `${delay}s` }}>
-        <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-white text-black shadow-[0_8px_18px_-8px_rgba(0,0,0,0.8)]"><Icon name={icon} className="h-5 w-5" /></span>
-        <span className="block text-left">
-          <span className="flex items-baseline justify-between gap-8 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">
-            <span>{label}</span>
-            <span className="font-medium normal-case tracking-normal text-white/35">{t("now", "maintenant")}</span>
-          </span>
-          <span className={`mt-0.5 block text-[22px] font-semibold leading-tight tracking-[-0.03em] ${valueClass}`}>{value}</span>
-          <span className="block text-[11px] text-white/45">{caption}</span>
-        </span>
+    <span className={`inline-flex flex-none items-center gap-2.5 ${className}`}>
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-[22px] w-[22px] flex-none" fill="currentColor" fillRule="evenodd"><path d={tool.d} /></svg>
+      <span className="text-[19px] font-semibold tracking-[-0.03em]">{tool.name}</span>
+    </span>
+  );
+}
+
+// "Works with": the tools' marks passing in a slow, endless row, fading out at
+// both edges. The list is rendered twice so the loop has no seam; the second
+// copy is hidden from readers. Still, and centred, for reduced motion.
+function ToolsMarquee() {
+  return (
+    <div className="mt-14 flex w-full flex-col items-center gap-5">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">{t("Works with", "Fonctionne avec")}</p>
+      <div className="mv-marquee-mask relative w-full max-w-3xl overflow-hidden">
+        <div className="mv-marquee flex w-max items-center">
+          {[0, 1].map((copy) => (
+            <ul key={copy} aria-hidden={copy === 1 ? "true" : undefined} className="flex flex-none items-center">
+              {TOOL_LOGOS.map((tool) => (
+                <li key={tool.name} className="px-7 text-white/45 transition-colors duration-300 hover:text-white sm:px-9"><ToolLogo tool={tool} /></li>
+              ))}
+            </ul>
+          ))}
+        </div>
       </div>
     </div>
+  );
+}
+
+// The glass tiles floating beside the hero's title. Each is tilted in space,
+// drifts on its own beat and leans a little with the pointer (the hero sets
+// --mx / --my, each tile moves by its own depth). A lit edge, a soft coloured
+// glow under it, a slow shine across it. Decoration: hidden from readers and
+// from narrower screens, where the title has the width to itself. Every one
+// says "exemple": they illustrate the use, they are not live figures.
+function HeroTile({ className, tilt, depth = 14, delay = 0, glow = "rgba(70,110,255,0.42)", children }) {
+  return (
+    <div aria-hidden="true" className={`pointer-events-none absolute hidden xl:block ${className}`} style={{ transform: `translate3d(calc(var(--mx, 0) * ${depth}px), calc(var(--my, 0) * ${depth}px), 0)`, transition: "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)" }}>
+      <div style={{ transform: `perspective(900px) ${tilt}` }}>
+        <div className="mv-float relative" style={{ animationDelay: `${delay}s` }}>
+          <div className="absolute inset-x-6 -bottom-6 h-10 rounded-full blur-2xl" style={{ background: glow }} />
+          <div className="relative overflow-hidden rounded-[22px] bg-[linear-gradient(150deg,rgba(58,70,108,0.62),rgba(13,16,28,0.86)_58%)] p-[1px] shadow-[0_30px_60px_-28px_rgba(0,0,0,0.9)]">
+            {/* the lit edge */}
+            <div className="absolute inset-0 rounded-[22px] bg-[linear-gradient(150deg,rgba(255,255,255,0.38),rgba(255,255,255,0.04)_38%,rgba(255,255,255,0.02)_62%,rgba(140,160,255,0.22))]" />
+            <div className="relative overflow-hidden rounded-[21px] bg-[linear-gradient(150deg,#1b2238,#0b0d16_62%)] px-4 py-3.5 backdrop-blur-md">
+              <span className="mv-shine" />
+              {children}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+const TILE_LABEL = "flex items-center justify-between gap-7 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55";
+const tileNow = () => <span className="inline-flex items-center gap-1.5 font-medium normal-case tracking-normal text-white/35"><span className="h-1 w-1 rounded-full bg-emerald-400" />{t("now", "maintenant")}</span>;
+
+function HeroTiles() {
+  // A real preview from the catalogue in the first tile, playing.
+  const sample = prompts.find((p) => p.file === "Keel_Chrome_Pear_Scroll_Film.md" && isVideoPreview(p.preview));
+  return (
+    <>
+      <HeroTile className="left-[-5%] top-[50%]" tilt="rotateX(8deg) rotateY(16deg) rotateZ(-6deg)" depth={18} delay={0}>
+        <div className="relative flex items-center gap-3.5">
+          <span className={`relative h-[52px] w-[74px] flex-none overflow-hidden rounded-[10px] bg-gradient-to-br ${sample?.gradient || "from-[#3d69c4] to-[#07080c]"} shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18)]`}>
+            {sample && <video src={sample.preview} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture className="absolute inset-0 h-full w-full object-cover" />}
+          </span>
+          <span className="block text-left">
+            <span className={TILE_LABEL}><span>{t("Prompt copied", "Prompt copié")}</span>{tileNow()}</span>
+            <span className="mt-1 block text-[17px] font-semibold leading-tight tracking-[-0.03em] text-white">Keel — Scroll Film</span>
+            <span className="mt-1 flex items-center gap-1.5 text-[11px] text-white/45">
+              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="currentColor" fillRule="evenodd"><path d={TOOL_LOGOS[0].d} /></svg>
+              {t("pasted into Lovable · example", "collé dans Lovable · exemple")}
+            </span>
+          </span>
+        </div>
+      </HeroTile>
+
+      <HeroTile className="right-[-6%] top-[13%]" tilt="rotateX(6deg) rotateY(-18deg) rotateZ(5deg)" depth={12} delay={1.7} glow="rgba(194,91,245,0.4)">
+        <div className="relative flex items-center gap-3.5">
+          <span className="grid h-11 w-11 flex-none place-items-center rounded-[13px] bg-[linear-gradient(140deg,#FF6A7D,#C25BF5_55%,#7C8CFF)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_10px_20px_-10px_rgba(194,91,245,0.9)]"><Icon name="zap" className="h-5 w-5" /></span>
+          <span className="block min-w-[150px] text-left">
+            <span className={TILE_LABEL}><span>{t("Site live", "Site en ligne")}</span>{tileNow()}</span>
+            <span className="mt-1 block text-[19px] font-semibold leading-tight tracking-[-0.03em] text-white">{t("in an afternoon", "en un après-midi")}</span>
+            <span className="mt-2 block h-1 overflow-hidden rounded-full bg-white/10"><span className="block h-full w-full rounded-full bg-[linear-gradient(90deg,#FF6A7D,#C25BF5,#7C8CFF)]" /></span>
+            <span className="mt-1.5 block text-[11px] text-white/45">{t("from prompt to site · example", "du prompt au site · exemple")}</span>
+          </span>
+        </div>
+      </HeroTile>
+
+      <HeroTile className="right-[-2%] top-[62%]" tilt="rotateX(10deg) rotateY(-14deg) rotateZ(6deg)" depth={22} delay={3.2} glow="rgba(52,211,153,0.34)">
+        <div className="relative flex items-center gap-3.5">
+          <span className="grid h-11 w-11 flex-none place-items-center rounded-[13px] bg-[linear-gradient(140deg,#6EE7B7,#10B981)] text-[#04150d] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_10px_20px_-10px_rgba(16,185,129,0.9)]"><Icon name="check" className="h-5 w-5" /></span>
+          <span className="block text-left">
+            <span className={TILE_LABEL}><span>{t("Sale", "Vente")}</span>{tileNow()}</span>
+            <span className="mt-1 flex items-center gap-2 text-[24px] font-semibold leading-none tracking-[-0.035em] text-emerald-300">
+              +900 €
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-400/15 text-emerald-300"><Icon name="arrow" className="h-3 w-3 -rotate-45" /></span>
+            </span>
+            <span className="mt-1.5 block text-[11px] text-white/45">{t("site sold · example", "site vendu · exemple")}</span>
+          </span>
+        </div>
+      </HeroTile>
+    </>
   );
 }
 
@@ -4971,11 +5072,26 @@ function HeroChip({ className, rotate, delay, icon, label, value, valueClass = "
 // a single white button. The Black Friday price sits under the button, against
 // PRICE_LIFETIME_REFERENCE, the price really charged before this reduction.
 function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
+  // The pointer's place over the page, from -1 to 1 each way, handed to the
+  // tiles as --mx / --my. Written straight to the element: no render per move.
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !window.matchMedia("(hover: hover) and (pointer: fine)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    let frame = 0;
+    const onMove = (e) => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        el.style.setProperty("--mx", ((e.clientX / window.innerWidth) * 2 - 1).toFixed(3));
+        el.style.setProperty("--my", ((e.clientY / window.innerHeight) * 2 - 1).toFixed(3));
+      });
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => { window.removeEventListener("pointermove", onMove); cancelAnimationFrame(frame); };
+  }, []);
   return (
-    <header className="relative isolate z-10 mx-auto flex max-w-6xl flex-col items-center px-5 pb-14 pt-14 text-center sm:pt-20">
-      <HeroChip className="left-[-3%] top-[52%]" rotate={-7} delay={0} icon="copy" label={t("Prompt copied", "Prompt copié")} value="KV Freight" caption={t("pasted into Lovable · example", "collé dans Lovable · exemple")} />
-      <HeroChip className="right-[-4%] top-[16%]" rotate={5} delay={1.6} icon="zap" label={t("Site live", "Site en ligne")} value={t("in an afternoon", "en un après-midi")} caption={t("from prompt to site · example", "du prompt au site · exemple")} />
-      <HeroChip className="right-[-1%] top-[60%]" rotate={6} delay={3.1} icon="check" label={t("Sale", "Vente")} value="+900 €" valueClass="text-emerald-300" caption={t("site sold · example", "site vendu · exemple")} />
+    <header ref={ref} className="relative isolate z-10 mx-auto flex max-w-6xl flex-col items-center px-5 pb-14 pt-14 text-center sm:pt-20">
+      <HeroTiles />
 
       <motion.a href="/pricing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-3 pr-3.5 text-[12.5px] font-medium text-white/80 transition hover:border-white/25 hover:text-white">
         <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" /></span>
@@ -5020,17 +5136,34 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
         )}
       </motion.div>
 
-      {/* The tools the prompts are written for, set in type like a row of
-          logos: names only, no marks. */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.4 }} className="mt-14 flex flex-col items-center gap-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">{t("Works with", "Fonctionne avec")}</p>
-        <ul className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-white/45 sm:gap-x-11">
-          {[["Lovable", "text-[19px] font-bold tracking-[-0.03em]"], ["Cursor", "text-[18px] font-semibold tracking-[-0.01em]"], ["Claude", "font-serif text-[20px] italic"], ["v0", "font-mono text-[19px] font-bold"], ["Bolt", "text-[19px] font-extrabold tracking-[-0.04em]"], ["Shopify", "text-[18px] font-semibold"]].map(([name, cls]) => (
-            <li key={name} className={`${cls} transition hover:text-white/80`}>{name}</li>
-          ))}
-        </ul>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.4 }} className="w-full">
+        <ToolsMarquee />
       </motion.div>
     </header>
+  );
+}
+
+const STEP_PREVIEW_FILES = ["Vaultline_Crystal_Cube_Scroll.md", "Keel_Chrome_Pear_Scroll_Film.md", "Lumen_Co_Podcast_Studio.md", "Folio_Room_Book_Orbit.md"];
+function StepPreviews() {
+  const ref = useRef(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setNear(true); return undefined; }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setNear(true); io.disconnect(); } }, { rootMargin: "300px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const items = STEP_PREVIEW_FILES.map((file) => prompts.find((p) => p.file === file)).filter((p) => p && isVideoPreview(p.preview));
+  return (
+    <div ref={ref} className="grid h-full grid-cols-2 gap-2 p-4">
+      {items.map((item, i) => (
+        <span key={item.file} className={`relative overflow-hidden rounded-lg bg-gradient-to-br ${item.gradient} ${i === 1 ? "ring-2 ring-white shadow-[0_10px_24px_-8px_rgba(124,140,255,0.8)]" : "opacity-80"}`}>
+          {near && <video src={item.preview} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture className="pointer-events-none absolute inset-0 h-full w-full object-cover" onLoadedData={(e) => { e.currentTarget.muted = true; e.currentTarget.play?.().catch(() => {}); }} />}
+          {i === 1 && <span className="absolute bottom-1.5 right-1.5 grid h-5 w-5 place-items-center rounded-full bg-white text-black shadow-lg"><Icon name="check" className="h-3 w-3" /></span>}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -5042,15 +5175,9 @@ function HowItWorks() {
     {
       title: t("Pick a design.", "Choisis un design."),
       text: t(`${availablePrompts.length} landing pages, heroes and portfolios, each with its preview playing.`, `${availablePrompts.length} landing pages, heros et portfolios, chacun avec son aperçu animé.`),
-      art: (
-        <div className="grid h-full grid-cols-3 gap-2 p-5">
-          {["from-[#2a1b4d] to-[#ff5a8a]", "from-[#06281f] to-[#34d399]", "from-[#f1ece2] to-[#e8200f]", "from-[#0b1f3a] to-[#d4af37]", "from-[#1b1035] to-[#7C8CFF]", "from-[#151312] to-[#f6b521]"].map((g, i) => (
-            <span key={g} className={`relative rounded-lg bg-gradient-to-br ${g} ${i === 4 ? "ring-2 ring-white shadow-[0_10px_24px_-8px_rgba(124,140,255,0.8)]" : "opacity-70"}`}>
-              {i === 4 && <span className="absolute -bottom-2 -right-2 grid h-6 w-6 place-items-center rounded-full bg-white text-black shadow-lg"><Icon name="check" className="h-3.5 w-3.5" /></span>}
-            </span>
-          ))}
-        </div>
-      ),
+      // Real previews from the catalogue, playing: the grid a visitor is
+      // about to scroll, in miniature. Mounted when the card nears the screen.
+      art: <StepPreviews />,
     },
     {
       title: t("Copy the prompt.", "Copie le prompt."),

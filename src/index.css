@@ -23,8 +23,41 @@
   50% { transform: translateY(-9px); }
 }
 .mv-float { animation: mv-float 7s ease-in-out infinite; }
+
+/* A band of light crossing a hero tile now and then. */
+@keyframes mv-shine {
+  0%, 62% { transform: translateX(-140%) skewX(-18deg); }
+  100% { transform: translateX(340%) skewX(-18deg); }
+}
+.mv-shine {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.09), transparent);
+  animation: mv-shine 7.5s ease-in-out infinite;
+}
+
+/* The "works with" row: two copies of the list side by side, moved left by
+   one copy's width, so the loop has no seam; the edges fade out. */
+@keyframes mv-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.mv-marquee { animation: mv-marquee 26s linear infinite; }
+.mv-marquee:hover { animation-play-state: paused; }
+.mv-marquee-mask {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .mv-float { animation: none; }
+  .mv-float, .mv-shine { animation: none; }
+  .mv-shine { display: none; }
+  .mv-marquee { animation: none; width: 100%; justify-content: center; flex-wrap: wrap; row-gap: 12px; }
+  .mv-marquee > ul[aria-hidden="true"] { display: none; }
+  .mv-marquee > ul { flex-wrap: wrap; justify-content: center; row-gap: 12px; }
+  .mv-marquee-mask { -webkit-mask-image: none; mask-image: none; }
 }
 
 /* Roboto Flex (variable: weight 100–1000, width 25–151 %), kept self-hosted
