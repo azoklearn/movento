@@ -20,12 +20,13 @@ import {
   redisUnblockEmail,
   whopConfigured,
 } from "./_shared.js";
+import { clearPassword, hasPassword } from "./_auth.js";
 
 // What an admin may grant: the two plans on sale, and lifetime for a gift.
 const GRANT_PLANS = new Set(["m1", "m3", "m12", "lifetime"]);
 
 async function buildLookup(email) {
-  const [redisRecord, owned, credits, hasAccess, blocked, addons, teamOwner] = await Promise.all([
+  const [redisRecord, owned, credits, hasAccess, blocked, addons, teamOwner, passwordSet] = await Promise.all([
     redisGetAccessRecord(email),
     redisGetOwnedPrompts(email),
     redisGetPromptCredits(email),
@@ -33,6 +34,7 @@ async function buildLookup(email) {
     redisIsBlocked(email),
     redisGetAddons(email),
     teamOwnerFor(email),
+    hasPassword(email).catch(() => false),
   ]);
 
   let membership = null;
@@ -67,6 +69,8 @@ async function buildLookup(email) {
     hasAccess,
     blocked,
     reason,
+    // Whether the address has set its password (api/_auth.js).
+    passwordSet,
     redis: redisRecord
       ? {
           plan: redisRecord.plan || null,
@@ -112,7 +116,7 @@ async function buildLookup(email) {
 // customerHasWhopAccess itself reads: the Redis grant written by the webhook,
 // then the live Whop membership.
 //
-// POST { email, action } — "revoke" (the default) or "grant".
+// POST { email, action } — "revoke" (the default), "grant" or "reset-password".
 //
 // revoke only ever deletes our own records (access:{email} and the options in
 // addons:{email}); it never touches Whop. A live Whop membership (a trial included) re-grants itself through the
@@ -157,7 +161,7 @@ export default async function handler(req, res) {
   }
 
   const action = req.method === "POST" ? String(req.body?.action || "revoke") : null;
-  if (action && action !== "revoke" && action !== "grant") {
+  if (action && action !== "revoke" && action !== "grant" && action !== "reset-password") {
     return res.status(400).json({ error: "Action invalide." });
   }
 
@@ -195,6 +199,11 @@ export default async function handler(req, res) {
       });
       await redisGrantAddons(email, grantAddons);
       console.log("Access granted via admin lookup:", email, grantPlan, grantAddons.join("+") || "no add-on");
+    } else if (action === "reset-password") {
+      // The password forgotten: taken off, every browser signed out. The
+      // address creates a new one at its next visit.
+      await clearPassword(email);
+      console.log("Password reset via admin lookup:", email);
     } else if (action === "revoke") {
       await redisClearAccess(email);
       await redisClearAddons(email);
@@ -204,6 +213,7 @@ export default async function handler(req, res) {
     const result = await buildLookup(email);
     if (action === "revoke") result.revoked = true;
     if (action === "grant") result.granted = true;
+    if (action === "reset-password") result.passwordReset = true;
     return res.json(result);
   } catch (error) {
     console.error("Admin lookup failed:", error);

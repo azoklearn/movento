@@ -9,6 +9,7 @@ import {
   redisGetPromptCredits,
   notifyTelegram,
 } from "./_shared.js";
+import { requireSession } from "./_auth.js";
 
 // Spends one single-prompt credit on the prompt the buyer picks.
 //
@@ -17,6 +18,15 @@ import {
 export default async function handler(req, res) {
   const email = normalizeEmail(req.method === "GET" ? req.query?.email : req.body?.email);
   if (!email) return res.status(400).json({ error: "Email requis.", errorEn: "Email required." });
+
+  // Purchases to read or to spend: for the browser signed in as that email.
+  try {
+    const [credits, owned] = await Promise.all([redisGetPromptCredits(email), redisGetOwnedPrompts(email)]);
+    if ((credits > 0 || owned.length > 0) && !(await requireSession(req, res, email))) return;
+  } catch (error) {
+    console.error("Credit lookup failed:", error);
+    return res.status(500).json({ error: "Impossible de lire tes achats.", errorEn: "Unable to read your purchases." });
+  }
 
   if (req.method === "GET") {
     try {

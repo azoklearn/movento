@@ -11,6 +11,36 @@ import BACKGROUND_CLIPS from "./backgrounds.json";
 const VIDEO_ASSETS = "https://raw.githubusercontent.com/aayushsoam/motionsites.ai/main/assets/videos/";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:4242" : "");
 const CHECKOUT_API_URL = import.meta.env.VITE_CHECKOUT_API_URL || `${API_BASE_URL}/api/create-checkout-session`;
+
+// Sign-in (api/_auth.js). An account is its email plus a password; the session
+// is an HttpOnly cookie the browser sends by itself. When an API answer says a
+// password is needed (the X-Movento-Auth header: "login", or "setup" for an
+// account that has none yet), the dialog opens — whichever page or component
+// made the call. Watching fetch in one place is what makes that true for the
+// forty-odd calls of this file without touching each of them.
+const AUTH_EVENT = "movento:auth";
+if (typeof window !== "undefined" && !window.__moventoAuthWatch) {
+  window.__moventoAuthWatch = true;
+  const plainFetch = window.fetch.bind(window);
+  window.fetch = async (...args) => {
+    const response = await plainFetch(...args);
+    try {
+      const mode = response.headers.get("x-movento-auth");
+      if (mode === "login" || mode === "setup") {
+        window.dispatchEvent(new CustomEvent(AUTH_EVENT, { detail: { mode, email: decodeURIComponent(response.headers.get("x-movento-auth-email") || "") } }));
+      }
+    } catch {
+      // An opaque or odd response: nothing to read, nothing to ask.
+    }
+    return response;
+  };
+}
+// Signs this browser out and forgets the email, so another one can be used.
+async function signOut() {
+  try { await fetch(`${API_BASE_URL}/api/auth`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "logout" }) }); } catch { /* the cookie expires by itself */ }
+  try { window.localStorage.removeItem("movento_access_email"); } catch { /* nothing stored */ }
+  window.location.assign("/");
+}
 // Deadline of the launch offer, shown as a live countdown in the bottom banner
 // on /pricing. It MUST be a real, fixed date — an ISO string with an offset,
 // e.g. "2026-08-31T23:59:59+02:00". Leave it null and the banner falls back to
@@ -3132,7 +3162,106 @@ if (typeof window !== "undefined" && !window.__MOVENTO_TESTS_RAN__) {
   runSelfTests();
 }
 
+// The sign-in dialog. Opened by an API answer (see AUTH_EVENT), for the email
+// that answer was about:
+//   setup  the account has no password yet: choose one (once)
+//   login  it has one: enter it
+// There is no way to close it and keep the access: either the password, or
+// signing out, which leaves the visitor's view of the site. After the
+// password, the page reloads so everything on it is fetched again, signed in.
+function AuthGate() {
+  const [ask, setAsk] = useState(null); // { mode, email }
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [show, setShow] = useState(false);
+  const [state, setState] = useState({ loading: false, error: "" });
+
+  useEffect(() => {
+    const onAsk = (event) => {
+      const { mode, email } = event.detail || {};
+      if (!email || window.location.pathname === "/admin") return;
+      // Several answers can ask at once: one dialog, for the first email.
+      setAsk((current) => (current && current.email !== email ? current : { mode, email }));
+    };
+    window.addEventListener(AUTH_EVENT, onAsk);
+    return () => window.removeEventListener(AUTH_EVENT, onAsk);
+  }, []);
+  useEffect(() => {
+    if (!ask) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [Boolean(ask)]);
+
+  if (!ask) return null;
+  const setup = ask.mode === "setup";
+  const submit = async (e) => {
+    e.preventDefault();
+    if (state.loading) return;
+    if (setup && password.length < 8) { setState({ loading: false, error: t("At least 8 characters.", "Au moins 8 caractères.") }); return; }
+    if (setup && password !== confirm) { setState({ loading: false, error: t("The two passwords are not the same.", "Les deux mots de passe ne sont pas identiques.") }); return; }
+    setState({ loading: true, error: "" });
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/auth`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: setup ? "setup" : "login", email: ask.email, password }) });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        try { window.localStorage.setItem("movento_access_email", ask.email); } catch { /* the session still holds */ }
+        track(setup ? "password_created" : "signed_in");
+        window.location.reload();
+        return;
+      }
+      // Someone set the password in the meantime: it is a sign-in now.
+      if (setup && d.auth === "login") { setAsk({ mode: "login", email: ask.email }); setPassword(""); setConfirm(""); }
+      setState({ loading: false, error: apiError(d, t("Not possible right now. Try again in a moment.", "Impossible pour le moment. Réessaie dans un instant.")) });
+    } catch {
+      setState({ loading: false, error: t("Not possible right now. Try again in a moment.", "Impossible pour le moment. Réessaie dans un instant.") });
+    }
+  };
+  const field = "w-full rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-3 text-sm text-[#EDE9E0] outline-none placeholder:text-white/30 focus:border-white/35";
+  return (
+    <div data-auth-gate={ask.mode} className="fixed inset-0 z-[90] flex items-end justify-center bg-black/80 backdrop-blur-md sm:items-center sm:p-6">
+      <form onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="auth-gate-title" className="w-full max-w-md rounded-t-[24px] border border-white/10 bg-[#121214] p-6 sm:rounded-[24px] sm:p-7">
+        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-[#F0566B] to-[#7C8CFF] text-white"><Icon name="lock" className="h-5 w-5" /></span>
+        <h2 id="auth-gate-title" className="mt-4 text-2xl font-bold tracking-tight text-[#EDE9E0]">{setup ? t("Create your password", "Crée ton mot de passe") : t("Enter your password", "Entre ton mot de passe")}</h2>
+        <p className="mt-2 text-sm leading-6 text-white/60">
+          {setup
+            ? t("Your Movento access is now protected by a password. Choose one for this email: you only do it once.", "Ton accès Movento est maintenant protégé par un mot de passe. Choisis-en un pour cet email : tu ne le fais qu'une fois.")
+            : t("To open the access of this email.", "Pour ouvrir l'accès de cet email.")}
+        </p>
+        <p className="mt-3 break-all rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-sm font-medium text-[#EDE9E0]">{ask.email}</p>
+        {/* For password managers: the account the password belongs to. */}
+        <input type="email" name="email" autoComplete="username" value={ask.email} readOnly hidden />
+        <div className="mt-4 space-y-3">
+          <div className="relative">
+            <input autoFocus type={show ? "text" : "password"} name="password" autoComplete={setup ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={setup ? t("Password (8 characters or more)", "Mot de passe (8 caractères ou plus)") : t("Password", "Mot de passe")} aria-label={t("Password", "Mot de passe")} className={`${field} pr-20`} />
+            <button type="button" onClick={() => setShow((v) => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white/55 transition hover:text-white">{show ? t("Hide", "Masquer") : t("Show", "Afficher")}</button>
+          </div>
+          {setup && <input type={show ? "text" : "password"} name="confirm" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={t("The same password again", "Le même mot de passe, encore")} aria-label={t("Confirm the password", "Confirme le mot de passe")} className={field} />}
+        </div>
+        {state.error && <p role="alert" className="mt-3 rounded-xl border border-red-400/25 bg-red-400/[0.07] px-3.5 py-2.5 text-sm text-red-200">{state.error}</p>}
+        <button type="submit" disabled={state.loading || !password} className="mt-5 flex w-full items-center justify-center rounded-full bg-[#EDE9E0] px-5 py-3.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50">
+          {state.loading ? "…" : setup ? t("Create my password", "Créer mon mot de passe") : t("Sign in", "Me connecter")}
+        </button>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <button type="button" onClick={signOut} className="font-semibold text-white/55 underline-offset-4 transition hover:text-white hover:underline">{t("Sign out / use another email", "Me déconnecter / utiliser un autre email")}</button>
+          {!setup && <a href={supportUrl()} className="font-semibold text-white/55 underline-offset-4 transition hover:text-white hover:underline">{t("Forgot it? Write to us", "Oublié ? Écris-nous")}</a>}
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// Every page, plus the sign-in dialog above them all.
 export default function MoventoSite() {
+  return (
+    <>
+      <MoventoPages />
+      <AuthGate />
+    </>
+  );
+}
+
+function MoventoPages() {
   // Seeded from ?q= so the nav's search, submitted from another page, lands on
   // the gallery already filtered.
   const [query, setQuery] = useState(() => (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("q") || "" : ""));
@@ -3329,6 +3458,17 @@ export default function MoventoSite() {
       const data = await response.json();
 
       if (!response.ok) throw new Error(apiError(data, t("Unable to verify access.", "Impossible de vérifier l'accès.")));
+
+      // The email is an account and this browser is not signed in as it: the
+      // sign-in dialog is opening (AuthGate), and the page reloads once the
+      // password is given. The email is kept, so the dialog comes back on the
+      // next visit until then.
+      if (data.auth === "login" || data.auth === "setup") {
+        setHasPremiumAccess(false);
+        setAccessEmail(normalizedEmail);
+        if (!options.silent) setAccessStatus({ loading: false, message: "", error: "" });
+        return false;
+      }
 
       setHasPremiumAccess(Boolean(data.hasAccess));
       setTrialActive(Boolean(data.trial));
@@ -4348,8 +4488,9 @@ function AccountContent({ email }) {
             ? <a href="/#prompts" className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Go to the gallery", "Aller à la galerie")}</a>
             : <a href="/pricing" className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the plans", "Voir les offres")}</a>}
           {data.hasAccess && !lifetime && !data.memberOf && <a href="/subscription" className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/35 hover:text-[#EDE9E0]">{t("Manage my subscription", "Gérer mon abonnement")}</a>}
-          <a href="/account?change=1" className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/35 hover:text-[#EDE9E0]">{t("Use another email", "Utiliser un autre email")}</a>
+          <button type="button" onClick={signOut} className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/35 hover:text-[#EDE9E0]">{t("Sign out", "Se déconnecter")}</button>
         </div>
+        {(data.hasAccess || held.length > 0) && <PasswordChange />}
       </div>
 
       {held.length > 0 && (
@@ -4382,6 +4523,52 @@ function AccountContent({ email }) {
           )}
           {pay.error && <p className="mt-3 text-sm text-red-300">{pay.error}</p>}
         </div>
+      )}
+    </div>
+  );
+}
+
+// The password changed from the account page: the current one, then the new
+// one. Every other browser signed in as this email is signed out.
+function PasswordChange() {
+  const [open, setOpen] = useState(false);
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [state, setState] = useState({ loading: false, error: "", done: false });
+  const submit = async (e) => {
+    e.preventDefault();
+    if (next.length < 8) { setState({ loading: false, error: t("At least 8 characters.", "Au moins 8 caractères."), done: false }); return; }
+    setState({ loading: true, error: "", done: false });
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/auth`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "change", current, password: next }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setState({ loading: false, error: apiError(d, t("Not possible right now.", "Impossible pour le moment.")), done: false }); return; }
+      setCurrent(""); setNext(""); setOpen(false);
+      setState({ loading: false, error: "", done: true });
+    } catch {
+      setState({ loading: false, error: t("Not possible right now.", "Impossible pour le moment."), done: false });
+    }
+  };
+  const field = "min-w-0 flex-1 rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2.5 text-sm text-[#EDE9E0] outline-none placeholder:text-white/30 focus:border-white/30";
+  return (
+    <div className="mt-5 border-t border-white/[0.07] pt-4">
+      {!open ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => { setOpen(true); setState({ loading: false, error: "", done: false }); }} className="text-sm font-semibold text-white/60 underline-offset-4 transition hover:text-white hover:underline">{t("Change my password", "Changer mon mot de passe")}</button>
+          {state.done && <span className="text-sm text-emerald-300">{t("Password changed.", "Mot de passe changé.")}</span>}
+        </div>
+      ) : (
+        <form onSubmit={submit} className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} placeholder={t("Current password", "Mot de passe actuel")} aria-label={t("Current password", "Mot de passe actuel")} className={field} />
+            <input type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} placeholder={t("New password (8+)", "Nouveau mot de passe (8+)")} aria-label={t("New password", "Nouveau mot de passe")} className={field} />
+          </div>
+          {state.error && <p role="alert" className="text-sm text-red-300">{state.error}</p>}
+          <div className="flex flex-wrap gap-3">
+            <button type="submit" disabled={state.loading || !current || !next} className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white disabled:opacity-50">{state.loading ? "…" : t("Change", "Changer")}</button>
+            <button type="button" onClick={() => setOpen(false)} className="text-sm text-white/45 hover:text-white/75">{t("Cancel", "Annuler")}</button>
+          </div>
+        </form>
       )}
     </div>
   );
@@ -4894,6 +5081,9 @@ function SiteNav({ query, setQuery, searchLabel }) {
                 {link.label}
               </a>
             ))}
+            {getStoredAccessEmail() && (
+              <button type="button" onClick={signOut} className="rounded-full px-3 py-2 text-[15px] font-medium text-white/55 transition hover:text-[#EDE9E0]">{t("Sign out", "Se déconnecter")}</button>
+            )}
           </nav>
           <LangSwitch className="mx-2 hidden md:inline-block" />
           {searchOpen ? (
@@ -4942,7 +5132,10 @@ function SiteNav({ query, setQuery, searchLabel }) {
                 ))}
               </div>
               <div className="mt-auto px-6 pb-10">
-                <div className="mb-4 flex justify-start"><LangSwitch /></div>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <LangSwitch />
+                  {getStoredAccessEmail() && <button type="button" onClick={signOut} className="text-sm font-semibold text-white/60 transition hover:text-white">{t("Sign out", "Se déconnecter")}</button>}
+                </div>
                 <a href="/pricing" onClick={() => setMenuOpen(false)} className="block rounded-full bg-[#EDE9E0] px-5 py-3.5 text-center text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Get started", "Commencer")}</a>
               </div>
             </motion.nav>
@@ -5141,6 +5334,12 @@ function SuccessPage() {
   // the buyer to press a button and read "not yet".
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Back after the password was given (see unlock): finish opening the
+    // access without asking for the email a second time.
+    try {
+      const resume = window.sessionStorage.getItem("movento_resume_unlock");
+      if (resume) { window.sessionStorage.removeItem("movento_resume_unlock"); setEmail(resume); unlock(null, resume); return; }
+    } catch { /* no storage: the form is still there */ }
     const params = new URLSearchParams(window.location.search);
     const fromUrl = clean(params.get("email") || "");
     if (params.get("provider") !== "mollie" || !fromUrl) return;
@@ -5152,6 +5351,9 @@ function SuccessPage() {
           const r = await fetch(`${API_BASE_URL}/api/verify-access`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: fromUrl }) });
           const d = await r.json().catch(() => ({}));
           if (d.hasAccess) { if (alive) unlock(null, fromUrl); return; }
+          // Paid, and the password is asked for (AuthGate): the page reloads
+          // once it is given and this runs again, signed in.
+          if (d.auth === "login" || d.auth === "setup") { if (alive) setStatus({ loading: false, ok: false, error: "" }); return; }
         } catch {}
         await new Promise((resolve) => setTimeout(resolve, 3000));
       }
@@ -5195,6 +5397,14 @@ function SuccessPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "error");
+      // The purchase is on this email and the password is asked for
+      // (AuthGate). The page reloads once it is given; remembered here so this
+      // step is taken again by itself, signed in.
+      if (data.auth === "login" || data.auth === "setup") {
+        try { window.sessionStorage.setItem("movento_resume_unlock", normalized); } catch { /* the buyer clicks again */ }
+        setStatus({ loading: false, ok: false, error: "" });
+        return;
+      }
       if (data.hasAccess) {
         window.localStorage.setItem("movento_access_email", normalized);
         forgetStartedPayment();
@@ -6013,6 +6223,7 @@ function PrivacyPage() {
         <h2>Données collectées</h2>
         <ul>
           <li>Ton <strong className="text-white/75">adresse email</strong>, pour ouvrir et retrouver ton accès.</li>
+          <li>Ton <strong className="text-white/75">mot de passe</strong>, conservé uniquement sous forme d'empreinte chiffrée irréversible : personne, pas même Movento, ne peut le lire. Un cookie de connexion, strictement nécessaire, te garde connecté sur ton navigateur pendant 90 jours.</li>
           <li>Les informations de ton <strong className="text-white/75">achat</strong> (offre, date, statut de l'abonnement), pour gérer ton accès et tes remboursements.</li>
           <li>Des <strong className="text-white/75">statistiques de visite anonymes</strong> (Vercel Web Analytics, sans cookie ni profil).</li>
         </ul>
@@ -7175,6 +7386,27 @@ function AdminLeadsPage() {
     await fetchLookup(value);
   }
 
+  // A forgotten password: taken off, the customer's browsers signed out. Two
+  // clicks, as it signs a customer out.
+  const [pwReset, setPwReset] = useState({ confirming: false, loading: false, error: "" });
+  async function resetPassword() {
+    if (!pwReset.confirming) { setPwReset({ confirming: true, loading: false, error: "" }); return; }
+    setPwReset({ confirming: true, loading: true, error: "" });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin-lookup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ email: lookup.data.email, action: "reset-password" }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Réinitialisation impossible.");
+      setLookup({ loading: false, error: "", data });
+      setPwReset({ confirming: false, loading: false, error: "" });
+    } catch (error) {
+      setPwReset({ confirming: false, loading: false, error: error.message });
+    }
+  }
+
   async function runRevoke() {
     if (!revoke.confirming) {
       setRevoke({ confirming: true, loading: false, error: "" });
@@ -7463,6 +7695,12 @@ function AdminLeadsPage() {
               )}
               {!lookup.data.whop.configured && <p className="text-white/40">Clé API Whop non configurée — vérification limitée à Redis.</p>}
               {lookup.data.whop.error && <p className="text-red-300/80">Whop: {lookup.data.whop.error}</p>}
+              <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-white/70">
+                <span>Mot de passe : {lookup.data.passwordSet ? "créé" : "pas encore créé"}</span>
+                {lookup.data.passwordSet && <button type="button" onClick={resetPassword} disabled={pwReset.loading} className="text-xs font-semibold text-amber-300 underline-offset-4 hover:underline disabled:opacity-60">{pwReset.loading ? "…" : pwReset.confirming ? "Confirmer la réinitialisation" : "Réinitialiser (mot de passe oublié)"}</button>}
+                {lookup.data.passwordReset && <span className="text-xs text-emerald-300">Réinitialisé : le client en crée un nouveau à sa prochaine visite.</span>}
+                {pwReset.error && <span className="text-xs text-red-300">{pwReset.error}</span>}
+              </p>
               {lookup.data.addons?.length > 0 && <p className="text-white/70">Options : {lookup.data.addons.map((id) => ADDONS.find((a) => a.id === id)?.name || id).join(" · ")}</p>}
               {lookup.data.teamOwner && <p className="text-white/70">Membre de l'équipe de {lookup.data.teamOwner} (Licence agence).</p>}
               {(lookup.data.packCredits > 0 || lookup.data.ownedPrompts.length > 0) && (

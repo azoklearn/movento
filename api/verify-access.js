@@ -1,4 +1,5 @@
 import { customerAccessLevel, redisGetAddons, methodNotAllowed, normalizeEmail, redisGetOwnedPrompts, redisGetPromptCredits, redisIsBlocked, syncPackCreditsFromWhop, TRIAL_PROMPT_FILES } from "./_shared.js";
+import { authHeaders, hasPassword, sessionEmail } from "./_auth.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
@@ -16,12 +17,24 @@ export default async function handler(req, res) {
     if (await redisIsBlocked(email)) return res.json({ hasAccess: false, trial: false, owned: [], credits: 0 });
 
     const level = await customerAccessLevel(email);
+    // What the email holds, then whether this browser is signed in as it.
+    // Without the session the answer shows nothing of it, and says which
+    // dialog to open: "login" (a password exists) or "setup" (create one).
+    const answer = async (held) => {
+      const holds = held.hasAccess || held.trial || held.owned.length > 0 || held.credits > 0;
+      if (!holds) return res.json(held);
+      if ((await sessionEmail(req)) === email) return res.json({ ...held, auth: "ok" });
+      const mode = (await hasPassword(email)) ? "login" : "setup";
+      authHeaders(res, email, mode);
+      return res.json({ hasAccess: false, trial: false, owned: [], credits: 0, auth: mode });
+    };
+
     // Someone with full access owns everything, so the per-prompt lists are only
     // worth reading for everyone else. `credits` lets the gallery offer the
     // claim to a buyer who paid but has not picked their prompt yet.
     // `addons` lists what was bought with the access (the freelance kit, the
     // agency licence), so the page can link to them.
-    if (level === "full") return res.json({ hasAccess: true, trial: false, owned: [], credits: 0, addons: await redisGetAddons(email) });
+    if (level === "full") return answer({ hasAccess: true, trial: false, owned: [], credits: 0, addons: await redisGetAddons(email) });
 
     const onTrial = level === "trial";
     let [owned, credits] = await Promise.all([redisGetOwnedPrompts(email), redisGetPromptCredits(email)]);
@@ -41,7 +54,7 @@ export default async function handler(req, res) {
       if (granted) credits = granted;
     }
 
-    return res.json({ hasAccess: false, trial: onTrial, owned, credits });
+    return answer({ hasAccess: false, trial: onTrial, owned, credits });
   } catch (error) {
     console.error("Access verification failed:", error);
     return res.status(500).json({ error: "Impossible de vérifier l’accès.", errorEn: "Unable to verify access." });

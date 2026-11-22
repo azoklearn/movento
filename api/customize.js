@@ -19,6 +19,7 @@
 // email. The email is the key, as everywhere on the site.
 import Anthropic from "@anthropic-ai/sdk";
 import { Redis } from "@upstash/redis";
+import { requireSession } from "./_auth.js";
 import { AI_EDITS_INCLUDED, customerAccessLevel, extractPrompt, fetchPromptMarkdown, isSafePromptFile, methodNotAllowed, normalizeEmail, redisGetAddons } from "./_shared.js";
 
 const MODEL = "claude-opus-5-5";
@@ -103,6 +104,7 @@ export default async function handler(req, res) {
   try {
     redis = Redis.fromEnv();
     const hasAccess = (await customerAccessLevel(email)) === "full";
+    if (hasAccess && !(await requireSession(req, res, email))) return;
     const holds = hasAccess && (await redisGetAddons(email)).includes("ai");
 
     if (action === "status") {

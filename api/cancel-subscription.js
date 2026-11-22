@@ -1,4 +1,5 @@
 import { cancelWhopMembership, GUMROAD_MANAGE_URL, methodNotAllowed, mollieApi, normalizeEmail, paddleApi, paddleSubscriptionSummary, redisGetAccessRecord, redisSetAccess } from "./_shared.js";
+import { isAccount, requireSession } from "./_auth.js";
 
 // Mollie: the subscription is deleted, so no further month is charged, and
 // the access record keeps its end date: the month already paid runs out on
@@ -62,6 +63,8 @@ export default async function handler(req, res) {
     // Billed by Gumroad: there is nothing this server can cancel, and asking
     // Whop would answer "no subscription found" to someone who is paying.
     const record = await redisGetAccessRecord(email);
+    // Cancelling is for the account's holder: the browser signed in as it.
+    if ((record || (await isAccount(email))) && !(await requireSession(req, res, email))) return;
     if ((record?.provider === "paddle" || record?.provider === "mollie") && record.type === "lifetime") {
       return res.status(400).json({ error: MESSAGES.lifetime[1], errorEn: MESSAGES.lifetime[2] });
     }

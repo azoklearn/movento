@@ -13,6 +13,7 @@
 // add-on only counts while its buyer still has the catalogue, so a refunded
 // purchase closes it.
 import { Redis } from "@upstash/redis";
+import { requireSession } from "./_auth.js";
 import { FREELANCE_KIT } from "./_kit.js";
 import { LEAD_COUNTRIES, LEAD_TRADES, LEADS_MAX, cityKey, findPlace, searchLeads, tradeById } from "./_leads.js";
 import { LEADS_DAILY_SEARCHES, TEAM_MAX_INVITES, TEAM_SEATS, customerAccessLevel, methodNotAllowed, normalizeEmail, redisGetAccessRecord, redisGetAddons, teamOwnerFor } from "./_shared.js";
@@ -50,6 +51,9 @@ export default async function handler(req, res) {
   try {
     const redis = Redis.fromEnv();
     const hasAccess = (await customerAccessLevel(email)) === "full";
+    // An account's options, its team and its searches are for the browser
+    // signed in as it.
+    if (hasAccess && !(await requireSession(req, res, email))) return;
     const addons = hasAccess ? await redisGetAddons(email) : [];
 
     if (action === "status") {

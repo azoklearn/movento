@@ -14,6 +14,7 @@ import {
   promptAllowedFor,
   redisGetAccessRecord,
 } from "./_shared.js";
+import { requireSession } from "./_auth.js";
 
 // The day in Paris, so the allowance resets at the buyer's midnight.
 const parisDay = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
@@ -78,6 +79,10 @@ export default async function handler(req, res) {
     }
     return res.status(403).json({ error: "Premium access required." });
   }
+
+  // Entitled, so it has to be them: a paid prompt goes to the browser signed
+  // in as that email. A free prompt asks for nothing.
+  if (!isFreePrompt && !(await requireSession(req, res, email))) return;
 
   // Only for those who hold the catalogue through the 3-month plan: a free
   // prompt, or one bought on its own, is never counted.
