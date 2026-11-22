@@ -1374,6 +1374,8 @@ const monthlyPlan = plans.find((plan) => plan.id === "monthly" && !plan.hidden);
 function PlanCard({ plan, onBuy, loading, featured }) {
   // Nothing to line up with, and no other card to be the best of.
   const highlight = featured && !isSinglePlan;
+  // The white button: on the plan put forward, or on the only plan there is.
+  const primary = highlight || isSinglePlan;
   // One list, one tick per row, in the order a buyer reads it: the catalogue,
   // support and the ebook, then what only this plan adds.
   const rows = [...(plan.features || []), plan.perk, plan.bonus, ...(plan.extras || [])].filter(Boolean);
@@ -1388,36 +1390,33 @@ function PlanCard({ plan, onBuy, loading, featured }) {
     setPicked((list) => (on ? [...list, id] : list.filter((x) => x !== id)));
   };
   return (
-    <div className={`mv-glass relative flex flex-col rounded-[22px] p-6 sm:p-8 ${highlight ? "order-first shadow-[0_0_70px_-18px_rgba(160,120,255,0.6)] sm:order-none" : ""}`}>
-      {/* The travelling light along the card's own edge — violet and faster on
-          the plan the page puts forward. */}
-      <span className="mv-glow" aria-hidden="true" style={highlight ? { "--mv-glow-color": "#b9a4ff", "--mv-glow-duration": "6s" } : undefined}>
-        <span className="mv-glow-blob" />
-        <span className="mv-glow-blob" />
-      </span>
+    // The site's own card: a near-black panel with a hairline. The plan the
+    // page puts forward is lit from the top in the accent colours.
+    <div className={`relative isolate flex flex-col overflow-hidden rounded-[28px] bg-[#0c0c0e] p-6 sm:p-8 ${highlight ? "order-first shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16),0_50px_130px_-60px_rgba(194,91,245,0.8)] sm:order-none" : "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"}`}>
+      {primary && <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(85%_100%_at_50%_0%,rgba(194,91,245,0.2),rgba(124,140,255,0.07)_55%,transparent_78%)]" />}
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h3 className="text-xl font-bold tracking-tight text-[#FAFAFA]">{plan.name}</h3>
-        {highlight && <span className="rounded-full bg-gradient-to-r from-[#F0566B] via-[#B04BF0] to-[#7C8CFF] px-2.5 py-1 text-[11px] font-bold text-white">{plan.badge || t("Best deal", "Meilleure offre")}</span>}
+        <h3 className="text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA]">{plan.name}</h3>
+        {highlight && <span className="rounded-full bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_55%,#7C8CFF_100%)] px-2.5 py-1 text-[11px] font-semibold text-white">{plan.badge || t("Best deal", "Meilleure offre")}</span>}
       </div>
-      {(plan.subtitle || plan.description) && <p className="mt-2 text-sm leading-6 text-white/60">{plan.subtitle || plan.description}</p>}
+      {(plan.subtitle || plan.description) && <p className="mt-2 text-sm leading-6 text-white/55">{plan.subtitle || plan.description}</p>}
 
-      <div className="my-6 border-t border-dashed border-white/[0.12]" />
+      <div className="my-6 h-px bg-white/[0.08]" />
 
       {/* Only the plan the page puts forward carries a struck price: the old
           figure beside the new one, same size, so the drop reads at a glance. */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        {plan.originalPrice && <span className="text-[34px] font-bold leading-none tracking-[-0.03em] text-white/30 line-through decoration-2 sm:text-[42px]">{plan.originalPrice}</span>}
-        <span className="text-[34px] font-bold leading-none tracking-[-0.03em] text-[#FAFAFA] sm:text-[42px]">{plan.price}</span>
+        {plan.originalPrice && <span className="text-[40px] font-semibold leading-none tracking-[-0.045em] text-white/25 line-through decoration-2 sm:text-[52px]">{plan.originalPrice}</span>}
+        <span className="text-[40px] font-semibold leading-none tracking-[-0.045em] text-[#FAFAFA] sm:text-[52px]">{plan.price}</span>
       </div>
-      {plan.billedNote && <p className="mt-2.5 text-sm text-white/55">{plan.billedNote}</p>}
+      {plan.billedNote && <p className="mt-3 text-sm text-white/50">{plan.billedNote}</p>}
 
       {bumps.length > 0 && (
         <fieldset className="mt-6">
-          <legend className="flex w-full items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
+          <legend className="flex w-full items-center gap-3 text-[12.5px] font-medium text-white/75">
             <span>{t("Add to your order", "Ajoute à ta commande")}</span>
-            <span className="h-px flex-1 bg-white/[0.1]" />
-            <span className="tracking-[0.1em] text-white/35">{t("Optional", "Optionnel")}</span>
+            <span className="h-px flex-1 bg-white/[0.08]" />
+            <span className="text-white/35">{t("Optional", "Optionnel")}</span>
           </legend>
           <div className="mt-3 space-y-2.5">
             {bumps.map((addon) => <AddonOption key={addon.id} addon={addon} on={picked.includes(addon.id)} onToggle={() => toggle(addon.id)} />)}
@@ -1428,9 +1427,10 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       <button
         onClick={() => onBuy(picked.length ? { ...plan, addons: picked } : plan)}
         disabled={loading}
-        className={`mt-6 flex w-full items-center justify-center rounded-full px-4 py-3.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${highlight ? "bg-gradient-to-r from-[#F0566B] via-[#5B5BF7] to-[#C58CFF] text-white shadow-[0_14px_40px_-14px_rgba(123,92,255,0.85)] hover:brightness-110" : "bg-[#FAFAFA] text-[#0A0A0B] hover:bg-white"}`}
+        className={`group mt-6 flex h-14 w-full flex-none items-center gap-3 rounded-full pl-14 pr-2 text-[15px] font-semibold transition duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${primary ? "bg-white text-black shadow-[0_24px_70px_-22px_rgba(194,91,245,0.75)] hover:-translate-y-0.5" : "bg-white/[0.06] text-[#FAFAFA] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] hover:bg-white/[0.1]"}`}
       >
-        {loading ? t("Loading…", "Chargement…") : extra ? t(`Pay ${eur(PRICE_LIFETIME + extra)}`, `Payer ${eur(PRICE_LIFETIME + extra)}`) : plan.cta}
+        <span className="flex-1 text-center">{loading ? t("Loading…", "Chargement…") : extra ? t(`Pay ${eur(PRICE_LIFETIME + extra)}`, `Payer ${eur(PRICE_LIFETIME + extra)}`) : plan.cta}</span>
+        <span className={`grid h-10 w-10 flex-none place-items-center rounded-full ${primary ? "bg-black text-white" : "bg-white/10 text-white"}`}><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
       </button>
 
       <ul className="mt-7 space-y-3">
@@ -1439,7 +1439,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
             <Icon name="tick" className="mt-[5px] h-[14px] w-[14px] flex-none text-white/85" />
             <span>
               {feat}
-              {NEW_FEATURES.has(feat) && <span className="ml-2 inline-block -translate-y-px rounded-full border border-[#F0566B]/80 px-1.5 py-px align-middle text-[9px] font-bold uppercase tracking-[0.06em] text-[#FF8A8A]">New</span>}
+              {NEW_FEATURES.has(feat) && <span className="ml-2 inline-block -translate-y-px rounded-full bg-emerald-400/15 px-1.5 py-px align-middle text-[9.5px] font-semibold uppercase tracking-[0.06em] text-emerald-300">New</span>}
             </span>
           </li>
         ))}
@@ -2171,9 +2171,9 @@ function AddonOption({ addon, on, onToggle, disabled = false }) {
   return (
     <label
       data-addon={addon.id}
-      className={`group relative flex items-start gap-3.5 rounded-2xl p-3.5 ring-1 transition duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-white/70 ${disabled ? "opacity-55" : "cursor-pointer"} ${on
-        ? "bg-[linear-gradient(120deg,rgba(240,86,107,0.13),rgba(124,140,255,0.13))] ring-[#b9a4ff]/60 shadow-[0_10px_34px_-18px_rgba(160,120,255,0.9)]"
-        : `bg-white/[0.035] ring-white/[0.09] ${disabled ? "" : "hover:bg-white/[0.06] hover:ring-white/25"}`}`}
+      className={`group relative flex items-start gap-3.5 rounded-2xl p-3.5 transition duration-200 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-white/70 ${disabled ? "opacity-55" : "cursor-pointer"} ${on
+        ? "bg-white/[0.08] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.9)]"
+        : `bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] ${disabled ? "" : "hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}`}
     >
       <input type="checkbox" checked={on} disabled={disabled} onChange={onToggle} className="sr-only" />
       <span aria-hidden="true" className={`grid h-10 w-10 flex-none place-items-center rounded-xl bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_8px_18px_-10px_rgba(0,0,0,0.9)] transition duration-200 ${disabled ? "" : "group-hover:scale-105"}`}>
@@ -2185,7 +2185,7 @@ function AddonOption({ addon, on, onToggle, disabled = false }) {
       </span>
       <span className="flex flex-none flex-col items-end gap-2.5">
         <span className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums transition ${on ? "bg-white text-[#0A0A0B]" : "bg-white/[0.08] text-[#FAFAFA]"}`}>+{eur(addon.price)}</span>
-        <span aria-hidden="true" className={`grid h-5 w-5 place-items-center rounded-full transition ${on ? "bg-gradient-to-br from-[#F0566B] to-[#7C8CFF] text-white" : "border border-white/25 text-transparent"}`}>
+        <span aria-hidden="true" className={`grid h-5 w-5 place-items-center rounded-full transition ${on ? "bg-white text-black" : "text-transparent shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.3)]"}`}>
           <Icon name="tick" className="h-3 w-3" />
         </span>
       </span>
@@ -2550,28 +2550,6 @@ function Icon({ name, className = "h-4 w-4" }) {
   return <svg {...common}>{children}</svg>;
 }
 
-// Used in the navbar, the mobile menu, every page header and the footer — one
-// change here swaps the mark everywhere. The file is /public/logo.png, shared
-// with the favicon, and versioned so a swap is not served from cache.
-// Colour band sweeping across the top-right of a page: cool blue on the left,
-// warm amber where it leaves the frame. Blurred hard and masked at both ends so
-// it dissolves into the page instead of finishing on a line. Sits inside the
-// pointer-events-none backdrop of whichever page mounts it.
-function AuroraBand() {
-  return (
-    <div
-      aria-hidden="true"
-      className="absolute inset-x-[-30%] top-[-24%] h-[300px] -rotate-[20deg] opacity-[0.9] blur-[45px] sm:h-[420px] sm:blur-[70px]"
-      style={{
-        backgroundImage:
-          "linear-gradient(94deg, rgba(24,40,150,0) 10%, rgba(40,72,235,0.55) 30%, rgba(88,84,240,0.6) 43%, rgba(176,104,180,0.55) 55%, rgba(238,126,80,0.68) 66%, rgba(255,170,74,0.82) 74%, rgba(255,226,158,0.72) 82%, rgba(255,226,158,0) 93%)",
-        maskImage: "linear-gradient(to bottom, transparent 2%, #000 34%, #000 64%, transparent 98%)",
-        WebkitMaskImage: "linear-gradient(to bottom, transparent 2%, #000 34%, #000 64%, transparent 98%)",
-      }}
-    />
-  );
-}
-
 // Glowing tail of the hero headline: same font and weight as the rest of the
 // sentence, tinted with a gradient clipped to the glyphs and haloed. Everything
 // visual lives in .hl-mark (index.css) — including the fallback colour for
@@ -2581,6 +2559,9 @@ function Highlight({ children }) {
   return <span className="hl-mark">{children}</span>;
 }
 
+// Used in the navbar, the mobile menu, every page header and the footer — one
+// change here swaps the mark everywhere. The file is /public/logo.png, shared
+// with the favicon, and versioned so a swap is not served from cache.
 function Logo() {
   return (
     <span className="flex items-center gap-2.5 select-none">
@@ -7033,6 +7014,25 @@ const TESTIMONIALS = [
 ];
 
 
+// The head every section of the site opens on: a small pill with a dot, then
+// a title in two tones.
+function SectionHead({ eyebrow, title, tail, lede, dot = "bg-white/70", stack = false }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto flex max-w-3xl flex-col items-center text-center">
+      <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[12.5px] font-medium text-white/75">
+        <span className={`h-1.5 w-1.5 rounded-full ${dot}`} /> {eyebrow}
+      </span>
+      <h2 className="mt-5 text-[clamp(2rem,5.4vw,3.4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
+        {title}{tail && <> <span className={`text-white/45 ${stack ? "sm:block" : ""}`}>{tail}</span></>}
+      </h2>
+      {lede && <p className="mx-auto mt-5 max-w-lg text-[16px] leading-7 text-white/55">{lede}</p>}
+    </motion.div>
+  );
+}
+// The site's button: a white pill, the arrow in a black circle.
+const PILL_BUTTON = "group inline-flex h-12 items-center justify-center gap-3 rounded-full bg-white pl-6 pr-1.5 text-[15px] font-semibold text-black transition duration-300 hover:-translate-y-0.5";
+const PillArrow = () => <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></span>;
+
 function PricingShowcase({ onPick }) {
   const items = useMemo(
     () => SHOWCASE_TITLES.map((title) => availablePrompts.find((p) => p.title === title)).filter(Boolean),
@@ -7041,22 +7041,17 @@ function PricingShowcase({ onPick }) {
   if (!items.length) return null;
 
   return (
-    <section className="relative z-10 border-y border-white/10 bg-white/[0.02] py-24">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-[#121214] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 shadow-sm">
-            <Icon name="layers" className="h-3 w-3" /> {t("Included in every plan", "Inclus dans chaque offre")}
-          </span>
-          <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em] text-[#FAFAFA] md:text-4xl">
-            {t("The designs you unlock", "Les designs que tu débloques")}
-          </h2>
-          <p className="mx-auto mt-3 max-w-lg text-base leading-7 text-white/55">
-            {t(
-              `${availablePrompts.length} premium prompts, each one describing a complete site — fonts, colors, animations, section by section.`,
-              `${availablePrompts.length} prompts premium, chacun décrivant un site complet — polices, couleurs, animations, section par section.`,
-            )}
-          </p>
-        </motion.div>
+    <section className="relative z-10 py-16 lg:py-24">
+      <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+        <SectionHead
+          eyebrow={t("Included in every plan", "Inclus dans chaque offre")}
+          title={t("The designs", "Les designs")}
+          tail={t("you unlock.", "que tu débloques.")}
+          lede={t(
+            `${availablePrompts.length} premium prompts, each one describing a complete site — fonts, colors, animations, section by section.`,
+            `${availablePrompts.length} prompts premium, chacun décrivant un site complet — polices, couleurs, animations, section par section.`,
+          )}
+        />
 
         {/* Staggered so the row assembles itself instead of snapping in — the
             previews are the argument on this page, they deserve the beat. */}
@@ -7069,8 +7064,8 @@ function PricingShowcase({ onPick }) {
         </div>
 
         <div className="mt-10 text-center">
-          <a href="/prompts" className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-6 py-3 text-sm font-semibold text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#FAFAFA]">
-            {t("Browse the full catalog", "Voir tout le catalogue")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
+          <a href="/prompts" className="group inline-flex h-12 items-center gap-2 rounded-full bg-white/[0.06] px-6 text-[15px] font-semibold text-[#FAFAFA] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] transition hover:bg-white/[0.1]">
+            {t("Browse the full catalog", "Voir tout le catalogue")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" />
           </a>
         </div>
       </div>
@@ -7109,25 +7104,27 @@ function PriceAnchor({ onPick }) {
     ? t(`Your first site sold pays for ${paysBack} years of Movento.`, `Ton premier site vendu paie ${paysBack} ans de Movento.`)
     : t(`Your first site sold pays for Movento ${paysBack} times over.`, `Ton premier site vendu rembourse Movento ${paysBack} fois.`);
   const cta = onPick ? (
-    <button onClick={onPick} className="group mt-6 inline-flex items-center gap-2 rounded-full bg-[#FAFAFA] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></button>
+    <button onClick={onPick} className={`${PILL_BUTTON} mt-6`}>{t("See the plans", "Voir les offres")} <PillArrow /></button>
   ) : (
-    <a href="/pricing" className="group mt-6 inline-flex items-center gap-2 rounded-full bg-[#FAFAFA] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the plans", "Voir les offres")} <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></a>
+    <a href="/pricing" className={`${PILL_BUTTON} mt-6`}>{t("See the plans", "Voir les offres")} <PillArrow /></a>
   );
   return (
-    <section className="relative z-10 mx-auto max-w-5xl px-6 py-16 lg:px-8 lg:py-24">
-      <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("The math", "Le calcul")}</p>
-        <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#FAFAFA] md:text-5xl">{t("A website sells for €800 to €2,000", "Un site se vend entre 800 et 2 000 €")}</h2>
-        {/* No arithmetic against the deposit any more: that held while a year of
-            Movento was 99 €, and quietly stopped holding when the term changed.
-            What is left is true at any price the page can quote. */}
-        <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-white/55">{t("That is what a freelancer or a small agency charges for one showcase site. Movento costs a fraction of it, and you can deliver as many as you like.", "C'est ce qu'un freelance ou une petite agence facture pour un seul site vitrine. Movento coûte une fraction de ce prix, et tu en livres autant que tu veux.")}</p>
-      </motion.div>
+    <section className="relative z-10 mx-auto max-w-5xl px-5 py-16 sm:px-6 lg:px-8 lg:py-24">
+      {/* No arithmetic against the deposit any more: that held while a year of
+          Movento was 99 €, and quietly stopped holding when the term changed.
+          What is left is true at any price the page can quote. */}
+      <SectionHead
+        eyebrow={t("The math", "Le calcul")}
+        title={t("A website sells", "Un site se vend")}
+        tail={t("for €800 to €2,000.", "entre 800 et 2 000 €.")}
+        stack
+        lede={t("That is what a freelancer or a small agency charges for one showcase site. Movento costs a fraction of it, and you can deliver as many as you like.", "C'est ce qu'un freelance ou une petite agence facture pour un seul site vitrine. Movento coûte une fraction de ce prix, et tu en livres autant que tu veux.")}
+      />
 
       <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} className="mt-12 grid items-stretch gap-3 md:grid-cols-[1fr_auto_1fr] md:gap-4">
-        <div className="flex flex-col rounded-[26px] border border-white/10 bg-white/[0.02] p-7 md:p-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">{t("One custom-made site", "Un site fait sur mesure")}</p>
-          <p className="mt-4 text-4xl font-bold tracking-[-0.03em] text-white/70 md:text-5xl">{t("€800 – €2,000", "800 – 2 000 €")}</p>
+        <div className="flex flex-col rounded-[24px] bg-[#0c0c0e] p-7 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] md:p-8">
+          <p className="text-[12.5px] font-medium text-white/45">{t("One custom-made site", "Un site fait sur mesure")}</p>
+          <p className="mt-4 text-4xl font-semibold tracking-[-0.045em] text-white/55 md:text-5xl">{t("€800 – €2,000", "800 – 2 000 €")}</p>
           <ul className="mt-5 space-y-2 text-sm leading-6 text-white/45">
             <li className="flex items-start gap-2"><Icon name="close" className="mt-1.5 h-3.5 w-3.5 flex-none text-white/30" /> {t("Per site, every time", "Par site, à chaque fois")}</li>
             <li className="flex items-start gap-2"><Icon name="close" className="mt-1.5 h-3.5 w-3.5 flex-none text-white/30" /> {t("Two to six weeks of back-and-forth", "Deux à six semaines d'allers-retours")}</li>
@@ -7136,19 +7133,19 @@ function PriceAnchor({ onPick }) {
         </div>
 
         <div className="flex items-center justify-center py-1 md:py-0">
-          <span className="grid h-10 w-10 place-items-center rounded-full border border-white/12 bg-[#08080A] text-[11px] font-bold uppercase tracking-wide text-white/60">vs</span>
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-[#0c0c0e] text-[11px] font-semibold uppercase tracking-wide text-white/55 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">vs</span>
         </div>
 
-        <div className="relative flex flex-col overflow-hidden rounded-[26px] border border-white/25 bg-[#121214] p-7 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] md:p-8">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/[0.06] blur-3xl" />
-          <p className="relative text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">Movento</p>
-          <p className="relative mt-4 text-4xl font-bold tracking-[-0.03em] text-[#FAFAFA] md:text-5xl">{eur(FEATURED_OFFER.price)} <span className="text-lg font-semibold text-white/45">{FEATURED_OFFER.banner}</span></p>
+        <div className="relative isolate flex flex-col overflow-hidden rounded-[24px] bg-[#0c0c0e] p-7 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16),0_50px_130px_-60px_rgba(194,91,245,0.7)] md:p-8">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-[radial-gradient(85%_100%_at_50%_0%,rgba(194,91,245,0.2),rgba(124,140,255,0.07)_55%,transparent_78%)]" />
+          <p className="relative text-[12.5px] font-medium text-white/75">Movento</p>
+          <p className="relative mt-4 text-4xl font-semibold tracking-[-0.045em] text-[#FAFAFA] md:text-5xl">{eur(FEATURED_OFFER.price)} <span className="text-lg font-medium tracking-[-0.01em] text-white/45">{FEATURED_OFFER.banner}</span></p>
           <ul className="relative mt-5 space-y-2 text-sm leading-6 text-white/65">
             <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t(`All ${availablePrompts.length} designs, and every new one`, `Les ${availablePrompts.length} designs, et tous les nouveaux`)}</li>
             <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t("A site in an afternoon, not in a month", "Un site dans l'après-midi, pas dans un mois")}</li>
             <li className="flex items-start gap-2"><Icon name="check" className="mt-1.5 h-3.5 w-3.5 flex-none text-emerald-400" /> {t("Sell as many as you like", "Tu en vends autant que tu veux")}</li>
           </ul>
-          <p className="relative mt-6 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-3 text-sm font-semibold leading-6 text-emerald-200">
+          <p className="relative mt-6 rounded-2xl bg-emerald-400/[0.08] px-4 py-3 text-sm font-semibold leading-6 text-emerald-200 shadow-[inset_0_0_0_1px_rgba(52,211,153,0.2)]">
             {paybackLine}
           </p>
           <div className="relative">{cta}</div>
@@ -7164,14 +7161,14 @@ const initialsOf = (name) => name.split(" ").map((part) => part[0]).join("").sli
 // one for the rail that runs alongside the plan cards.
 function TestimonialCard({ review, compact = false }) {
   return (
-    <figure className={`relative flex h-full flex-col overflow-hidden rounded-[20px] border border-white/10 bg-[#121214] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition hover:-translate-y-1 hover:border-white/25 hover:shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)] ${compact ? "p-5" : "p-7"}`}>
+    <figure className={`relative flex h-full flex-col overflow-hidden rounded-[24px] bg-[#0c0c0e] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] ${compact ? "p-5" : "p-7"}`}>
       {/* Oversized quote mark, kept decorative and behind the text. */}
       {!compact && <span aria-hidden="true" className="pointer-events-none absolute -right-2 -top-6 select-none font-serif text-[110px] leading-none text-white/[0.06]">”</span>}
       <span className="relative flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((n) => <Icon key={n} name="star" className={compact ? "h-3 w-3" : "h-3.5 w-3.5"} />)}</span>
       {/* The amount is the part a visitor scans for, so it gets pulled out
           of the paragraph — never a figure the quote does not state. */}
       {review.highlight && (
-        <span className={`relative inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-1 font-semibold text-emerald-300 ${compact ? "mt-3 text-[11px]" : "mt-4 text-xs"}`}>
+        <span className={`relative inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-400/[0.1] px-3 py-1 font-semibold text-emerald-300 ${compact ? "mt-3 text-[11px]" : "mt-4 text-xs"}`}>
           <Icon name="zap" className="h-3 w-3" /> {review.highlight}
         </span>
       )}
@@ -7200,18 +7197,16 @@ function Testimonials({ items = TESTIMONIALS }) {
   const centerLast = items.length % 3 === 1 ? "[&>*:last-child]:md:col-start-2" : "";
 
   return (
-    <section className="relative z-10 py-24">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 shadow-sm backdrop-blur">
-            <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3.5 w-3.5" />)}</span>
-            <span className="text-sm font-semibold text-[#FAFAFA]">{RATING_SCORE}/5</span>
-            <span className="text-sm text-white/40">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
-          </div>
-          <h2 className="mt-6 text-3xl font-bold tracking-[-0.03em] text-[#FAFAFA] md:text-4xl">{t("What buyers say", "Ce que disent les acheteurs")}</h2>
-        </motion.div>
+    <section className="relative z-10 py-16 lg:py-24">
+      <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+        <SectionHead
+          eyebrow={<><span className="inline-flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3 w-3" />)}</span> <span className="font-semibold text-white">{RATING_SCORE}/5</span> <span className="text-white/40">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span></>}
+          dot="hidden"
+          title={t("What buyers", "Ce que disent")}
+          tail={t("say.", "les acheteurs.")}
+        />
 
-        <div className={`mt-12 grid gap-5 md:grid-cols-3 ${centerLast}`}>
+        <div className={`mt-12 grid gap-3 md:grid-cols-3 ${centerLast}`}>
           {items.map((review, i) => (
             <motion.div
               key={review.id}
@@ -7263,35 +7258,47 @@ function useCountdown(iso) {
 }
 
 
-// Sticky offer bar at the bottom of /pricing. The countdown is appended only
-// when a real deadline is configured; otherwise the offer stands on its own
-// rather than inventing an urgency.
+// The offer floating at the bottom of /pricing, the same capsule as on the
+// home page. The countdown is appended only when a real deadline is
+// configured; otherwise the offer stands on its own rather than inventing an
+// urgency.
 function PricingBanner({ onPick }) {
   const countdown = useCountdown(LAUNCH_OFFER_ENDS_AT);
   const tail = countdown ? t(`${countdown} left`, `plus que ${countdown}`) : null;
 
+  // Out of the way while the plan cards are on screen: it would only repeat
+  // the price they are already showing.
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const plans = document.getElementById("plans");
+    if (!plans || typeof IntersectionObserver === "undefined") { setShown(true); return undefined; }
+    const io = new IntersectionObserver(([entry]) => setShown(!entry.isIntersecting));
+    io.observe(plans);
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50">
-      <button
-        onClick={() => {
-          track("pricing_banner_click", { countdown: Boolean(countdown), ...refProps() });
-          onPick?.();
-        }}
-        className="group block w-full bg-[linear-gradient(100deg,#ef6f5c_0%,#e0625f_14%,#5f6ff2_44%,#7a63ef_62%,#a874f0_80%,#d79bf5_100%)] px-4 py-3 text-left transition hover:brightness-110 sm:px-6"
-      >
-        <span className="mx-auto flex max-w-5xl items-center gap-3">
-          <span className="grid h-7 w-7 flex-none place-items-center rounded-full border border-white/45 text-white">
-            <Icon name="clock" className="h-4 w-4" />
-          </span>
-          <span className="text-sm font-semibold leading-5 text-white sm:text-[15px]">
-            {/* The plan the page puts forward, priced exactly as its card is. */}
-            {t("Black Friday, lifetime access", "Black Friday, accès à vie")} — <span className="line-through opacity-70">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="font-bold">{eur(PRICE_LIFETIME)}</span>
-            {` ${t("one-time payment", "en un seul paiement")}`}{tail ? ` — ${tail}` : ""}
-          </span>
-          <Icon name="arrow" className="ml-auto hidden h-4 w-4 flex-none text-white transition group-hover:translate-x-0.5 sm:block" />
-        </span>
-      </button>
-    </div>
+    <AnimatePresence>
+      {shown && (
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }} className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-3">
+          <div className="pointer-events-auto flex w-full max-w-[600px] items-center gap-3 rounded-full bg-[#0c0c0e]/85 py-2 pl-5 pr-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_24px_60px_-20px_rgba(0,0,0,1)] backdrop-blur-xl">
+            <p className="min-w-0 flex-1 truncate text-[13px] text-white/60">
+              {/* The plan the page puts forward, priced exactly as its card is. */}
+              <span className="font-semibold text-white">Black Friday</span> <span className="hidden sm:inline">· {t("lifetime access", "accès à vie")}</span> · <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span>{tail ? <span className="hidden sm:inline"> · {tail}</span> : null}
+            </p>
+            <button
+              onClick={() => {
+                track("pricing_banner_click", { countdown: Boolean(countdown), ...refProps() });
+                onPick?.();
+              }}
+              className="group inline-flex flex-none items-center gap-2 rounded-full bg-white py-1.5 pl-4 pr-1.5 text-[13px] font-semibold text-black transition hover:bg-white/90"
+            >
+              {t("See the plans", "Voir les offres")} <span className="grid h-7 w-7 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span>
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -7413,56 +7420,38 @@ function BusinessLadder({ onPick }) {
   const steps = [
     {
       key: "prompts",
-      label: t("Step 1 — The prompts", "Étape 1 — Les prompts"),
+      label: t("The prompts", "Les prompts"),
       title: t("You can deliver a site today", "Tu livres un site dès aujourd'hui"),
       body: t(
         "Copy a prompt, paste it into Lovable, Cursor or Claude, and a complete site comes out — fonts, animations, sections. You ship work you could not have coded.",
         "Tu copies un prompt, tu le colles dans Lovable, Cursor ou Claude, et un site complet en sort — polices, animations, sections. Tu livres un travail que tu n'aurais pas su coder.",
       ),
       tag: isSinglePlan ? t("Included", "Inclus") : t("In every plan", "Dans toutes les offres"),
-      tone: "border-white/12 bg-white/[0.03]",
-      accent: "text-white/45",
       icon: "sparkles",
-      iconTone: "bg-white/10 text-[#FAFAFA]",
     },
     {
       key: "ebook",
-      label: t("Step 2 — Plus the ebook", "Étape 2 — Avec l'ebook"),
+      label: t("Plus the ebook", "Avec l'ebook"),
       title: t("You can sell what you deliver", "Tu sais vendre ce que tu livres"),
       body: t(
         "Building is half the job. The guide covers the other half: pricing a site, writing the offer, handling the client, delivering and getting paid.",
         "Créer, c'est la moitié du travail. Le guide couvre l'autre moitié : fixer un prix, rédiger l'offre, gérer le client, livrer et te faire payer.",
       ),
       tag: EBOOK_TAG,
-      tone: "border-amber-400/25 bg-amber-400/[0.05]",
-      accent: "text-amber-300/80",
       icon: "gift",
-      iconTone: "bg-amber-400 text-[#1a1400]",
     },
   ];
 
   return (
-    <section className="relative z-10 mx-auto max-w-6xl px-6 py-16 lg:px-8 lg:py-24">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.15 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto max-w-2xl text-center"
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("Why people buy", "Pourquoi on achète Movento")}</p>
-        <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#FAFAFA] md:text-4xl">
-          {t("Enough to start selling websites", "De quoi lancer ton activité de revente de sites")}
-        </h2>
-        <p className="mt-4 text-sm leading-6 text-white/55">
-          {t(
-            "Three things, and each one takes you further than the last.",
-            "Trois choses, et chacune te mène plus loin que la précédente.",
-          )}
-        </p>
-      </motion.div>
+    <section className="relative z-10 mx-auto max-w-6xl px-5 py-16 sm:px-6 lg:px-8 lg:py-24">
+      <SectionHead
+        eyebrow={t("Why people buy", "Pourquoi on achète Movento")}
+        title={t("Enough to start", "De quoi lancer ton activité")}
+        tail={t("selling websites.", "de revente de sites.")}
+        lede={t("Two things, and the second takes you further than the first.", "Deux choses, et la seconde te mène plus loin que la première.")}
+      />
 
-      <ol className="mx-auto mt-12 grid max-w-3xl gap-5 md:grid-cols-2">
+      <ol className="mx-auto mt-12 grid max-w-4xl gap-3 md:grid-cols-2">
         {steps.map((step, i) => (
           <motion.li
             key={step.key}
@@ -7470,18 +7459,17 @@ function BusinessLadder({ onPick }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className={`flex flex-col rounded-[26px] border p-6 md:p-7 ${step.tone}`}
+            className="relative isolate flex flex-col overflow-hidden rounded-[24px] bg-[#0c0c0e] p-6 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] md:p-7"
           >
-            <div className="flex items-center gap-3">
-              <span className={`grid h-8 w-8 flex-none place-items-center rounded-full ${step.iconTone}`}>
-                <Icon name={step.icon} className="h-4 w-4" />
-              </span>
-              <p className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${step.accent}`}>{step.label}</p>
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-40 bg-[radial-gradient(120%_90%_at_50%_0%,rgba(124,140,255,0.14),transparent_70%)]" />
+            <div className="flex items-center justify-between gap-3">
+              <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-white text-[12px] font-bold text-black">{i + 1}</span>
+              <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-white/50"><Icon name={step.icon} className="h-3.5 w-3.5" /> {step.label}</span>
             </div>
-            <h3 className="mt-4 text-lg font-semibold leading-snug tracking-tight text-[#FAFAFA]">{step.title}</h3>
+            <h3 className="mt-5 text-[19px] font-semibold leading-snug tracking-[-0.02em] text-[#FAFAFA]">{step.title}</h3>
             <p className="mt-2.5 text-sm leading-6 text-white/55">{step.body}</p>
-            {/* mt-auto, not a fixed margin: the three bodies differ in length and
-                the plan labels would otherwise sit at three different heights. */}
+            {/* mt-auto, not a fixed margin: the bodies differ in length and the
+                plan labels would otherwise sit at different heights. */}
             <p className="mt-auto border-t border-white/[0.08] pt-4 text-xs font-medium text-white/40 [margin-top:1.25rem] md:[margin-top:auto]">{step.tag}</p>
           </motion.li>
         ))}
@@ -7494,11 +7482,8 @@ function BusinessLadder({ onPick }) {
         transition={{ duration: 0.5, delay: 0.25 }}
         className="mt-10 flex flex-col items-center gap-3"
       >
-        <button
-          onClick={onPick}
-          className="inline-flex items-center gap-2 rounded-full bg-[#FAFAFA] px-7 py-3.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white hover:scale-[1.02]"
-        >
-          {t("Get all three", "Prendre les trois")} <Icon name="arrow" className="h-4 w-4" />
+        <button onClick={onPick} className={PILL_BUTTON}>
+          {t("Get both", "Prendre les deux")} <PillArrow />
         </button>
         {/* Phrased without naming a term: EBOOK_NOTE lists the plans that go
             without the ebook, which reads as a comparison when there is only
@@ -7543,7 +7528,7 @@ function PricingPage() {
   const showPackOffer = Boolean(PROMPT_PACK_ENABLED && fromPrompt && packPlan && !visiblePlans.includes(packPlan));
 
   return (
-    <main className="min-h-screen bg-[#0A0A0B] text-[#FAFAFA]">
+    <main className="relative min-h-screen overflow-x-clip bg-black text-[#FAFAFA]">
       <WinbackOffer />
       <AnimatePresence>
         {checkoutPlan && (
@@ -7556,49 +7541,28 @@ function PricingPage() {
         )}
       </AnimatePresence>
 
-      {/* Backdrop: two colour washes plus a faint dot grid that fades out before
-          the plan cards, so the cards read as paper on a surface instead of
-          floating on flat white. */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <AuroraBand />
-        <div className="absolute inset-x-0 top-0 h-[70vh] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:22px_22px] opacity-[0.05] [mask-image:linear-gradient(to_bottom,#000,transparent)]" />
-        <div className="absolute left-1/2 top-[-22%] h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-white/[0.05] blur-[130px]" />
-      </div>
+      {/* The same frame as the rest of the site: its bar, a field of dots
+          fading out behind the title, a pill, a title in two tones. */}
+      <div aria-hidden="true" className="mv-dots pointer-events-none absolute inset-x-0 top-0 h-[520px]" />
+      <SiteNav />
 
-      <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-white/[0.04] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-          <a href="/" className="transition hover:opacity-80"><Logo /></a>
-          <div className="flex items-center gap-2">
-            <a href="/#prompts" className="hidden rounded-full px-4 py-2.5 text-sm font-medium text-white/55 transition hover:text-[#FAFAFA] sm:inline-block">{t("Catalog", "Catalogue")}</a>
-            <LangSwitch />
-            <a href="/" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 shadow-sm transition hover:border-white/25 hover:text-[#FAFAFA]">← {t("Back", "Retour")}</a>
-          </div>
-        </div>
-      </header>
-
-      {/* One desktop screen is the rule for the plain pricing page. Arriving
-          from a locked prompt adds two rows — which prompt, and the option to
-          buy just it — and forcing those into the same height only pushed the
-          offer under the launch banner. That trip scrolls instead. */}
-      <section className={`relative z-10 mx-auto flex max-w-7xl flex-col justify-center px-6 pb-24 pt-16 lg:px-8 lg:pb-20 lg:pt-4 ${showPackOffer ? "" : "lg:min-h-[calc(100svh-75px)]"}`}>
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto max-w-2xl text-center">
+      <section className="relative z-10 mx-auto flex max-w-7xl flex-col px-5 pb-20 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+        <motion.div initial={{ opacity: 0, y: 16, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mx-auto flex max-w-3xl flex-col items-center text-center">
           {/* The reduction, then the promise, then the instruction — in that
               order, because the figure is what earns the next two lines a
-              reading. The percentage is the best of the three cards, derived,
-              so the page cannot announce a discount no card offers. */}
-          <span className="mv-chip inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#FAFAFA]">
-            <span className="text-[13px] tracking-normal"><span className="text-white/45 line-through">{eur(PRICE_LIFETIME_REFERENCE)}</span> {eur(PRICE_LIFETIME)}</span>
-            <span className="h-3 w-px bg-white/20" />
-            {t("Black Friday · lifetime access", "Black Friday · accès à vie")}
+              reading. */}
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-3 pr-3.5 text-[12.5px] font-medium text-white/80">
+            <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" /></span>
+            Black Friday <span className="text-white/40">·</span> <span className="text-white/45 line-through">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span> {t("for lifetime access", "l'accès à vie")}
           </span>
-          <h1 className="mt-6 text-[2.6rem] font-bold leading-[1.05] tracking-[-0.045em] text-[#FAFAFA] md:text-6xl lg:mt-2 lg:text-[2.2rem]">
+          <h1 className="mt-6 text-[clamp(2.4rem,6.6vw,4.2rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
             {/* Nothing to choose between with one offer on sale, so the
                 headline stops asking and states what is being sold. */}
             {isSinglePlan
-              ? <>{t("All of Movento,", "Tout Movento,")} <span className="text-white/45">{soloTerm ? soloTerm.every : t("for life.", "à vie.")}</span></>
-              : <>{t("Choose your", "Choisis ton")} <span className="text-white/45">{t("plan.", "plan.")}</span></>}
+              ? <>{t("All of Movento,", "Tout Movento,")} <span className="bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_48%,#7C8CFF_100%)] bg-clip-text pb-[0.06em] text-transparent">{soloTerm ? soloTerm.every : t("for life.", "à vie.")}</span></>
+              : <>{t("Choose your", "Choisis ton")} <span className="bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_48%,#7C8CFF_100%)] bg-clip-text pb-[0.06em] text-transparent">{t("plan.", "plan.")}</span></>}
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-base leading-7 text-white/55 lg:mt-2 lg:text-[15px] lg:leading-6">{/* "The longer the term, the less a day costs" had three terms to prove it
+          <p className="mx-auto mt-5 max-w-[30rem] text-[16px] leading-7 text-white/55 sm:text-[17px]">{/* "The longer the term, the less a day costs" had three terms to prove it
               against. With one offer left there is no comparison to draw, so
               the line states what you get and what you are committing to —
               which is the next question a single price raises. */}
@@ -7608,25 +7572,23 @@ function PricingPage() {
               : t(`All ${availablePrompts.length} premium prompts and every one added next. One payment, no subscription, no renewal.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Un seul paiement, pas d'abonnement, pas de renouvellement.`)
             : t(`The same ${availablePrompts.length} premium prompts in every plan, and every one added next. Take it by the month, or keep it for good.`, `Les mêmes ${availablePrompts.length} prompts premium dans toutes les offres, et tous ceux à venir. Prends-le au mois, ou garde-le pour toujours.`)}</p>
           {fromPrompt && (
-            <p className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
+            <p className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-white/60">
               <Icon name="lock" className="h-3 w-3" /> {t(`To copy “${fromPrompt.title}”`, `Pour copier « ${fromPrompt.title} »`)}
             </p>
           )}
           {/* The rating is declared as AggregateRating in index.html; Google only
               honours that markup when the same figure is visible on the page. */}
-          <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 shadow-sm backdrop-blur lg:mt-2">
+          <div className="mt-6 inline-flex items-center gap-2 text-[13px]">
             <span className="flex items-center gap-0.5 text-amber-400">{[0, 1, 2, 3, 4].map((i) => <Icon key={i} name="star" className="h-3.5 w-3.5" />)}</span>
-            <span className="text-sm font-semibold text-[#FAFAFA]">{RATING_SCORE}/5</span>
-            <span className="text-sm text-white/40">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
+            <span className="font-semibold text-[#FAFAFA]">{RATING_SCORE}/5</span>
+            <span className="text-white/40">· {t(`${RATING_COUNT}+ reviews`, `+${RATING_COUNT} avis`)}</span>
           </div>
         </motion.div>
 
         {/* One column, centred: the offer is the page. Proof lives further down
             so nothing competes with the cards at the moment of the decision. */}
-        {/* lg had 16px, which put the "le plus choisi" ribbon — which hangs 12
-            above its card — four pixels under the rating pill. */}
-        <div className="mt-14 lg:mt-9">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-24 items-stretch gap-4 sm:gap-6 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
+        <div className="mt-12">
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-28 items-stretch gap-3 sm:gap-4 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
             {visiblePlans.map((plan) => (
               <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
             ))}
@@ -7635,10 +7597,8 @@ function PricingPage() {
               there is nothing to buy on its own, and a price with no prompt
               attached would just read as a cheaper catalogue. */}
           {showPackOffer && (
-            <div className="mx-auto mt-6 w-full max-w-sm lg:mt-1 lg:max-w-2xl">
-              {/* Tight on lg: the extra rows of the paywall trip otherwise put
-                  this row's last pixels behind the fixed launch banner. */}
-              <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.03] px-5 py-4 text-center sm:flex-row sm:justify-between sm:text-left lg:py-3">
+            <div className="mx-auto mt-4 w-full max-w-sm lg:max-w-2xl">
+              <div className="flex flex-col items-center gap-3 rounded-[20px] bg-[#0c0c0e] px-5 py-4 text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] sm:flex-row sm:justify-between sm:text-left">
                 <div>
                   <p className="text-sm font-semibold text-[#FAFAFA]">{t("Don't need the whole catalogue?", "Tu ne veux pas tout le catalogue ?")}</p>
                   <p className="mt-0.5 text-xs leading-5 text-white/50">{t(`“${fromPrompt.title}” and ${PROMPT_PACK_SIZE - 1} more of your choice, yours forever.`, `« ${fromPrompt.title} » et ${PROMPT_PACK_SIZE - 1} autres de ton choix, à toi pour toujours.`)}</p>
@@ -7653,7 +7613,7 @@ function PricingPage() {
               </div>
             </div>
           )}
-          <Reassurance className={showPackOffer ? "mt-9 lg:mt-2" : "mt-9 lg:mt-3"} />
+          <Reassurance className="mt-8" />
         </div>
       </section>
 
