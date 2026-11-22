@@ -255,7 +255,6 @@ const prompts = [
   // Same Cloudinary account and the same kind of source as Vanta below — a
   // macOS screen recording — so it ships with the transformations already on
   // rather than waiting for the card to go blank on a phone first.
-  { title: "Fiamma Pizzeria", category: "Landing Page", type: "Landing", file: "Fiamma_Pizzeria_Scrollytelling_3D.md", demo: "https://pizza-jade-ten.vercel.app/", preview: "https://res.cloudinary.com/du0hbrmvw/video/upload/vc_h264:baseline:3.1,w_960,q_auto,ac_none/v1787413782/Enregistrement_de_l_e%CC%81cran_2026-08-22_a%CC%80_17.48.26_online-video-cutter.com_spwzdm.mp4", tags: ["Three.js", "Scrollytelling", "Restaurant"], gradient: "from-amber-100 via-red-600 to-[#1C1A17]" },
   // The only preview in the catalogue that carries Cloudinary transformations,
   // and they are the point: the untransformed clip played on every desktop and
   // on no phone. vc_h264:baseline:3.1 forces the one H.264 profile every phone
@@ -680,7 +679,6 @@ const AVAILABLE_FILES = new Set([
   "Aurevon_Luxury_Brand_Hero.md",
   "Targo_Platform_Hero_About.md",
   "JWT_3D_Card_Carousel.md",
-  "Fiamma_Pizzeria_Scrollytelling_3D.md",
   "Baseline_Tennis_Club.md",
   "Convix_PR_Software_Hero.md",
   "Michael_Smith_Portfolio_Landing.md",
