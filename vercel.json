@@ -10,6 +10,9 @@
   "functions": {
     "api/addons.js": {
       "maxDuration": 60
+    },
+    "api/customize.js": {
+      "maxDuration": 300
     }
   }
 }

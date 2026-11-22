@@ -545,13 +545,20 @@ export const MOLLIE_PACK_SIZES = { pack2: 2, pack5: 5, pack10: 10 };
 //         catalogue, managed on /team
 //   leads the leads finder: real businesses to contact, by trade and city,
 //         from a short questionnaire on /leads (api/_leads.js)
+//   ai    the AI adaptation: a prompt rewritten for the buyer's own brand from
+//         a short brief, AI_EDITS_INCLUDED times in all (api/customize.js)
 // Prices come from here, never from the request. Keep in step with ADDONS in
 // src/App.jsx.
 export const MOLLIE_ADDONS = {
   kit: { price: Number(process.env.MOLLIE_ADDON_KIT_PRICE || 19).toFixed(2), label: "Kit freelance" },
   team: { price: Number(process.env.MOLLIE_ADDON_TEAM_PRICE || 29).toFixed(2), label: "Licence agence" },
   leads: { price: Number(process.env.MOLLIE_ADDON_LEADS_PRICE || 39).toFixed(2), label: "On trouve tes clients" },
+  ai: { price: Number(process.env.MOLLIE_ADDON_AI_PRICE || 29).toFixed(2), label: "Prompts sur mesure (IA)" },
 };
+// Adaptations the AI option includes, in all and not per month: each one is a
+// paid call to the Claude API, and the option is paid once. A failed
+// adaptation is not counted.
+export const AI_EDITS_INCLUDED = 50;
 // New leads searches one buyer can run in a day (a search already in the
 // cache is free): the data comes from free community servers.
 export const LEADS_DAILY_SEARCHES = 10;
