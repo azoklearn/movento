@@ -5210,9 +5210,49 @@ const QUIZ_LEVELS = () => [
   { id: "some", icon: "layers", label: t("A little", "Un peu"), hint: t("You tinker with HTML or no-code", "Tu bidouilles du HTML ou du no-code") },
   { id: "dev", icon: "code", label: t("Yes", "Oui"), hint: t("You are a developer", "Tu es développeur") },
 ];
-const QUIZ_TYPES = ["Landing Page", "Portfolio", "E-commerce", "SaaS", "Agency"];
+// The kinds of site the fourth question offers: local businesses first, since
+// that is who most buyers build for, then the online ones. Each kind is shown
+// with a real design of the catalogue:
+//   - a business kind takes the newest entry whose title or tags name it
+//     (`words`), so a new restaurant or salon prompt appears here by itself
+//     as soon as its tags say so;
+//   - the others take the newest pinned entry of their `category`.
+// `noun` is how the plan names the client's business ("le restaurant de ton
+// client").
+const QUIZ_TYPES = () => [
+  { id: "restaurant", label: t("Restaurant or café", "Restaurant ou café"), noun: t("restaurant", "restaurant"), words: /restaurant|pizz|caf[eé]|coffee|bistro|brasserie|bakery|boulang|burger|sushi/i },
+  { id: "beauty", label: t("Hair or beauty salon", "Salon de coiffure ou beauté"), noun: t("salon", "salon"), words: /beauty|beaut[eé]|salon|barber|coiff|hair|nail|spa\b|wellness/i },
+  { id: "local", label: t("Practice or local service", "Cabinet ou service local"), noun: t("business", "cabinet"), words: /dental|dentist|clinic|doctor|kin[eé]|plumb|garage|lawyer|avocat|artisan|\bcoach\b|\bgym\b|fitness|immobil|real estate/i },
+  { id: "travel", label: t("Hotel or travel", "Hôtel ou voyage"), noun: t("hotel", "hôtel"), words: /\bh[oô]tel\b|\btravel\b|voyage|resort|airline/i },
+  { id: "shop", label: t("Online shop", "Boutique en ligne"), noun: t("shop", "boutique"), category: "E-commerce" },
+  { id: "portfolio", label: t("Portfolio or freelance", "Portfolio ou freelance"), category: "Portfolio" },
+  { id: "saas", label: t("Startup or SaaS", "Startup ou SaaS"), category: "SaaS" },
+  { id: "agency", label: t("Agency or studio", "Agence ou studio"), category: "Agency" },
+];
 const QUIZ_SITE_PRICE = 900;
-const quizSample = (category) => prompts.find((p) => p.category === category && p.pinned && isVideoPreview(p.preview) && isPromptAvailable(p) && !p.onlyFor);
+// A business design is a whole site, never an app screen or a single block,
+// and is not looked for among the SaaS entries that merely share a word.
+const QUIZ_BUSINESS_CATEGORIES = new Set(["Landing Page", "E-commerce", "Agency", "Portfolio", "Hero Section"]);
+function quizSample(type) {
+  if (!type) return undefined;
+  const usable = (p) => isPromptAvailable(p) && !p.onlyFor && (isVideoPreview(p.preview) || isImagePreview(p.preview));
+  const fits = type.words
+    ? (p) => QUIZ_BUSINESS_CATEGORIES.has(p.category) && type.words.test(`${p.title} ${(p.tags || []).join(" ")}`)
+    : (p) => p.category === type.category && p.pinned;
+  const all = prompts.filter((p) => usable(p) && fits(p));
+  // A playing clip before a still, the newest first either way.
+  return all.find((p) => isVideoPreview(p.preview)) || all[0];
+}
+// The design's preview at any size: the clip playing, or the still.
+function QuizPreview({ item, className = "" }) {
+  return (
+    <span className={`relative block overflow-hidden bg-gradient-to-br ${item?.gradient || "from-white/20 to-white/5"} ${className}`}>
+      {item && (isVideoPreview(item.preview)
+        ? <video src={item.preview} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+        : <img src={item.preview} alt="" loading="lazy" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />)}
+    </span>
+  );
+}
 
 function QuizOption({ selected, onClick, icon, media, label, hint, index }) {
   return (
@@ -5304,7 +5344,9 @@ function StartQuiz() {
   };
 
   const goal = goals.find((g) => g.id === answers.goal) || goals[0];
-  const sample = quizSample(answers.type) || quizSample("Landing Page");
+  const types = QUIZ_TYPES();
+  const type = types.find((x) => x.id === answers.type);
+  const sample = quizSample(type) || quizSample(types.find((x) => x.id === "shop"));
   const monthly = answers.sites * QUIZ_SITE_PRICE;
   const sells = answers.goal === "clients" || answers.goal === "agency";
   const reaction = answers.sites <= 1 ? t("A good start.", "Un bon début.") : answers.sites <= 3 ? t("A real side income.", "Un vrai complément de revenu.") : answers.sites <= 6 ? t("Ambitious. We like it.", "Ambitieux, on aime.") : t("An agency's pace.", "Un rythme d'agence.");
@@ -5357,15 +5399,22 @@ function StartQuiz() {
   } else if (step === 3) {
     screen = (
       <>
-        {heading(t("Your first site", "Ton premier site"), t("Which site do you want", "Quel site veux-tu"), t("to build first?", "créer en premier ?"), t("Each one is a real design from the catalogue.", "Chacun est un vrai design du catalogue."))}
-        <div className="mt-9 space-y-2.5">
-          {QUIZ_TYPES.map((category, i) => {
-            const item = quizSample(category);
+        {heading(t("Your first site", "Ton premier site"), t("Which site do you want", "Quel site veux-tu"), t("to build first?", "créer en premier ?"), t("Each one opens on a real design from the catalogue.", "Chacun s'ouvre sur un vrai design du catalogue."))}
+        {/* Tiles, not rows: here the picture is the answer. */}
+        <div className="mt-9 grid grid-cols-2 gap-2.5">
+          {types.map((kind, i) => {
+            const item = quizSample(kind);
+            const on = answers.type === kind.id;
             return (
-              <QuizOption key={category} index={i} label={category} hint={item ? item.title : ""} selected={answers.type === category} onClick={() => choose("type", category)}
-                media={<span className={`relative h-12 w-[76px] flex-none overflow-hidden rounded-[10px] bg-gradient-to-br ${item?.gradient || "from-white/20 to-white/5"} shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]`}>
-                  {item && <video src={item.preview} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture className="pointer-events-none absolute inset-0 h-full w-full object-cover" />}
-                </span>} />
+              <motion.button key={kind.id} type="button" onClick={() => choose("type", kind.id)} aria-pressed={on} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.08 + i * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                className={`group relative overflow-hidden rounded-2xl p-1.5 text-left transition duration-200 ${on ? "bg-white/[0.09] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.9)]" : "bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}>
+                <QuizPreview item={item} className="aspect-[16/9] rounded-[11px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]" />
+                <span className={`absolute right-3.5 top-3.5 grid h-6 w-6 place-items-center rounded-full transition ${on ? "bg-white text-black" : "bg-black/45 text-transparent shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.35)] backdrop-blur-sm"}`}><Icon name="tick" className="h-3.5 w-3.5" /></span>
+                <span className="block px-2 pb-2 pt-2.5">
+                  <span className="block text-[14.5px] font-semibold leading-tight tracking-[-0.01em] text-[#FAFAFA]">{kind.label}</span>
+                  <span className="mt-1 block truncate text-[12px] text-white/40">{item ? item.title : t("Coming soon", "Bientôt")}</span>
+                </span>
+              </motion.button>
             );
           })}
         </div>
@@ -5399,7 +5448,9 @@ function StartQuiz() {
     const planSteps = [
       sample ? t(`Open “${sample.title}” and copy its prompt.`, `Ouvre « ${sample.title} » et copie son prompt.`) : t("Open a design and copy its prompt.", "Ouvre un design et copie son prompt."),
       tool ? t(`Paste it into ${toolName}: the site builds itself.`, `Colle-le dans ${toolName} : le site se construit tout seul.`) : t("Paste it into Lovable (free to start): the site builds itself.", "Colle-le dans Lovable (gratuit pour commencer) : le site se construit tout seul."),
-      sells ? t("Change the name, the copy, the images, and send it to your client.", "Change le nom, les textes, les images, et envoie-le à ton client.") : t("Change the name, the copy, the images, and put it online.", "Change le nom, les textes, les images, et mets-le en ligne."),
+      sells && type?.noun
+        ? t(`Put in your client's ${type.noun}: its name, its copy, its photos. Then send it.`, `Mets-y le ${type.noun} de ton client : son nom, ses textes, ses photos. Puis envoie-le.`)
+        : sells ? t("Change the name, the copy, the images, and send it to your client.", "Change le nom, les textes, les images, et envoie-le à ton client.") : t("Change the name, the copy, the images, and put it online.", "Change le nom, les textes, les images, et mets-le en ligne."),
     ];
     screen = (
       <div className="grid items-start gap-8 lg:grid-cols-[1fr_1.05fr] lg:gap-12">
@@ -5428,7 +5479,7 @@ function StartQuiz() {
           <div aria-hidden="true" className="absolute inset-x-8 -bottom-8 h-24 rounded-full bg-[radial-gradient(closest-side,rgba(124,140,255,0.5),transparent)] blur-2xl" />
           <div className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(160deg,#151a2e,#0a0b12_60%)] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">
             <div className={`relative aspect-[16/10] overflow-hidden rounded-[20px] bg-gradient-to-br ${sample?.gradient || "from-white/15 to-white/5"}`}>
-              {sample && <video src={sample.preview} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture className="pointer-events-none absolute inset-0 h-full w-full object-cover" />}
+              <QuizPreview item={sample} className="absolute inset-0 h-full w-full" />
               <span className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-md">{t("Made for you", "Fait pour toi")}</span>
             </div>
             <div className="p-4 pt-5">
