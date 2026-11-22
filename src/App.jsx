@@ -2708,7 +2708,7 @@ function PromptFeature({ item, onClose, onCopy, copied, access, live, aiEmail, a
   useEffect(() => {
     const el = ref.current;
     if (el) {
-      const top = el.getBoundingClientRect().top + window.scrollY - 100;
+      const top = el.getBoundingClientRect().top + window.scrollY - 96;
       window.scrollTo({ top, behavior: "smooth" });
     }
     // While the AI panel is open, Escape closes that panel, not the prompt.
@@ -3781,6 +3781,7 @@ function MoventoPages() {
       <SiteNav query={query} setQuery={setQuery} />
 
       <LandingHero hasPremiumAccess={hasPremiumAccess} trialActive={trialActive} onUnlock={() => setShowUnlockModal(true)} />
+      {!hasPremiumAccess && <HowItWorks />}
 
       {/* Full width, no max: the gallery is the page, and a capped row left a
           band of empty background down each side on anything above 1560. */}
@@ -3836,7 +3837,7 @@ function MoventoPages() {
             <span className="h-1.5 w-1.5 rounded-full bg-white/70" /> {t(`The catalogue · ${availablePrompts.length} prompts`, `Le catalogue · ${availablePrompts.length} prompts`)}
           </span>
           <h2 className="mt-5 text-[clamp(2rem,5.4vw,3.4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
-            {t("Pick a design.", "Choisis un design.")} <span className="text-white/45">{t("Copy the prompt.", "Copie le prompt.")}</span>
+            {t("Every design,", "Tous les designs,")} <span className="text-white/45">{t("ready to copy.", "prêts à copier.")}</span>
           </h2>
         </div>
         {/* Two groups on one line: how the cards are ordered, then which
@@ -3964,6 +3965,8 @@ function MoventoPages() {
         })()}
       </section>
 
+      {!hasPremiumAccess && <ClosingOffer />}
+      {!hasPremiumAccess && <StickyOffer hidden={Boolean(previewItem)} />}
       <SiteFooter className="pb-24" />
     </main>
   );
@@ -4982,7 +4985,7 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
       <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.06, ease: [0.22, 1, 0.36, 1] }} className="mt-7 text-[clamp(2.45rem,9.2vw,5.4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
         <span className="block">{t("Premium websites,", "Des sites premium,")}</span>
         <span className="block">{t("built with AI,", "créés avec l'IA,")}</span>
-        <span className="block text-white/45">{t("ready to sell.", "prêts à vendre.")}</span>
+        <span className="block bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_48%,#7C8CFF_100%)] bg-clip-text pb-[0.06em] text-transparent">{t("ready to sell.", "prêts à vendre.")}</span>
       </motion.h1>
 
       <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.14 }} className="mt-7 max-w-md text-[17px] leading-7 text-white/55 sm:text-lg">
@@ -4996,8 +4999,9 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
           </span>
         ) : (
           <>
-            <a href="/pricing" className="group inline-flex h-14 items-center justify-center gap-2.5 rounded-full bg-white px-9 text-base font-semibold tracking-[-0.005em] text-black shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_24px_60px_-20px_rgba(255,255,255,0.35)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.3),0_30px_70px_-20px_rgba(255,255,255,0.5)] sm:h-16 sm:px-11 sm:text-lg">
-              {t(`Unlock the ${availablePrompts.length} prompts`, `Débloquer les ${availablePrompts.length} prompts`)} <Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" />
+            <a href="/pricing" className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-white pl-8 pr-2 text-base font-semibold tracking-[-0.005em] text-black shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_24px_70px_-18px_rgba(194,91,245,0.55)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.3),0_30px_80px_-18px_rgba(194,91,245,0.75)] sm:h-16 sm:pl-10 sm:text-lg">
+              {t(`Unlock the ${availablePrompts.length} prompts`, `Débloquer les ${availablePrompts.length} prompts`)}
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-black text-white sm:h-12 sm:w-12"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
             </a>
             <p className="text-[13px] text-white/50">
               <strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="text-white/30">·</span> {t("one payment, no subscription", "un seul paiement, sans abonnement")}
@@ -5015,7 +5019,148 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
           </>
         )}
       </motion.div>
+
+      {/* The tools the prompts are written for, set in type like a row of
+          logos: names only, no marks. */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.4 }} className="mt-14 flex flex-col items-center gap-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">{t("Works with", "Fonctionne avec")}</p>
+        <ul className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-white/45 sm:gap-x-11">
+          {[["Lovable", "text-[19px] font-bold tracking-[-0.03em]"], ["Cursor", "text-[18px] font-semibold tracking-[-0.01em]"], ["Claude", "font-serif text-[20px] italic"], ["v0", "font-mono text-[19px] font-bold"], ["Bolt", "text-[19px] font-extrabold tracking-[-0.04em]"], ["Shopify", "text-[18px] font-semibold"]].map(([name, cls]) => (
+            <li key={name} className={`${cls} transition hover:text-white/80`}>{name}</li>
+          ))}
+        </ul>
+      </motion.div>
     </header>
+  );
+}
+
+// "How it works", between the hero and the gallery: three cards, each with a
+// small drawn mock-up of the step above its title. Drawn in markup, so nothing
+// to load and nothing that pretends to be a screenshot.
+function HowItWorks() {
+  const steps = [
+    {
+      title: t("Pick a design.", "Choisis un design."),
+      text: t(`${availablePrompts.length} landing pages, heroes and portfolios, each with its preview playing.`, `${availablePrompts.length} landing pages, heros et portfolios, chacun avec son aperçu animé.`),
+      art: (
+        <div className="grid h-full grid-cols-3 gap-2 p-5">
+          {["from-[#2a1b4d] to-[#ff5a8a]", "from-[#06281f] to-[#34d399]", "from-[#f1ece2] to-[#e8200f]", "from-[#0b1f3a] to-[#d4af37]", "from-[#1b1035] to-[#7C8CFF]", "from-[#151312] to-[#f6b521]"].map((g, i) => (
+            <span key={g} className={`relative rounded-lg bg-gradient-to-br ${g} ${i === 4 ? "ring-2 ring-white shadow-[0_10px_24px_-8px_rgba(124,140,255,0.8)]" : "opacity-70"}`}>
+              {i === 4 && <span className="absolute -bottom-2 -right-2 grid h-6 w-6 place-items-center rounded-full bg-white text-black shadow-lg"><Icon name="check" className="h-3.5 w-3.5" /></span>}
+            </span>
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: t("Copy the prompt.", "Copie le prompt."),
+      text: t("A full brief written for AI: layout, colours, motion, down to the timings.", "Un brief complet écrit pour l'IA : mise en page, couleurs, animations, jusqu'aux timings."),
+      art: (
+        <div className="flex h-full flex-col p-5">
+          <div className="flex-1 rounded-xl bg-black/50 p-3.5 font-mono text-[10px] leading-[1.7] text-white/45 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+            <p><span className="text-[#C25BF5]">Build</span> the landing page for <span className="text-white/80">**Uvra**</span>…</p>
+            <p>## 1. Look</p>
+            <p>- Night <span className="text-white/75">#0b0705</span>, paper <span className="text-white/75">#f5efe8</span></p>
+            <p>## 2. Motion</p>
+          </div>
+          <span className="mt-3 inline-flex items-center gap-1.5 self-start rounded-full bg-emerald-400/15 px-3 py-1.5 text-[11px] font-semibold text-emerald-300"><Icon name="check" className="h-3 w-3" /> {t("Copied", "Copié")}</span>
+        </div>
+      ),
+    },
+    {
+      title: t("Paste it, and sell the site.", "Colle-le, et vends le site."),
+      text: t("Lovable, Cursor or Claude builds it in an afternoon. A showcase site sells for €800 to €2,000.", "Lovable, Cursor ou Claude le construit dans l'après-midi. Un site vitrine se vend entre 800 et 2 000 €."),
+      art: (
+        <div className="flex h-full flex-col justify-between p-5">
+          <div className="rounded-xl bg-black/50 p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+            <div className="flex items-center justify-between text-[10px] text-white/50"><span>{t("Building your site", "Création du site")}</span><span className="text-white/75">100 %</span></div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-full rounded-full bg-[linear-gradient(90deg,#FF6A7D,#C25BF5,#7C8CFF)]" /></div>
+          </div>
+          <div className="flex items-center justify-between rounded-xl bg-white px-3.5 py-2.5 text-black shadow-[0_14px_30px_-14px_rgba(255,255,255,0.4)]">
+            <span className="text-[11px] font-semibold">{t("Showcase site · invoice", "Site vitrine · facture")}</span>
+            <span className="text-[13px] font-bold text-emerald-600">+900 €</span>
+          </div>
+          <p className="text-center text-[10px] text-white/30">{t("example", "exemple")}</p>
+        </div>
+      ),
+    },
+  ];
+  return (
+    <section className="relative z-10 mx-auto max-w-6xl px-4 pb-6 pt-10 sm:px-6">
+      <div className="flex flex-col items-center text-center">
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[12.5px] font-medium text-white/75">
+          <span className="h-1.5 w-1.5 rounded-full bg-white/70" /> {t("How it works", "Comment ça marche")}
+        </span>
+        <h2 className="mt-5 text-[clamp(2rem,5.4vw,3.4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
+          {t("From zero to a sold site,", "De zéro à un site vendu,")} <span className="text-white/45">{t("in an afternoon.", "en un après-midi.")}</span>
+        </h2>
+      </div>
+      <ol className="mt-10 grid gap-3 md:grid-cols-3">
+        {steps.map((step, i) => (
+          <motion.li key={step.title} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.55, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col overflow-hidden rounded-[24px] bg-[#0c0c0e] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+            <div aria-hidden="true" className="h-44 bg-[radial-gradient(120%_90%_at_50%_0%,rgba(124,140,255,0.16),transparent_70%)]">{step.art}</div>
+            <div className="flex flex-1 flex-col p-6 pt-5">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[12px] font-bold text-black">{i + 1}</span>
+              <h3 className="mt-4 text-[19px] font-semibold tracking-[-0.02em] text-[#FAFAFA]">{step.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-white/55">{step.text}</p>
+            </div>
+          </motion.li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+// At the foot of the gallery, for those who scrolled it all: one dark panel
+// lit from below, the offer once more, the button.
+function ClosingOffer() {
+  return (
+    <section className="relative z-10 mx-auto max-w-6xl px-4 pb-4 pt-16 sm:px-6">
+      <div className="relative isolate overflow-hidden rounded-[32px] bg-[#0c0c0e] px-6 py-16 text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)] sm:py-20">
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-[-40%] -z-10 mx-auto h-[90%] w-[85%] rounded-full bg-[radial-gradient(closest-side,rgba(194,91,245,0.5),rgba(255,106,125,0.22)_55%,transparent)] blur-2xl" />
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[12.5px] font-medium text-white/75">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Black Friday <span className="text-white/40">·</span> {t(`${LIFETIME_DISCOUNT}% off`, `−${LIFETIME_DISCOUNT} %`)}
+        </span>
+        <h2 className="mx-auto mt-6 max-w-3xl text-[clamp(2.1rem,6vw,4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
+          {t("Your next client", "Ton prochain client")} <span className="bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_48%,#7C8CFF_100%)] bg-clip-text text-transparent">{t("is waiting for a site.", "attend un site.")}</span>
+        </h2>
+        <p className="mx-auto mt-5 max-w-md text-[16px] leading-7 text-white/55">{t(`All ${availablePrompts.length} prompts and every one added next, for life.`, `Les ${availablePrompts.length} prompts et tous ceux à venir, à vie.`)}</p>
+        <a href="/pricing" className="group mt-8 inline-flex h-14 items-center justify-center gap-3 rounded-full bg-white pl-8 pr-2 text-base font-semibold text-black shadow-[0_24px_70px_-18px_rgba(194,91,245,0.7)] transition duration-300 hover:-translate-y-0.5">
+          {t("Unlock everything", "Tout débloquer")}
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
+        </a>
+        <p className="mt-4 text-[13px] text-white/45"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> · {t("one payment", "un seul paiement")}</p>
+      </div>
+    </section>
+  );
+}
+
+// Floating at the bottom of the home page once the hero is out of sight, for
+// visitors without access: the offer and the way to it, always one tap away
+// while they browse the gallery. Out of the way while a prompt is open.
+function StickyOffer({ hidden }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShown(window.scrollY > 640);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return (
+    <AnimatePresence>
+      {shown && !hidden && (
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }} className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-3">
+          <div className="pointer-events-auto flex w-full max-w-[560px] items-center gap-3 rounded-full bg-[#0c0c0e]/85 py-2 pl-5 pr-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_24px_60px_-20px_rgba(0,0,0,1)] backdrop-blur-xl">
+            <p className="min-w-0 flex-1 truncate text-[13px] text-white/60">
+              <span className="font-semibold text-white">{t(`${availablePrompts.length} prompts`, `${availablePrompts.length} prompts`)}</span> <span className="hidden sm:inline">· {t("lifetime access", "accès à vie")}</span> · <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span>
+            </p>
+            <a href="/pricing" onClick={() => track("sticky_offer_clicked")} className="group inline-flex flex-none items-center gap-2 rounded-full bg-white py-1.5 pl-4 pr-1.5 text-[13px] font-semibold text-black transition hover:bg-white/90">
+              {t("Unlock", "Débloquer")} <span className="grid h-7 w-7 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span>
+            </a>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -5056,8 +5201,8 @@ function SiteNav({ query, setQuery, searchLabel }) {
   // spacer under it keeps the page where it was.
   return (
     <>
-    <header className={`fixed inset-x-0 top-0 z-30 w-full transition-[background-color,border-color] duration-300 border-b backdrop-blur-xl ${scrolled ? "border-white/[0.07] bg-black/65" : "border-white/[0.05] bg-black/40"}`}>
-      <div className="flex h-[72px] items-center gap-6 px-4 sm:px-6">
+    <header className="fixed inset-x-0 top-0 z-30 w-full px-3 pt-3 sm:px-5">
+      <div className={`mx-auto flex h-[60px] max-w-[1320px] items-center gap-6 rounded-full pl-5 pr-2 backdrop-blur-xl transition-[background-color,box-shadow] duration-300 sm:pl-6 ${scrolled ? "bg-[#0c0c0e]/80 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09),0_20px_50px_-24px_rgba(0,0,0,0.95)]" : "bg-white/[0.035] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.07)]"}`}>
         <a href="/" className="flex-none transition hover:opacity-85" aria-label="Movento"><Logo /></a>
         <nav className="hidden items-center gap-1 md:flex" aria-label={t("Sections", "Sections")}>
           {NAV_PRIMARY().map((link) => (
@@ -5100,14 +5245,14 @@ function SiteNav({ query, setQuery, searchLabel }) {
               <Icon name="search" className="h-[18px] w-[18px]" />
             </button>
           )}
-          <a href="/pricing" className="group ml-2 hidden items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-semibold tracking-[-0.005em] text-black transition hover:bg-white/90 md:inline-flex">{t("Get started", "Commencer")} <Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></a>
+          <a href="/pricing" className="group ml-2 hidden items-center gap-2 rounded-full bg-white py-1.5 pl-4 pr-1.5 text-[13px] font-semibold tracking-[-0.005em] text-black transition hover:bg-white/90 md:inline-flex">{t("Get started", "Commencer")} <span className="grid h-7 w-7 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span></a>
           <button onClick={() => setMenuOpen((open) => !open)} aria-label={t("Menu", "Menu")} aria-expanded={menuOpen} className="ml-1 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.05] text-white/70 transition hover:border-white/25 md:hidden">
             <Icon name={menuOpen ? "close" : "menu"} className="h-5 w-5" />
           </button>
         </div>
       </div>
     </header>
-    <div aria-hidden="true" className="h-[72px]" />
+    <div aria-hidden="true" className="h-[84px]" />
 
       {/* Full-height panel from the right on a phone: the links get room and
           the call to action sits where the thumb already is. */}
