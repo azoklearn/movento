@@ -33,6 +33,7 @@ import {
   recordWebhookStatus,
   redisClearAccess,
   redisGetAccessRecord,
+  redisRemoveAddons,
 } from "./_shared.js";
 import { Redis } from "@upstash/redis";
 
@@ -83,6 +84,12 @@ export default async function handler(req, res) {
     const chargedBack = cents(payment.amountChargedBack) > 0;
     if (refundedInFull || chargedBack) {
       await Redis.fromEnv().set(`mollierefund:${payment.id}`, new Date().toISOString()).catch(() => {});
+      // Options bought afterwards: only those go, the access stays.
+      if (plan === "addons") {
+        if (email) await redisRemoveAddons(email, payment.metadata?.addons);
+        const sent = await notifyTelegramOnce(`mollie:${payment.id}:${chargedBack ? "chargeback" : "refund"}`, `${test}${chargedBack ? "⚠️ Litige bancaire (chargeback)" : "↩️ Remboursement"} Mollie — ${label}\n${money(chargedBack ? payment.amountChargedBack : payment.amountRefunded)}\n${who}\nOptions retirées.`);
+        return done(200, "remboursé : options retirées", sent ? "envoyé" : "non envoyé");
+      }
       const previous = email ? await redisGetAccessRecord(email) : null;
       const ours = previous?.provider === "mollie" && (previous.transactionId === payment.id || (plan !== "lifetime" && previous.kind === plan));
       if (ours) {

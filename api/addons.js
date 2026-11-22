@@ -15,7 +15,7 @@
 import { Redis } from "@upstash/redis";
 import { FREELANCE_KIT } from "./_kit.js";
 import { LEAD_COUNTRIES, LEAD_TRADES, LEADS_MAX, cityKey, findPlace, searchLeads, tradeById } from "./_leads.js";
-import { LEADS_DAILY_SEARCHES, TEAM_MAX_INVITES, TEAM_SEATS, customerAccessLevel, methodNotAllowed, normalizeEmail, redisGetAddons, teamOwnerFor } from "./_shared.js";
+import { LEADS_DAILY_SEARCHES, TEAM_MAX_INVITES, TEAM_SEATS, customerAccessLevel, methodNotAllowed, normalizeEmail, redisGetAccessRecord, redisGetAddons, teamOwnerFor } from "./_shared.js";
 
 const looksLikeEmail = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 const parisDay = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
@@ -56,6 +56,9 @@ export default async function handler(req, res) {
       return res.json({
         hasAccess,
         addons,
+        // Options are sold with the lifetime access, at checkout or afterwards
+        // from the account page: only its holder can add one.
+        kind: hasAccess ? (await redisGetAccessRecord(email))?.kind || null : null,
         team: addons.includes("team") ? await teamOf(redis, email) : null,
         memberOf: hasAccess ? await teamOwnerFor(email) : null,
       });

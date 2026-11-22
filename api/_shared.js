@@ -573,6 +573,12 @@ export async function redisGrantAddons(email, addons) {
   const list = parseAddons(addons);
   if (list.length) await Redis.fromEnv().sadd(`addons:${email}`, ...list);
 }
+// The options of one payment taken back (that payment refunded): the others
+// the email holds stay.
+export async function redisRemoveAddons(email, addons) {
+  const list = parseAddons(addons);
+  if (list.length) await Redis.fromEnv().srem(`addons:${email}`, ...list);
+}
 export async function redisClearAddons(email) {
   try {
     await Redis.fromEnv().del(`addons:${email}`);
@@ -617,7 +623,7 @@ export const MOLLIE_LIFETIME_PROMO = {
   label: process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Black Friday",
 };
 export const strikeText = (text) => [...String(text)].map((c) => `${c}\u0336`).join("");
-export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
+export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", addons: "Options", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
 // How many months one payment of each subscription pays for: the Mollie
 // subscription's interval, and how far a paid payment opens the catalogue.
 export const MOLLIE_PLAN_MONTHS = { m1: 1, m3: 3, m12: 12 };

@@ -2640,7 +2640,7 @@ function LiveSitePreview({ item }) {
 // the copy button and how to use it. Opened from any card; Escape or the
 // arrow closes it. Scrolled into view when it opens, since the card clicked
 // may be far down the page.
-function PromptFeature({ item, onClose, onCopy, copied, access, live, aiEmail }) {
+function PromptFeature({ item, onClose, onCopy, copied, access, live, aiEmail, aiOffer }) {
   const ref = useRef(null);
   const [aiOpen, setAiOpen] = useState(false);
   useEffect(() => {
@@ -2693,6 +2693,13 @@ function PromptFeature({ item, onClose, onCopy, copied, access, live, aiEmail })
           <button type="button" onClick={() => { setAiOpen(true); track("ai_panel_opened", { prompt: item.title }); }} className="-mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/80 transition hover:border-white/35 hover:text-white">
             <Icon name="zap" className="h-4 w-4" /> {t("Adapt it with AI", "Adapter avec l'IA")}
           </button>
+        )}
+        {/* A member without the option: the same button leads to the account
+            page, where it can be added. */}
+        {!aiEmail && aiOffer && (
+          <a href={aiOffer} onClick={() => track("ai_option_offered", { prompt: item.title })} className="-mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/80 transition hover:border-white/35 hover:text-white">
+            <Icon name="zap" className="h-4 w-4" /> {t("Adapt it with AI", "Adapter avec l'IA")} <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/70">{t("Option", "Option")}</span>
+          </a>
         )}
         {aiOpen && <AiCustomizer item={item} email={aiEmail} onClose={() => setAiOpen(false)} />}
         {/* Deliberately not `link`, which REPLACES the copy action: a demo is
@@ -3171,6 +3178,7 @@ export default function MoventoSite() {
   const isTeamPage = typeof window !== "undefined" && window.location.pathname === "/team";
   const isLeadsPage = typeof window !== "undefined" && window.location.pathname === "/leads";
   const isAiPage = typeof window !== "undefined" && window.location.pathname === "/ai";
+  const isAccountPage = typeof window !== "undefined" && window.location.pathname === "/account";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -3511,6 +3519,7 @@ export default function MoventoSite() {
   if (isTeamPage) return <TeamPage />;
   if (isLeadsPage) return <LeadsPage />;
   if (isAiPage) return <AiPage />;
+  if (isAccountPage) return <AccountPage />;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#141414] text-[#EDE9E0]">
@@ -3747,6 +3756,7 @@ export default function MoventoSite() {
               copied={copiedCard === previewItem.title}
               access={{ hasPremiumAccess, owned: ownedPrompts.has(previewItem.file), credits: promptCredits }}
               aiEmail={hasPremiumAccess && myAddons.includes("ai") ? accessEmail : ""}
+              aiOffer={hasPremiumAccess && ADDONS_ON_SALE && !myAddons.includes("ai") ? accountUrl(accessEmail, "ai") : ""}
               live={SHOW_DEMO_LINKS && Boolean(previewItem.demo) && canSeeLivePreviews(accessEmail)}
             />
           );
@@ -3778,6 +3788,7 @@ export default function MoventoSite() {
           <p className="text-sm text-white/40">© {new Date().getFullYear()} Movento. {t("All rights reserved.", "Tous droits réservés.")}</p>
           <div className="flex items-center gap-5">
             <a href="/tiktok" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Monetize TikTok", "Monétise TikTok")}</a>
+            <a href="/account" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("My account", "Mon compte")}</a>
             <a href="/subscription" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("My subscription", "Mon abonnement")}</a>
             <a href="/cgv" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Terms of sale", "CGV")}</a>
             <a href="/remboursement" className="text-sm text-white/40 transition hover:text-[#EDE9E0]">{t("Refunds", "Remboursement")}</a>
@@ -3871,7 +3882,10 @@ function AddonCards({ addons, email, className = "" }) {
 function AddonPage({ title, lede, children }) {
   const [email, setEmail] = useState(() => {
     if (typeof window === "undefined") return "";
-    return cleanEmail(new URLSearchParams(window.location.search).get("email") || getStoredAccessEmail() || "");
+    const params = new URLSearchParams(window.location.search);
+    // ?change=1 asks for the email again, whatever this device remembers.
+    if (params.get("change")) return "";
+    return cleanEmail(params.get("email") || getStoredAccessEmail() || "");
   });
   const [typed, setTyped] = useState("");
   return (
@@ -3900,13 +3914,20 @@ function AddonPage({ title, lede, children }) {
   );
 }
 
+// The account page, for this email, with one option already ticked.
+const accountUrl = (email, addon) => `/account?${new URLSearchParams({ ...(email ? { email } : {}), ...(addon ? { add: addon } : {}) })}`;
+
 // What an add-on page shows to an email that does not hold the add-on.
-function AddonMissing({ message }) {
+// `addon` and `email`, when given, turn the first button into the way to add
+// that option from the account page.
+function AddonMissing({ message, addon, email }) {
   return (
     <div className="mt-8 rounded-[28px] border border-white/10 bg-[#121214] p-6 md:p-7">
       <p className="text-sm leading-6 text-white/65">{message}</p>
       <div className="mt-5 flex flex-wrap gap-3">
-        <a href="/pricing" className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the offer", "Voir l'offre")}</a>
+        {addon && ADDONS_ON_SALE
+          ? <a href={accountUrl(email, addon)} className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Add this option", "Ajouter cette option")}</a>
+          : <a href="/pricing" className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the offer", "Voir l'offre")}</a>}
         <a href={supportUrl()} className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/35 hover:text-[#EDE9E0]">{t("Write to us", "Nous écrire")}</a>
       </div>
     </div>
@@ -4133,7 +4154,7 @@ function AiContent({ email }) {
   }, [email]);
   if (state.loading) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!state.data?.addon) {
-    return <AddonMissing message={state.error || t(`The AI option is not on ${email}. It is an option of the lifetime access, ticked when ordering.`, `L'option « Prompts sur mesure » n'est pas sur ${email}. C'est une option de l'accès à vie, à cocher au moment de la commande.`)} />;
+    return <AddonMissing message={state.error || t(`The AI option is not on ${email}. It is an option of the lifetime access: you can add it from your account.`, `L'option « Prompts sur mesure » n'est pas sur ${email}. C'est une option de l'accès à vie : tu peux l'ajouter depuis ton compte.`)} addon="ai" email={email} />;
   }
   const { left, total, results } = state.data;
   const copy = async (file) => {
@@ -4193,6 +4214,173 @@ function AiPage() {
   );
 }
 
+// /account — one page for what an email holds: its access, the options it
+// has (each opening its own page) and the ones it can still add. Options are
+// sold with the lifetime access, so only its holder can add one here; the
+// payment is a Mollie one-off that comes back to this page (?paid=<claim>).
+const ACCESS_KIND_NAMES = () => ({
+  lifetime: t("Lifetime access", "Accès à vie"),
+  m1: t("Monthly subscription", "Abonnement mensuel"),
+  monthly: t("Monthly subscription", "Abonnement mensuel"),
+  m3: t("3-month subscription", "Abonnement 3 mois"),
+  m12: t("Annual subscription", "Abonnement annuel"),
+  yearly: t("Annual subscription", "Abonnement annuel"),
+});
+
+function AccountContent({ email }) {
+  const [state, load] = useAddons(email, "status");
+  const params = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
+  const [picked, setPicked] = useState(() => (ADDONS.some((a) => a.id === params.get("add")) ? [params.get("add")] : []));
+  const [pay, setPay] = useState({ loading: false, error: "" });
+  // Back from Mollie: "confirming" until the payment is confirmed.
+  const [paid, setPaid] = useState(() => (params.get("paid") ? { status: "confirming", message: "" } : null));
+
+  useEffect(() => { load(); }, [load]);
+
+  // The return from Mollie. The claim names one payment; asking for it here
+  // opens the options at once instead of waiting for Mollie's notification.
+  useEffect(() => {
+    const claim = params.get("paid");
+    if (!claim) return undefined;
+    let alive = true;
+    let tries = 0;
+    const clean = () => { try { const u = new URL(window.location.href); u.searchParams.delete("paid"); window.history.replaceState({}, "", u); } catch { /* keep the URL */ } };
+    const ask = async () => {
+      tries += 1;
+      try {
+        const r = await fetch(`${API_BASE_URL}/api/mollie-claim`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ claim, email }) });
+        const d = await r.json().catch(() => ({}));
+        if (!alive) return;
+        if (r.status === 202 && tries < 15) { setTimeout(ask, 2000); return; }
+        if (r.ok && r.status !== 202) { clean(); setPaid({ status: "ok", message: "" }); track("addons_bought_after"); load(); return; }
+        if (r.status === 202) { setPaid({ status: "late", message: "" }); return; }
+        clean();
+        setPaid({ status: "failed", message: apiError(d, t("This payment did not go through: nothing was charged.", "Ce paiement n'a pas abouti : rien n'a été prélevé.")) });
+      } catch {
+        if (alive) setPaid({ status: "late", message: "" });
+      }
+    };
+    ask();
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email]);
+
+  const data = state.data;
+  if (state.loading && !data) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
+  if (!data) return <AddonMissing message={state.error} />;
+
+  const held = data.addons || [];
+  const lifetime = data.kind === "lifetime";
+  const toAdd = ADDONS.filter((a) => !held.includes(a.id));
+  const chosen = picked.filter((id) => toAdd.some((a) => a.id === id));
+  const total = addonsTotal(chosen);
+  const kindName = ACCESS_KIND_NAMES()[data.kind];
+  const toggle = (id) => { setPicked((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id])); setPay({ loading: false, error: "" }); };
+
+  const buy = async () => {
+    if (!chosen.length || pay.loading) return;
+    setPay({ loading: true, error: "" });
+    track("addons_checkout_after", { addons: chosen.join("+") });
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/mollie-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "addons", email, addons: chosen }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.checkoutUrl) throw new Error(apiError(d, t("The payment could not start. Try again in a moment.", "Le paiement n'a pas pu démarrer. Réessaie dans un instant.")));
+      window.location.assign(d.checkoutUrl);
+    } catch (err) {
+      setPay({ loading: false, error: err.message });
+    }
+  };
+
+  const card = "rounded-[28px] border border-white/10 bg-[#121214] p-6 md:p-7";
+  return (
+    <div className="mt-8 space-y-6">
+      {paid && (
+        <div data-account-notice={paid.status} className={`rounded-2xl border px-4 py-3 text-sm leading-6 ${paid.status === "ok" ? "border-emerald-400/30 bg-emerald-400/[0.08] text-emerald-200" : paid.status === "failed" ? "border-red-400/25 bg-red-400/[0.07] text-red-200" : "border-white/12 bg-white/[0.04] text-white/70"}`}>
+          {paid.status === "confirming" && t("Confirming your payment…", "Confirmation de ton paiement…")}
+          {paid.status === "ok" && t("Payment received: your new options are open below.", "Paiement reçu : tes nouvelles options sont ouvertes ci-dessous.")}
+          {paid.status === "late" && t("Your payment is still being confirmed. Reload this page in a minute: the options appear as soon as it is.", "Ton paiement est encore en cours de confirmation. Recharge cette page dans une minute : les options apparaissent dès qu'il est confirmé.")}
+          {paid.status === "failed" && paid.message}
+        </div>
+      )}
+
+      <div className={card}>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">{t("Your access", "Ton accès")}</p>
+        <p className="mt-2 break-all text-lg font-semibold text-[#EDE9E0]">{email}</p>
+        {data.hasAccess ? (
+          <p className="mt-1 text-sm text-white/60">
+            {data.memberOf
+              ? t(`Catalogue open: you are on the team of ${data.memberOf}.`, `Catalogue ouvert : tu fais partie de l'équipe de ${data.memberOf}.`)
+              : kindName ? `${kindName} · ${t("catalogue open", "catalogue ouvert")}` : t("Catalogue open", "Catalogue ouvert")}
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-white/60">{t("No access found on this email.", "Aucun accès trouvé sur cet email.")}</p>
+        )}
+        <div className="mt-5 flex flex-wrap gap-3">
+          {data.hasAccess
+            ? <a href="/#prompts" className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Go to the gallery", "Aller à la galerie")}</a>
+            : <a href="/pricing" className="rounded-full bg-[#EDE9E0] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the plans", "Voir les offres")}</a>}
+          {data.hasAccess && !lifetime && !data.memberOf && <a href="/subscription" className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/35 hover:text-[#EDE9E0]">{t("Manage my subscription", "Gérer mon abonnement")}</a>}
+          <a href="/account?change=1" className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/35 hover:text-[#EDE9E0]">{t("Use another email", "Utiliser un autre email")}</a>
+        </div>
+      </div>
+
+      {held.length > 0 && (
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">{t("Your options", "Tes options")}</h2>
+          <AddonCards addons={held} email={email} className="mt-4" />
+        </div>
+      )}
+
+      {ADDONS_ON_SALE && toAdd.length > 0 && (
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">{held.length ? t("Add an option", "Ajouter une option") : t("Options", "Options")}</h2>
+          <p className="mt-1 text-sm text-white/50">
+            {lifetime
+              ? t("Paid once, added to your account right after the payment.", "Payées une seule fois, ajoutées à ton compte juste après le paiement.")
+              : t("The options are added to the lifetime access.", "Les options s'ajoutent à l'accès à vie.")}
+          </p>
+          <div className="mt-4 space-y-3">
+            {toAdd.map((addon) => {
+              const on = chosen.includes(addon.id);
+              return (
+                <label key={addon.id} data-addon={addon.id} className={`flex items-start gap-3 rounded-[20px] border px-5 py-4 transition ${lifetime ? "cursor-pointer" : "opacity-60"} ${on ? "border-emerald-400/40 bg-emerald-400/[0.06]" : "border-white/10 bg-[#121214] hover:border-white/25"}`}>
+                  <input type="checkbox" checked={on} disabled={!lifetime} onChange={() => toggle(addon.id)} className="mt-1 h-4 w-4 flex-none accent-emerald-400" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="text-sm font-semibold text-[#EDE9E0]">{addon.name}</span>
+                      <span className="flex-none text-sm font-bold text-[#EDE9E0]">+{eur(addon.price)}</span>
+                    </span>
+                    <span className="mt-1 block text-[13px] leading-5 text-white/55">{addon.desc}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          {lifetime ? (
+            <div className="mt-5 flex flex-wrap items-center gap-4">
+              <button type="button" onClick={buy} disabled={!chosen.length || pay.loading} className="inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40">
+                {pay.loading ? t("Taking you to the payment…", "Redirection vers le paiement…") : chosen.length ? t(`Pay ${eur(total)}`, `Payer ${eur(total)}`) : t("Choose an option", "Choisis une option")}
+              </button>
+              <p className="text-xs text-white/40">{t("Secure payment by Mollie. One payment, no subscription.", "Paiement sécurisé par Mollie. Un seul paiement, sans abonnement.")}</p>
+            </div>
+          ) : (
+            <a href="/pricing" className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#EDE9E0] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the lifetime access", "Voir l'accès à vie")} <Icon name="arrow" className="h-4 w-4" /></a>
+          )}
+          {pay.error && <p className="mt-3 text-sm text-red-300">{pay.error}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AccountPage() {
+  return (
+    <AddonPage title={t("My account", "Mon compte")} lede={t("Your access, your options, and the ones you can add.", "Ton accès, tes options, et celles que tu peux ajouter.")}>
+      {(email) => <AccountContent email={email} />}
+    </AddonPage>
+  );
+}
+
 // The freelance kit (api/_kit.js), for an email that bought it: each model in
 // its own block, copied as is, and the whole kit as one text file.
 function KitContent({ email }) {
@@ -4203,8 +4391,8 @@ function KitContent({ email }) {
   if (state.loading && !kit) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!kit) {
     return <AddonMissing message={state.status === 403
-      ? t(`The freelance kit is not on ${email}. It is an option of the lifetime access, ticked when ordering.`, `Le Kit freelance n'est pas sur ${email}. C'est une option de l'accès à vie, à cocher au moment de la commande.`)
-      : state.error} />;
+      ? t(`The freelance kit is not on ${email}. It is an option of the lifetime access: you can add it from your account.`, `Le Kit freelance n'est pas sur ${email}. C'est une option de l'accès à vie : tu peux l'ajouter depuis ton compte.`)
+      : state.error} addon={state.status === 403 ? "kit" : undefined} email={email} />;
   }
   const copy = async (key, text) => {
     if (await copyTextToClipboard(text)) { setCopied(key); setTimeout(() => setCopied(""), 1600); track("kit_block_copied", { block: key }); }
@@ -4292,7 +4480,7 @@ function TeamContent({ email }) {
   if (!team) {
     return <AddonMissing message={state.data.memberOf
       ? t(`${email} is on the team of ${state.data.memberOf}: the catalogue is open to you. Only the buyer of the licence manages the team.`, `${email} fait partie de l'équipe de ${state.data.memberOf} : le catalogue t'est ouvert. Seul l'acheteur de la licence gère l'équipe.`)
-      : t(`The agency licence is not on ${email}. It is an option of the lifetime access, ticked when ordering.`, `La Licence agence n'est pas sur ${email}. C'est une option de l'accès à vie, à cocher au moment de la commande.`)} />;
+      : t(`The agency licence is not on ${email}. It is an option of the lifetime access: you can add it from your account.`, `La Licence agence n'est pas sur ${email}. C'est une option de l'accès à vie : tu peux l'ajouter depuis ton compte.`)} addon={state.data.memberOf ? undefined : "team"} email={email} />;
   }
   const free = team.seats - team.members.length;
   return (
@@ -4389,8 +4577,8 @@ function LeadsContent({ email }) {
   if (form.loading && !form.data) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!form.data) {
     return <AddonMissing message={form.status === 403
-      ? t(`The leads finder is not on ${email}. It is an option of the lifetime access, ticked when ordering.`, `L'option « On trouve tes clients » n'est pas sur ${email}. C'est une option de l'accès à vie, à cocher au moment de la commande.`)
-      : form.error} />;
+      ? t(`The leads finder is not on ${email}. It is an option of the lifetime access: you can add it from your account.`, `L'option « On trouve tes clients » n'est pas sur ${email}. C'est une option de l'accès à vie : tu peux l'ajouter depuis ton compte.`)
+      : form.error} addon={form.status === 403 ? "leads" : undefined} email={email} />;
   }
   const trades = form.data.trades || [];
   const tradeLabel = (id) => { const tr = trades.find((x) => x.id === id); return tr ? t(tr.labelEn, tr.label) : id; };
@@ -4551,7 +4739,7 @@ const NAV_PRIMARY = () => [
 ];
 const NAV_SECONDARY = () => [
   { href: "/pricing", label: t("Pricing", "Tarifs") },
-  { href: "/subscription", label: t("My subscription", "Mon abonnement") },
+  { href: "/account", label: t("My account", "Mon compte") },
 ];
 
 // The tile wall behind the hero (src/tileWall.js, three.js, loaded on demand):
@@ -5742,7 +5930,7 @@ function CgvPage() {
         <ul>
           <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
           <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
-          <li><strong className="text-white/75">Options, au moment de la commande de l'accès à vie</strong> : l'option « Prompts sur mesure (IA) » ({eur(ADDONS.find((a) => a.id === "ai").price)}, qui fait réécrire un prompt du catalogue par une intelligence artificielle à partir d'une courte demande, dans la limite de {AI_EDITS_INCLUDED} adaptations au total ; le texte est généré automatiquement, doit être relu avant usage, et une adaptation qui échoue n'est pas décomptée), le Kit freelance ({eur(ADDONS.find((a) => a.id === "kit").price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) la Licence agence ({eur(ADDONS.find((a) => a.id === "team").price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email) et l'option « On trouve tes clients » ({eur(ADDONS.find((a) => a.id === "leads").price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial). Elles sont payées une seule fois, avec l'accès à vie, et suivent son sort en cas de remboursement.</li>
+          <li><strong className="text-white/75">Options de l'accès à vie</strong>, à prendre au moment de la commande ou plus tard depuis la page <a href="/account" className="underline underline-offset-4">Mon compte</a> : l'option « Prompts sur mesure (IA) » ({eur(ADDONS.find((a) => a.id === "ai").price)}, qui fait réécrire un prompt du catalogue par une intelligence artificielle à partir d'une courte demande, dans la limite de {AI_EDITS_INCLUDED} adaptations au total ; le texte est généré automatiquement, doit être relu avant usage, et une adaptation qui échoue n'est pas décomptée), le Kit freelance ({eur(ADDONS.find((a) => a.id === "kit").price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) la Licence agence ({eur(ADDONS.find((a) => a.id === "team").price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email) et l'option « On trouve tes clients » ({eur(ADDONS.find((a) => a.id === "leads").price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial). Chaque option est payée une seule fois. Elles suivent le sort de l'accès à vie : si celui-ci est remboursé, elles sont retirées avec lui.</li>
           <li>Les abonnements de 3 mois et annuel, ainsi que les packs de prompts, ne sont plus proposés à l'achat. Ceux déjà souscrits restent valables aux conditions de leur souscription : les abonnements se renouvellent jusqu'à résiliation, et les prompts d'un pack restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>

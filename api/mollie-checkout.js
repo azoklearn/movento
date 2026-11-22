@@ -13,9 +13,15 @@
 // visitor), it is passed along and the customer reused, as before.
 //
 // What is charged comes from MOLLIE_PRICES, never from the request.
+//
+// plan "addons" is the options bought afterwards, from the account page:
+// { plan: "addons", email, addons }. The email is required and must hold the
+// lifetime access, since the options are sold with it; options it already
+// holds are left out; the payment is a one-off for the rest, and comes back
+// to /account.
 import { randomBytes } from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { checkoutProviderFor, methodNotAllowed, MOLLIE_ADDONS, parseAddons, MOLLIE_LIFETIME_PROMO, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, strikeText, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
+import { CHECKOUT_PROVIDER, customerAccessLevel, mollieReady, redisGetAccessRecord, redisGetAddons, checkoutProviderFor, methodNotAllowed, MOLLIE_ADDONS, parseAddons, MOLLIE_LIFETIME_PROMO, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, strikeText, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
 
 const looksLikeEmail = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 
@@ -49,12 +55,60 @@ function lifetimeDescription(amount, offer) {
   return anchor ? `Movento — Accès à vie · ${label} ${strikeText(`${anchor}€`)} → ${paid}` : "Movento — Accès à vie";
 }
 
+// Options added to an account that already has the lifetime access.
+async function addonsCheckout(req, res, email) {
+  if (CHECKOUT_PROVIDER !== "mollie" || !mollieReady()) {
+    return res.status(400).json({ error: "Les options ne sont pas disponibles au paiement.", errorEn: "The options cannot be paid for right now." });
+  }
+  if (!looksLikeEmail(email)) return res.status(400).json({ error: "Entre une adresse email valide.", errorEn: "Enter a valid email address." });
+  const wanted = parseAddons(req.body?.addons);
+  if (!wanted.length) return res.status(400).json({ error: "Choisis au moins une option.", errorEn: "Choose at least one option." });
+
+  const host = req.headers["x-forwarded-host"] || req.headers.host;
+  const site = `https://${host}`;
+  try {
+    const [level, record, held] = await Promise.all([customerAccessLevel(email), redisGetAccessRecord(email), redisGetAddons(email)]);
+    if (level !== "full" || record?.kind !== "lifetime") {
+      return res.status(403).json({ error: "Les options s'ajoutent à l'accès à vie. Cet email ne l'a pas.", errorEn: "The options are added to the lifetime access. This email does not have it.", needsLifetime: true });
+    }
+    const addons = wanted.filter((a) => !held.includes(a));
+    if (!addons.length) return res.status(409).json({ error: "Tu as déjà ces options.", errorEn: "You already have these options." });
+
+    const amount = addons.reduce((sum, a) => sum + Number(MOLLIE_ADDONS[a].price), 0).toFixed(2);
+    const customerId = await customerFor(email);
+    const claim = randomBytes(18).toString("base64url");
+    const back = `${site}/account?email=${encodeURIComponent(email)}`;
+    const payment = await mollieApi("/payments", {
+      method: "POST",
+      body: {
+        amount: { currency: "EUR", value: amount },
+        description: `Movento — ${addons.length > 1 ? "Options" : "Option"} : ${addons.map((a) => MOLLIE_ADDONS[a].label).join(" + ")}`,
+        customerId,
+        sequenceType: "oneoff",
+        redirectUrl: `${back}&paid=${claim}`,
+        cancelUrl: back,
+        webhookUrl: `${site}/api/mollie-webhook`,
+        locale: "fr_FR",
+        metadata: { plan: "addons", claim, addons: addons.join(","), email },
+      },
+    });
+    await Redis.fromEnv().set(`mollie:claim:${claim}`, { paymentId: payment.id, plan: "addons" }, { ex: 60 * 86400 });
+    const checkoutUrl = payment?._links?.checkout?.href;
+    if (!checkoutUrl) throw new Error("Mollie returned no checkout link");
+    return res.json({ checkoutUrl, claim, addons, amount });
+  } catch (error) {
+    console.error("Mollie add-ons checkout failed:", error);
+    return res.status(502).json({ error: "Le paiement n'a pas pu démarrer. Réessaie dans un instant.", errorEn: "The payment could not start. Try again in a moment." });
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res);
   res.setHeader("Cache-Control", "no-store");
 
   const plan = String(req.body?.plan || "");
   const email = normalizeEmail(req.body?.email);
+  if (plan === "addons") return addonsCheckout(req, res, email);
   if (RETIRED_PLANS.has(plan) || checkoutProviderFor(plan) !== "mollie") {
     return res.status(400).json({ error: "Cette offre n'est pas disponible au paiement." });
   }

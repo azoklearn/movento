@@ -54,6 +54,12 @@ export default async function handler(req, res) {
   }
   if (await wasRefunded(payment.id)) return res.status(409).json({ error: "Ce paiement a été remboursé.", errorEn: "This payment was refunded." });
 
+  // Options added from the account page were paid for one account: the claim
+  // cannot move them to another.
+  if (payment.metadata?.plan === "addons" && normalizeEmail(payment.metadata?.email) !== email) {
+    return res.status(409).json({ error: "Ces options ont été payées pour une autre adresse.", errorEn: "These options were paid for another address." });
+  }
+
   // Bound to the first email that claims it.
   const already = await claimedEmail(payment.id);
   if (already && already !== email) {

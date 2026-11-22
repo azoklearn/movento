@@ -150,6 +150,14 @@ export async function grantPaid(payment, email) {
     return { plan, renewal: false };
   }
 
+  // Options bought afterwards (plan "addons"): added to what the email holds,
+  // the access itself untouched.
+  if (plan === "addons") {
+    const addons = parseAddons(payment.metadata?.addons);
+    await redisGrantAddons(email, addons);
+    return { plan, renewal: false, addons };
+  }
+
   if (plan === "lifetime") {
     await redisSetAccess(email, mollieAccessRecord({ kind: "lifetime", paymentId: payment.id, customerId: payment.customerId }));
     // The add-ons paid for in the same payment (a set: granting twice is the
