@@ -5231,28 +5231,28 @@ const QUIZ_SITE_PRICE = 900;
 // A business design is a whole site, never an app screen or a single block,
 // and is not looked for among the SaaS entries that merely share a word.
 const QUIZ_BUSINESS_CATEGORIES = new Set(["Landing Page", "E-commerce", "Agency", "Portfolio", "Hero Section"]);
-function quizSample(type) {
-  if (!type) return undefined;
+// Every design of the catalogue that fits a type, in the order the quiz
+// shows them: for the business type, restaurants first, then salons,
+// practices and hotels; for the others, the pinned entries of the category
+// first. Within each group, a playing clip before a still, newest first.
+function quizMatches(type) {
+  if (!type) return [];
   const usable = (p) => isPromptAvailable(p) && !p.onlyFor && (isVideoPreview(p.preview) || isImagePreview(p.preview));
-  // A playing clip before a still, the newest first either way.
-  const pick = (fits) => {
-    const all = prompts.filter((p) => usable(p) && fits(p));
-    return all.find((p) => isVideoPreview(p.preview)) || all[0];
-  };
-  if (!type.words) return pick((p) => p.category === type.category && p.pinned);
-  for (const words of type.words) {
-    const found = pick((p) => QUIZ_BUSINESS_CATEGORIES.has(p.category) && words.test(`${p.title} ${(p.tags || []).join(" ")}`));
-    if (found) return found;
-  }
-  return undefined;
+  const byMotion = (list) => [...list.filter((p) => isVideoPreview(p.preview)), ...list.filter((p) => !isVideoPreview(p.preview))];
+  const groups = type.words
+    ? type.words.map((words) => prompts.filter((p) => usable(p) && QUIZ_BUSINESS_CATEGORIES.has(p.category) && words.test(`${p.title} ${(p.tags || []).join(" ")}`)))
+    : [prompts.filter((p) => usable(p) && p.category === type.category && p.pinned), prompts.filter((p) => usable(p) && p.category === type.category && !p.pinned)];
+  const seen = new Set();
+  return groups.flatMap(byMotion).filter((p) => (seen.has(p.file) ? false : seen.add(p.file)));
 }
+const quizSample = (type) => quizMatches(type)[0];
 // The design's preview at any size: the clip playing, or the still.
 function QuizPreview({ item, className = "" }) {
   return (
     <span className={`relative block overflow-hidden bg-gradient-to-br ${item?.gradient || "from-white/20 to-white/5"} ${className}`}>
       {item && (isVideoPreview(item.preview)
         ? <video src={item.preview} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
-        : <img src={item.preview} alt="" loading="lazy" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />)}
+        : <img src={item.preview} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} className="pointer-events-none absolute inset-0 h-full w-full object-cover" />)}
     </span>
   );
 }
@@ -5353,7 +5353,6 @@ function StartQuiz() {
   const goal = goals.find((g) => g.id === answers.goal) || goals[0];
   const types = QUIZ_TYPES();
   const type = types.find((x) => x.id === answers.type);
-  const sample = quizSample(type) || quizSample(types.find((x) => x.id === "shop"));
   const monthly = answers.sites * QUIZ_SITE_PRICE;
   const sells = answers.goal === "clients" || answers.goal === "agency";
   const reaction = answers.sites <= 1 ? t("A good start.", "Un bon début.") : answers.sites <= 3 ? t("A real side income.", "Un vrai complément de revenu.") : answers.sites <= 6 ? t("Ambitious. We like it.", "Ambitieux, on aime.") : t("An agency's pace.", "Un rythme d'agence.");
@@ -5452,12 +5451,24 @@ function StartQuiz() {
   } else {
     const tool = TOOL_LOGOS.find((x) => x.name === answers.tool);
     const toolName = tool ? tool.name : "Lovable";
+    // The whole catalogue is the offer, never the one design used as an
+    // example: the plan names the type's share of it, then the rest.
+    const matches = quizMatches(type);
+    const forType = type ? type.label.charAt(0).toLowerCase() + type.label.slice(1) : "";
+    const fill = availablePrompts.filter((p) => isVideoPreview(p.preview) && !matches.includes(p));
+    const wall = [...matches, ...fill].slice(0, 6);
+    const others = availablePrompts.length - wall.length;
     const planSteps = [
-      sample ? t(`Open “${sample.title}” and copy its prompt.`, `Ouvre « ${sample.title} » et copie son prompt.`) : t("Open a design and copy its prompt.", "Ouvre un design et copie son prompt."),
+      matches.length > 1
+        ? t(`Pick a design among the ${availablePrompts.length}, ${matches.length} of them ${forType}, and copy its prompt.`, `Choisis un design parmi les ${availablePrompts.length}, dont ${matches.length} ${forType}, et copie son prompt.`)
+        : t(`Pick a design among the ${availablePrompts.length} and copy its prompt.`, `Choisis un design parmi les ${availablePrompts.length} et copie son prompt.`),
       tool ? t(`Paste it into ${toolName}: the site builds itself.`, `Colle-le dans ${toolName} : le site se construit tout seul.`) : t("Paste it into Lovable (free to start): the site builds itself.", "Colle-le dans Lovable (gratuit pour commencer) : le site se construit tout seul."),
       sells && type?.client
         ? t(`Put in ${type.client}: the name, the copy, the photos. Then send it.`, `Mets-y ${type.client} : son nom, ses textes, ses photos. Puis envoie-le.`)
         : sells ? t("Change the name, the copy, the images, and send it to your client.", "Change le nom, les textes, les images, et envoie-le à ton client.") : t("Change the name, the copy, the images, and put it online.", "Change le nom, les textes, les images, et mets-le en ligne."),
+      sells
+        ? t("Next client, next design: every prompt is yours, as often as you like.", "Client suivant, design suivant : tous les prompts sont à toi, autant de fois que tu veux.")
+        : t("Next site, next design: every prompt is yours, as often as you like.", "Site suivant, design suivant : tous les prompts sont à toi, autant de fois que tu veux."),
     ];
     screen = (
       <div className="grid items-start gap-8 lg:grid-cols-[1fr_1.05fr] lg:gap-12">
@@ -5466,7 +5477,7 @@ function StartQuiz() {
           <h1 className="mt-5 text-[clamp(2.2rem,5.6vw,3.6rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
             {t("Your plan", "Ton plan")} <span className="text-white/45">{t("is ready.", "est prêt.")}</span>
           </h1>
-          <p className="mt-4 text-[16px] leading-7 text-white/55">{t(`Here is how to ${goal.plan}.`, `Voici comment ${goal.plan}.`)}</p>
+          <p className="mt-4 text-[16px] leading-7 text-white/55">{t(`Here is how to ${goal.plan}, with the ${availablePrompts.length} prompts of the catalogue.`, `Voici comment ${goal.plan}, avec les ${availablePrompts.length} prompts du catalogue.`)}</p>
           <ol className="mt-7 space-y-2.5">
             {planSteps.map((line, i) => (
               <motion.li key={line} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.15 + i * 0.1 }} className="flex items-start gap-3.5 rounded-2xl bg-white/[0.03] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
@@ -5485,17 +5496,35 @@ function StartQuiz() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative">
           <div aria-hidden="true" className="absolute inset-x-8 -bottom-8 h-24 rounded-full bg-[radial-gradient(closest-side,rgba(124,140,255,0.5),transparent)] blur-2xl" />
           <div className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(160deg,#151a2e,#0a0b12_60%)] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">
-            <div className={`relative aspect-[16/10] overflow-hidden rounded-[20px] bg-gradient-to-br ${sample?.gradient || "from-white/15 to-white/5"}`}>
-              <QuizPreview item={sample} className="absolute inset-0 h-full w-full" />
-              <span className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-md">{t("Made for you", "Fait pour toi")}</span>
+            <div className="flex items-center justify-between gap-3 px-1.5 pb-3 pt-1">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 text-[12.5px] font-medium text-white/80 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {t(`All ${availablePrompts.length} prompts included`, `Les ${availablePrompts.length} prompts inclus`)}</span>
+              {matches.length > 1 && <span className="hidden truncate text-[12.5px] text-white/45 sm:block">{t(`${matches.length} ${forType}`, `${matches.length} ${forType}`)}</span>}
+            </div>
+            {/* A wall of the catalogue, the type's designs first: what is
+                unlocked is all of it, and the picture has to say so. */}
+            <div className="grid grid-cols-3 gap-1.5">
+              {wall.map((item, i) => (
+                <div key={item.file} className={`relative overflow-hidden rounded-[14px] bg-gradient-to-br ${item.gradient || "from-white/15 to-white/5"} ${i === 0 ? "col-span-2 row-span-2" : "aspect-[4/3]"}`}>
+                  <QuizPreview item={item} className="absolute inset-0 h-full w-full" />
+                  {i === 0 && <span className="absolute bottom-2.5 left-2.5 right-2.5 truncate rounded-full bg-black/60 px-2.5 py-1 text-[11.5px] font-medium text-white/85 backdrop-blur-md sm:right-auto sm:max-w-[90%]"><span className="font-semibold text-white">{t("To start with:", "Pour commencer :")}</span> {item.title.split(" — ")[0]}</span>}
+                  {i === wall.length - 1 && others > 0 && (
+                    <span className="absolute inset-0 grid place-items-center bg-black/60 text-center backdrop-blur-[2px]">
+                      <span><span className="block text-[22px] font-semibold leading-none tracking-[-0.03em] text-white">+{others}</span><span className="mt-1 block text-[11px] text-white/70">{t("more designs", "autres designs")}</span></span>
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
             <div className="p-4 pt-5">
-              <p className="text-[20px] font-semibold tracking-[-0.03em] text-[#FAFAFA]">{sample ? sample.title : t("Your first design", "Ton premier design")}</p>
+              <p className="text-[20px] font-semibold tracking-[-0.03em] text-[#FAFAFA]">{t("Every prompt, unlocked at once.", "Tous les prompts, débloqués d'un coup.")}</p>
               <ul className="mt-4 space-y-2.5">
                 {[
-                  t(`${availablePrompts.length} designs, and every one added next`, `${availablePrompts.length} designs, et tous ceux à venir`),
+                  matches.length > 1
+                    ? t(`${availablePrompts.length} designs, ${matches.length} of them ${forType}`, `${availablePrompts.length} designs, dont ${matches.length} ${forType}`)
+                    : t(`${availablePrompts.length} designs: landing pages, shops, portfolios`, `${availablePrompts.length} designs : landing pages, boutiques, portfolios`),
+                  t("Every new prompt included, for life", "Tous les nouveaux prompts inclus, à vie"),
                   answers.level === "dev" ? t("Clean code you can take further", "Un code propre que tu peux pousser plus loin") : t("Not a line of code to write", "Aucune ligne de code à écrire"),
-                  sells ? t(`${answers.sites} site${answers.sites > 1 ? "s" : ""} a month: about ${new Intl.NumberFormat("en-GB").format(monthly)} € at €${QUIZ_SITE_PRICE} each (estimate)`, `${answers.sites} site${answers.sites > 1 ? "s" : ""} par mois : environ ${new Intl.NumberFormat("fr-FR").format(monthly)} € à ${QUIZ_SITE_PRICE} € pièce (estimation)`) : t(`Works with ${toolName}, Cursor and Claude`, `Fonctionne avec ${toolName}, Cursor et Claude`),
+                  sells ? t(`${answers.sites} site${answers.sites > 1 ? "s" : ""} a month at €${QUIZ_SITE_PRICE}: about €${new Intl.NumberFormat("en-GB").format(monthly)} (estimate)`, `${answers.sites} site${answers.sites > 1 ? "s" : ""} par mois à ${QUIZ_SITE_PRICE} € : environ ${new Intl.NumberFormat("fr-FR").format(monthly)} € (estimation)`) : t(`Works with ${toolName}, Cursor and Claude`, `Fonctionne avec ${toolName}, Cursor et Claude`),
                 ].map((line) => (
                   <li key={line} className="flex items-start gap-3 text-[14.5px] leading-6 text-white/75"><span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10 text-white"><Icon name="tick" className="h-3 w-3" /></span>{line}</li>
                 ))}
