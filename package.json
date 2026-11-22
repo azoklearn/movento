@@ -21,8 +21,7 @@
     "framer-motion": "latest",
     "posthog-js": "^1.418.10",
     "react": "latest",
-    "react-dom": "latest",
-    "three": "0.170.0"
+    "react-dom": "latest"
   },
   "devDependencies": {
     "@tailwindcss/vite": "latest",

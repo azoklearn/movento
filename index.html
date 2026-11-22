@@ -33,14 +33,10 @@
     <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=3" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3" />
-    <meta name="theme-color" content="#0A0A0B" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Load fonts without blocking first paint: swap them in once they arrive. -->
-    <link rel="preload" as="font" type="font/woff2" href="/fonts/roboto-flex/latin.woff2" crossorigin />
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" media="print" onload="this.media='all'" />
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" /></noscript>
+    <meta name="theme-color" content="#000000" />
+    <!-- The site's face, self-hosted (src/index.css): fetched early, so the
+         first paint is already in it. No font is loaded from another server. -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/plus-jakarta-sans/latin.woff2" crossorigin />
     <!-- Warm up the connections to the preview-media hosts so thumbnails arrive faster. -->
     <link rel="preconnect" href="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev" />
     <link rel="preconnect" href="https://admin.lafys.com" />
@@ -118,7 +114,7 @@
     }
     </script>
     <style>
-      html, body { margin: 0; background: #0A0A0B; }
+      html, body { margin: 0; background: #000; }
       @keyframes mv-spin { to { transform: rotate(360deg); } }
     </style>
     <!-- Whop Pixel (biz_2CQPz7bDNhG3va). Pasted verbatim from Whop; the
