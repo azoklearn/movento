@@ -1381,23 +1381,13 @@ function PlanCard({ plan, onBuy, loading, featured }) {
 
       {bumps.length > 0 && (
         <fieldset className="mt-6">
-          <legend className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">{t("Add to your order", "Ajoute à ta commande")}</legend>
-          <div className="mt-2.5 space-y-2">
-            {bumps.map((addon) => {
-              const on = picked.includes(addon.id);
-              return (
-                <label key={addon.id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 transition ${on ? "border-emerald-400/50 bg-emerald-400/[0.07]" : "border-dashed border-white/20 bg-white/[0.02] hover:border-white/40"}`}>
-                  <input type="checkbox" checked={on} onChange={() => toggle(addon.id)} className="mt-1 h-4 w-4 flex-none accent-emerald-400" />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-baseline justify-between gap-3">
-                      <span className="text-sm font-semibold text-[#EDE9E0]">{addon.name}</span>
-                      <span className="flex-none text-sm font-bold text-[#EDE9E0]">+{eur(addon.price)}</span>
-                    </span>
-                    <span className="mt-0.5 block text-xs leading-5 text-white/55">{addon.desc}</span>
-                  </span>
-                </label>
-              );
-            })}
+          <legend className="flex w-full items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
+            <span>{t("Add to your order", "Ajoute à ta commande")}</span>
+            <span className="h-px flex-1 bg-white/[0.1]" />
+            <span className="tracking-[0.1em] text-white/35">{t("Optional", "Optionnel")}</span>
+          </legend>
+          <div className="mt-3 space-y-2.5">
+            {bumps.map((addon) => <AddonOption key={addon.id} addon={addon} on={picked.includes(addon.id)} onToggle={() => toggle(addon.id)} />)}
           </div>
         </fieldset>
       )}
@@ -2104,8 +2094,10 @@ const ADDONS = [
     id: "ai",
     price: 29,
     href: "/ai",
-    name: t("Custom prompts (AI)", "Prompts sur mesure (IA)"),
-    desc: t(`Give your brand, your business and your colours: the AI rewrites any prompt for you, ready to paste. ${AI_EDITS_INCLUDED} adaptations included.`, `Donne ta marque, ton activité et tes couleurs : l'IA réécrit n'importe quel prompt pour toi, prêt à coller. ${AI_EDITS_INCLUDED} adaptations incluses.`),
+    name: t("We adapt the prompt for you", "On adapte le prompt directement pour toi"),
+    desc: t(`Your brand, your business, your colours: the AI rewrites the prompt, ready to paste. ${AI_EDITS_INCLUDED} adaptations included.`, `Ta marque, ton activité, tes couleurs : l'IA réécrit le prompt, prêt à coller. ${AI_EDITS_INCLUDED} adaptations incluses.`),
+    icon: "zap",
+    tint: "from-[#F0566B] to-[#B04BF0]",
     open: t("Adapt a prompt", "Adapter un prompt"),
   },
   {
@@ -2113,7 +2105,9 @@ const ADDONS = [
     price: 19,
     href: "/kit",
     name: t("Freelance kit", "Kit freelance"),
-    desc: t("Quote template, contract, outreach messages and price grid to sell a site to a client (in French).", "Modèle de devis, contrat type, messages de prospection et grille de prix pour vendre un site à un client."),
+    desc: t("Quote, contract, outreach messages and price grid to sell a site to a client (in French).", "Devis, contrat, messages de prospection et grille de prix pour vendre un site à un client."),
+    icon: "layers",
+    tint: "from-[#F7B955] to-[#F0566B]",
     open: t("Open the kit", "Ouvrir le kit"),
   },
   {
@@ -2122,6 +2116,8 @@ const ADDONS = [
     href: "/team",
     name: t("Agency licence", "Licence agence"),
     desc: t("Access for 5 people: you and 4 teammates, each with their own email.", "L'accès pour 5 personnes : toi et 4 membres de ton équipe, chacun avec son email."),
+    icon: "users",
+    tint: "from-[#7C8CFF] to-[#5B5BF7]",
     open: t("Invite my team", "Inviter mon équipe"),
   },
   {
@@ -2129,10 +2125,41 @@ const ADDONS = [
     price: 39,
     href: "/leads",
     name: t("We find your clients", "On trouve tes clients"),
-    desc: t("Answer three questions (the trade you target, your city) and get a list of real local businesses to contact, with a ready-made message.", "Réponds à 3 questions (le métier que tu vises, ta ville) et reçois une liste de vraies entreprises à démarcher, avec un message prêt à envoyer."),
+    desc: t("Three questions, and you get a list of real local businesses to contact, with a ready-made message.", "3 questions, et tu reçois une liste de vraies entreprises de ta ville à démarcher, avec le message prêt à envoyer."),
+    icon: "search",
+    tint: "from-[#34D399] to-[#0EA5A4]",
     open: t("Find my prospects", "Trouver mes prospects"),
   },
 ];
+// One option to tick, on the lifetime card and on the account page: its own
+// coloured mark, what it is, its price, and a round check that fills when it
+// is taken. The real checkbox is kept for the keyboard and screen readers.
+function AddonOption({ addon, on, onToggle, disabled = false }) {
+  return (
+    <label
+      data-addon={addon.id}
+      className={`group relative flex items-start gap-3.5 rounded-2xl p-3.5 ring-1 transition duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-white/70 ${disabled ? "opacity-55" : "cursor-pointer"} ${on
+        ? "bg-[linear-gradient(120deg,rgba(240,86,107,0.13),rgba(124,140,255,0.13))] ring-[#b9a4ff]/60 shadow-[0_10px_34px_-18px_rgba(160,120,255,0.9)]"
+        : `bg-white/[0.035] ring-white/[0.09] ${disabled ? "" : "hover:bg-white/[0.06] hover:ring-white/25"}`}`}
+    >
+      <input type="checkbox" checked={on} disabled={disabled} onChange={onToggle} className="sr-only" />
+      <span aria-hidden="true" className={`grid h-10 w-10 flex-none place-items-center rounded-xl bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_8px_18px_-10px_rgba(0,0,0,0.9)] transition duration-200 ${disabled ? "" : "group-hover:scale-105"}`}>
+        <Icon name={addon.icon} className="h-[18px] w-[18px]" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14px] font-semibold leading-5 text-[#EDE9E0]">{addon.name}</span>
+        <span className="mt-1 block text-xs leading-5 text-white/55">{addon.desc}</span>
+      </span>
+      <span className="flex flex-none flex-col items-end gap-2.5">
+        <span className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums transition ${on ? "bg-white text-[#0A0A0B]" : "bg-white/[0.08] text-[#EDE9E0]"}`}>+{eur(addon.price)}</span>
+        <span aria-hidden="true" className={`grid h-5 w-5 place-items-center rounded-full transition ${on ? "bg-gradient-to-br from-[#F0566B] to-[#7C8CFF] text-white" : "border border-white/25 text-transparent"}`}>
+          <Icon name="tick" className="h-3 w-3" />
+        </span>
+      </span>
+    </label>
+  );
+}
+
 // Sold on Mollie only: it is the one checkout that adds them to the payment.
 const ADDONS_ON_SALE = CHECKOUT_PROVIDER_PUBLIC === "mollie";
 const addonsTotal = (ids) => ADDONS.filter((a) => (ids || []).includes(a.id)).reduce((sum, a) => sum + a.price, 0);
@@ -2473,6 +2500,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   if (name === "sparkles") children = <><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z" /></>;
   if (name === "play") children = <path d="M8 5v14l11-7z" />;
   if (name === "arrow") children = <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>;
+  if (name === "users") children = <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>;
   if (name === "zap") children = <path d="M13 2 3 14h8l-1 8 10-12h-8l1-8z" />;
   if (name === "code") children = <><path d="m16 18 6-6-6-6" /><path d="m8 6-6 6 6 6" /></>;
   if (name === "layers") children = <><path d="m12 2 10 6-10 6L2 8l10-6z" /><path d="m2 17 10 6 10-6" /><path d="m2 12 10 6 10-6" /></>;
@@ -3863,7 +3891,7 @@ function AddonCards({ addons, email, className = "" }) {
       {owned.map((addon) => (
         <div key={addon.id} className="rounded-[28px] border border-emerald-400/25 bg-emerald-400/[0.06] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7">
           <div className="flex items-center gap-3">
-            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name={addon.id === "kit" ? "layers" : addon.id === "leads" ? "search" : addon.id === "ai" ? "zap" : "sparkles"} className="h-4 w-4" /></span>
+            <span className={`grid h-9 w-9 flex-none place-items-center rounded-xl bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]`}><Icon name={addon.icon} className="h-4 w-4" /></span>
             <h2 className="text-lg font-semibold text-[#EDE9E0]">{addon.name}</h2>
           </div>
           <p className="mt-3 text-sm leading-6 text-white/60">{addon.desc}</p>
@@ -4154,7 +4182,7 @@ function AiContent({ email }) {
   }, [email]);
   if (state.loading) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!state.data?.addon) {
-    return <AddonMissing message={state.error || t(`The AI option is not on ${email}. It is an option of the lifetime access: you can add it from your account.`, `L'option « Prompts sur mesure » n'est pas sur ${email}. C'est une option de l'accès à vie : tu peux l'ajouter depuis ton compte.`)} addon="ai" email={email} />;
+    return <AddonMissing message={state.error || t(`The AI option is not on ${email}. It is an option of the lifetime access: you can add it from your account.`, `L'option « On adapte le prompt pour toi » n'est pas sur ${email}. C'est une option de l'accès à vie : tu peux l'ajouter depuis ton compte.`)} addon="ai" email={email} />;
   }
   const { left, total, results } = state.data;
   const copy = async (file) => {
@@ -4208,7 +4236,7 @@ function AiContent({ email }) {
 
 function AiPage() {
   return (
-    <AddonPage title={t("Custom prompts (AI)", "Prompts sur mesure (IA)")} lede={t("Any prompt of the catalogue, rewritten for your brand.", "N'importe quel prompt du catalogue, réécrit pour ta marque.")}>
+    <AddonPage title={t("We adapt the prompt for you", "On adapte le prompt pour toi")} lede={t("Any prompt of the catalogue, rewritten for your brand by the AI.", "N'importe quel prompt du catalogue, réécrit pour ta marque par l'IA.")}>
       {(email) => <AiContent email={email} />}
     </AddonPage>
   );
@@ -4340,21 +4368,7 @@ function AccountContent({ email }) {
               : t("The options are added to the lifetime access.", "Les options s'ajoutent à l'accès à vie.")}
           </p>
           <div className="mt-4 space-y-3">
-            {toAdd.map((addon) => {
-              const on = chosen.includes(addon.id);
-              return (
-                <label key={addon.id} data-addon={addon.id} className={`flex items-start gap-3 rounded-[20px] border px-5 py-4 transition ${lifetime ? "cursor-pointer" : "opacity-60"} ${on ? "border-emerald-400/40 bg-emerald-400/[0.06]" : "border-white/10 bg-[#121214] hover:border-white/25"}`}>
-                  <input type="checkbox" checked={on} disabled={!lifetime} onChange={() => toggle(addon.id)} className="mt-1 h-4 w-4 flex-none accent-emerald-400" />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-baseline justify-between gap-3">
-                      <span className="text-sm font-semibold text-[#EDE9E0]">{addon.name}</span>
-                      <span className="flex-none text-sm font-bold text-[#EDE9E0]">+{eur(addon.price)}</span>
-                    </span>
-                    <span className="mt-1 block text-[13px] leading-5 text-white/55">{addon.desc}</span>
-                  </span>
-                </label>
-              );
-            })}
+            {toAdd.map((addon) => <AddonOption key={addon.id} addon={addon} on={chosen.includes(addon.id)} disabled={!lifetime} onToggle={() => toggle(addon.id)} />)}
           </div>
           {lifetime ? (
             <div className="mt-5 flex flex-wrap items-center gap-4">
@@ -5930,7 +5944,7 @@ function CgvPage() {
         <ul>
           <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
           <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
-          <li><strong className="text-white/75">Options de l'accès à vie</strong>, à prendre au moment de la commande ou plus tard depuis la page <a href="/account" className="underline underline-offset-4">Mon compte</a> : l'option « Prompts sur mesure (IA) » ({eur(ADDONS.find((a) => a.id === "ai").price)}, qui fait réécrire un prompt du catalogue par une intelligence artificielle à partir d'une courte demande, dans la limite de {AI_EDITS_INCLUDED} adaptations au total ; le texte est généré automatiquement, doit être relu avant usage, et une adaptation qui échoue n'est pas décomptée), le Kit freelance ({eur(ADDONS.find((a) => a.id === "kit").price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) la Licence agence ({eur(ADDONS.find((a) => a.id === "team").price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email) et l'option « On trouve tes clients » ({eur(ADDONS.find((a) => a.id === "leads").price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial). Chaque option est payée une seule fois. Elles suivent le sort de l'accès à vie : si celui-ci est remboursé, elles sont retirées avec lui.</li>
+          <li><strong className="text-white/75">Options de l'accès à vie</strong>, à prendre au moment de la commande ou plus tard depuis la page <a href="/account" className="underline underline-offset-4">Mon compte</a> : l'option « On adapte le prompt directement pour toi » ({eur(ADDONS.find((a) => a.id === "ai").price)}, qui fait réécrire un prompt du catalogue par une intelligence artificielle à partir d'une courte demande, dans la limite de {AI_EDITS_INCLUDED} adaptations au total ; le texte est généré automatiquement, doit être relu avant usage, et une adaptation qui échoue n'est pas décomptée), le Kit freelance ({eur(ADDONS.find((a) => a.id === "kit").price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) la Licence agence ({eur(ADDONS.find((a) => a.id === "team").price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email) et l'option « On trouve tes clients » ({eur(ADDONS.find((a) => a.id === "leads").price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial). Chaque option est payée une seule fois. Elles suivent le sort de l'accès à vie : si celui-ci est remboursé, elles sont retirées avec lui.</li>
           <li>Les abonnements de 3 mois et annuel, ainsi que les packs de prompts, ne sont plus proposés à l'achat. Ceux déjà souscrits restent valables aux conditions de leur souscription : les abonnements se renouvellent jusqu'à résiliation, et les prompts d'un pack restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
@@ -6013,7 +6027,7 @@ function PrivacyPage() {
         <ul>
           <li>Vercel (hébergement du site et statistiques anonymes)</li>
           <li>Upstash (base de données des accès)</li>
-          <li>Anthropic (intelligence artificielle de l'option « Prompts sur mesure » : la demande que tu saisis et le prompt à adapter lui sont transmis pour produire le texte)</li>
+          <li>Anthropic (intelligence artificielle de l'option « On adapte le prompt directement pour toi » : la demande que tu saisis et le prompt à adapter lui sont transmis pour produire le texte)</li>
           <li>{PAYMENT_PROVIDER.name} (paiement)</li>
           <li>Telegram (notification interne des ventes au vendeur)</li>
         </ul>

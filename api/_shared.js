@@ -553,7 +553,7 @@ export const MOLLIE_ADDONS = {
   kit: { price: Number(process.env.MOLLIE_ADDON_KIT_PRICE || 19).toFixed(2), label: "Kit freelance" },
   team: { price: Number(process.env.MOLLIE_ADDON_TEAM_PRICE || 29).toFixed(2), label: "Licence agence" },
   leads: { price: Number(process.env.MOLLIE_ADDON_LEADS_PRICE || 39).toFixed(2), label: "On trouve tes clients" },
-  ai: { price: Number(process.env.MOLLIE_ADDON_AI_PRICE || 29).toFixed(2), label: "Prompts sur mesure (IA)" },
+  ai: { price: Number(process.env.MOLLIE_ADDON_AI_PRICE || 29).toFixed(2), label: "On adapte le prompt pour toi (IA)" },
 };
 // Adaptations the AI option includes, in all and not per month: each one is a
 // paid call to the Claude API, and the option is paid once. A failed

@@ -109,7 +109,7 @@ export default async function handler(req, res) {
       if (!holds) return res.json({ hasAccess, addon: false });
       return res.json({ hasAccess, addon: true, ...(await statusOf(redis, email)) });
     }
-    if (!holds) return res.status(403).json({ error: "L'option « Prompts sur mesure » n'est pas sur cet email.", errorEn: "The AI option is not on this email." });
+    if (!holds) return res.status(403).json({ error: "L'option « On adapte le prompt pour toi » n'est pas sur cet email.", errorEn: "The AI option is not on this email." });
 
     const file = String(req.body?.file || "");
     if (!isSafePromptFile(file)) return res.status(400).json({ error: "Prompt invalide.", errorEn: "Invalid prompt." });
