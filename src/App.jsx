@@ -143,6 +143,10 @@ const prompts = [
   // Fictional placeholder, visible only to the team address (onlyFor): not in
   // the public gallery or any count.
   { title: "GTA 6 — Vice Coast Teaser", category: "Hero Section", type: "Hero", file: "GTA_6_Vice_Teaser_Hero.md", pinned: true, onlyFor: "teammoventoino1@gmail.com", preview: "https://res.cloudinary.com/klc0oxsz/image/upload/v1795056214/Capture_d_e%CC%81cran_2026-11-19_a%CC%80_03.41.46.png", tags: ["Synthwave Sun", "Parallax", "Fan Concept"], gradient: "from-[#ff2e88] via-[#ff8a3d] to-[#0b0614]" },
+  { title: "Pente Fino — Barbershop Under One Spotlight", category: "Landing Page", type: "Landing", file: "Pente_Fino_Barbershop_Spotlight.md", pinned: true, preview: "https://res.cloudinary.com/ce2yatay/video/upload/pente-fino/preview.mp4", tags: ["Barbershop", "Mirror Lights", "Pinned Hero Dissolve"], gradient: "from-[#e9e7e3] via-[#8a8884] to-[#0a0a0a]" },
+  { title: "Capiá — Burger Joint, Torn-Paper Menu", category: "Landing Page", type: "Landing", file: "Capia_Burger_Torn_Paper_Menu.md", pinned: true, preview: "https://res.cloudinary.com/ce2yatay/video/upload/capia/preview.mp4", tags: ["Restaurant", "Exploded Menu Picker", "Torn Paper Edges"], gradient: "from-[#f9b21c] via-[#de3a26] to-[#171310]" },
+  { title: "Crimson Rite — Tattoo Studio in Five Scenes", category: "Landing Page", type: "Landing", file: "Crimson_Rite_Tattoo_Scenes.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/crimson-rite.mp4", tags: ["Tattoo Studio", "Word Behind Statue", "Scroll Scenes"], gradient: "from-[#b21e1a] via-[#560e0a] to-[#050303]" },
+  { title: "Rastro — Night Test Drive", category: "Automotive", type: "Landing", file: "Rastro_Night_Test_Drive.md", pinned: true, preview: "https://res.cloudinary.com/ce2yatay/video/upload/rastro/preview.mp4", tags: ["Scroll Film", "Tachometer Needle", "Road Drawing"], gradient: "from-[#f5190f] via-[#3a0a08] to-[#0b0b0c]" },
   { title: "Vaultline — Crystal in a Glass Cube", category: "Fintech", type: "Landing", file: "Vaultline_Crystal_Cube_Scroll.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/crystal-scroll.mp4", tags: ["CSS 3D Cube", "Water Caustics", "Dotted Terrain"], gradient: "from-[#f2f2f4] via-[#cdc8f6] to-[#060607]" },
   { title: "Keel — Chrome Pear Scroll Film", category: "Agency", type: "Landing", file: "Keel_Chrome_Pear_Scroll_Film.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/keel-landing.mp4", tags: ["Scroll Film", "Pixel Dissolve", "Chrome Clouds"], gradient: "from-[#3d69c4] via-[#76a3e2] to-[#07080c]" },
   { title: "Uvra — Scroll-Scrubbed Harvest Film", category: "Landing Page", type: "Landing", file: "Uvra_Scroll_Harvest_Film.md", pinned: true, preview: "https://www.profitizebuild.com/media/7f57314f-1772-4e8f-a25f-1dabac20f9b7/en/previa-card-d73bdc1d.mp4", tags: ["Scroll Film", "Canvas Frame Sequence", "Chapter Nav"], gradient: "from-[#f5efe8] via-[#ecd9e3] to-[#0b0705]" },
@@ -484,6 +488,10 @@ const AVAILABLE_FILES = new Set([
   "VirtualFit_Spatial_TryOn_Arc.md",
   "Ciao_Energy_3D_Can_Carousel.md",
   "Letterbloom_Poppy_Type_Garden.md",
+  "Pente_Fino_Barbershop_Spotlight.md",
+  "Capia_Burger_Torn_Paper_Menu.md",
+  "Crimson_Rite_Tattoo_Scenes.md",
+  "Rastro_Night_Test_Drive.md",
   "Vaultline_Crystal_Cube_Scroll.md",
   "Keel_Chrome_Pear_Scroll_Film.md",
   "Uvra_Scroll_Harvest_Film.md",
@@ -5205,7 +5213,7 @@ const QUIZ_TYPES = () => [
     // a practice or a hotel does.
     words: [
       /restaurant|pizz|caf[eé]|coffee|bistro|brasserie|bakery|boulang|burger|sushi/i,
-      /beauty|beaut[eé]|salon|barber|coiff|hair|nail|spa\b|wellness/i,
+      /beauty|beaut[eé]|salon|barber|coiff|hair|nail|spa\b|wellness|tattoo|tatou/i,
       /dental|dentist|clinic|doctor|kin[eé]|plumb|garage|lawyer|avocat|artisan|\bcoach\b|\bgym\b|fitness|immobil|real estate/i,
       /\bh[oô]tel\b|\btravel\b|voyage|resort/i,
     ] },
