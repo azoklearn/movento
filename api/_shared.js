@@ -31,7 +31,8 @@ const SHOWCASE_FILES = [
 // button, this one decides whether /api/prompt actually hands the markdown
 // over, so a name in only one of them is either a button that fails or a
 // prompt given away in silence.
-export const FREE_PROMPT_FILES = new Set(["Ovra_Every_Workout.md", "Leon_Vasari_VHS_Filmography_Hero.md", "Oda_Nobunaga_Unifiers_Hero.md", "Folio_Room_Book_Orbit.md", "Meadowbell_Hero.md"]);
+// Empty: nothing is given away.
+export const FREE_PROMPT_FILES = new Set([]);
 
 // Free copies, counted for /admin: how many times each free prompt was copied
 // and by how many different people (an anonymous id the browser keeps, never

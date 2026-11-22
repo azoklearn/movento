@@ -877,14 +877,13 @@ const SHOWCASE_FILES = [
   "Kimi_Grido1_Racing_Systems.md",
 ];
 const SHOWCASE_SET = new Set(SHOWCASE_FILES);
-// Three prompts anyone can copy, with no account and no email: the sample the
-// whole market gives before its paywall, so a visitor can judge what a Movento
-// prompt produces before paying. They sit right after the lead card for
-// visitors without access, with a "Free" badge.
+// Prompts anyone can copy, with no account and no email. Empty: nothing is
+// given away, every prompt is behind the offer. A name put back here gets the
+// "Free" badge and the place right after the lead card.
 //
 // The same names must be in the set in api/_shared.js, which is what actually
 // lets /api/prompt hand them over — this one only unlocks the copy button.
-const FREE_PROMPT_FILES = new Set(["Ovra_Every_Workout.md", "Leon_Vasari_VHS_Filmography_Hero.md", "Oda_Nobunaga_Unifiers_Hero.md", "Folio_Room_Book_Orbit.md", "Meadowbell_Hero.md"]);
+const FREE_PROMPT_FILES = new Set([]);
 
 // Whether the card moves BY ITSELF — a clip or a gif, as against a still that
 // only gets the Ken Burns pan, and against an entry with no preview at all,
@@ -3115,8 +3114,8 @@ function runSelfTests() {
   // The popup names whatever is free, so the two have to agree. Not compared
   // against api/_shared.js here — that set is not imported — so the mirror is
   // checked by a script before each commit instead.
-  // Five prompts are the free sample, all of them in the catalogue.
-  console.assert(FREE_PROMPT_FILES.size === 5 && freePromptItems.length === 5, "exactly five prompts are free, and all five are on display");
+  // Nothing is free: every prompt is behind the offer.
+  console.assert(FREE_PROMPT_FILES.size === 0 && freePromptItems.length === 0, "no prompt is given away");
   console.assert(SHOWCASE_FILES.every((f) => prompts.some((item) => item.file === f)), "every showcase filename must belong to a catalogue entry");
   console.assert(freePromptItems.every((item) => isPromptAvailable(item) && item.title), "a free prompt with no markdown or no title would be a badge promising a 404");
   // The badge, the sort and the API all key on FREE_PROMPT_FILES, so a name in
@@ -5175,7 +5174,7 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
             </p>
             <div className="mt-1 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
               <a href="#prompts" className="text-sm font-semibold text-white/80 underline decoration-white/30 underline-offset-4 transition hover:text-white">
-                {t("Try a free prompt", "Essayer un prompt gratuit")}
+                {t("Browse the prompts", "Voir les prompts")}
               </a>
               {!trialActive && (
                 <button onClick={onUnlock} className="text-sm font-medium text-white/45 transition hover:text-white/80">
@@ -5473,7 +5472,7 @@ function StartQuiz() {
             <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
           </a>
           <p className="mt-3 text-center text-[13px] text-white/45"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> · {t("one payment, no subscription", "un seul paiement, sans abonnement")}</p>
-          <p className="mt-4 text-center"><a href="/#prompts" className="text-sm font-semibold text-white/70 underline decoration-white/25 underline-offset-4 transition hover:text-white">{t("Try a free prompt first", "Essayer d'abord un prompt gratuit")}</a></p>
+          <p className="mt-4 text-center"><a href="/#prompts" className="text-sm font-semibold text-white/70 underline decoration-white/25 underline-offset-4 transition hover:text-white">{t("Browse the prompts first", "Voir d'abord les prompts")}</a></p>
         </div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative">
           <div aria-hidden="true" className="absolute inset-x-8 -bottom-8 h-24 rounded-full bg-[radial-gradient(closest-side,rgba(124,140,255,0.5),transparent)] blur-2xl" />
