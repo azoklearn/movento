@@ -3342,6 +3342,7 @@ function MoventoPages() {
   const isLeadsPage = typeof window !== "undefined" && window.location.pathname === "/leads";
   const isAiPage = typeof window !== "undefined" && window.location.pathname === "/ai";
   const isAccountPage = typeof window !== "undefined" && window.location.pathname === "/account";
+  const isStartPage = typeof window !== "undefined" && window.location.pathname === "/commencer";
 
   useEffect(() => {
     const savedEmail = getStoredAccessEmail();
@@ -3694,6 +3695,7 @@ function MoventoPages() {
   if (isLeadsPage) return <LeadsPage />;
   if (isAiPage) return <AiPage />;
   if (isAccountPage) return <AccountPage />;
+  if (isStartPage) return <StartQuiz />;
 
   return (
     <main className="min-h-screen overflow-hidden bg-black text-[#FAFAFA]">
@@ -4028,18 +4030,28 @@ function AddonCards({ addons, email, className = "" }) {
   const owned = ADDONS.filter((a) => (addons || []).includes(a.id));
   if (!owned.length) return null;
   return (
-    <div className={`space-y-4 ${className}`}>
-      {owned.map((addon) => (
-        <div key={addon.id} className="rounded-[28px] border border-emerald-400/25 bg-emerald-400/[0.06] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] md:p-7">
-          <div className="flex items-center gap-3">
-            <span className={`grid h-9 w-9 flex-none place-items-center rounded-xl bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]`}><Icon name={addon.icon} className="h-4 w-4" /></span>
-            <h2 className="text-lg font-semibold text-[#FAFAFA]">{addon.name}</h2>
-          </div>
-          <p className="mt-3 text-sm leading-6 text-white/60">{addon.desc}</p>
-          <a href={`${addon.href}${email ? `?email=${encodeURIComponent(email)}` : ""}`} onClick={() => track("addon_opened", { addon: addon.id })} className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3 text-sm font-semibold text-[#04150d] transition hover:scale-[1.02] hover:bg-emerald-300">
-            {addon.open} <Icon name="arrow" className="h-4 w-4" />
-          </a>
-        </div>
+    <div className={`grid gap-3 sm:grid-cols-2 ${className}`}>
+      {owned.map((addon, i) => (
+        <motion.a
+          key={addon.id}
+          href={`${addon.href}${email ? `?email=${encodeURIComponent(email)}` : ""}`}
+          onClick={() => track("addon_opened", { addon: addon.id })}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
+          className="group relative flex flex-col overflow-hidden rounded-[24px] bg-[#0a0a0c] p-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.24),0_30px_60px_-34px_rgba(0,0,0,1)]"
+        >
+          <span aria-hidden="true" className={`absolute -right-10 -top-12 h-32 w-32 rounded-full bg-gradient-to-br ${addon.tint} opacity-[0.16] blur-2xl transition duration-300 group-hover:opacity-30`} />
+          <span className="flex items-center justify-between">
+            <span className={`grid h-11 w-11 place-items-center rounded-[14px] bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_10px_22px_-12px_rgba(0,0,0,0.9)]`}><Icon name={addon.icon} className="h-5 w-5" /></span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{t("Active", "Active")}</span>
+          </span>
+          <span className="mt-5 block text-[17px] font-semibold tracking-[-0.02em] text-[#FAFAFA]">{addon.name}</span>
+          <span className="mt-1.5 block flex-1 text-[13.5px] leading-6 text-white/50">{addon.desc}</span>
+          <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white">
+            {addon.open} <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-black transition group-hover:translate-x-0.5"><Icon name="arrow" className="h-3.5 w-3.5" /></span>
+          </span>
+        </motion.a>
       ))}
     </div>
   );
@@ -4048,7 +4060,7 @@ function AddonCards({ addons, email, className = "" }) {
 // The frame the two add-on pages share: the bar, a title, and the email the
 // page works for. The email comes from the link (?email=) or from the access
 // already unlocked on this device; with neither, the page asks for it.
-function AddonPage({ title, lede, children }) {
+function AddonPage({ title, tail, lede, eyebrow, wide = false, children }) {
   const [email, setEmail] = useState(() => {
     if (typeof window === "undefined") return "";
     const params = new URLSearchParams(window.location.search);
@@ -4057,24 +4069,28 @@ function AddonPage({ title, lede, children }) {
     return cleanEmail(params.get("email") || getStoredAccessEmail() || "");
   });
   const [typed, setTyped] = useState("");
+  // The site's own bar, a field of dots fading out behind the title, the title
+  // in two tones under a small pill: the same frame as the guided start.
   return (
-    <main className="min-h-screen bg-[#0A0A0B] text-[#FAFAFA]">
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
-        <a href="/"><Logo /></a>
-        <div className="flex items-center gap-3">
-          <LangSwitch />
-          <a href="/#prompts" className="rounded-full border border-white/10 bg-[#121214] px-5 py-2.5 text-sm font-medium text-white/75 transition hover:border-white/25 hover:text-[#FAFAFA]">{t("Go to the gallery", "Aller à la galerie")}</a>
-        </div>
-      </header>
-      <section className="mx-auto max-w-3xl px-6 pb-24 pt-6 lg:px-8">
-        <h1 className="text-3xl font-bold tracking-tight md:text-5xl">{title}</h1>
-        {lede && <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55 md:text-base">{lede}</p>}
+    <main className="relative min-h-screen overflow-hidden bg-black text-[#FAFAFA]">
+      <div aria-hidden="true" className="mv-dots pointer-events-none absolute inset-x-0 top-0 h-[440px]" />
+      <SiteNav />
+      <section className={`relative z-10 mx-auto px-5 pb-24 pt-10 sm:px-8 sm:pt-14 ${wide ? "max-w-5xl" : "max-w-3xl"}`}>
+        <motion.div initial={{ opacity: 0, y: 16, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[12.5px] font-medium text-white/75">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {eyebrow || t("Your space", "Ton espace")}
+          </span>
+          <h1 className="mt-5 text-[clamp(2.2rem,6vw,3.6rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
+            {title}{tail && <> <span className="text-white/45">{tail}</span></>}
+          </h1>
+          {lede && <p className="mt-4 max-w-xl text-[16px] leading-7 text-white/55">{lede}</p>}
+        </motion.div>
         {email ? children(email) : (
-          <form onSubmit={(e) => { e.preventDefault(); setEmail(cleanEmail(typed)); }} className="mt-8 rounded-[28px] border border-white/10 bg-[#121214] p-6 md:p-7">
-            <p className="text-sm leading-6 text-white/60">{t("Enter the email you bought with.", "Entre l'email utilisé lors de l'achat.")}</p>
+          <form onSubmit={(e) => { e.preventDefault(); setEmail(cleanEmail(typed)); }} className="mt-9 max-w-xl rounded-[26px] bg-[#0a0a0c] p-6 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)] md:p-7">
+            <p className="text-[15px] leading-6 text-white/65">{t("Enter the email you bought with.", "Entre l'email utilisé lors de l'achat.")}</p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-              <input value={typed} onChange={(e) => setTyped(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#0A0A0B] px-4 py-3 text-sm text-[#FAFAFA] outline-none placeholder:text-white/40 focus:border-white/35" />
-              <button type="submit" className="rounded-2xl bg-[#FAFAFA] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Continue", "Continuer")}</button>
+              <input value={typed} onChange={(e) => setTyped(e.target.value)} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} placeholder="email@example.com" className="min-w-0 flex-1 rounded-full border border-white/10 bg-black px-5 py-3 text-sm text-[#FAFAFA] outline-none placeholder:text-white/35 focus:border-white/35" />
+              <button type="submit" className="group inline-flex items-center justify-center gap-2 rounded-full bg-white py-2 pl-5 pr-2 text-sm font-semibold text-black transition hover:bg-white/90">{t("Continue", "Continuer")} <span className="grid h-8 w-8 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span></button>
             </div>
           </form>
         )}
@@ -4091,8 +4107,8 @@ const accountUrl = (email, addon) => `/account?${new URLSearchParams({ ...(email
 // that option from the account page.
 function AddonMissing({ message, addon, email }) {
   return (
-    <div className="mt-8 rounded-[28px] border border-white/10 bg-[#121214] p-6 md:p-7">
-      <p className="text-sm leading-6 text-white/65">{message}</p>
+    <div className="mt-9 max-w-xl rounded-[26px] bg-[#0a0a0c] p-6 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)] md:p-7">
+      <p className="text-[15px] leading-7 text-white/65">{message}</p>
       <div className="mt-5 flex flex-wrap gap-3">
         {addon && ADDONS_ON_SALE
           ? <a href={accountUrl(email, addon)} className="rounded-full bg-[#FAFAFA] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Add this option", "Ajouter cette option")}</a>
@@ -4460,70 +4476,105 @@ function AccountContent({ email }) {
     }
   };
 
-  const card = "rounded-[28px] border border-white/10 bg-[#121214] p-6 md:p-7";
+  const rise = (i) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay: 0.08 + i * 0.07, ease: [0.22, 1, 0.36, 1] } });
+  const panel = "rounded-[26px] bg-[#0a0a0c] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)]";
+  const statusLine = data.hasAccess
+    ? data.memberOf
+      ? t(`On the team of ${data.memberOf}`, `Dans l'équipe de ${data.memberOf}`)
+      : kindName || t("Catalogue open", "Catalogue ouvert")
+    : t("No access on this email", "Aucun accès sur cet email");
+  const stats = [
+    [t("Access", "Accès"), data.hasAccess ? (lifetime ? t("For life", "À vie") : data.memberOf ? t("Team", "Équipe") : t("Subscription", "Abonnement")) : "—"],
+    [t("Options", "Options"), `${held.length} / ${ADDONS.length}`],
+    [t("Prompts", "Prompts"), data.hasAccess ? String(availablePrompts.length) : "—"],
+  ];
   return (
-    <div className="mt-8 space-y-6">
+    <div className="mt-10 space-y-10">
       {paid && (
-        <div data-account-notice={paid.status} className={`rounded-2xl border px-4 py-3 text-sm leading-6 ${paid.status === "ok" ? "border-emerald-400/30 bg-emerald-400/[0.08] text-emerald-200" : paid.status === "failed" ? "border-red-400/25 bg-red-400/[0.07] text-red-200" : "border-white/12 bg-white/[0.04] text-white/70"}`}>
-          {paid.status === "confirming" && t("Confirming your payment…", "Confirmation de ton paiement…")}
-          {paid.status === "ok" && t("Payment received: your new options are open below.", "Paiement reçu : tes nouvelles options sont ouvertes ci-dessous.")}
-          {paid.status === "late" && t("Your payment is still being confirmed. Reload this page in a minute: the options appear as soon as it is.", "Ton paiement est encore en cours de confirmation. Recharge cette page dans une minute : les options apparaissent dès qu'il est confirmé.")}
-          {paid.status === "failed" && paid.message}
+        <div data-account-notice={paid.status} className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm leading-6 ${paid.status === "ok" ? "bg-emerald-400/[0.08] text-emerald-200 shadow-[inset_0_0_0_1px_rgba(52,211,153,0.3)]" : paid.status === "failed" ? "bg-red-400/[0.07] text-red-200 shadow-[inset_0_0_0_1px_rgba(248,113,113,0.25)]" : "bg-white/[0.04] text-white/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]"}`}>
+          {paid.status === "confirming" && <span className="h-4 w-4 flex-none animate-spin rounded-full border-2 border-white/15 border-t-white/70" />}
+          {paid.status === "ok" && <span className="grid h-5 w-5 flex-none place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="tick" className="h-3 w-3" /></span>}
+          <span>
+            {paid.status === "confirming" && t("Confirming your payment…", "Confirmation de ton paiement…")}
+            {paid.status === "ok" && t("Payment received: your new options are open below.", "Paiement reçu : tes nouvelles options sont ouvertes ci-dessous.")}
+            {paid.status === "late" && t("Your payment is still being confirmed. Reload this page in a minute: the options appear as soon as it is.", "Ton paiement est encore en cours de confirmation. Recharge cette page dans une minute : les options apparaissent dès qu'il est confirmé.")}
+            {paid.status === "failed" && paid.message}
+          </span>
         </div>
       )}
 
-      <div className={card}>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">{t("Your access", "Ton accès")}</p>
-        <p className="mt-2 break-all text-lg font-semibold text-[#FAFAFA]">{email}</p>
-        {data.hasAccess ? (
-          <p className="mt-1 text-sm text-white/60">
-            {data.memberOf
-              ? t(`Catalogue open: you are on the team of ${data.memberOf}.`, `Catalogue ouvert : tu fais partie de l'équipe de ${data.memberOf}.`)
-              : kindName ? `${kindName} · ${t("catalogue open", "catalogue ouvert")}` : t("Catalogue open", "Catalogue ouvert")}
-          </p>
-        ) : (
-          <p className="mt-1 text-sm text-white/60">{t("No access found on this email.", "Aucun accès trouvé sur cet email.")}</p>
-        )}
-        <div className="mt-5 flex flex-wrap gap-3">
-          {data.hasAccess
-            ? <a href="/#prompts" className="rounded-full bg-[#FAFAFA] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("Go to the gallery", "Aller à la galerie")}</a>
-            : <a href="/pricing" className="rounded-full bg-[#FAFAFA] px-5 py-2.5 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the plans", "Voir les offres")}</a>}
-          {data.hasAccess && !lifetime && !data.memberOf && <a href="/subscription" className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/35 hover:text-[#FAFAFA]">{t("Manage my subscription", "Gérer mon abonnement")}</a>}
-          <button type="button" onClick={signOut} className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white/75 transition hover:border-white/35 hover:text-[#FAFAFA]">{t("Sign out", "Se déconnecter")}</button>
+      {/* Who is signed in, what they hold, in one panel lit from a corner. */}
+      <motion.div {...rise(0)} className={`${panel} relative overflow-hidden p-6 sm:p-8`}>
+        <div aria-hidden="true" className="absolute -right-24 -top-32 h-72 w-72 rounded-full bg-[radial-gradient(closest-side,rgba(194,91,245,0.28),transparent)] blur-2xl" />
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="grid h-16 w-16 flex-none place-items-center rounded-full bg-[linear-gradient(140deg,#FF6A7D,#C25BF5_55%,#7C8CFF)] p-[2px]">
+              <span className="grid h-full w-full place-items-center rounded-full bg-[#0a0a0c] text-[24px] font-semibold uppercase text-white">{email.slice(0, 1)}</span>
+            </span>
+            <div className="min-w-0">
+              <p className="break-all text-[19px] font-semibold tracking-[-0.02em] text-[#FAFAFA]">{email}</p>
+              <p className="mt-1.5 inline-flex items-center gap-2 text-sm text-white/60">
+                <span className={`h-1.5 w-1.5 rounded-full ${data.hasAccess ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" : "bg-white/30"}`} /> {statusLine}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {data.hasAccess
+              ? <a href="/#prompts" className="group inline-flex items-center gap-2 rounded-full bg-white py-1.5 pl-5 pr-1.5 text-sm font-semibold text-black transition hover:bg-white/90">{t("Go to the gallery", "Aller à la galerie")} <span className="grid h-8 w-8 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span></a>
+              : <a href="/pricing" className="group inline-flex items-center gap-2 rounded-full bg-white py-1.5 pl-5 pr-1.5 text-sm font-semibold text-black transition hover:bg-white/90">{t("See the plans", "Voir les offres")} <span className="grid h-8 w-8 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span></a>}
+            {data.hasAccess && !lifetime && !data.memberOf && <a href="/subscription" className="rounded-full px-4 py-2.5 text-sm font-semibold text-white/75 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] transition hover:text-white hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]">{t("Manage my subscription", "Gérer mon abonnement")}</a>}
+            <button type="button" onClick={signOut} className="rounded-full px-4 py-2.5 text-sm font-semibold text-white/75 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] transition hover:text-white hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]">{t("Sign out", "Se déconnecter")}</button>
+          </div>
         </div>
-        {(data.hasAccess || held.length > 0) && <PasswordChange />}
-      </div>
+        <dl className="relative mt-7 grid grid-cols-3 divide-x divide-white/[0.07] overflow-hidden rounded-2xl bg-white/[0.025] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+          {stats.map(([label, value]) => (
+            <div key={label} className="px-4 py-4 sm:px-5">
+              <dt className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-white/35">{label}</dt>
+              <dd className="mt-1.5 truncate text-[17px] font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-[19px]">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        {(data.hasAccess || held.length > 0) && <div className="relative"><PasswordChange /></div>}
+      </motion.div>
 
       {held.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">{t("Your options", "Tes options")}</h2>
-          <AddonCards addons={held} email={email} className="mt-4" />
-        </div>
+        <motion.div {...rise(1)}>
+          <h2 className="text-[26px] font-semibold tracking-[-0.035em] text-[#FAFAFA]">{t("Your options", "Tes options")} <span className="text-white/40">{t("ready to use.", "prêtes à l'emploi.")}</span></h2>
+          <AddonCards addons={held} email={email} className="mt-5" />
+        </motion.div>
       )}
 
       {ADDONS_ON_SALE && toAdd.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">{held.length ? t("Add an option", "Ajouter une option") : t("Options", "Options")}</h2>
-          <p className="mt-1 text-sm text-white/50">
-            {lifetime
-              ? t("Paid once, added to your account right after the payment.", "Payées une seule fois, ajoutées à ton compte juste après le paiement.")
-              : t("The options are added to the lifetime access.", "Les options s'ajoutent à l'accès à vie.")}
-          </p>
-          <div className="mt-4 space-y-3">
-            {toAdd.map((addon) => <AddonOption key={addon.id} addon={addon} on={chosen.includes(addon.id)} disabled={!lifetime} onToggle={() => toggle(addon.id)} />)}
-          </div>
-          {lifetime ? (
-            <div className="mt-5 flex flex-wrap items-center gap-4">
-              <button type="button" onClick={buy} disabled={!chosen.length || pay.loading} className="inline-flex items-center gap-2 rounded-full bg-[#FAFAFA] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40">
-                {pay.loading ? t("Taking you to the payment…", "Redirection vers le paiement…") : chosen.length ? t(`Pay ${eur(total)}`, `Payer ${eur(total)}`) : t("Choose an option", "Choisis une option")}
-              </button>
-              <p className="text-xs text-white/40">{t("Secure payment by Mollie. One payment, no subscription.", "Paiement sécurisé par Mollie. Un seul paiement, sans abonnement.")}</p>
+        <motion.div {...rise(2)}>
+          <h2 className="text-[26px] font-semibold tracking-[-0.035em] text-[#FAFAFA]">{held.length ? t("Add an option,", "Ajoute une option,") : t("The options,", "Les options,")} <span className="text-white/40">{lifetime ? t("paid once.", "payée une seule fois.") : t("with the lifetime access.", "avec l'accès à vie.")}</span></h2>
+          <div className={`${panel} mt-5 p-3 sm:p-4`}>
+            <div className="space-y-2.5">
+              {toAdd.map((addon) => <AddonOption key={addon.id} addon={addon} on={chosen.includes(addon.id)} disabled={!lifetime} onToggle={() => toggle(addon.id)} />)}
             </div>
-          ) : (
-            <a href="/pricing" className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#FAFAFA] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white">{t("See the lifetime access", "Voir l'accès à vie")} <Icon name="arrow" className="h-4 w-4" /></a>
-          )}
+            <div className="mt-3 flex flex-col gap-3 rounded-2xl bg-white/[0.025] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] sm:flex-row sm:items-center sm:justify-between">
+              {lifetime ? (
+                <>
+                  <p className="text-sm text-white/50">
+                    {chosen.length
+                      ? <>{t("Total", "Total")} <strong className="ml-1 text-[19px] font-semibold tracking-[-0.02em] text-white">{eur(total)}</strong> <span className="ml-1">· {t("one payment, no subscription", "un seul paiement, sans abonnement")}</span></>
+                      : t("Tick an option: it opens right after the payment.", "Coche une option : elle s'ouvre juste après le paiement.")}
+                  </p>
+                  <button type="button" onClick={buy} disabled={!chosen.length || pay.loading} className="group inline-flex flex-none items-center justify-center gap-2.5 rounded-full bg-white py-1.5 pl-6 pr-1.5 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-40">
+                    {pay.loading ? t("Taking you to the payment…", "Redirection vers le paiement…") : chosen.length ? t(`Pay ${eur(total)}`, `Payer ${eur(total)}`) : t("Choose an option", "Choisis une option")}
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-white/50">{t("The options are added to the lifetime access.", "Les options s'ajoutent à l'accès à vie.")}</p>
+                  <a href="/pricing" className="group inline-flex flex-none items-center justify-center gap-2.5 rounded-full bg-white py-1.5 pl-6 pr-1.5 text-sm font-semibold text-black transition hover:bg-white/90">{t("See the lifetime access", "Voir l'accès à vie")} <span className="grid h-9 w-9 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></span></a>
+                </>
+              )}
+            </div>
+          </div>
+          {lifetime && <p className="mt-3 text-xs text-white/35">{t("Secure payment by Mollie.", "Paiement sécurisé par Mollie.")}</p>}
           {pay.error && <p className="mt-3 text-sm text-red-300">{pay.error}</p>}
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -4552,7 +4603,7 @@ function PasswordChange() {
   };
   const field = "min-w-0 flex-1 rounded-xl border border-white/10 bg-[#0A0A0B] px-3.5 py-2.5 text-sm text-[#FAFAFA] outline-none placeholder:text-white/30 focus:border-white/30";
   return (
-    <div className="mt-5 border-t border-white/[0.07] pt-4">
+    <div className="mt-6 border-t border-white/[0.07] pt-5">
       {!open ? (
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => { setOpen(true); setState({ loading: false, error: "", done: false }); }} className="text-sm font-semibold text-white/60 underline-offset-4 transition hover:text-white hover:underline">{t("Change my password", "Changer mon mot de passe")}</button>
@@ -4577,7 +4628,7 @@ function PasswordChange() {
 
 function AccountPage() {
   return (
-    <AddonPage title={t("My account", "Mon compte")} lede={t("Your access, your options, and the ones you can add.", "Ton accès, tes options, et celles que tu peux ajouter.")}>
+    <AddonPage wide title={t("My account.", "Mon compte.")} tail={t("Everything in one place.", "Tout au même endroit.")} lede={t("Your access, your options, and the ones you can add.", "Ton accès, tes options, et celles que tu peux ajouter.")}>
       {(email) => <AccountContent email={email} />}
     </AddonPage>
   );
@@ -5115,12 +5166,12 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
           </span>
         ) : (
           <>
-            <a href="/pricing" className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-white pl-8 pr-2 text-base font-semibold tracking-[-0.005em] text-black shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_24px_70px_-18px_rgba(194,91,245,0.55)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.3),0_30px_80px_-18px_rgba(194,91,245,0.75)] sm:h-16 sm:pl-10 sm:text-lg">
-              {t(`Unlock the ${availablePrompts.length} prompts`, `Débloquer les ${availablePrompts.length} prompts`)}
+            <a href="/commencer" className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-white pl-8 pr-2 text-base font-semibold tracking-[-0.005em] text-black shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_24px_70px_-18px_rgba(194,91,245,0.55)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.3),0_30px_80px_-18px_rgba(194,91,245,0.75)] sm:h-16 sm:pl-10 sm:text-lg">
+              {t("Start now", "Commencer maintenant")}
               <span className="grid h-10 w-10 place-items-center rounded-full bg-black text-white sm:h-12 sm:w-12"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
             </a>
             <p className="text-[13px] text-white/50">
-              <strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="text-white/30">·</span> {t("one payment, no subscription", "un seul paiement, sans abonnement")}
+              <a href="/pricing" className="transition hover:text-white/80"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="text-white/30">·</span> {t("one payment, no subscription", "un seul paiement, sans abonnement")}</a>
             </p>
             <div className="mt-1 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
               <a href="#prompts" className="text-sm font-semibold text-white/80 underline decoration-white/30 underline-offset-4 transition hover:text-white">
@@ -5140,6 +5191,292 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
         <ToolsMarquee />
       </motion.div>
     </header>
+  );
+}
+
+// /commencer — a short guided start, one question a screen, in the manner of
+// a good onboarding: a thin progress line, the question in two tones, big
+// answers that move on by themselves, each screen arriving out of a blur.
+// Nothing is sent anywhere: the answers only shape the last screen (which
+// designs to open first, what the plan says) and the events counted.
+const QUIZ_GOALS = () => [
+  { id: "clients", icon: "zap", label: t("For clients", "Pour des clients"), hint: t("You want to sell sites as a freelancer", "Tu veux vendre des sites en freelance"), plan: t("sell your first site", "vendre ton premier site") },
+  { id: "agency", icon: "users", label: t("For my agency", "Pour mon agence"), hint: t("You already deliver projects", "Tu livres déjà des projets"), plan: t("deliver more, faster", "livrer plus, plus vite") },
+  { id: "self", icon: "sparkles", label: t("For my own projects", "Pour mes projets"), hint: t("Your brand, your product, your portfolio", "Ta marque, ton produit, ton portfolio"), plan: t("launch your own site", "lancer ton propre site") },
+  { id: "learn", icon: "search", label: t("I'm exploring", "Je découvre"), hint: t("You want to see what AI can build", "Tu veux voir ce que l'IA sait faire"), plan: t("build your first site with AI", "créer ton premier site avec l'IA") },
+];
+const QUIZ_LEVELS = () => [
+  { id: "none", icon: "gift", label: t("Not at all", "Pas du tout"), hint: t("You have never written a line", "Tu n'as jamais écrit une ligne") },
+  { id: "some", icon: "layers", label: t("A little", "Un peu"), hint: t("You tinker with HTML or no-code", "Tu bidouilles du HTML ou du no-code") },
+  { id: "dev", icon: "code", label: t("Yes", "Oui"), hint: t("You are a developer", "Tu es développeur") },
+];
+const QUIZ_TYPES = ["Landing Page", "Portfolio", "E-commerce", "SaaS", "Agency"];
+const QUIZ_SITE_PRICE = 900;
+const quizSample = (category) => prompts.find((p) => p.category === category && p.pinned && isVideoPreview(p.preview) && isPromptAvailable(p) && !p.onlyFor);
+
+function QuizOption({ selected, onClick, icon, media, label, hint, index }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.08 + index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+      aria-pressed={selected}
+      className={`group flex w-full items-center gap-4 rounded-2xl p-3.5 text-left transition duration-200 ${selected ? "bg-white/[0.08] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.9)]" : "bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}
+    >
+      {media || <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-white/[0.06] text-white/75 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"><Icon name={icon} className="h-[18px] w-[18px]" /></span>}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-semibold tracking-[-0.01em] text-[#FAFAFA]">{label}</span>
+        {hint && <span className="mt-0.5 block text-[13px] text-white/45">{hint}</span>}
+      </span>
+      <span className={`grid h-6 w-6 flex-none place-items-center rounded-full transition ${selected ? "bg-white text-black" : "text-transparent shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.2)]"}`}><Icon name="tick" className="h-3.5 w-3.5" /></span>
+    </motion.button>
+  );
+}
+
+// The screen between the questions and the plan: a ring filling up while the
+// lines of the plan are ticked one by one. It takes three seconds on purpose:
+// the plan reads as made for the visitor, which it is.
+function QuizLoader({ onDone }) {
+  const [pct, setPct] = useState(0);
+  const lines = [t("Your goal", "Ton objectif"), t("Your level", "Ton niveau"), t("Your tool", "Ton outil"), t("The designs that fit you", "Les designs qui te correspondent"), t("Your plan", "Ton plan")];
+  useEffect(() => {
+    const started = performance.now();
+    const total = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 600 : 3200;
+    let frame = 0;
+    const tick = (now) => {
+      const p = Math.min(1, (now - started) / total);
+      // Eased, so it starts briskly and settles at the end.
+      setPct(Math.round((1 - Math.pow(1 - p, 2.2)) * 100));
+      if (p < 1) frame = requestAnimationFrame(tick);
+      else setTimeout(onDone, 350);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const r = 52;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="mt-10 flex flex-col items-center">
+      <div className="relative grid h-36 w-36 place-items-center">
+        <svg viewBox="0 0 120 120" className="absolute inset-0 -rotate-90">
+          <circle cx="60" cy="60" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+          <circle cx="60" cy="60" r={r} fill="none" stroke="url(#quiz-ring)" strokeWidth="5" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} />
+          <defs><linearGradient id="quiz-ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FF6A7D" /><stop offset="0.5" stopColor="#C25BF5" /><stop offset="1" stopColor="#7C8CFF" /></linearGradient></defs>
+        </svg>
+        <span className="text-[34px] font-semibold tracking-[-0.04em] tabular-nums text-[#FAFAFA]">{pct}<span className="text-lg text-white/45">%</span></span>
+      </div>
+      <ul className="mt-9 space-y-3">
+        {lines.map((line, i) => {
+          const done = pct >= (i + 1) * 20;
+          const active = !done && pct >= i * 20;
+          return (
+            <li key={line} className={`flex items-center gap-3 text-[15px] transition duration-300 ${done ? "text-white/85" : active ? "text-white/60" : "text-white/25"}`}>
+              <span className={`grid h-5 w-5 flex-none place-items-center rounded-full transition duration-300 ${done ? "bg-emerald-400 text-[#04150d]" : active ? "shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.45)]" : "shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.14)]"}`}>
+                {done ? <Icon name="tick" className="h-3 w-3" /> : active ? <span className="h-2.5 w-2.5 animate-spin rounded-full border-[1.5px] border-white/20 border-t-white/80" /> : null}
+              </span>
+              {line}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function StartQuiz() {
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState({ goal: "", level: "", tool: "", type: "", sites: 3 });
+  const QUESTIONS = 5; // the loader and the plan are not counted
+  const goals = QUIZ_GOALS();
+  const levels = QUIZ_LEVELS();
+  useEffect(() => { track("quiz_started"); }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, [step]);
+
+  const next = () => setStep((n) => n + 1);
+  // An answer shows as chosen for a beat, then the next question comes.
+  const choose = (key, value) => {
+    setAnswers((a) => ({ ...a, [key]: value }));
+    track("quiz_answer", { question: key, answer: value });
+    setTimeout(next, 340);
+  };
+
+  const goal = goals.find((g) => g.id === answers.goal) || goals[0];
+  const sample = quizSample(answers.type) || quizSample("Landing Page");
+  const monthly = answers.sites * QUIZ_SITE_PRICE;
+  const sells = answers.goal === "clients" || answers.goal === "agency";
+  const reaction = answers.sites <= 1 ? t("A good start.", "Un bon début.") : answers.sites <= 3 ? t("A real side income.", "Un vrai complément de revenu.") : answers.sites <= 6 ? t("Ambitious. We like it.", "Ambitieux, on aime.") : t("An agency's pace.", "Un rythme d'agence.");
+
+  const heading = (eyebrow, first, second, sub) => (
+    <div className="text-center">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{eyebrow}</p>
+      <h1 className="mt-5 text-[clamp(2rem,6vw,3.25rem)] font-semibold leading-[1.04] tracking-[-0.045em] text-[#FAFAFA]">
+        <span className="block">{first}</span>
+        <span className="block text-white/45">{second}</span>
+      </h1>
+      {sub && <p className="mx-auto mt-4 max-w-sm text-[16px] leading-6 text-white/50">{sub}</p>}
+    </div>
+  );
+  const bigButton = "group mt-8 flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-white text-[16px] font-semibold tracking-[-0.005em] text-black shadow-[0_24px_60px_-22px_rgba(255,255,255,0.45)] transition duration-300 hover:-translate-y-0.5 disabled:opacity-40";
+
+  let screen;
+  if (step === 0) {
+    screen = (
+      <>
+        {heading(t("Let's get to know you", "Faisons connaissance"), t("Who do you want", "Pour qui veux-tu"), t("to build sites for?", "créer des sites ?"), t("The rest adapts to your answer.", "La suite s'adapte à ta réponse."))}
+        <div className="mt-9 space-y-2.5">{goals.map((o, i) => <QuizOption key={o.id} index={i} {...o} selected={answers.goal === o.id} onClick={() => choose("goal", o.id)} />)}</div>
+      </>
+    );
+  } else if (step === 1) {
+    screen = (
+      <>
+        {heading(t("Your level", "Ton niveau"), t("Do you know", "Est-ce que tu sais"), t("how to code?", "coder ?"), t("Be honest: the prompts do the hard part.", "Sois honnête : les prompts font le plus dur."))}
+        <div className="mt-9 space-y-2.5">{levels.map((o, i) => <QuizOption key={o.id} index={i} {...o} selected={answers.level === o.id} onClick={() => choose("level", o.id)} />)}</div>
+      </>
+    );
+  } else if (step === 2) {
+    screen = (
+      <>
+        {heading(t("Your tool", "Ton outil"), t("Which AI tool", "Quel outil IA"), t("do you use?", "utilises-tu ?"), t("Every prompt works with all of them.", "Chaque prompt fonctionne avec tous."))}
+        <div className="mt-9 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {[...TOOL_LOGOS.slice(0, 5), { name: t("None yet", "Aucun pour l'instant"), d: "" }].map((tool, i) => {
+            const on = answers.tool === tool.name;
+            return (
+              <motion.button key={tool.name} type="button" onClick={() => choose("tool", tool.name)} aria-pressed={on} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.08 + i * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                className={`flex h-[104px] flex-col items-center justify-center gap-3 rounded-2xl transition duration-200 ${on ? "bg-white/[0.09] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.9)]" : "bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}>
+                {tool.d ? <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7 text-white/85" fill="currentColor" fillRule="evenodd"><path d={tool.d} /></svg> : <Icon name="sparkles" className="h-7 w-7 text-white/60" />}
+                <span className="px-2 text-center text-[13.5px] font-semibold leading-tight text-[#FAFAFA]">{tool.name}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </>
+    );
+  } else if (step === 3) {
+    screen = (
+      <>
+        {heading(t("Your first site", "Ton premier site"), t("Which site do you want", "Quel site veux-tu"), t("to build first?", "créer en premier ?"), t("Each one is a real design from the catalogue.", "Chacun est un vrai design du catalogue."))}
+        <div className="mt-9 space-y-2.5">
+          {QUIZ_TYPES.map((category, i) => {
+            const item = quizSample(category);
+            return (
+              <QuizOption key={category} index={i} label={category} hint={item ? item.title : ""} selected={answers.type === category} onClick={() => choose("type", category)}
+                media={<span className={`relative h-12 w-[76px] flex-none overflow-hidden rounded-[10px] bg-gradient-to-br ${item?.gradient || "from-white/20 to-white/5"} shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]`}>
+                  {item && <video src={item.preview} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture className="pointer-events-none absolute inset-0 h-full w-full object-cover" />}
+                </span>} />
+            );
+          })}
+        </div>
+      </>
+    );
+  } else if (step === 4) {
+    screen = (
+      <>
+        {heading(t("Your goal", "Ton objectif"), t("How many sites do you want", "Combien de sites veux-tu"), t("to deliver each month?", "livrer par mois ?"), t("Slide. Aim high, you decide.", "Fais glisser le curseur. Vise haut, c'est toi qui décides."))}
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 }} className="mt-9 rounded-[26px] bg-[#0a0a0c] px-6 pb-7 pt-8 text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("Each month", "Chaque mois")}</p>
+          <p className="mt-3 text-[72px] font-semibold leading-none tracking-[-0.05em] tabular-nums text-[#FAFAFA]">{answers.sites}<span className="ml-2 text-[22px] tracking-[-0.02em] text-white/45">{answers.sites > 1 ? t("sites", "sites") : t("site", "site")}</span></p>
+          <p className="mt-4 text-[15px] font-semibold text-[#FFD98A]">{reaction}</p>
+          <input type="range" min="1" max="10" step="1" value={answers.sites} onChange={(e) => setAnswers((a) => ({ ...a, sites: Number(e.target.value) }))} aria-label={t("Sites a month", "Sites par mois")} className="mv-range mt-8 w-full" style={{ "--fill": `${((answers.sites - 1) / 9) * 100}%` }} />
+          <div className="mt-2 flex justify-between text-xs text-white/35"><span>1</span><span>10</span></div>
+          <p className="mt-5 text-[13px] text-white/45">{t(`At €${QUIZ_SITE_PRICE} a site, that is`, `À ${QUIZ_SITE_PRICE} € le site, ça fait`)} <strong className="font-semibold text-white">{new Intl.NumberFormat(lang === "en" ? "en-GB" : "fr-FR").format(monthly)} €</strong> {t("a month (an estimate, not a promise).", "par mois (une estimation, pas une promesse).")}</p>
+        </motion.div>
+        <button type="button" onClick={() => { track("quiz_answer", { question: "sites", answer: answers.sites }); next(); }} className={bigButton}>{t("See my plan", "Voir mon plan")} <Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></button>
+      </>
+    );
+  } else if (step === 5) {
+    screen = (
+      <>
+        {heading(t("Working on it", "Calcul en cours"), t("We are putting", "On prépare"), t("your plan together.", "ton plan."), "")}
+        <QuizLoader onDone={() => { track("quiz_completed", { goal: answers.goal, level: answers.level, tool: answers.tool, type: answers.type, sites: answers.sites }); next(); }} />
+      </>
+    );
+  } else {
+    const tool = TOOL_LOGOS.find((x) => x.name === answers.tool);
+    const toolName = tool ? tool.name : "Lovable";
+    const planSteps = [
+      sample ? t(`Open “${sample.title}” and copy its prompt.`, `Ouvre « ${sample.title} » et copie son prompt.`) : t("Open a design and copy its prompt.", "Ouvre un design et copie son prompt."),
+      tool ? t(`Paste it into ${toolName}: the site builds itself.`, `Colle-le dans ${toolName} : le site se construit tout seul.`) : t("Paste it into Lovable (free to start): the site builds itself.", "Colle-le dans Lovable (gratuit pour commencer) : le site se construit tout seul."),
+      sells ? t("Change the name, the copy, the images, and send it to your client.", "Change le nom, les textes, les images, et envoie-le à ton client.") : t("Change the name, the copy, the images, and put it online.", "Change le nom, les textes, les images, et mets-le en ligne."),
+    ];
+    screen = (
+      <div className="grid items-start gap-8 lg:grid-cols-[1fr_1.05fr] lg:gap-12">
+        <div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[12.5px] font-medium text-white/75"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {t("Your plan", "Ton plan")}</span>
+          <h1 className="mt-5 text-[clamp(2.2rem,5.6vw,3.6rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
+            {t("Your plan", "Ton plan")} <span className="text-white/45">{t("is ready.", "est prêt.")}</span>
+          </h1>
+          <p className="mt-4 text-[16px] leading-7 text-white/55">{t(`Here is how to ${goal.plan}.`, `Voici comment ${goal.plan}.`)}</p>
+          <ol className="mt-7 space-y-2.5">
+            {planSteps.map((line, i) => (
+              <motion.li key={line} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.15 + i * 0.1 }} className="flex items-start gap-3.5 rounded-2xl bg-white/[0.03] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+                <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-white text-[12px] font-bold text-black">{i + 1}</span>
+                <span className="text-[14.5px] leading-6 text-white/80">{line}</span>
+              </motion.li>
+            ))}
+          </ol>
+          <a href="/pricing?from=quiz" onClick={() => track("quiz_cta_clicked")} className="group mt-8 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-white pl-6 pr-2 text-[16px] font-semibold text-black shadow-[0_24px_70px_-18px_rgba(194,91,245,0.7)] transition duration-300 hover:-translate-y-0.5">
+            <span className="flex-1 text-center">{t(`Unlock the ${availablePrompts.length} prompts`, `Débloquer les ${availablePrompts.length} prompts`)}</span>
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
+          </a>
+          <p className="mt-3 text-center text-[13px] text-white/45"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> · {t("one payment, no subscription", "un seul paiement, sans abonnement")}</p>
+          <p className="mt-4 text-center"><a href="/#prompts" className="text-sm font-semibold text-white/70 underline decoration-white/25 underline-offset-4 transition hover:text-white">{t("Try a free prompt first", "Essayer d'abord un prompt gratuit")}</a></p>
+        </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative">
+          <div aria-hidden="true" className="absolute inset-x-8 -bottom-8 h-24 rounded-full bg-[radial-gradient(closest-side,rgba(124,140,255,0.5),transparent)] blur-2xl" />
+          <div className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(160deg,#151a2e,#0a0b12_60%)] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">
+            <div className={`relative aspect-[16/10] overflow-hidden rounded-[20px] bg-gradient-to-br ${sample?.gradient || "from-white/15 to-white/5"}`}>
+              {sample && <video src={sample.preview} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture className="pointer-events-none absolute inset-0 h-full w-full object-cover" />}
+              <span className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-md">{t("Made for you", "Fait pour toi")}</span>
+            </div>
+            <div className="p-4 pt-5">
+              <p className="text-[20px] font-semibold tracking-[-0.03em] text-[#FAFAFA]">{sample ? sample.title : t("Your first design", "Ton premier design")}</p>
+              <ul className="mt-4 space-y-2.5">
+                {[
+                  t(`${availablePrompts.length} designs, and every one added next`, `${availablePrompts.length} designs, et tous ceux à venir`),
+                  answers.level === "dev" ? t("Clean code you can take further", "Un code propre que tu peux pousser plus loin") : t("Not a line of code to write", "Aucune ligne de code à écrire"),
+                  sells ? t(`${answers.sites} site${answers.sites > 1 ? "s" : ""} a month: about ${new Intl.NumberFormat("en-GB").format(monthly)} € at €${QUIZ_SITE_PRICE} each (estimate)`, `${answers.sites} site${answers.sites > 1 ? "s" : ""} par mois : environ ${new Intl.NumberFormat("fr-FR").format(monthly)} € à ${QUIZ_SITE_PRICE} € pièce (estimation)`) : t(`Works with ${toolName}, Cursor and Claude`, `Fonctionne avec ${toolName}, Cursor et Claude`),
+                ].map((line) => (
+                  <li key={line} className="flex items-start gap-3 text-[14.5px] leading-6 text-white/75"><span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10 text-white"><Icon name="tick" className="h-3 w-3" /></span>{line}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const isPlan = step > 5;
+  const progress = Math.min(1, (step + 1) / (QUESTIONS + 1));
+  return (
+    <main className="relative min-h-screen overflow-hidden bg-black text-[#FAFAFA]">
+      <div aria-hidden="true" className="mv-dots pointer-events-none absolute inset-x-0 top-0 h-[420px]" />
+      <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-5 py-6 sm:px-8">
+        <a href="/" aria-label="Movento"><Logo /></a>
+        <a href="/" className="inline-flex items-center gap-2 text-sm font-medium text-white/60 transition hover:text-white"><Icon name="close" className="h-4 w-4" /> {t("Quit", "Quitter")}</a>
+      </header>
+      <div className={`relative z-10 mx-auto px-5 pb-20 pt-4 sm:px-8 ${isPlan ? "max-w-5xl" : "max-w-[600px]"}`}>
+        {!isPlan && (
+          <>
+            <div className="h-[2px] overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-white transition-[width] duration-500 ease-out" style={{ width: `${progress * 100}%` }} /></div>
+            <div className="mt-4 flex h-6 items-center justify-between text-[13px] text-white/45">
+              {step > 0 && step < 5
+                ? <button type="button" onClick={() => setStep((n) => n - 1)} className="inline-flex items-center gap-1.5 transition hover:text-white"><Icon name="arrow" className="h-3.5 w-3.5 rotate-180" /> {t("Previous question", "Question précédente")}</button>
+                : <span />}
+              <span className="font-medium tabular-nums tracking-[0.08em]">{String(Math.min(step + 1, QUESTIONS + 1)).padStart(2, "0")} / {QUESTIONS + 1}</span>
+            </div>
+          </>
+        )}
+        <AnimatePresence mode="wait">
+          <motion.div key={step} initial={{ opacity: 0, y: 18, filter: "blur(10px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: -14, filter: "blur(8px)" }} transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }} className={isPlan ? "mt-6" : "mt-10"}>
+            {screen}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </main>
   );
 }
 
@@ -5372,7 +5709,7 @@ function SiteNav({ query, setQuery, searchLabel }) {
               <Icon name="search" className="h-[18px] w-[18px]" />
             </button>
           )}
-          <a href="/pricing" className="group ml-2 hidden items-center gap-2 rounded-full bg-white py-1.5 pl-4 pr-1.5 text-[13px] font-semibold tracking-[-0.005em] text-black transition hover:bg-white/90 md:inline-flex">{t("Get started", "Commencer")} <span className="grid h-7 w-7 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span></a>
+          <a href="/commencer" className="group ml-2 hidden items-center gap-2 rounded-full bg-white py-1.5 pl-4 pr-1.5 text-[13px] font-semibold tracking-[-0.005em] text-black transition hover:bg-white/90 md:inline-flex">{t("Get started", "Commencer")} <span className="grid h-7 w-7 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span></a>
           <button onClick={() => setMenuOpen((open) => !open)} aria-label={t("Menu", "Menu")} aria-expanded={menuOpen} className="ml-1 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.05] text-white/70 transition hover:border-white/25 md:hidden">
             <Icon name={menuOpen ? "close" : "menu"} className="h-5 w-5" />
           </button>
