@@ -113,6 +113,7 @@ const prompts = [
   // Fictional placeholder, visible only to the team address (onlyFor): not in
   // the public gallery or any count.
   { title: "GTA 6 — Vice Coast Teaser", category: "Hero Section", type: "Hero", file: "GTA_6_Vice_Teaser_Hero.md", pinned: true, onlyFor: "teammoventoino1@gmail.com", preview: "https://res.cloudinary.com/klc0oxsz/image/upload/v1795056214/Capture_d_e%CC%81cran_2026-11-19_a%CC%80_03.41.46.png", tags: ["Synthwave Sun", "Parallax", "Fan Concept"], gradient: "from-[#ff2e88] via-[#ff8a3d] to-[#0b0614]" },
+  { title: "Uvra — Scroll-Scrubbed Harvest Film", category: "Landing Page", type: "Landing", file: "Uvra_Scroll_Harvest_Film.md", pinned: true, preview: "https://www.profitizebuild.com/media/7f57314f-1772-4e8f-a25f-1dabac20f9b7/en/previa-card-d73bdc1d.mp4", tags: ["Scroll Film", "Canvas Frame Sequence", "Chapter Nav"], gradient: "from-[#f5efe8] via-[#ecd9e3] to-[#0b0705]" },
   { title: "Kromo Photography — Seven Scroll Scenes", category: "Portfolio", type: "Landing", file: "Kromo_Photography_Scroll_Scenes.md", pinned: true, preview: "https://res.cloudinary.com/ce2yatay/video/upload/kromo/preview.mp4", tags: ["Lens Zoom Intro", "Sideways Gallery", "Slanted Wipes"], gradient: "from-[#e3ddd5] via-[#e8200f] to-[#0e0d0d]" },
   { title: "Lumen & Co. — Podcast Growth Studio", category: "Agency", type: "Landing", file: "Lumen_Co_Podcast_Studio.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/lumen-podcast-landing.mp4", tags: ["3D Stat Block", "Cover Fly-through", "Drawn Route"], gradient: "from-[#f2f3f9] via-[#2644ea] to-[#0b1119]" },
   { title: "VEKTOR LAB — Curved WebGL Gallery", category: "Portfolio", type: "Landing", file: "Vektor_Lab_Curved_Gallery.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/vektor-lab-gallery.mp4", tags: ["Glass Refraction", "Smile Strip", "Code Scramble"], gradient: "from-[#c9b8ff] via-[#5a6bd6] to-[#0f0e14]" },
@@ -451,6 +452,7 @@ const AVAILABLE_FILES = new Set([
   "VirtualFit_Spatial_TryOn_Arc.md",
   "Ciao_Energy_3D_Can_Carousel.md",
   "Letterbloom_Poppy_Type_Garden.md",
+  "Uvra_Scroll_Harvest_Film.md",
   "Kromo_Photography_Scroll_Scenes.md",
   "Lumen_Co_Podcast_Studio.md",
   "Vektor_Lab_Curved_Gallery.md",
