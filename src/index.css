@@ -46,6 +46,11 @@
   mask-image: radial-gradient(ellipse 70% 100% at 50% 0%, #000 0%, transparent 72%);
 }
 
+/* The questions of the guided start differ in height, and a scrollbar coming
+   and going would shift the column sideways: its place is kept from the first
+   paint, for as long as the quiz is on the page. */
+html:has(main[data-quiz]) { scrollbar-gutter: stable; }
+
 /* The slider of the guided start: a thick track filled up to the thumb
    (--fill), a white ringed thumb. */
 .mv-range {

@@ -5124,7 +5124,7 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
     <header ref={ref} className="relative isolate z-10 mx-auto flex max-w-6xl flex-col items-center px-5 pb-14 pt-14 text-center sm:pt-20">
       <HeroTiles />
 
-      <motion.a href="/pricing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-3 pr-3.5 text-[12.5px] font-medium text-white/80 transition hover:border-white/25 hover:text-white">
+      <motion.a href="/pricing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-3 pr-3.5 text-[12.5px] font-medium text-white/80 transition-colors hover:border-white/25 hover:text-white">
         <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" /></span>
         Black Friday <span className="text-white/40">·</span> {t(`${LIFETIME_DISCOUNT}% off lifetime access`, `−${LIFETIME_DISCOUNT} % sur l'accès à vie`)}
       </motion.a>
@@ -5245,6 +5245,10 @@ function QuizPreview({ item, className = "" }) {
   );
 }
 
+// The entrance is framer-motion's, which writes the transform frame by frame.
+// The CSS transition is therefore limited to the colours: Tailwind's plain
+// `transition` also covers transform and opacity, smooths each of those writes
+// a second time, and the answer trails in after the title has settled.
 function QuizOption({ selected, onClick, icon, media, label, hint, index }) {
   return (
     <motion.button
@@ -5254,7 +5258,7 @@ function QuizOption({ selected, onClick, icon, media, label, hint, index }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.08 + index * 0.05, ease: [0.22, 1, 0.36, 1] }}
       aria-pressed={selected}
-      className={`group flex w-full items-center gap-4 rounded-2xl p-3.5 text-left transition duration-200 ${selected ? "bg-white/[0.08] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.9)]" : "bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}
+      className={`group flex w-full items-center gap-4 rounded-2xl p-3.5 text-left transition-[background-color,box-shadow] duration-200 ${selected ? "bg-white/[0.08] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.9)]" : "bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}
     >
       {media || <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-white/[0.06] text-white/75 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"><Icon name={icon} className="h-[18px] w-[18px]" /></span>}
       <span className="min-w-0 flex-1">
@@ -5378,7 +5382,7 @@ function StartQuiz() {
             const on = answers.tool === tool.name;
             return (
               <motion.button key={tool.name} type="button" onClick={() => choose("tool", tool.name)} aria-pressed={on} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.08 + i * 0.04, ease: [0.22, 1, 0.36, 1] }}
-                className={`flex h-[104px] flex-col items-center justify-center gap-3 rounded-2xl transition duration-200 ${on ? "bg-white/[0.09] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.9)]" : "bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}>
+                className={`flex h-[104px] flex-col items-center justify-center gap-3 rounded-2xl transition-[background-color,box-shadow] duration-200 ${on ? "bg-white/[0.09] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.9)]" : "bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}>
                 {tool.d ? <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7 text-white/85" fill="currentColor" fillRule="evenodd"><path d={tool.d} /></svg> : <Icon name="sparkles" className="h-7 w-7 text-white/60" />}
                 <span className="px-2 text-center text-[13.5px] font-semibold leading-tight text-[#FAFAFA]">{tool.name}</span>
               </motion.button>
@@ -5398,7 +5402,7 @@ function StartQuiz() {
             const on = answers.type === kind.id;
             return (
               <motion.button key={kind.id} type="button" onClick={() => choose("type", kind.id)} aria-pressed={on} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.08 + i * 0.04, ease: [0.22, 1, 0.36, 1] }}
-                className={`group relative overflow-hidden rounded-2xl p-1.5 text-left transition duration-200 ${on ? "bg-white/[0.09] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.9)]" : "bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}>
+                className={`group relative overflow-hidden rounded-2xl p-1.5 text-left transition-[background-color,box-shadow] duration-200 ${on ? "bg-white/[0.09] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.9)]" : "bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}>
                 <QuizPreview item={item} className="aspect-[16/9] rounded-[11px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]" />
                 <span className={`absolute right-3.5 top-3.5 grid h-6 w-6 place-items-center rounded-full transition ${on ? "bg-white text-black" : "bg-black/45 text-transparent shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.35)] backdrop-blur-sm"}`}><Icon name="tick" className="h-3.5 w-3.5" /></span>
                 <span className="block px-2 pb-2 pt-2.5">
@@ -5494,7 +5498,7 @@ function StartQuiz() {
   const isPlan = step > 5;
   const progress = Math.min(1, (step + 1) / (QUESTIONS + 1));
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black text-[#FAFAFA]">
+    <main data-quiz className="relative min-h-screen overflow-hidden bg-black text-[#FAFAFA]">
       <div aria-hidden="true" className="mv-dots pointer-events-none absolute inset-x-0 top-0 h-[420px]" />
       <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-5 py-6 sm:px-8">
         <a href="/" aria-label="Movento"><Logo /></a>
@@ -5512,7 +5516,10 @@ function StartQuiz() {
             </div>
           </>
         )}
-        <AnimatePresence mode="wait">
+        {/* initial={false}: the first question, answers included, is in place
+            when the page opens, with nothing sliding in; the move is kept for
+            going from one question to the next. */}
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div key={step} initial={{ opacity: 0, y: 18, filter: "blur(10px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: -14, filter: "blur(8px)" }} transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }} className={isPlan ? "mt-6" : "mt-10"}>
             {screen}
           </motion.div>
