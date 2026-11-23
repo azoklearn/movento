@@ -845,7 +845,9 @@ export function bestCheckoutUrl(plan) {
 // options (149 €, then 199 €). 3 months, the year and
 // the prompt packs are off sale; their subscribers keep their access and
 // their renewals.
-export const RETIRED_PLANS = new Set(["m3", "m12", "monthly", "yearly", "pack2", "pack5", "pack10"]);
+// lifetime_plus (lifetime with every option) is off sale: the options are
+// offered after the lifetime payment instead; its buyers keep them.
+export const RETIRED_PLANS = new Set(["m3", "m12", "monthly", "yearly", "pack2", "pack5", "pack10", "lifetime_plus"]);
 
 // Which of our plans a Whop plan_xxx belongs to ("monthly" | "yearly" |
 // "lifetime"), or null when it matches none. This is the reliable way to tell a

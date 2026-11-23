@@ -1172,7 +1172,10 @@ const BASE_FEATURES = CATALOGUE_FEATURES;
 // Lifetime + options is sold on Mollie only, the one checkout that grants the
 // options. Read from the build's variable directly: CHECKOUT_PROVIDER_PUBLIC
 // is declared further down.
-const LIFETIME_PLUS_ON_SALE = String(import.meta.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "mollie";
+// Off sale: the options are offered after the lifetime payment instead
+// (PostPurchaseOptions on /success). Mirrored by RETIRED_PLANS in
+// api/_shared.js. Buyers keep the options they got with it.
+const LIFETIME_PLUS_ON_SALE = false;
 const plans = [
   {
     id: "m1",
@@ -2235,8 +2238,8 @@ function AddonOption({ addon, on, onToggle, disabled = false }) {
 // Sold on Mollie only: it is the one checkout that adds them to the payment.
 const ADDONS_ON_SALE = CHECKOUT_PROVIDER_PUBLIC === "mollie";
 const addonsTotal = (ids) => ADDONS.filter((a) => (ids || []).includes(a.id)).reduce((sum, a) => sum + a.price, 0);
-// Right after a subscription is paid, on /success: the options, offered once
-// the access is open, each paid once. The payment goes through the account
+// Right after a payment (the month or lifetime), on /success: the options
+// the buyer does not hold, offered once the access is open, each paid once. The payment goes through the account
 // page's checkout (plan "addons") and comes back to /account, which confirms
 // it.
 function PostPurchaseOptions({ email, held = [], className = "" }) {
@@ -2272,7 +2275,7 @@ function PostPurchaseOptions({ email, held = [], className = "" }) {
       <div className="relative">
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[12.5px] font-medium text-white/75"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {t("Your access is open", "Ton accès est ouvert")}</span>
         <h2 className="mt-4 text-[24px] font-semibold leading-tight tracking-[-0.035em] text-[#FAFAFA]">{t("Go further,", "Va plus loin,")} <span className="text-white/45">{t("right now.", "dès maintenant.")}</span></h2>
-        <p className="mt-2 text-sm leading-6 text-white/55">{t("Options for your subscription, each paid once. Tick the ones you want.", "Des options pour ton abonnement, chacune payée une seule fois. Coche celles qui t'intéressent.")}</p>
+        <p className="mt-2 text-sm leading-6 text-white/55">{t("Options for your access, each paid once. Tick the ones you want.", "Des options pour ton accès, chacune payée une seule fois. Coche celles qui t'intéressent.")}</p>
         <div className="mt-5 space-y-2.5">
           {offer.map((addon) => <AddonOption key={addon.id} addon={addon} on={picked.includes(addon.id)} onToggle={() => toggle(addon.id)} />)}
         </div>
@@ -2282,7 +2285,7 @@ function PostPurchaseOptions({ email, held = [], className = "" }) {
         </button>
         {pay.error && <p className="mt-3 text-sm text-red-300">{pay.error}</p>}
         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/40">
-          <span>{t("Secure payment by Mollie · no change to your subscription", "Paiement sécurisé par Mollie · ton abonnement ne change pas")}</span>
+          <span>{t("Secure payment by Mollie · paid once", "Paiement sécurisé par Mollie · payé une seule fois")}</span>
           <button type="button" onClick={() => { track("post_purchase_options_declined"); setHidden(true); }} className="flex-none font-medium text-white/55 underline decoration-white/25 underline-offset-4 transition hover:text-white">{t("No thanks", "Non merci")}</button>
         </div>
       </div>
@@ -4437,7 +4440,7 @@ function AiContent({ email }) {
   }, [email]);
   if (state.loading) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!state.data?.addon) {
-    return <AddonMissing message={state.error || t(`The AI option is not on ${email}. Lifetime + options includes it; with another plan, you can add it from your account.`, `L'option « On adapte le prompt pour toi » n'est pas sur ${email}. L'accès à vie + options la comprend ; sinon, tu peux l'ajouter depuis ton compte.`)} addon="ai" email={email} />;
+    return <AddonMissing message={state.error || t(`The AI option is not on ${email}. You can add it from your account.`, `L'option « On adapte le prompt pour toi » n'est pas sur ${email}. Tu peux l'ajouter depuis ton compte.`)} addon="ai" email={email} />;
   }
   const { left, total, results } = state.data;
   const copy = async (file) => {
@@ -4647,7 +4650,7 @@ function AccountContent({ email }) {
 
       {ADDONS_ON_SALE && toAdd.length > 0 && (
         <motion.div {...rise(2)}>
-          <h2 className="text-[26px] font-semibold tracking-[-0.035em] text-[#FAFAFA]">{held.length ? t("Add an option,", "Ajoute une option,") : t("The options,", "Les options,")} <span className="text-white/40">{canBuy ? t("paid once.", "payée une seule fois.") : t("included with lifetime + options.", "comprises dans l'accès à vie + options.")}</span></h2>
+          <h2 className="text-[26px] font-semibold tracking-[-0.035em] text-[#FAFAFA]">{held.length ? t("Add an option,", "Ajoute une option,") : t("The options,", "Les options,")} <span className="text-white/40">{canBuy ? t("paid once.", "payée une seule fois.") : t("with a Movento access.", "avec un accès Movento.")}</span></h2>
           <div className={`${panel} mt-5 p-3 sm:p-4`}>
             <div className="space-y-2.5">
               {toAdd.map((addon) => <AddonOption key={addon.id} addon={addon} on={chosen.includes(addon.id)} disabled={!canBuy} onToggle={() => toggle(addon.id)} />)}
@@ -4667,7 +4670,7 @@ function AccountContent({ email }) {
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-white/50">{t("The options are added to a Movento access, and lifetime + options includes them all.", "Les options s'ajoutent à un accès Movento, et l'accès à vie + options les comprend toutes.")}</p>
+                  <p className="text-sm text-white/50">{t("The options are added to a Movento access.", "Les options s'ajoutent à un accès Movento.")}</p>
                   <a href="/pricing" className="group inline-flex flex-none items-center justify-center gap-2.5 rounded-full bg-white py-1.5 pl-6 pr-1.5 text-sm font-semibold text-black transition hover:bg-white/90">{t("See the lifetime access", "Voir l'accès à vie")} <span className="grid h-9 w-9 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></span></a>
                 </>
               )}
@@ -4745,7 +4748,7 @@ function KitContent({ email }) {
   if (state.loading && !kit) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!kit) {
     return <AddonMissing message={state.status === 403
-      ? t(`The freelance kit is not on ${email}. Lifetime + options includes it; with another plan, you can add it from your account.`, `Le Kit freelance n'est pas sur ${email}. L'accès à vie + options la comprend ; sinon, tu peux l'ajouter depuis ton compte.`)
+      ? t(`The freelance kit is not on ${email}. You can add it from your account.`, `Le Kit freelance n'est pas sur ${email}. Tu peux l'ajouter depuis ton compte.`)
       : state.error} addon={state.status === 403 ? "kit" : undefined} email={email} />;
   }
   const copy = async (key, text) => {
@@ -4834,7 +4837,7 @@ function TeamContent({ email }) {
   if (!team) {
     return <AddonMissing message={state.data.memberOf
       ? t(`${email} is on the team of ${state.data.memberOf}: the catalogue is open to you. Only the buyer of the licence manages the team.`, `${email} fait partie de l'équipe de ${state.data.memberOf} : le catalogue t'est ouvert. Seul l'acheteur de la licence gère l'équipe.`)
-      : t(`The agency licence is not on ${email}. Lifetime + options includes it; with another plan, you can add it from your account.`, `La Licence agence n'est pas sur ${email}. L'accès à vie + options la comprend ; sinon, tu peux l'ajouter depuis ton compte.`)} addon={state.data.memberOf ? undefined : "team"} email={email} />;
+      : t(`The agency licence is not on ${email}. You can add it from your account.`, `La Licence agence n'est pas sur ${email}. Tu peux l'ajouter depuis ton compte.`)} addon={state.data.memberOf ? undefined : "team"} email={email} />;
   }
   const free = team.seats - team.members.length;
   return (
@@ -4931,7 +4934,7 @@ function LeadsContent({ email }) {
   if (form.loading && !form.data) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!form.data) {
     return <AddonMissing message={form.status === 403
-      ? t(`The leads finder is not on ${email}. Lifetime + options includes it; with another plan, you can add it from your account.`, `L'option « On trouve tes clients » n'est pas sur ${email}. L'accès à vie + options la comprend ; sinon, tu peux l'ajouter depuis ton compte.`)
+      ? t(`The leads finder is not on ${email}. You can add it from your account.`, `L'option « On trouve tes clients » n'est pas sur ${email}. Tu peux l'ajouter depuis ton compte.`)
       : form.error} addon={form.status === 403 ? "leads" : undefined} email={email} />;
   }
   const trades = form.data.trades || [];
@@ -6208,7 +6211,7 @@ function SuccessPage() {
   const [supportEarned, setSupportEarned] = useState(false);
   // The add-ons paid with the access (freelance kit, agency licence).
   const [addons, setAddons] = useState([]);
-  // What was bought: a subscription is offered the options once it is open.
+  // What was bought: once the access is open, the options it lacks are offered.
   const [accessInfo, setAccessInfo] = useState(null);
 
   // What Whop says happened. The embedded checkout sends every finished
@@ -6432,7 +6435,7 @@ function SuccessPage() {
 
         {status.ok && <AddonCards addons={addons} email={clean(email)} className="mt-4" />}
 
-        {status.ok && ADDONS_ON_SALE && accessInfo && accessInfo.type !== "lifetime" && ADDONS.some((a) => !addons.includes(a.id)) && (
+        {status.ok && ADDONS_ON_SALE && accessInfo && ADDONS.some((a) => !addons.includes(a.id)) && (
           <PostPurchaseOptions email={clean(email)} held={addons} className="mt-4" />
         )}
 
@@ -7874,7 +7877,7 @@ function PricingPage() {
             ? (() => {
                 const forType = fromQuiz.type ? ` ${t("building sites", "avec des sites")} ${fromQuiz.type.label.charAt(0).toLowerCase() + fromQuiz.type.label.slice(1)}` : "";
                 const goal = fromQuiz.income ? t(`To reach ${new Intl.NumberFormat("en-GB").format(fromQuiz.income)} € a month${forType}`, `Pour viser ${new Intl.NumberFormat("fr-FR").format(fromQuiz.income)} € par mois${forType}`) : t(`For your goal${forType}`, `Pour ton objectif${forType}`);
-                return t(`${goal}: lifetime + options. All ${availablePrompts.length} prompts, and we find your clients for you. You pay once and keep it all.`, `${goal} : l'accès à vie + options. Les ${availablePrompts.length} prompts, et on te trouve tes clients. Tu paies une fois et tu gardes tout.`);
+                return t(`${goal}: lifetime access. All ${availablePrompts.length} prompts and every one added next, and you can add the options that find your clients. You pay once and keep it all.`, `${goal} : l'accès à vie. Les ${availablePrompts.length} prompts et tous ceux à venir, et tu peux y ajouter les options qui te trouvent tes clients. Tu paies une fois et tu gardes tout.`);
               })()
             : isSinglePlan
             ? soloTerm
@@ -7900,7 +7903,7 @@ function PricingPage() {
         <div className="mt-12">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-28 items-stretch gap-3 sm:gap-4 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
             {visiblePlans.map((plan) => (
-              <PlanCard key={plan.id} plan={fromQuiz && plan.id === "lifetime_plus" ? { ...plan, badge: t("Recommended for you", "Recommandé pour toi") } : plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, fromQuiz ? "quiz_result" : "plan_card")} />
+              <PlanCard key={plan.id} plan={fromQuiz && plan.id === "lifetime" ? { ...plan, badge: t("Recommended for you", "Recommandé pour toi") } : plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, fromQuiz ? "quiz_result" : "plan_card")} />
             ))}
           </motion.div>
           {/* Only when the visitor arrived from a specific prompt. Without one
