@@ -1393,9 +1393,10 @@ function PlanCard({ plan, onBuy, loading, featured }) {
   // One list, one tick per row, in the order a buyer reads it: the catalogue,
   // support and the ebook, then what only this plan adds.
   const rows = [...(plan.features || []), plan.perk, plan.bonus, ...(plan.extras || [])].filter(Boolean);
-  // The order bumps: add-ons ticked here ride along in plan.addons and are
-  // added to the same payment.
-  const bumps = ADDONS_ON_SALE && plan.id === "lifetime" ? ADDONS : [];
+  // The options: included with lifetime, offered on top of the month (paid
+  // once with the first month, in plan.addons).
+  const bumps = ADDONS_ON_SALE && plan.id === "m1" ? ADDONS : [];
+  const included = plan.id === "lifetime" ? ADDONS : [];
   const [picked, setPicked] = useState([]);
   const extra = addonsTotal(picked);
   const toggle = (id) => {
@@ -1425,6 +1426,26 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       </div>
       {plan.billedNote && <p className="mt-3 text-sm text-white/50">{plan.billedNote}</p>}
 
+      {included.length > 0 && (
+        <div className="mt-6">
+          <p className="flex w-full items-center gap-3 text-[12.5px] font-medium text-white/75">
+            <span>{t("Every option included", "Toutes les options comprises")}</span>
+            <span className="h-px flex-1 bg-white/[0.08]" />
+            <span className="text-emerald-300">{t(`worth ${eur(ADDONS_VALUE)}`, `valeur ${eur(ADDONS_VALUE)}`)}</span>
+          </p>
+          <ul className="mt-3 space-y-2">
+            {included.map((addon) => (
+              <li key={addon.id} data-addon-included={addon.id} className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-2.5 pr-3.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+                <span aria-hidden="true" className={`grid h-9 w-9 flex-none place-items-center rounded-xl bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]`}><Icon name={addon.icon} className="h-4 w-4" /></span>
+                <span className="min-w-0 flex-1 text-[13.5px] font-semibold leading-5 text-[#FAFAFA]">{addon.name}</span>
+                <span className="hidden flex-none text-[12px] text-white/35 sm:inline">{eur(addon.price)}</span>
+                <span className="flex-none rounded-full bg-emerald-400/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">{t("Included", "Compris")}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {bumps.length > 0 && (
         <fieldset className="mt-6">
           <legend className="flex w-full items-center gap-3 text-[12.5px] font-medium text-white/75">
@@ -1443,9 +1464,11 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         disabled={loading}
         className={`group mt-6 flex h-14 w-full flex-none items-center gap-3 rounded-full pl-14 pr-2 text-[15px] font-semibold transition duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${primary ? "bg-white text-black shadow-[0_24px_70px_-22px_rgba(194,91,245,0.75)] hover:-translate-y-0.5" : "bg-white/[0.06] text-[#FAFAFA] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] hover:bg-white/[0.1]"}`}
       >
-        <span className="flex-1 text-center">{loading ? t("Loading…", "Chargement…") : extra ? t(`Pay ${eur(PRICE_LIFETIME + extra)}`, `Payer ${eur(PRICE_LIFETIME + extra)}`) : plan.cta}</span>
+        <span className="flex-1 text-center">{loading ? t("Loading…", "Chargement…") : extra ? t(`Pay ${eur(money(planBasePrice(plan) + extra))} today`, `Payer ${eur(money(planBasePrice(plan) + extra))} aujourd'hui`) : plan.cta}</span>
         <span className={`grid h-10 w-10 flex-none place-items-center rounded-full ${primary ? "bg-black text-white" : "bg-white/10 text-white"}`}><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
       </button>
+
+      {extra > 0 && plan.id === "m1" && <p className="mt-2.5 text-center text-[12.5px] text-white/45">{t(`The options are paid once, then ${eur(planBasePrice(plan))} a month.`, `Les options sont payées une fois, puis ${eur(planBasePrice(plan))} par mois.`)}</p>}
 
       <ul className="mt-7 space-y-3">
         {rows.map((feat) => (
@@ -1845,7 +1868,7 @@ function OrderSummary({ plan, totals, provider, priceNote }) {
           )}
           <div className="flex items-baseline justify-between pt-1 text-[#FAFAFA]">
             <dt className="font-semibold">{t("Total today", "Total aujourd'hui")}</dt>
-            <dd className="text-lg font-bold">{total || (addons.length ? eur(PRICE_LIFETIME + addonsTotal(plan.addons)) : plan.price)}</dd>
+            <dd className="text-lg font-bold">{total || (addons.length ? eur(money(planBasePrice(plan) + addonsTotal(plan.addons))) : plan.price)}</dd>
           </div>
           {!total && <p className="text-xs text-white/40">{priceNote || t("VAT included, worked out for your country.", "TVA incluse, calculée selon ton pays.")}</p>}
         </dl>
@@ -2178,7 +2201,7 @@ const ADDONS = [
     open: t("Find my prospects", "Trouver mes prospects"),
   },
 ];
-// One option to tick, on the lifetime card and on the account page: its own
+// One option to tick, on the monthly card and on the account page: its own
 // coloured mark, what it is, its price, and a round check that fills when it
 // is taken. The real checkbox is kept for the keyboard and screen readers.
 function AddonOption({ addon, on, onToggle, disabled = false }) {
@@ -2210,6 +2233,12 @@ function AddonOption({ addon, on, onToggle, disabled = false }) {
 // Sold on Mollie only: it is the one checkout that adds them to the payment.
 const ADDONS_ON_SALE = CHECKOUT_PROVIDER_PUBLIC === "mollie";
 const addonsTotal = (ids) => ADDONS.filter((a) => (ids || []).includes(a.id)).reduce((sum, a) => sum + a.price, 0);
+// What every option costs bought one by one: what lifetime includes.
+const ADDONS_VALUE = ADDONS.reduce((sum, a) => sum + a.price, 0);
+// A plan's own price, before any option: lifetime, or the term's price.
+const planBasePrice = (plan) => (plan.id === "lifetime" ? PRICE_LIFETIME : termOf(plan.id)?.price || 0);
+// A sum in euros with at most two decimals, so 29.99 + 19 is never 48.989999.
+const money = (n) => Math.round(n * 100) / 100;
 
 // Off sale: with lifetime at 89 € a pack of prompts costs about as much as the
 // whole catalogue. Past buyers keep their prompts and their unused credits.
@@ -4333,7 +4362,7 @@ function AiContent({ email }) {
   }, [email]);
   if (state.loading) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!state.data?.addon) {
-    return <AddonMissing message={state.error || t(`The AI option is not on ${email}. It is an option of the lifetime access: you can add it from your account.`, `L'option « On adapte le prompt pour toi » n'est pas sur ${email}. C'est une option de l'accès à vie : tu peux l'ajouter depuis ton compte.`)} addon="ai" email={email} />;
+    return <AddonMissing message={state.error || t(`The AI option is not on ${email}. Lifetime access includes it; with the monthly plan, you can add it from your account.`, `L'option « On adapte le prompt pour toi » n'est pas sur ${email}. L'accès à vie la comprend ; avec le mensuel, tu peux l'ajouter depuis ton compte.`)} addon="ai" email={email} />;
   }
   const { left, total, results } = state.data;
   const copy = async (file) => {
@@ -4451,6 +4480,9 @@ function AccountContent({ email }) {
   const held = data.addons || [];
   const lifetime = data.kind === "lifetime";
   const toAdd = ADDONS.filter((a) => !held.includes(a.id));
+  // Options are bought on top of an access of one's own; lifetime already
+  // includes them all, so it never gets here with anything to add.
+  const canBuy = data.hasAccess && !data.memberOf && !lifetime;
   const chosen = picked.filter((id) => toAdd.some((a) => a.id === id));
   const total = addonsTotal(chosen);
   const kindName = ACCESS_KIND_NAMES()[data.kind];
@@ -4540,13 +4572,13 @@ function AccountContent({ email }) {
 
       {ADDONS_ON_SALE && toAdd.length > 0 && (
         <motion.div {...rise(2)}>
-          <h2 className="text-[26px] font-semibold tracking-[-0.035em] text-[#FAFAFA]">{held.length ? t("Add an option,", "Ajoute une option,") : t("The options,", "Les options,")} <span className="text-white/40">{lifetime ? t("paid once.", "payée une seule fois.") : t("with the lifetime access.", "avec l'accès à vie.")}</span></h2>
+          <h2 className="text-[26px] font-semibold tracking-[-0.035em] text-[#FAFAFA]">{held.length ? t("Add an option,", "Ajoute une option,") : t("The options,", "Les options,")} <span className="text-white/40">{canBuy ? t("paid once.", "payée une seule fois.") : t("included with lifetime.", "comprises dans l'accès à vie.")}</span></h2>
           <div className={`${panel} mt-5 p-3 sm:p-4`}>
             <div className="space-y-2.5">
-              {toAdd.map((addon) => <AddonOption key={addon.id} addon={addon} on={chosen.includes(addon.id)} disabled={!lifetime} onToggle={() => toggle(addon.id)} />)}
+              {toAdd.map((addon) => <AddonOption key={addon.id} addon={addon} on={chosen.includes(addon.id)} disabled={!canBuy} onToggle={() => toggle(addon.id)} />)}
             </div>
             <div className="mt-3 flex flex-col gap-3 rounded-2xl bg-white/[0.025] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] sm:flex-row sm:items-center sm:justify-between">
-              {lifetime ? (
+              {canBuy ? (
                 <>
                   <p className="text-sm text-white/50">
                     {chosen.length
@@ -4560,13 +4592,13 @@ function AccountContent({ email }) {
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-white/50">{t("The options are added to the lifetime access.", "Les options s'ajoutent à l'accès à vie.")}</p>
+                  <p className="text-sm text-white/50">{t("The options are added to a Movento access, and lifetime includes them all.", "Les options s'ajoutent à un accès Movento, et l'accès à vie les comprend toutes.")}</p>
                   <a href="/pricing" className="group inline-flex flex-none items-center justify-center gap-2.5 rounded-full bg-white py-1.5 pl-6 pr-1.5 text-sm font-semibold text-black transition hover:bg-white/90">{t("See the lifetime access", "Voir l'accès à vie")} <span className="grid h-9 w-9 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></span></a>
                 </>
               )}
             </div>
           </div>
-          {lifetime && <p className="mt-3 text-xs text-white/35">{t("Secure payment by Mollie.", "Paiement sécurisé par Mollie.")}</p>}
+          {canBuy && <p className="mt-3 text-xs text-white/35">{t("Secure payment by Mollie.", "Paiement sécurisé par Mollie.")}</p>}
           {pay.error && <p className="mt-3 text-sm text-red-300">{pay.error}</p>}
         </motion.div>
       )}
@@ -4638,7 +4670,7 @@ function KitContent({ email }) {
   if (state.loading && !kit) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!kit) {
     return <AddonMissing message={state.status === 403
-      ? t(`The freelance kit is not on ${email}. It is an option of the lifetime access: you can add it from your account.`, `Le Kit freelance n'est pas sur ${email}. C'est une option de l'accès à vie : tu peux l'ajouter depuis ton compte.`)
+      ? t(`The freelance kit is not on ${email}. Lifetime access includes it; with the monthly plan, you can add it from your account.`, `Le Kit freelance n'est pas sur ${email}. L'accès à vie la comprend ; avec le mensuel, tu peux l'ajouter depuis ton compte.`)
       : state.error} addon={state.status === 403 ? "kit" : undefined} email={email} />;
   }
   const copy = async (key, text) => {
@@ -4727,7 +4759,7 @@ function TeamContent({ email }) {
   if (!team) {
     return <AddonMissing message={state.data.memberOf
       ? t(`${email} is on the team of ${state.data.memberOf}: the catalogue is open to you. Only the buyer of the licence manages the team.`, `${email} fait partie de l'équipe de ${state.data.memberOf} : le catalogue t'est ouvert. Seul l'acheteur de la licence gère l'équipe.`)
-      : t(`The agency licence is not on ${email}. It is an option of the lifetime access: you can add it from your account.`, `La Licence agence n'est pas sur ${email}. C'est une option de l'accès à vie : tu peux l'ajouter depuis ton compte.`)} addon={state.data.memberOf ? undefined : "team"} email={email} />;
+      : t(`The agency licence is not on ${email}. Lifetime access includes it; with the monthly plan, you can add it from your account.`, `La Licence agence n'est pas sur ${email}. L'accès à vie la comprend ; avec le mensuel, tu peux l'ajouter depuis ton compte.`)} addon={state.data.memberOf ? undefined : "team"} email={email} />;
   }
   const free = team.seats - team.members.length;
   return (
@@ -4824,7 +4856,7 @@ function LeadsContent({ email }) {
   if (form.loading && !form.data) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!form.data) {
     return <AddonMissing message={form.status === 403
-      ? t(`The leads finder is not on ${email}. It is an option of the lifetime access: you can add it from your account.`, `L'option « On trouve tes clients » n'est pas sur ${email}. C'est une option de l'accès à vie : tu peux l'ajouter depuis ton compte.`)
+      ? t(`The leads finder is not on ${email}. Lifetime access includes it; with the monthly plan, you can add it from your account.`, `L'option « On trouve tes clients » n'est pas sur ${email}. L'accès à vie la comprend ; avec le mensuel, tu peux l'ajouter depuis ton compte.`)
       : form.error} addon={form.status === 403 ? "leads" : undefined} email={email} />;
   }
   const trades = form.data.trades || [];
@@ -5261,6 +5293,94 @@ function QuizPreview({ item, className = "" }) {
   );
 }
 
+// The goal's range, in euros a month, and the number of sites it takes.
+const QUIZ_INCOME_MIN = 500;
+const QUIZ_INCOME_MAX = 10000;
+const quizSitesFor = (income) => Math.max(1, Math.ceil(income / QUIZ_SITE_PRICE));
+
+// The commitment at the end of the questions: a fingerprint to hold, like a
+// phone's Touch ID. Holding fills it from the bottom; letting go early
+// empties it again. Space or Enter held works the same way.
+const COMMIT_HOLD_MS = 1400;
+function QuizCommit({ onDone }) {
+  const [progress, setProgress] = useState(0);
+  const [done, setDone] = useState(false);
+  const holding = useRef(false);
+  const frame = useRef(0);
+  const value = useRef(0);
+  const last = useRef(0);
+  const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  const loop = (now) => {
+    const dt = last.current ? now - last.current : 16;
+    last.current = now;
+    // Fills at the hold's pace, drains three times faster when released.
+    value.current = Math.min(1, Math.max(0, value.current + (holding.current ? dt / COMMIT_HOLD_MS : -dt / (COMMIT_HOLD_MS / 3))));
+    setProgress(value.current);
+    if (value.current >= 1) {
+      holding.current = false;
+      setDone(true);
+      try { navigator.vibrate?.(40); } catch { /* no vibration here */ }
+      setTimeout(onDone, reduced ? 200 : 900);
+      return;
+    }
+    if (holding.current || value.current > 0) frame.current = requestAnimationFrame(loop);
+    else last.current = 0;
+  };
+  const press = (e) => {
+    if (done) return;
+    e?.preventDefault?.();
+    holding.current = true;
+    last.current = 0;
+    cancelAnimationFrame(frame.current);
+    frame.current = requestAnimationFrame(loop);
+  };
+  const release = () => { holding.current = false; };
+  const r = 58;
+  const c = 2 * Math.PI * r;
+  const print = (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-[64px] w-[64px]">
+      <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" /><path d="M14 13.12c0 2.38 0 6.38-1 8.88" /><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" /><path d="M2 12a10 10 0 0 1 18-6" /><path d="M2 16h.01" /><path d="M21.8 16c.2-2 .131-5.354 0-6" /><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" /><path d="M8.65 22c.21-.66.45-1.32.57-2" /><path d="M9 6.8a6 6 0 0 1 9 5.2v2" />
+    </svg>
+  );
+  return (
+    <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.18 }} className="mt-8 flex flex-col items-center text-center">
+      <button
+        type="button"
+        data-commit
+        aria-label={t("Hold to commit to giving it everything to reach your goal", "Maintiens pour t'engager à te donner à fond pour atteindre ton objectif")}
+        onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); press(e); }}
+        onPointerUp={release}
+        onPointerCancel={release}
+        onLostPointerCapture={release}
+        onKeyDown={(e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) press(e); }}
+        onKeyUp={(e) => { if (e.key === " " || e.key === "Enter") release(); }}
+        onContextMenu={(e) => e.preventDefault()}
+        className={`relative grid h-[148px] w-[148px] touch-none select-none place-items-center rounded-full transition-transform duration-200 [-webkit-touch-callout:none] ${progress > 0 && !done ? "scale-[0.96]" : ""}`}
+        style={{ WebkitTapHighlightColor: "transparent" }}
+      >
+        <span aria-hidden="true" className={`absolute inset-3 rounded-full transition-colors duration-500 ${done ? "bg-emerald-400/15" : "bg-white/[0.04]"} shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]`} />
+        <span aria-hidden="true" className="absolute inset-0 rounded-full blur-2xl transition-opacity duration-300" style={{ opacity: done ? 0.55 : progress * 0.5, background: done ? "radial-gradient(closest-side,rgba(52,211,153,0.6),transparent)" : "radial-gradient(closest-side,rgba(194,91,245,0.6),transparent)" }} />
+        <svg viewBox="0 0 132 132" aria-hidden="true" className="absolute inset-0 h-full w-full -rotate-90">
+          <circle cx="66" cy="66" r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+          <circle cx="66" cy="66" r={r} fill="none" stroke={done ? "#34d399" : "url(#commit-ring)"} strokeWidth="3" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - progress)} />
+          <defs><linearGradient id="commit-ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FF6A7D" /><stop offset="0.5" stopColor="#C25BF5" /><stop offset="1" stopColor="#7C8CFF" /></linearGradient></defs>
+        </svg>
+        <span aria-hidden="true" className="relative grid place-items-center">
+          <span className="text-white/25">{print}</span>
+          {/* The same print in colour, revealed from the bottom as it fills. */}
+          <span className={`absolute inset-0 grid place-items-center ${done ? "text-emerald-300" : "text-[#d9a6ff]"}`} style={{ clipPath: `inset(${(1 - progress) * 100}% 0 0 0)` }}>{print}</span>
+          {done && <motion.span initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 18 }} className="absolute -bottom-2 -right-3 grid h-8 w-8 place-items-center rounded-full bg-emerald-400 text-[#04150d] shadow-[0_8px_24px_-6px_rgba(52,211,153,0.8)]"><Icon name="tick" className="h-4 w-4" /></motion.span>}
+        </span>
+      </button>
+      <p className="mt-6 max-w-xs text-[15.5px] font-semibold leading-6 tracking-[-0.01em] text-white">
+        {done ? t("Commitment made. Let's go.", "Engagement pris. C'est parti.") : t("I commit to giving it everything to reach my goal.", "Je m'engage à me donner à fond pour atteindre mon objectif.")}
+      </p>
+      <p className="mt-2 text-[13px] text-white/45" aria-live="polite">{done ? "" : progress > 0 ? t("Keep holding…", "Garde le doigt…") : t("Hold your finger on the print", "Maintiens ton doigt sur l'empreinte")}</p>
+    </motion.div>
+  );
+}
+
 // The entrance is framer-motion's, which writes the transform frame by frame.
 // The CSS transition is therefore limited to the colours: Tailwind's plain
 // `transition` also covers transform and opacity, smooths each of those writes
@@ -5291,7 +5411,7 @@ function QuizOption({ selected, onClick, icon, media, label, hint, index }) {
 // the plan reads as made for the visitor, which it is.
 function QuizLoader({ onDone }) {
   const [pct, setPct] = useState(0);
-  const lines = [t("Your goal", "Ton objectif"), t("Your level", "Ton niveau"), t("Your tool", "Ton outil"), t("The designs that fit you", "Les designs qui te correspondent"), t("Your plan", "Ton plan")];
+  const lines = [t("Your goal", "Ton objectif"), t("Your level", "Ton niveau"), t("Your tool", "Ton outil"), t("The designs that fit you", "Les designs qui te correspondent"), t("The plan for you", "Ta formule")];
   useEffect(() => {
     const started = performance.now();
     const total = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 600 : 3200;
@@ -5339,8 +5459,10 @@ function QuizLoader({ onDone }) {
 
 function StartQuiz() {
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState({ goal: "", level: "", tool: "", type: "", sites: 3 });
-  const QUESTIONS = 5; // the loader and the plan are not counted
+  const [answers, setAnswers] = useState({ goal: "", level: "", tool: "", type: "", income: 2700 });
+  // The five questions and the commitment; the loader and the plan are not
+  // counted.
+  const QUESTIONS = 6;
   const goals = QUIZ_GOALS();
   const levels = QUIZ_LEVELS();
   useEffect(() => { track("quiz_started"); }, []);
@@ -5357,9 +5479,13 @@ function StartQuiz() {
   const goal = goals.find((g) => g.id === answers.goal) || goals[0];
   const types = QUIZ_TYPES();
   const type = types.find((x) => x.id === answers.type);
-  const monthly = answers.sites * QUIZ_SITE_PRICE;
+  // The goal is set in euros a month, and read back as a number of sites at
+  // QUIZ_SITE_PRICE each.
+  const monthly = answers.income;
+  const sites = quizSitesFor(answers.income);
+  const euros = (n) => `${new Intl.NumberFormat(lang === "en" ? "en-GB" : "fr-FR").format(n)} €`;
   const sells = answers.goal === "clients" || answers.goal === "agency";
-  const reaction = answers.sites <= 1 ? t("A good start.", "Un bon début.") : answers.sites <= 3 ? t("A real side income.", "Un vrai complément de revenu.") : answers.sites <= 6 ? t("Ambitious. We like it.", "Ambitieux, on aime.") : t("An agency's pace.", "Un rythme d'agence.");
+  const reaction = answers.income <= 1000 ? t("A good start.", "Un bon début.") : answers.income <= 3000 ? t("A real side income.", "Un vrai complément de revenu.") : answers.income <= 6000 ? t("Ambitious. We like it.", "Ambitieux, on aime.") : t("An agency's pace.", "Un rythme d'agence.");
 
   const heading = (eyebrow, first, second, sub) => (
     <div className="text-center">
@@ -5379,6 +5505,12 @@ function StartQuiz() {
       <>
         {heading(t("Let's get to know you", "Faisons connaissance"), t("Who do you want", "Pour qui veux-tu"), t("to build sites for?", "créer des sites ?"), t("The rest adapts to your answer.", "La suite s'adapte à ta réponse."))}
         <div className="mt-9 space-y-2.5">{goals.map((o, i) => <QuizOption key={o.id} index={i} {...o} selected={answers.goal === o.id} onClick={() => choose("goal", o.id)} />)}</div>
+        {/* No questionnaire for someone who came for the prompts: straight to
+            the offers. */}
+        <div className="mt-5 flex items-center gap-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30"><span className="h-px flex-1 bg-white/[0.08]" />{t("or", "ou")}<span className="h-px flex-1 bg-white/[0.08]" /></div>
+        <div className="mt-5">
+          <QuizOption index={goals.length} icon="arrow" label={t("I just want the prompts", "Je veux juste les prompts")} hint={t("No questions: straight to the offers", "Pas de questions : direct aux offres")} selected={false} onClick={() => { track("quiz_skipped", { at: "start" }); window.location.assign("/pricing"); }} />
+        </div>
       </>
     );
   } else if (step === 1) {
@@ -5433,23 +5565,39 @@ function StartQuiz() {
   } else if (step === 4) {
     screen = (
       <>
-        {heading(t("Your goal", "Ton objectif"), t("How many sites do you want", "Combien de sites veux-tu"), t("to deliver each month?", "livrer par mois ?"), t("Slide. Aim high, you decide.", "Fais glisser le curseur. Vise haut, c'est toi qui décides."))}
+        {heading(t("Your goal", "Ton objectif"), t("How much do you want", "Combien veux-tu"), t("to earn each month?", "gagner par mois ?"), t("Slide. Aim high, you decide.", "Fais glisser le curseur. Vise haut, c'est toi qui décides."))}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 }} className="mt-9 rounded-[26px] bg-[#0a0a0c] px-6 pb-7 pt-8 text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)]">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("Each month", "Chaque mois")}</p>
-          <p className="mt-3 text-[72px] font-semibold leading-none tracking-[-0.05em] tabular-nums text-[#FAFAFA]">{answers.sites}<span className="ml-2 text-[22px] tracking-[-0.02em] text-white/45">{answers.sites > 1 ? t("sites", "sites") : t("site", "site")}</span></p>
+          <p className="mt-3 text-[64px] font-semibold leading-none tracking-[-0.05em] tabular-nums text-[#FAFAFA] sm:text-[72px]">{euros(answers.income)}</p>
           <p className="mt-4 text-[15px] font-semibold text-[#FFD98A]">{reaction}</p>
-          <input type="range" min="1" max="10" step="1" value={answers.sites} onChange={(e) => setAnswers((a) => ({ ...a, sites: Number(e.target.value) }))} aria-label={t("Sites a month", "Sites par mois")} className="mv-range mt-8 w-full" style={{ "--fill": `${((answers.sites - 1) / 9) * 100}%` }} />
-          <div className="mt-2 flex justify-between text-xs text-white/35"><span>1</span><span>10</span></div>
-          <p className="mt-5 text-[13px] text-white/45">{t(`At €${QUIZ_SITE_PRICE} a site, that is`, `À ${QUIZ_SITE_PRICE} € le site, ça fait`)} <strong className="font-semibold text-white">{new Intl.NumberFormat(lang === "en" ? "en-GB" : "fr-FR").format(monthly)} €</strong> {t("a month (an estimate, not a promise).", "par mois (une estimation, pas une promesse).")}</p>
+          <input type="range" min={QUIZ_INCOME_MIN} max={QUIZ_INCOME_MAX} step="100" value={answers.income} onChange={(e) => setAnswers((a) => ({ ...a, income: Number(e.target.value) }))} aria-label={t("Income a month", "Revenu par mois")} className="mv-range mt-8 w-full" style={{ "--fill": `${((answers.income - QUIZ_INCOME_MIN) / (QUIZ_INCOME_MAX - QUIZ_INCOME_MIN)) * 100}%` }} />
+          <div className="mt-2 flex justify-between text-xs text-white/35"><span>{euros(QUIZ_INCOME_MIN)}</span><span>{euros(QUIZ_INCOME_MAX)}</span></div>
+          {/* Then the same goal counted in sites: what it takes. */}
+          <div className="mt-6 flex items-center justify-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.07)]">
+            <span className="text-[28px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-white">{sites}</span>
+            <span className="text-left text-[13.5px] leading-5 text-white/60">{sites > 1 ? t("sites a month", "sites par mois") : t("site a month", "site par mois")}<br /><span className="text-white/40">{t(`at €${QUIZ_SITE_PRICE} a site (an estimate)`, `à ${QUIZ_SITE_PRICE} € le site (estimation)`)}</span></span>
+          </div>
         </motion.div>
-        <button type="button" onClick={() => { track("quiz_answer", { question: "sites", answer: answers.sites }); next(); }} className={bigButton}>{t("See my plan", "Voir mon plan")} <Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></button>
+        <button type="button" onClick={() => { track("quiz_answer", { question: "income", answer: answers.income, sites }); next(); }} className={bigButton}>{t("Continue", "Continuer")} <Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></button>
       </>
     );
   } else if (step === 5) {
     screen = (
       <>
-        {heading(t("Working on it", "Calcul en cours"), t("We are putting", "On prépare"), t("your plan together.", "ton plan."), "")}
-        <QuizLoader onDone={() => { track("quiz_completed", { goal: answers.goal, level: answers.level, tool: answers.tool, type: answers.type, sites: answers.sites }); next(); }} />
+        {heading(t("Last step", "Dernière étape"), t("To get there, you will deliver", "Pour y arriver, tu vas livrer"), sites > 1 ? t(`${sites} sites a month.`, `${sites} sites par mois.`) : t("one site a month.", "un site par mois."), t("That is the only rule. Showing up every month is what grows the business.", "C'est la seule règle. La régularité, c'est ce qui fait grandir ton activité."))}
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 }} className="mt-8 rounded-[22px] bg-[#0a0a0c] px-5 py-4 text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">{t("Your goal", "Ton objectif")}</p>
+          <p className="mt-2 text-[22px] font-semibold tracking-[-0.03em] text-white">{t(`${euros(answers.income)} a month`, `${euros(answers.income)} par mois`)}</p>
+          <p className="mt-1 text-[13.5px] text-white/50">{t(`${sites} site${sites > 1 ? "s" : ""} at €${QUIZ_SITE_PRICE}`, `${sites} site${sites > 1 ? "s" : ""} à ${QUIZ_SITE_PRICE} €`)}{type ? ` · ${type.label.charAt(0).toLowerCase() + type.label.slice(1)}` : ""}</p>
+        </motion.div>
+        <QuizCommit onDone={() => { track("quiz_committed", { income: answers.income, sites }); next(); }} />
+      </>
+    );
+  } else if (step === 6) {
+    screen = (
+      <>
+        {heading(t("Working on it", "Calcul en cours"), t("We are looking for", "On cherche"), t("the plan that fits you.", "la formule qui te correspond."), "")}
+        <QuizLoader onDone={() => { track("quiz_completed", { goal: answers.goal, level: answers.level, tool: answers.tool, type: answers.type, income: answers.income, sites }); next(); }} />
       </>
     );
   } else {
@@ -5490,8 +5638,8 @@ function StartQuiz() {
               </motion.li>
             ))}
           </ol>
-          <a href="/pricing?from=quiz" onClick={() => track("quiz_cta_clicked")} className="group mt-8 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-white pl-6 pr-2 text-[16px] font-semibold text-black shadow-[0_24px_70px_-18px_rgba(194,91,245,0.7)] transition duration-300 hover:-translate-y-0.5">
-            <span className="flex-1 text-center">{t(`Unlock the ${availablePrompts.length} prompts`, `Débloquer les ${availablePrompts.length} prompts`)}</span>
+          <a href={`/pricing?${new URLSearchParams({ from: "quiz", income: String(answers.income), ...(answers.type ? { type: answers.type } : {}), ...(answers.goal ? { goal: answers.goal } : {}) })}`} onClick={() => track("quiz_cta_clicked")} className="group mt-8 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-white pl-6 pr-2 text-[16px] font-semibold text-black shadow-[0_24px_70px_-18px_rgba(194,91,245,0.7)] transition duration-300 hover:-translate-y-0.5">
+            <span className="flex-1 text-center">{t("See the plan made for me", "Voir ma formule")}</span>
             <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
           </a>
           <p className="mt-3 text-center text-[13px] text-white/45"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("for life", "à vie")} · {LIFETIME_TERMS_LINE}</p>
@@ -5528,7 +5676,7 @@ function StartQuiz() {
                     : t(`${availablePrompts.length} designs: landing pages, shops, portfolios`, `${availablePrompts.length} designs : landing pages, boutiques, portfolios`),
                   t("Every new prompt included, for life", "Tous les nouveaux prompts inclus, à vie"),
                   answers.level === "dev" ? t("Clean code you can take further", "Un code propre que tu peux pousser plus loin") : t("Not a line of code to write", "Aucune ligne de code à écrire"),
-                  sells ? t(`${answers.sites} site${answers.sites > 1 ? "s" : ""} a month at €${QUIZ_SITE_PRICE}: about €${new Intl.NumberFormat("en-GB").format(monthly)} (estimate)`, `${answers.sites} site${answers.sites > 1 ? "s" : ""} par mois à ${QUIZ_SITE_PRICE} € : environ ${new Intl.NumberFormat("fr-FR").format(monthly)} € (estimation)`) : t(`Works with ${toolName}, Cursor and Claude`, `Fonctionne avec ${toolName}, Cursor et Claude`),
+                  t(`Your goal: ${euros(monthly)} a month, ${sites} site${sites > 1 ? "s" : ""} at €${QUIZ_SITE_PRICE}`, `Ton objectif : ${euros(monthly)} par mois, soit ${sites} site${sites > 1 ? "s" : ""} à ${QUIZ_SITE_PRICE} €`),
                 ].map((line) => (
                   <li key={line} className="flex items-start gap-3 text-[14.5px] leading-6 text-white/75"><span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10 text-white"><Icon name="tick" className="h-3 w-3" /></span>{line}</li>
                 ))}
@@ -5540,7 +5688,7 @@ function StartQuiz() {
     );
   }
 
-  const isPlan = step > 5;
+  const isPlan = step > 6;
   const progress = Math.min(1, (step + 1) / (QUESTIONS + 1));
   return (
     <main data-quiz className="relative min-h-screen overflow-hidden bg-black text-[#FAFAFA]">
@@ -5554,7 +5702,7 @@ function StartQuiz() {
           <>
             <div className="h-[2px] overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-white transition-[width] duration-500 ease-out" style={{ width: `${progress * 100}%` }} /></div>
             <div className="mt-4 flex h-6 items-center justify-between text-[13px] text-white/45">
-              {step > 0 && step < 5
+              {step > 0 && step < 6
                 ? <button type="button" onClick={() => setStep((n) => n - 1)} className="inline-flex items-center gap-1.5 transition hover:text-white"><Icon name="arrow" className="h-3.5 w-3.5 rotate-180" /> {t("Previous question", "Question précédente")}</button>
                 : <span />}
               <span className="font-medium tabular-nums tracking-[0.08em]">{String(Math.min(step + 1, QUESTIONS + 1)).padStart(2, "0")} / {QUESTIONS + 1}</span>
@@ -7556,6 +7704,18 @@ function PricingPage() {
     return slug ? availablePrompts.find((p) => slugify(p.title) === slug.toLowerCase()) || null : null;
   });
 
+  // Arriving from the questionnaire: the goal it set, and the type of site,
+  // so the page can say which plan it found and why.
+  const [fromQuiz] = useState(() => {
+    if (typeof window === "undefined") return null;
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("from") !== "quiz") return null;
+    const income = Math.min(QUIZ_INCOME_MAX, Math.max(QUIZ_INCOME_MIN, Number(q.get("income")) || 0));
+    const type = QUIZ_TYPES().find((x) => x.id === q.get("type"));
+    return { income: Number(q.get("income")) ? income : null, type };
+  });
+  useEffect(() => { if (fromQuiz) track("quiz_result_viewed", { income: fromQuiz.income, type: fromQuiz.type?.id }); }, [fromQuiz]);
+
   function onUnlocked(email, info = {}) {
     window.localStorage.setItem("movento_access_email", email);
     // A pack buyer has nothing unlocked yet — the catalogue would be a wall of
@@ -7603,16 +7763,25 @@ function PricingPage() {
           {/* The reduction, then the promise, then the instruction — in that
               order, because the figure is what earns the next two lines a
               reading. */}
+          {fromQuiz ? (
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/[0.08] py-1 pl-2 pr-3.5 text-[12.5px] font-medium text-emerald-200">
+              <span className="grid h-4 w-4 place-items-center rounded-full bg-emerald-400 text-[#04150d]"><Icon name="tick" className="h-2.5 w-2.5" /></span>
+              {t("Your result", "Ton résultat")}
+            </span>
+          ) : (
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-3 pr-3.5 text-[12.5px] font-medium text-white/80">
             <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" /></span>
             {BLACK_FRIDAY
               ? <>Black Friday <span className="text-white/40">·</span> <span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span> {t(`for life, ${eur(PRICE_LIFETIME_NEXT)} from 1 Dec.`, `à vie, ${eur(PRICE_LIFETIME_NEXT)} dès le 1er déc.`)}</>
               : <><span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span> {t("for lifetime access", "l'accès à vie")}</>}
           </span>
+          )}
           <h1 className="mt-6 text-[clamp(2.4rem,6.6vw,4.2rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
             {/* Nothing to choose between with one offer on sale, so the
                 headline stops asking and states what is being sold. */}
-            {isSinglePlan
+            {fromQuiz
+              ? <>{t("We found", "On a trouvé")} <span className="bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_48%,#7C8CFF_100%)] bg-clip-text pb-[0.06em] text-transparent">{t("the right plan for you.", "la bonne formule pour toi.")}</span></>
+              : isSinglePlan
               ? <>{t("All of Movento,", "Tout Movento,")} <span className="bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_48%,#7C8CFF_100%)] bg-clip-text pb-[0.06em] text-transparent">{soloTerm ? soloTerm.every : t("for life.", "à vie.")}</span></>
               : <>{t("Choose your", "Choisis ton")} <span className="bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_48%,#7C8CFF_100%)] bg-clip-text pb-[0.06em] text-transparent">{t("plan.", "plan.")}</span></>}
           </h1>
@@ -7620,7 +7789,13 @@ function PricingPage() {
               against. With one offer left there is no comparison to draw, so
               the line states what you get and what you are committing to —
               which is the next question a single price raises. */}
-          {isSinglePlan
+          {fromQuiz
+            ? (() => {
+                const forType = fromQuiz.type ? ` ${t("building sites", "avec des sites")} ${fromQuiz.type.label.charAt(0).toLowerCase() + fromQuiz.type.label.slice(1)}` : "";
+                const goal = fromQuiz.income ? t(`To reach ${new Intl.NumberFormat("en-GB").format(fromQuiz.income)} € a month${forType}`, `Pour viser ${new Intl.NumberFormat("fr-FR").format(fromQuiz.income)} € par mois${forType}`) : t(`For your goal${forType}`, `Pour ton objectif${forType}`);
+                return t(`${goal}: lifetime access, with all ${availablePrompts.length} prompts and every option included. You pay once and keep it all.`, `${goal} : l'accès à vie, avec les ${availablePrompts.length} prompts et toutes les options comprises. Tu paies une fois et tu gardes tout.`);
+              })()
+            : isSinglePlan
             ? soloTerm
               ? t(`All ${availablePrompts.length} premium prompts and every one added next. Cancel whenever you like, no commitment.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Résiliation quand tu veux, sans engagement.`)
               : t(`All ${availablePrompts.length} premium prompts and every one added next. One payment, no subscription, no renewal.`, `Les ${availablePrompts.length} prompts premium et tous ceux à venir. Un seul paiement, pas d'abonnement, pas de renouvellement.`)
@@ -7644,7 +7819,7 @@ function PricingPage() {
         <div className="mt-12">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-28 items-stretch gap-3 sm:gap-4 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
             {visiblePlans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, "plan_card")} />
+              <PlanCard key={plan.id} plan={fromQuiz && plan.id === "lifetime" ? { ...plan, badge: t("Recommended for you", "Recommandé pour toi") } : plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, fromQuiz ? "quiz_result" : "plan_card")} />
             ))}
           </motion.div>
           {/* Only when the visitor arrived from a specific prompt. Without one

@@ -114,9 +114,10 @@ export async function ensureSubscription(payment, email) {
     const sub = await mollieApi(`/customers/${encodeURIComponent(payment.customerId)}/subscriptions`, {
       method: "POST",
       body: {
-        // What the first payment charged, so the renewals charge the same —
-        // except after the win-back offer, which is the first year only.
-        amount: { currency: "EUR", value: payment.metadata?.offer ? MOLLIE_PRICES[plan] : payment.amount?.value || MOLLIE_PRICES[plan] },
+        // The plan's price the first payment was made at, so the renewals
+        // charge the same — without the options paid once with it, and
+        // without the win-back offer, which is the first year only.
+        amount: { currency: "EUR", value: payment.metadata?.offer ? MOLLIE_PRICES[plan] : payment.metadata?.base ? Number(payment.metadata.base).toFixed(2) : payment.metadata?.addons ? MOLLIE_PRICES[plan] : payment.amount?.value || MOLLIE_PRICES[plan] },
         interval: months === 1 ? "1 month" : `${months} months`,
         startDate: nextChargeDate(payment.paidAt, months),
         description: `Movento — ${MOLLIE_PLAN_LABELS[plan]}`,
@@ -166,6 +167,9 @@ export async function grantPaid(payment, email) {
     await redisGrantAddons(email, addons);
     return { plan, renewal, addons };
   }
+  // Options paid with the first month: kept by the email (a set, so granting
+  // twice is the same as once).
+  if (payment.metadata?.addons) await redisGrantAddons(email, parseAddons(payment.metadata.addons));
   const subscriptionId = payment.subscriptionId || (payment.sequenceType === "first" ? await ensureSubscription(payment, email) : previous?.subscriptionId || null);
   // A lifetime member keeps the lifetime; the month is still set up and paid.
   if (previous?.kind === "lifetime") return { plan, renewal, subscriptionId };

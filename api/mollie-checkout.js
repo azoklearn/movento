@@ -56,7 +56,8 @@ function lifetimeDescription(amount, offer) {
   return label ? `Movento — Accès à vie · ${label}` : "Movento — Accès à vie";
 }
 
-// Options added to an account that already has the lifetime access.
+// Options added later to an account with the month (or any other access but
+// lifetime, which already includes them all).
 async function addonsCheckout(req, res, email) {
   if (CHECKOUT_PROVIDER !== "mollie" || !mollieReady()) {
     return res.status(400).json({ error: "Les options ne sont pas disponibles au paiement.", errorEn: "The options cannot be paid for right now." });
@@ -69,8 +70,11 @@ async function addonsCheckout(req, res, email) {
   const site = `https://${host}`;
   try {
     const [level, record, held] = await Promise.all([customerAccessLevel(email), redisGetAccessRecord(email), redisGetAddons(email)]);
-    if (level !== "full" || record?.kind !== "lifetime") {
-      return res.status(403).json({ error: "Les options s'ajoutent à l'accès à vie. Cet email ne l'a pas.", errorEn: "The options are added to the lifetime access. This email does not have it.", needsLifetime: true });
+    if (record?.kind === "lifetime") {
+      return res.status(409).json({ error: "Ton accès à vie comprend déjà toutes les options.", errorEn: "Your lifetime access already includes every option." });
+    }
+    if (level !== "full" || !record) {
+      return res.status(403).json({ error: "Les options s'ajoutent à un accès Movento. Cet email n'en a pas.", errorEn: "The options are added to a Movento access. This email has none.", needsAccess: true });
     }
     const addons = wanted.filter((a) => !held.includes(a));
     if (!addons.length) return res.status(409).json({ error: "Tu as déjà ces options.", errorEn: "You already have these options." });
@@ -129,8 +133,9 @@ export default async function handler(req, res) {
     }
   }
   const base = offer ? MOLLIE_WINBACK.price : MOLLIE_PRICES[plan];
-  // Add-ons ticked on the card: with lifetime only, at the server's prices.
-  const addons = plan === "lifetime" ? parseAddons(req.body?.addons) : [];
+  // Add-ons ticked on the card: on the month only, at the server's prices,
+  // paid once with the first month. Lifetime includes them all.
+  const addons = plan === "m1" ? parseAddons(req.body?.addons) : [];
   const amount = (Number(base) + addons.reduce((sum, a) => sum + Number(MOLLIE_ADDONS[a].price), 0)).toFixed(2);
   const addonText = addons.map((a) => ` + ${MOLLIE_ADDONS[a].label}`).join("");
 
@@ -144,7 +149,7 @@ export default async function handler(req, res) {
       method: "POST",
       body: {
         amount: { currency: "EUR", value: amount },
-        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? `${lifetimeDescription(base, offer)}${addonText}` : `Movento — ${MOLLIE_PLAN_LABELS[plan]}`,
+        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? lifetimeDescription(base, offer) : `Movento — ${MOLLIE_PLAN_LABELS[plan]}${addonText}`,
         customerId,
         // A subscription (3 months, the year) stores the card for the charges
         // that follow; lifetime is charged once.
@@ -155,7 +160,9 @@ export default async function handler(req, res) {
         cancelUrl: `${site}/pricing?left=${claim}`,
         webhookUrl: `${site}/api/mollie-webhook`,
         locale: "fr_FR",
-        metadata: { plan, claim, ...(addons.length ? { addons: addons.join(",") } : {}), ...(offer ? { offer: "winback", offerFrom: offer.from } : {}), ...(knownEmail ? { email: knownEmail } : {}) },
+        // `base`: the plan's own price, which the renewals charge; the
+        // options are paid once, with this first payment only.
+        metadata: { plan, claim, base: String(base), ...(addons.length ? { addons: addons.join(",") } : {}), ...(offer ? { offer: "winback", offerFrom: offer.from } : {}), ...(knownEmail ? { email: knownEmail } : {}) },
       },
     });
     // Kept 60 days: long enough for a buyer who closes the tab and comes back.

@@ -595,7 +595,22 @@ export async function redisClearAddons(email) {
     // Redis unavailable — nothing to clear.
   }
 }
+// The options an email holds: every one of them with lifetime access, which
+// includes them all; otherwise those it paid for (with the month, or later
+// from /account). Read from the access record each time, so a lifetime
+// refunded or revoked takes its options with it.
 export async function redisGetAddons(email) {
+  try {
+    const [stored, record] = await Promise.all([Redis.fromEnv().smembers(`addons:${email}`), redisGetAccessRecord(email)]);
+    if (record?.kind === "lifetime" && !(await redisIsBlocked(email))) return Object.keys(MOLLIE_ADDONS);
+    return parseAddons(stored);
+  } catch {
+    return [];
+  }
+}
+// The options paid for, without those lifetime includes: what /admin shows as
+// bought, and what a refund can take back.
+export async function redisGetPaidAddons(email) {
   try {
     return parseAddons(await Redis.fromEnv().smembers(`addons:${email}`));
   } catch {
