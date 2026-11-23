@@ -1447,19 +1447,22 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       </div>
       {plan.billedNote && <p className="mt-3 text-sm text-white/50">{plan.billedNote}</p>}
 
-      {/* The four options as one panel: a short name each, two by two, and
-          their value once, instead of four boxed rows the size of the plan. */}
+      {/* The four options as one panel: a short name and one line of what it
+          does each, and their value once, instead of four boxed rows. */}
       {included.length > 0 && (
         <div data-addons-included className="mt-6 rounded-2xl bg-[linear-gradient(135deg,rgba(255,106,125,0.08),rgba(194,91,245,0.07)_50%,rgba(124,140,255,0.08))] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">
           <div className="flex items-baseline justify-between gap-3">
             <p className="text-[13.5px] font-semibold text-[#FAFAFA]">{t(`+ ${included.length} options included`, `+ ${included.length} options comprises`)}</p>
             <p className="text-[12.5px] text-white/50">{t("worth", "valeur")} <span className="font-semibold text-emerald-300">{eur(ADDONS_VALUE)}</span></p>
           </div>
-          <ul className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-3">
+          <ul className="mt-3.5 space-y-3">
             {included.map((addon) => (
-              <li key={addon.id} className="flex min-w-0 items-center gap-2.5">
-                <span aria-hidden="true" className={`grid h-7 w-7 flex-none place-items-center rounded-lg bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]`}><Icon name={addon.icon} className="h-3.5 w-3.5" /></span>
-                <span className="min-w-0 text-[13px] font-medium leading-[1.25] text-white/85">{addon.short || addon.name}</span>
+              <li key={addon.id} className="flex min-w-0 items-start gap-3">
+                <span aria-hidden="true" className={`mt-0.5 grid h-7 w-7 flex-none place-items-center rounded-lg bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]`}><Icon name={addon.icon} className="h-3.5 w-3.5" /></span>
+                <span className="min-w-0">
+                  <span className="block text-[13.5px] font-semibold leading-5 text-[#FAFAFA]">{addon.short || addon.name}</span>
+                  <span className="block text-[12.5px] leading-[1.4] text-white/50">{addon.blurb || addon.desc}</span>
+                </span>
               </li>
             ))}
           </ul>
@@ -2168,6 +2171,7 @@ const ADDONS = [
   {
     id: "ai",
     short: t("AI adaptation", "Adaptation IA"),
+    blurb: t("The AI rewrites a prompt for your brand or your client, 50 times.", "L'IA réécrit un prompt pour ta marque ou ton client, 50 fois."),
     price: 29,
     href: "/ai",
     name: t("We adapt the prompt for you", "On adapte le prompt directement pour toi"),
@@ -2179,6 +2183,7 @@ const ADDONS = [
   {
     id: "kit",
     short: t("Freelance kit", "Kit freelance"),
+    blurb: t("Quote, contract and messages to sell a site to a client.", "Devis, contrat et messages pour vendre un site à un client."),
     price: 19,
     href: "/kit",
     name: t("Freelance kit", "Kit freelance"),
@@ -2190,6 +2195,7 @@ const ADDONS = [
   {
     id: "team",
     short: t("Agency licence", "Licence agence"),
+    blurb: t("Access for you and 4 teammates, each with their own email.", "L'accès pour toi et 4 membres de ton équipe."),
     price: 29,
     href: "/team",
     name: t("Agency licence", "Licence agence"),
@@ -2201,6 +2207,7 @@ const ADDONS = [
   {
     id: "leads",
     short: t("Client list", "Liste de clients"),
+    blurb: t("Local businesses to contact, with the message ready.", "Des entreprises de ta ville à démarcher, message prêt."),
     price: 39,
     href: "/leads",
     name: t("We find your clients", "On trouve tes clients"),
