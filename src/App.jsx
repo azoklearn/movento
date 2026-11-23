@@ -144,6 +144,7 @@ const prompts = [
   // Fictional placeholder, visible only to the team address (onlyFor): not in
   // the public gallery or any count.
   { title: "GTA 6 — Vice Coast Teaser", category: "Hero Section", type: "Hero", file: "GTA_6_Vice_Teaser_Hero.md", pinned: true, onlyFor: "teammoventoino1@gmail.com", preview: "https://res.cloudinary.com/klc0oxsz/image/upload/v1795056214/Capture_d_e%CC%81cran_2026-11-19_a%CC%80_03.41.46.png", tags: ["Synthwave Sun", "Parallax", "Fan Concept"], gradient: "from-[#ff2e88] via-[#ff8a3d] to-[#0b0614]" },
+  { title: "Embers Foundry — Two-State Courtyard Gate", category: "Landing Page", type: "Landing", file: "Embers_Foundry_Two_State_Gate.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/sanctum-gate-scroll.mp4", tags: ["Camera Scrub", "Masked Text", "Two-State Scroll"], gradient: "from-[#C5794B] via-[#5D3827] to-[#121110]" },
   { title: "SUNFIZZ — Fruit Soda Bottle Story", category: "E-commerce", type: "Landing", file: "Sunfizz_Soda_Bottle_Story.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/sunfizz-soda-bottle-story.mp4", tags: ["Three.js Bottles", "Drag Carousel", "Back-Label Story"], gradient: "from-[#FCD9C8] via-[#E25B45] to-[#4A1E17]" },
   { title: "Reshoot — AI Beauty Photography", category: "AI / SaaS", type: "Landing", file: "Reshoot_AI_Beauty_Photography.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/reshoot-landing.mp4", tags: ["Orbiting Photo Ring", "Preloader", "Pinned 3D Steps"], gradient: "from-[#f9f0f5] via-[#cbb6ea] to-[#3a1d43]" },
   { title: "Pente Fino — Barbershop Under One Spotlight", category: "Landing Page", type: "Landing", file: "Pente_Fino_Barbershop_Spotlight.md", pinned: true, preview: "https://res.cloudinary.com/ce2yatay/video/upload/pente-fino/preview.mp4", tags: ["Barbershop", "Mirror Lights", "Pinned Hero Dissolve"], gradient: "from-[#e9e7e3] via-[#8a8884] to-[#0a0a0a]" },
@@ -496,6 +497,7 @@ const AVAILABLE_FILES = new Set([
   "Rastro_Night_Test_Drive.md",
   "Sunfizz_Soda_Bottle_Story.md",
   "Reshoot_AI_Beauty_Photography.md",
+  "Embers_Foundry_Two_State_Gate.md",
   "Vaultline_Crystal_Cube_Scroll.md",
   "Keel_Chrome_Pear_Scroll_Film.md",
   "Uvra_Scroll_Harvest_Film.md",
