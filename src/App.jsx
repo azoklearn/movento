@@ -1447,20 +1447,19 @@ function PlanCard({ plan, onBuy, loading, featured }) {
       </div>
       {plan.billedNote && <p className="mt-3 text-sm text-white/50">{plan.billedNote}</p>}
 
+      {/* The four options as one panel: a short name each, two by two, and
+          their value once, instead of four boxed rows the size of the plan. */}
       {included.length > 0 && (
-        <div className="mt-6">
-          <p className="flex w-full items-center gap-3 text-[12.5px] font-medium text-white/75">
-            <span>{t("Every option included", "Toutes les options comprises")}</span>
-            <span className="h-px flex-1 bg-white/[0.08]" />
-            <span className="text-emerald-300">{t(`worth ${eur(ADDONS_VALUE)}`, `valeur ${eur(ADDONS_VALUE)}`)}</span>
-          </p>
-          <ul className="mt-3 space-y-2">
+        <div data-addons-included className="mt-6 rounded-2xl bg-[linear-gradient(135deg,rgba(255,106,125,0.08),rgba(194,91,245,0.07)_50%,rgba(124,140,255,0.08))] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-[13.5px] font-semibold text-[#FAFAFA]">{t(`+ ${included.length} options included`, `+ ${included.length} options comprises`)}</p>
+            <p className="text-[12.5px] text-white/50">{t("worth", "valeur")} <span className="font-semibold text-emerald-300">{eur(ADDONS_VALUE)}</span></p>
+          </div>
+          <ul className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-3">
             {included.map((addon) => (
-              <li key={addon.id} data-addon-included={addon.id} className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-2.5 pr-3.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
-                <span aria-hidden="true" className={`grid h-9 w-9 flex-none place-items-center rounded-xl bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]`}><Icon name={addon.icon} className="h-4 w-4" /></span>
-                <span className="min-w-0 flex-1 text-[13.5px] font-semibold leading-5 text-[#FAFAFA]">{addon.name}</span>
-                <span className="hidden flex-none text-[12px] text-white/35 sm:inline">{eur(addon.price)}</span>
-                <span className="flex-none rounded-full bg-emerald-400/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">{t("Included", "Compris")}</span>
+              <li key={addon.id} className="flex min-w-0 items-center gap-2.5">
+                <span aria-hidden="true" className={`grid h-7 w-7 flex-none place-items-center rounded-lg bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]`}><Icon name={addon.icon} className="h-3.5 w-3.5" /></span>
+                <span className="min-w-0 text-[13px] font-medium leading-[1.25] text-white/85">{addon.short || addon.name}</span>
               </li>
             ))}
           </ul>
@@ -2168,6 +2167,7 @@ const AI_EDITS_INCLUDED = 50;
 const ADDONS = [
   {
     id: "ai",
+    short: t("AI adaptation", "Adaptation IA"),
     price: 29,
     href: "/ai",
     name: t("We adapt the prompt for you", "On adapte le prompt directement pour toi"),
@@ -2178,6 +2178,7 @@ const ADDONS = [
   },
   {
     id: "kit",
+    short: t("Freelance kit", "Kit freelance"),
     price: 19,
     href: "/kit",
     name: t("Freelance kit", "Kit freelance"),
@@ -2188,6 +2189,7 @@ const ADDONS = [
   },
   {
     id: "team",
+    short: t("Agency licence", "Licence agence"),
     price: 29,
     href: "/team",
     name: t("Agency licence", "Licence agence"),
@@ -2198,6 +2200,7 @@ const ADDONS = [
   },
   {
     id: "leads",
+    short: t("Client list", "Liste de clients"),
     price: 39,
     href: "/leads",
     name: t("We find your clients", "On trouve tes clients"),
