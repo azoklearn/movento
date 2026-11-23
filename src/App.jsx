@@ -1086,10 +1086,6 @@ const eur = (n) => {
   const s = Number.isInteger(Number(n)) ? String(Number(n)) : Number(n).toFixed(2);
   return t(`${s}€`, `${s.replace(".", ",")}€`);
 };
-// "then 149 € from 1 December", or the plain terms once the offer is over.
-const LIFETIME_TERMS_LINE = BLACK_FRIDAY
-  ? t(`then ${eur(PRICE_LIFETIME_NEXT)} from 1 December`, `puis ${eur(PRICE_LIFETIME_NEXT)} dès le 1er décembre`)
-  : t("one payment, no subscription", "un seul paiement, sans abonnement");
 // "soit 0,63€ par jour" — the smallest way to read a price, and the reason a
 // three-month term reads as cheaper than a monthly one at a glance.
 const perDayOf = (id) => {
