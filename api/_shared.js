@@ -529,16 +529,33 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 // The site switches to Mollie with CHECKOUT_PROVIDER=mollie.
 export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
 export const mollieTestMode = () => String(process.env.MOLLIE_API_KEY || "").startsWith("test_");
-// Black Friday: lifetime at 89 € until the rise, then 149 €. Read at the
-// moment of each checkout, so the rise needs no deploy. Keep in step with
-// LIFETIME_RISE_AT in src/App.jsx and the JSON-LD offer in index.html.
-export const LIFETIME_PRICE_RISE = { at: Date.parse("2026-12-01T00:00:00+01:00"), before: 89, after: 149 };
+// Two lifetime offers. Black Friday until 30 November: the prompts alone at
+// 89 € and the prompts with every option at 149 €; from 1 December, midnight
+// in Paris, 129 € and 199 €. Read at the moment of each checkout, so the rise
+// needs no deploy. Keep in step with LIFETIME_RISE_AT in src/App.jsx and the
+// JSON-LD offers in index.html.
+export const LIFETIME_PRICE_RISE = {
+  at: Date.parse("2026-12-01T00:00:00+01:00"),
+  lifetime: { before: 89, after: 129 },
+  lifetime_plus: { before: 149, after: 199 },
+};
 export const lifetimeRisen = (now = Date.now()) => now >= LIFETIME_PRICE_RISE.at;
+const lifetimePrice = (plan) => (lifetimeRisen() ? LIFETIME_PRICE_RISE[plan].after : LIFETIME_PRICE_RISE[plan].before).toFixed(2);
+// The two lifetime plans: both open the catalogue for life; lifetime_plus
+// also grants every option.
+export const LIFETIME_PLANS = new Set(["lifetime", "lifetime_plus"]);
+// Lifetime access granted before this moment includes every option: it was
+// sold or given while lifetime included them all (and members kept them when
+// the prompts-only lifetime came in). Granted after it, lifetime is the
+// prompts alone, plus the options paid for or given (lifetime_plus grants
+// them all).
+export const LIFETIME_ALL_OPTIONS_BEFORE = Date.parse("2026-11-23T05:00:00Z");
 export const MOLLIE_PRICES = {
   m1: Number(process.env.MOLLIE_M1_PRICE || 29.99).toFixed(2),
   m3: Number(process.env.MOLLIE_M3_PRICE || 109).toFixed(2),
   m12: Number(process.env.MOLLIE_M12_PRICE || 239).toFixed(2),
-  get lifetime() { return (lifetimeRisen() ? LIFETIME_PRICE_RISE.after : LIFETIME_PRICE_RISE.before).toFixed(2); },
+  get lifetime() { return lifetimePrice("lifetime"); },
+  get lifetime_plus() { return lifetimePrice("lifetime_plus"); },
   // Packs of prompts, paid once: the buyer picks the prompts after paying
   // (/choose) and keeps them. Sizes in MOLLIE_PACK_SIZES.
   pack2: Number(process.env.MOLLIE_PACK2_PRICE || 49).toFixed(2),
@@ -595,14 +612,17 @@ export async function redisClearAddons(email) {
     // Redis unavailable — nothing to clear.
   }
 }
-// The options an email holds: every one of them with lifetime access, which
-// includes them all; otherwise those it paid for (with the month, or later
-// from /account). Read from the access record each time, so a lifetime
-// refunded or revoked takes its options with it.
+// The options an email holds: every one of them with a lifetime access
+// granted before LIFETIME_ALL_OPTIONS_BEFORE; otherwise those it paid for or
+// was given (with lifetime + options, with the month, or later from
+// /account). Read from the access record each time, so a lifetime refunded
+// or revoked takes its options with it.
 export async function redisGetAddons(email) {
   try {
     const [stored, record] = await Promise.all([Redis.fromEnv().smembers(`addons:${email}`), redisGetAccessRecord(email)]);
-    if (record?.kind === "lifetime" && !(await redisIsBlocked(email))) return Object.keys(MOLLIE_ADDONS);
+    const granted = Date.parse(record?.grantedAt || "");
+    const before = !Number.isFinite(granted) || granted < LIFETIME_ALL_OPTIONS_BEFORE;
+    if (record?.kind === "lifetime" && before && !(await redisIsBlocked(email))) return Object.keys(MOLLIE_ADDONS);
     return parseAddons(stored);
   } catch {
     return [];
@@ -649,7 +669,7 @@ export const MOLLIE_LIFETIME_PROMO = {
   get label() { return lifetimeRisen() ? "" : process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Black Friday"; },
 };
 export const strikeText = (text) => [...String(text)].map((c) => `${c}\u0336`).join("");
-export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", addons: "Options", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
+export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", lifetime_plus: "À vie + options", addons: "Options", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
 // How many months one payment of each subscription pays for: the Mollie
 // subscription's interval, and how far a paid payment opens the catalogue.
 export const MOLLIE_PLAN_MONTHS = { m1: 1, m3: 3, m12: 12 };
@@ -821,7 +841,8 @@ export function bestCheckoutUrl(plan) {
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
 //
-// On sale: the month (29,99 €) and lifetime (89 €, then 149 €). 3 months, the year and
+// On sale: the month (29,99 €), lifetime (89 €, then 129 €) and lifetime +
+// options (149 €, then 199 €). 3 months, the year and
 // the prompt packs are off sale; their subscribers keep their access and
 // their renewals.
 export const RETIRED_PLANS = new Set(["m3", "m12", "monthly", "yearly", "pack2", "pack5", "pack10"]);

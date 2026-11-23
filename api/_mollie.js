@@ -18,6 +18,7 @@ import {
   MOLLIE_PLAN_LABELS,
   MOLLIE_PLAN_MONTHS,
   MOLLIE_PRICES,
+  LIFETIME_PLANS,
   mollieAccessRecord,
   mollieAccessUntil,
   mollieApi,
@@ -159,7 +160,9 @@ export async function grantPaid(payment, email) {
     return { plan, renewal: false, addons };
   }
 
-  if (plan === "lifetime") {
+  if (LIFETIME_PLANS.has(plan)) {
+    // Both lifetime plans are stored as "lifetime"; lifetime_plus carries
+    // every option in its metadata, granted just below.
     await redisSetAccess(email, mollieAccessRecord({ kind: "lifetime", paymentId: payment.id, customerId: payment.customerId }));
     // The add-ons paid for in the same payment (a set: granting twice is the
     // same as once).

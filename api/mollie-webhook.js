@@ -91,7 +91,7 @@ export default async function handler(req, res) {
         return done(200, "remboursé : options retirées", sent ? "envoyé" : "non envoyé");
       }
       const previous = email ? await redisGetAccessRecord(email) : null;
-      const ours = previous?.provider === "mollie" && (previous.transactionId === payment.id || (plan !== "lifetime" && previous.kind === plan));
+      const ours = previous?.provider === "mollie" && (previous.transactionId === payment.id || (plan !== "lifetime" && plan !== "lifetime_plus" && previous.kind === plan));
       if (ours) {
         if (previous.subscriptionId && previous.customerId) {
           await mollieApi(`/customers/${encodeURIComponent(previous.customerId)}/subscriptions/${encodeURIComponent(previous.subscriptionId)}`, { method: "DELETE" }).catch((e) => console.error("Mollie subscription cancel after refund failed:", e));

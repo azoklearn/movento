@@ -1014,18 +1014,21 @@ const discountOf = (id) => {
 // On sale with every processor. Off sale, lifetime members
 // keep their access, their ebook and their support.
 const LIFETIME_RETIRED = false;
-// Black Friday: lifetime at 89 € until 30 November, then 149 € from
-// 1 December, midnight in Paris. No struck price: lifetime was sold at 49 €
-// over the last 30 days, so a figure struck above 89 € would be a false
-// reference price (art. L112-1-1, Code de la consommation). The offer is the
-// rise announced ahead, and the rise is real: past the date the page quotes
-// 149 € by itself, and api/_shared.js charges it (LIFETIME_PRICE_RISE there,
+// Two lifetime offers, Black Friday until 30 November: the prompts alone at
+// 89 €, the prompts with every option at 149 €; from 1 December, midnight in
+// Paris, 129 € and 199 €. No struck price: lifetime was sold at 49 € over the
+// last 30 days, so a figure struck above it would be a false reference price
+// (art. L112-1-1, Code de la consommation). The offer is the rise announced
+// ahead, and the rise is real: past the date the page quotes the new prices
+// by itself, and api/_shared.js charges them (LIFETIME_PRICE_RISE there,
 // keep both in step).
 const LIFETIME_RISE_AT = "2026-12-01T00:00:00+01:00";
 const LIFETIME_RISEN = Date.now() >= Date.parse(LIFETIME_RISE_AT);
-const PRICE_LIFETIME = LIFETIME_RISEN ? 149 : 89;
-// The price it goes up to, while the offer runs; null once it has.
-const PRICE_LIFETIME_NEXT = LIFETIME_RISEN ? null : 149;
+const PRICE_LIFETIME = LIFETIME_RISEN ? 129 : 89;
+const PRICE_LIFETIME_PLUS = LIFETIME_RISEN ? 199 : 149;
+// The prices they go up to, while the offer runs; null once they have.
+const PRICE_LIFETIME_NEXT = LIFETIME_RISEN ? null : 129;
+const PRICE_LIFETIME_PLUS_NEXT = LIFETIME_RISEN ? null : 199;
 const BLACK_FRIDAY = !LIFETIME_RISEN;
 
 // The figure the page leads with — the best of everything a button actually
@@ -1157,6 +1160,10 @@ const STRONG_FEATURES = new Set([FEATURE_CLIENT_WORK]);
 // has nothing to cancel, which is why it does not share this list.
 const BASE_FEATURES = CATALOGUE_FEATURES;
 
+// Lifetime + options is sold on Mollie only, the one checkout that grants the
+// options. Read from the build's variable directly: CHECKOUT_PROVIDER_PUBLIC
+// is declared further down.
+const LIFETIME_PLUS_ON_SALE = String(import.meta.env.CHECKOUT_PROVIDER || "").trim().toLowerCase() === "mollie";
 const plans = [
   {
     id: "m1",
@@ -1270,7 +1277,7 @@ const plans = [
     // api/_shared.js, which would refuse the checkout while this is hidden.
     hidden: LIFETIME_RETIRED,
     name: t("Lifetime access", "Accès à vie"),
-    subtitle: t("Unlimited prompts, access for life", "Prompts illimités, accès à vie"),
+    subtitle: t("Every prompt, for life", "Tous les prompts, à vie"),
     price: eur(PRICE_LIFETIME),
     // No struck price: see LIFETIME_RISE_AT.
     // No chip: struck against two years of the annual its reduction is small
@@ -1286,16 +1293,37 @@ const plans = [
     // the one worth steering a buyer to, and "best value" is arithmetic anyone
     // can check against the card beside it — unlike "most chosen", which would
     // be a claim about other buyers that nothing here measures.
-    badge: BLACK_FRIDAY ? "Black Friday" : t("Best value", "Meilleure offre"),
-    featured: true,
-    // The comparison stated as a line of its own, derived from both prices so
-    // it cannot outlive either of them.
+    badge: BLACK_FRIDAY ? "Black Friday" : undefined,
+    // Put forward only where lifetime + options is not sold.
+    featured: !LIFETIME_PLUS_ON_SALE,
     // Its two extras go after support and the ebook, as the last rows.
     features: CATALOGUE_FEATURES,
     extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés")],
     // Stated plainly rather than buried in the list above. The descriptions the
     // card used to carry are gone: they were most of its height, and beside
     // three shorter cards that read as a mistake rather than as generosity.
+    perk: t("Direct support included", "Support direct inclus"),
+    bonus: t("Free bonus ebook included", "Ebook offert inclus"),
+  },
+  {
+    // Lifetime with every option: the same access, and the four options
+    // granted with it (api/_shared.js, plan lifetime_plus). The card the page
+    // puts forward.
+    id: "lifetime_plus",
+    // Sold on Mollie only, the one checkout that grants the options.
+    hidden: LIFETIME_RETIRED || !LIFETIME_PLUS_ON_SALE,
+    name: t("Lifetime + options", "À vie + options"),
+    subtitle: t("Every prompt and every option, for life", "Tous les prompts et toutes les options, à vie"),
+    price: eur(PRICE_LIFETIME_PLUS),
+    period: t("forever", "à vie"),
+    billedNote: BLACK_FRIDAY
+      ? t(`Black Friday · one payment, then ${eur(PRICE_LIFETIME_PLUS_NEXT)} from 1 December`, `Black Friday · paiement unique, puis ${eur(PRICE_LIFETIME_PLUS_NEXT)} dès le 1er décembre`)
+      : t("One payment, no subscription", "Paiement unique, sans abonnement"),
+    cta: t("Take it all, for life", "Tout prendre, à vie"),
+    badge: t("All included", "Tout compris"),
+    featured: true,
+    features: CATALOGUE_FEATURES,
+    extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés")],
     perk: t("Direct support included", "Support direct inclus"),
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
   },
@@ -1396,7 +1424,7 @@ function PlanCard({ plan, onBuy, loading, featured }) {
   // The options: included with lifetime, offered on top of the month (paid
   // once with the first month, in plan.addons).
   const bumps = ADDONS_ON_SALE && plan.id === "m1" ? ADDONS : [];
-  const included = plan.id === "lifetime" ? ADDONS : [];
+  const included = plan.id === "lifetime_plus" ? ADDONS : [];
   const [picked, setPicked] = useState([]);
   const extra = addonsTotal(picked);
   const toggle = (id) => {
@@ -2236,7 +2264,7 @@ const addonsTotal = (ids) => ADDONS.filter((a) => (ids || []).includes(a.id)).re
 // What every option costs bought one by one: what lifetime includes.
 const ADDONS_VALUE = ADDONS.reduce((sum, a) => sum + a.price, 0);
 // A plan's own price, before any option: lifetime, or the term's price.
-const planBasePrice = (plan) => (plan.id === "lifetime" ? PRICE_LIFETIME : termOf(plan.id)?.price || 0);
+const planBasePrice = (plan) => (plan.id === "lifetime" ? PRICE_LIFETIME : plan.id === "lifetime_plus" ? PRICE_LIFETIME_PLUS : termOf(plan.id)?.price || 0);
 // A sum in euros with at most two decimals, so 29.99 + 19 is never 48.989999.
 const money = (n) => Math.round(n * 100) / 100;
 
@@ -3111,17 +3139,19 @@ async function copyTextToClipboard(text) {
 
 function runSelfTests() {
   // The two offers, mirroring RETIRED_PLANS in api/_shared.js.
-  console.assert(["m1", "lifetime"].every(validatePlanId) && visiblePlans.length === 2, "the month and lifetime are the offers and must be purchasable");
+  console.assert(["m1", "lifetime"].every(validatePlanId) && validatePlanId("lifetime_plus") === LIFETIME_PLUS_ON_SALE && visiblePlans.length === (LIFETIME_PLUS_ON_SALE ? 3 : 2), "the month and the lifetime offers must be purchasable");
   console.assert(["m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
   console.assert(FEATURED_TERM === null && FEATURED_OFFER.price === PRICE_LIFETIME, "while lifetime is the offer pushed, the bar and the anchor quote it, not the month");
   console.assert(termOf("m1").price === 29.99, "the month is 29,99 €");
-  console.assert(PRICE_LIFETIME === (LIFETIME_RISEN ? 149 : 89) && (PRICE_LIFETIME_NEXT === null || PRICE_LIFETIME_NEXT > PRICE_LIFETIME), "lifetime is 89 € until the rise, 149 € after it");
+  console.assert(PRICE_LIFETIME === (LIFETIME_RISEN ? 129 : 89) && PRICE_LIFETIME_PLUS === (LIFETIME_RISEN ? 199 : 149) && (PRICE_LIFETIME_NEXT === null || PRICE_LIFETIME_NEXT > PRICE_LIFETIME), "lifetime is 89 € and 149 € until the rise, 129 € and 199 € after it");
   console.assert(visiblePlans.some((plan) => plan.id === "lifetime") && visiblePlans.filter((plan) => plan.featured).length === 1, "lifetime is on sale, and exactly one card is featured");
   // A card may not promise an extra its kind is not granted: the card is the
   // promise, EBOOK_KINDS and SUPPORT_KINDS are what keep it, and the two going
   // out of step is the one failure here a buyer finds out about after paying.
-  console.assert(visiblePlans.every((plan) => !plan.bonus || EBOOK_KINDS.has(plan.id)), "no card may offer the ebook unless its kind is granted it");
-  console.assert(visiblePlans.every((plan) => !plan.perk || SUPPORT_KINDS.has(plan.id)), "no card may offer support unless its kind is granted it");
+  // Lifetime + options is stored as a lifetime (api/_mollie.js).
+  const kindOfPlan = (id) => (id === "lifetime_plus" ? "lifetime" : id);
+  console.assert(visiblePlans.every((plan) => !plan.bonus || EBOOK_KINDS.has(kindOfPlan(plan.id))), "no card may offer the ebook unless its kind is granted it");
+  console.assert(visiblePlans.every((plan) => !plan.perk || SUPPORT_KINDS.has(kindOfPlan(plan.id))), "no card may offer support unless its kind is granted it");
   console.assert(earnedEbook({ kind: "m1" }) && earnedEbook({ kind: "m12" }) && earnedEbook({ kind: "lifetime" }), "the ebook comes with the month on sale, and with the terms that carried it");
   console.assert(earnedEbook({ kind: "m3" }), "the retired quarter was sold as \"+ EBOOK\" and its buyers keep it");
   console.assert(earnedEbook({}), "an unidentified plan must not lose the ebook");
@@ -4378,7 +4408,7 @@ function AiContent({ email }) {
   }, [email]);
   if (state.loading) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!state.data?.addon) {
-    return <AddonMissing message={state.error || t(`The AI option is not on ${email}. Lifetime access includes it; with the monthly plan, you can add it from your account.`, `L'option « On adapte le prompt pour toi » n'est pas sur ${email}. L'accès à vie la comprend ; avec le mensuel, tu peux l'ajouter depuis ton compte.`)} addon="ai" email={email} />;
+    return <AddonMissing message={state.error || t(`The AI option is not on ${email}. Lifetime + options includes it; with another plan, you can add it from your account.`, `L'option « On adapte le prompt pour toi » n'est pas sur ${email}. L'accès à vie + options la comprend ; sinon, tu peux l'ajouter depuis ton compte.`)} addon="ai" email={email} />;
   }
   const { left, total, results } = state.data;
   const copy = async (file) => {
@@ -4496,9 +4526,9 @@ function AccountContent({ email }) {
   const held = data.addons || [];
   const lifetime = data.kind === "lifetime";
   const toAdd = ADDONS.filter((a) => !held.includes(a.id));
-  // Options are bought on top of an access of one's own; lifetime already
-  // includes them all, so it never gets here with anything to add.
-  const canBuy = data.hasAccess && !data.memberOf && !lifetime;
+  // Options are bought on top of an access of one's own: the month, or the
+  // prompts-only lifetime. Those already held are not offered.
+  const canBuy = data.hasAccess && !data.memberOf;
   const chosen = picked.filter((id) => toAdd.some((a) => a.id === id));
   const total = addonsTotal(chosen);
   const kindName = ACCESS_KIND_NAMES()[data.kind];
@@ -4588,7 +4618,7 @@ function AccountContent({ email }) {
 
       {ADDONS_ON_SALE && toAdd.length > 0 && (
         <motion.div {...rise(2)}>
-          <h2 className="text-[26px] font-semibold tracking-[-0.035em] text-[#FAFAFA]">{held.length ? t("Add an option,", "Ajoute une option,") : t("The options,", "Les options,")} <span className="text-white/40">{canBuy ? t("paid once.", "payée une seule fois.") : t("included with lifetime.", "comprises dans l'accès à vie.")}</span></h2>
+          <h2 className="text-[26px] font-semibold tracking-[-0.035em] text-[#FAFAFA]">{held.length ? t("Add an option,", "Ajoute une option,") : t("The options,", "Les options,")} <span className="text-white/40">{canBuy ? t("paid once.", "payée une seule fois.") : t("included with lifetime + options.", "comprises dans l'accès à vie + options.")}</span></h2>
           <div className={`${panel} mt-5 p-3 sm:p-4`}>
             <div className="space-y-2.5">
               {toAdd.map((addon) => <AddonOption key={addon.id} addon={addon} on={chosen.includes(addon.id)} disabled={!canBuy} onToggle={() => toggle(addon.id)} />)}
@@ -4608,7 +4638,7 @@ function AccountContent({ email }) {
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-white/50">{t("The options are added to a Movento access, and lifetime includes them all.", "Les options s'ajoutent à un accès Movento, et l'accès à vie les comprend toutes.")}</p>
+                  <p className="text-sm text-white/50">{t("The options are added to a Movento access, and lifetime + options includes them all.", "Les options s'ajoutent à un accès Movento, et l'accès à vie + options les comprend toutes.")}</p>
                   <a href="/pricing" className="group inline-flex flex-none items-center justify-center gap-2.5 rounded-full bg-white py-1.5 pl-6 pr-1.5 text-sm font-semibold text-black transition hover:bg-white/90">{t("See the lifetime access", "Voir l'accès à vie")} <span className="grid h-9 w-9 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></span></a>
                 </>
               )}
@@ -4686,7 +4716,7 @@ function KitContent({ email }) {
   if (state.loading && !kit) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!kit) {
     return <AddonMissing message={state.status === 403
-      ? t(`The freelance kit is not on ${email}. Lifetime access includes it; with the monthly plan, you can add it from your account.`, `Le Kit freelance n'est pas sur ${email}. L'accès à vie la comprend ; avec le mensuel, tu peux l'ajouter depuis ton compte.`)
+      ? t(`The freelance kit is not on ${email}. Lifetime + options includes it; with another plan, you can add it from your account.`, `Le Kit freelance n'est pas sur ${email}. L'accès à vie + options la comprend ; sinon, tu peux l'ajouter depuis ton compte.`)
       : state.error} addon={state.status === 403 ? "kit" : undefined} email={email} />;
   }
   const copy = async (key, text) => {
@@ -4775,7 +4805,7 @@ function TeamContent({ email }) {
   if (!team) {
     return <AddonMissing message={state.data.memberOf
       ? t(`${email} is on the team of ${state.data.memberOf}: the catalogue is open to you. Only the buyer of the licence manages the team.`, `${email} fait partie de l'équipe de ${state.data.memberOf} : le catalogue t'est ouvert. Seul l'acheteur de la licence gère l'équipe.`)
-      : t(`The agency licence is not on ${email}. Lifetime access includes it; with the monthly plan, you can add it from your account.`, `La Licence agence n'est pas sur ${email}. L'accès à vie la comprend ; avec le mensuel, tu peux l'ajouter depuis ton compte.`)} addon={state.data.memberOf ? undefined : "team"} email={email} />;
+      : t(`The agency licence is not on ${email}. Lifetime + options includes it; with another plan, you can add it from your account.`, `La Licence agence n'est pas sur ${email}. L'accès à vie + options la comprend ; sinon, tu peux l'ajouter depuis ton compte.`)} addon={state.data.memberOf ? undefined : "team"} email={email} />;
   }
   const free = team.seats - team.members.length;
   return (
@@ -4872,7 +4902,7 @@ function LeadsContent({ email }) {
   if (form.loading && !form.data) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
   if (!form.data) {
     return <AddonMissing message={form.status === 403
-      ? t(`The leads finder is not on ${email}. Lifetime access includes it; with the monthly plan, you can add it from your account.`, `L'option « On trouve tes clients » n'est pas sur ${email}. L'accès à vie la comprend ; avec le mensuel, tu peux l'ajouter depuis ton compte.`)
+      ? t(`The leads finder is not on ${email}. Lifetime + options includes it; with another plan, you can add it from your account.`, `L'option « On trouve tes clients » n'est pas sur ${email}. L'accès à vie + options la comprend ; sinon, tu peux l'ajouter depuis ton compte.`)
       : form.error} addon={form.status === 403 ? "leads" : undefined} email={email} />;
   }
   const trades = form.data.trades || [];
@@ -7809,7 +7839,7 @@ function PricingPage() {
             ? (() => {
                 const forType = fromQuiz.type ? ` ${t("building sites", "avec des sites")} ${fromQuiz.type.label.charAt(0).toLowerCase() + fromQuiz.type.label.slice(1)}` : "";
                 const goal = fromQuiz.income ? t(`To reach ${new Intl.NumberFormat("en-GB").format(fromQuiz.income)} € a month${forType}`, `Pour viser ${new Intl.NumberFormat("fr-FR").format(fromQuiz.income)} € par mois${forType}`) : t(`For your goal${forType}`, `Pour ton objectif${forType}`);
-                return t(`${goal}: lifetime access, with all ${availablePrompts.length} prompts and every option included. You pay once and keep it all.`, `${goal} : l'accès à vie, avec les ${availablePrompts.length} prompts et toutes les options comprises. Tu paies une fois et tu gardes tout.`);
+                return t(`${goal}: lifetime + options, with all ${availablePrompts.length} prompts and every option included. You pay once and keep it all.`, `${goal} : l'accès à vie + options, avec les ${availablePrompts.length} prompts et toutes les options comprises. Tu paies une fois et tu gardes tout.`);
               })()
             : isSinglePlan
             ? soloTerm
@@ -7835,7 +7865,7 @@ function PricingPage() {
         <div className="mt-12">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} id="plans" className={`mx-auto grid scroll-mt-28 items-stretch gap-3 sm:gap-4 ${planGridWidth} ${planGridBase} ${visiblePlans.length === 1 ? "" : planGridLg}`}>
             {visiblePlans.map((plan) => (
-              <PlanCard key={plan.id} plan={fromQuiz && plan.id === "lifetime" ? { ...plan, badge: t("Recommended for you", "Recommandé pour toi") } : plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, fromQuiz ? "quiz_result" : "plan_card")} />
+              <PlanCard key={plan.id} plan={fromQuiz && plan.id === "lifetime_plus" ? { ...plan, badge: t("Recommended for you", "Recommandé pour toi") } : plan} featured={plan.featured} loading={Boolean(checkoutPlan)} onBuy={(p) => startCheckout(p, fromQuiz ? "quiz_result" : "plan_card")} />
             ))}
           </motion.div>
           {/* Only when the visitor arrived from a specific prompt. Without one
