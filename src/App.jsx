@@ -5271,17 +5271,20 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
           </span>
         ) : (
           <>
-            <a href="/commencer" className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-white pl-8 pr-2 text-base font-semibold tracking-[-0.005em] text-black shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_24px_70px_-18px_rgba(194,91,245,0.55)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.3),0_30px_80px_-18px_rgba(194,91,245,0.75)] sm:h-16 sm:pl-10 sm:text-lg">
-              {t("Start now", "Commencer maintenant")}
+            <a href="#prompts" onClick={() => track("hero_cta_gallery")} className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-white pl-8 pr-2 text-base font-semibold tracking-[-0.005em] text-black shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_24px_70px_-18px_rgba(194,91,245,0.55)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.3),0_30px_80px_-18px_rgba(194,91,245,0.75)] sm:h-16 sm:pl-10 sm:text-lg">
+              {t("See the prompts", "Voir les prompts")}
               <span className="grid h-10 w-10 place-items-center rounded-full bg-black text-white sm:h-12 sm:w-12"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
+            </a>
+            {/* The guided start, offered rather than imposed: for those who
+                came to sell sites, not just to browse designs. */}
+            <a href="/commencer" onClick={() => track("hero_quiz_link")} className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-4 pr-1.5 text-[13.5px] text-white/65 transition hover:border-white/25 hover:text-white">
+              {t("Want to sell sites?", "Tu veux vendre des sites ?")} <span className="font-semibold text-white">{t("Take the test (1 min)", "Fais le test (1 min)")}</span>
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-white"><Icon name="arrow" className="h-3 w-3 transition group-hover:translate-x-0.5" /></span>
             </a>
             <p className="text-[13px] text-white/50">
               <a href="/pricing" className="transition hover:text-white/80"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("for life", "à vie")} <span className="text-white/30">·</span> {LIFETIME_TERMS_LINE}</a>
             </p>
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-              <a href="#prompts" className="text-sm font-semibold text-white/80 underline decoration-white/30 underline-offset-4 transition hover:text-white">
-                {t("Browse the prompts", "Voir les prompts")}
-              </a>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
               {!trialActive && (
                 <button onClick={onUnlock} className="text-sm font-medium text-white/45 transition hover:text-white/80">
                   {t("Already a customer? Sign in", "Déjà client ? Connecte-toi")}
