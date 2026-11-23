@@ -1157,11 +1157,13 @@ const NEW_FEATURES = new Set([FEATURE_APPS, FEATURE_BACKGROUNDS]);
 // What lifetime + options holds beyond the catalogue, written as rows of the
 // card like everything else it includes (the four options of ADDONS, granted
 // with it; keep the wording in step with them).
+// The clients first: it is what the plan sells on.
+const FEATURE_FIND_CLIENTS = t("We find your clients: local businesses to contact, message ready", "On te trouve tes clients : des entreprises à démarcher, message prêt");
 const PLUS_FEATURES = [
+  FEATURE_FIND_CLIENTS,
   t("Prompts adapted for you by AI (50)", "Prompts adaptés pour toi par l'IA (50)"),
   t("Freelance kit: quote, contract, messages", "Kit freelance : devis, contrat, messages"),
   t("Agency licence: you + 4 teammates", "Licence agence : toi + 4 personnes"),
-  t("Local businesses to contact, message ready", "Entreprises à démarcher, message prêt"),
 ];
 const STRONG_FEATURES = new Set([FEATURE_CLIENT_WORK, ...PLUS_FEATURES]);
 
@@ -1322,7 +1324,7 @@ const plans = [
     // Sold on Mollie only, the one checkout that grants the options.
     hidden: LIFETIME_RETIRED || !LIFETIME_PLUS_ON_SALE,
     name: t("Lifetime + options", "À vie + options"),
-    subtitle: t("Every prompt, and the tools to sell your sites", "Tous les prompts, et les outils pour vendre tes sites"),
+    subtitle: t("Every prompt, and we find your clients", "Tous les prompts, et on te trouve tes clients"),
     price: eur(PRICE_LIFETIME_PLUS),
     period: t("forever", "à vie"),
     billedNote: BLACK_FRIDAY
@@ -7875,7 +7877,7 @@ function PricingPage() {
             ? (() => {
                 const forType = fromQuiz.type ? ` ${t("building sites", "avec des sites")} ${fromQuiz.type.label.charAt(0).toLowerCase() + fromQuiz.type.label.slice(1)}` : "";
                 const goal = fromQuiz.income ? t(`To reach ${new Intl.NumberFormat("en-GB").format(fromQuiz.income)} € a month${forType}`, `Pour viser ${new Intl.NumberFormat("fr-FR").format(fromQuiz.income)} € par mois${forType}`) : t(`For your goal${forType}`, `Pour ton objectif${forType}`);
-                return t(`${goal}: lifetime + options, with all ${availablePrompts.length} prompts and every option included. You pay once and keep it all.`, `${goal} : l'accès à vie + options, avec les ${availablePrompts.length} prompts et toutes les options comprises. Tu paies une fois et tu gardes tout.`);
+                return t(`${goal}: lifetime + options. All ${availablePrompts.length} prompts, and we find your clients for you. You pay once and keep it all.`, `${goal} : l'accès à vie + options. Les ${availablePrompts.length} prompts, et on te trouve tes clients. Tu paies une fois et tu gardes tout.`);
               })()
             : isSinglePlan
             ? soloTerm
