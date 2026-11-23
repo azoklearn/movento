@@ -3884,7 +3884,6 @@ function MoventoPages() {
       <SiteNav query={query} setQuery={setQuery} />
 
       <LandingHero hasPremiumAccess={hasPremiumAccess} trialActive={trialActive} onUnlock={() => setShowUnlockModal(true)} />
-      {!hasPremiumAccess && <HowItWorks />}
 
       {/* Full width, no max: the gallery is the page, and a capped row left a
           band of empty background down each side on anything above 1560. */}
@@ -5144,109 +5143,13 @@ function ToolsMarquee() {
   );
 }
 
-// The glass tiles floating beside the hero's title. Each is tilted in space,
-// drifts on its own beat and leans a little with the pointer (the hero sets
-// --mx / --my, each tile moves by its own depth). A lit edge, a soft coloured
-// glow under it, a slow shine across it. Decoration: hidden from readers and
-// from narrower screens, where the title has the width to itself. Every one
-// says "exemple": they illustrate the use, they are not live figures.
-function HeroTile({ className, tilt, depth = 14, delay = 0, glow = "rgba(70,110,255,0.42)", children }) {
-  return (
-    <div aria-hidden="true" className={`pointer-events-none absolute hidden xl:block ${className}`} style={{ transform: `translate3d(calc(var(--mx, 0) * ${depth}px), calc(var(--my, 0) * ${depth}px), 0)`, transition: "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)" }}>
-      <div style={{ transform: `perspective(900px) ${tilt}` }}>
-        <div className="mv-float relative" style={{ animationDelay: `${delay}s` }}>
-          <div className="absolute inset-x-6 -bottom-6 h-10 rounded-full blur-2xl" style={{ background: glow }} />
-          <div className="relative overflow-hidden rounded-[22px] bg-[linear-gradient(150deg,rgba(58,70,108,0.62),rgba(13,16,28,0.86)_58%)] p-[1px] shadow-[0_30px_60px_-28px_rgba(0,0,0,0.9)]">
-            {/* the lit edge */}
-            <div className="absolute inset-0 rounded-[22px] bg-[linear-gradient(150deg,rgba(255,255,255,0.38),rgba(255,255,255,0.04)_38%,rgba(255,255,255,0.02)_62%,rgba(140,160,255,0.22))]" />
-            <div className="relative overflow-hidden rounded-[21px] bg-[linear-gradient(150deg,#1b2238,#0b0d16_62%)] px-4 py-3.5 backdrop-blur-md">
-              <span className="mv-shine" />
-              {children}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-const TILE_LABEL = "flex items-center justify-between gap-7 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55";
-const tileNow = () => <span className="inline-flex items-center gap-1.5 font-medium normal-case tracking-normal text-white/35"><span className="h-1 w-1 rounded-full bg-emerald-400" />{t("now", "maintenant")}</span>;
-
-function HeroTiles() {
-  // A real preview from the catalogue in the first tile, playing.
-  const sample = prompts.find((p) => p.file === "Keel_Chrome_Pear_Scroll_Film.md" && isVideoPreview(p.preview));
-  return (
-    <>
-      <HeroTile className="left-[-5%] top-[50%]" tilt="rotateX(8deg) rotateY(16deg) rotateZ(-6deg)" depth={18} delay={0}>
-        <div className="relative flex items-center gap-3.5">
-          <span className={`relative h-[52px] w-[74px] flex-none overflow-hidden rounded-[10px] bg-gradient-to-br ${sample?.gradient || "from-[#3d69c4] to-[#07080c]"} shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18)]`}>
-            {sample && <video src={sample.preview} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture className="absolute inset-0 h-full w-full object-cover" />}
-          </span>
-          <span className="block text-left">
-            <span className={TILE_LABEL}><span>{t("Prompt copied", "Prompt copié")}</span>{tileNow()}</span>
-            <span className="mt-1 block text-[17px] font-semibold leading-tight tracking-[-0.03em] text-white">Keel — Scroll Film</span>
-            <span className="mt-1 flex items-center gap-1.5 text-[11px] text-white/45">
-              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="currentColor" fillRule="evenodd"><path d={TOOL_LOGOS[0].d} /></svg>
-              {t("pasted into Lovable · example", "collé dans Lovable · exemple")}
-            </span>
-          </span>
-        </div>
-      </HeroTile>
-
-      <HeroTile className="right-[-6%] top-[13%]" tilt="rotateX(6deg) rotateY(-18deg) rotateZ(5deg)" depth={12} delay={1.7} glow="rgba(194,91,245,0.4)">
-        <div className="relative flex items-center gap-3.5">
-          <span className="grid h-11 w-11 flex-none place-items-center rounded-[13px] bg-[linear-gradient(140deg,#FF6A7D,#C25BF5_55%,#7C8CFF)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_10px_20px_-10px_rgba(194,91,245,0.9)]"><Icon name="zap" className="h-5 w-5" /></span>
-          <span className="block min-w-[150px] text-left">
-            <span className={TILE_LABEL}><span>{t("Site live", "Site en ligne")}</span>{tileNow()}</span>
-            <span className="mt-1 block text-[19px] font-semibold leading-tight tracking-[-0.03em] text-white">{t("in an afternoon", "en un après-midi")}</span>
-            <span className="mt-2 block h-1 overflow-hidden rounded-full bg-white/10"><span className="block h-full w-full rounded-full bg-[linear-gradient(90deg,#FF6A7D,#C25BF5,#7C8CFF)]" /></span>
-            <span className="mt-1.5 block text-[11px] text-white/45">{t("from prompt to site · example", "du prompt au site · exemple")}</span>
-          </span>
-        </div>
-      </HeroTile>
-
-      <HeroTile className="right-[-2%] top-[62%]" tilt="rotateX(10deg) rotateY(-14deg) rotateZ(6deg)" depth={22} delay={3.2} glow="rgba(52,211,153,0.34)">
-        <div className="relative flex items-center gap-3.5">
-          <span className="grid h-11 w-11 flex-none place-items-center rounded-[13px] bg-[linear-gradient(140deg,#6EE7B7,#10B981)] text-[#04150d] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_10px_20px_-10px_rgba(16,185,129,0.9)]"><Icon name="check" className="h-5 w-5" /></span>
-          <span className="block text-left">
-            <span className={TILE_LABEL}><span>{t("Sale", "Vente")}</span>{tileNow()}</span>
-            <span className="mt-1 flex items-center gap-2 text-[24px] font-semibold leading-none tracking-[-0.035em] text-emerald-300">
-              +900 €
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-400/15 text-emerald-300"><Icon name="arrow" className="h-3 w-3 -rotate-45" /></span>
-            </span>
-            <span className="mt-1.5 block text-[11px] text-white/45">{t("site sold · example", "site vendu · exemple")}</span>
-          </span>
-        </div>
-      </HeroTile>
-    </>
-  );
-}
-
 // The landing hero: on plain black, a small pill naming the offer, a very
 // large title whose last line steps back in grey, one line of what to do, and
-// a single white button. The lifetime price sits under the button, with the
-// day it goes up while the Black Friday offer runs.
+// a single white button to the gallery. No illustration: the gallery right
+// under it shows what is sold.
 function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
-  // The pointer's place over the page, from -1 to 1 each way, handed to the
-  // tiles as --mx / --my. Written straight to the element: no render per move.
-  const ref = useRef(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !window.matchMedia("(hover: hover) and (pointer: fine)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
-    let frame = 0;
-    const onMove = (e) => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        el.style.setProperty("--mx", ((e.clientX / window.innerWidth) * 2 - 1).toFixed(3));
-        el.style.setProperty("--my", ((e.clientY / window.innerHeight) * 2 - 1).toFixed(3));
-      });
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => { window.removeEventListener("pointermove", onMove); cancelAnimationFrame(frame); };
-  }, []);
   return (
-    <header ref={ref} className="relative isolate z-10 mx-auto flex max-w-6xl flex-col items-center px-5 pb-14 pt-14 text-center sm:pt-20">
-      <HeroTiles />
+    <header className="relative isolate z-10 mx-auto flex max-w-6xl flex-col items-center px-5 pb-10 pt-14 text-center sm:pt-20">
 
       <motion.a href="/pricing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-3 pr-3.5 text-[12.5px] font-medium text-white/80 transition-colors hover:border-white/25 hover:text-white">
         <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" /></span>
@@ -5797,101 +5700,6 @@ function StartQuiz() {
         </AnimatePresence>
       </div>
     </main>
-  );
-}
-
-const STEP_PREVIEW_FILES = ["Vaultline_Crystal_Cube_Scroll.md", "Keel_Chrome_Pear_Scroll_Film.md", "Lumen_Co_Podcast_Studio.md", "Folio_Room_Book_Orbit.md"];
-function StepPreviews() {
-  const ref = useRef(null);
-  const [near, setNear] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === "undefined") { setNear(true); return undefined; }
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setNear(true); io.disconnect(); } }, { rootMargin: "300px 0px" });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  const items = STEP_PREVIEW_FILES.map((file) => prompts.find((p) => p.file === file)).filter((p) => p && isVideoPreview(p.preview));
-  return (
-    <div ref={ref} className="grid h-full grid-cols-2 gap-2 p-4">
-      {items.map((item, i) => (
-        <span key={item.file} className={`relative overflow-hidden rounded-lg bg-gradient-to-br ${item.gradient} ${i === 1 ? "ring-2 ring-white shadow-[0_10px_24px_-8px_rgba(124,140,255,0.8)]" : "opacity-80"}`}>
-          {near && <video src={item.preview} muted loop playsInline autoPlay preload="metadata" disablePictureInPicture className="pointer-events-none absolute inset-0 h-full w-full object-cover" onLoadedData={(e) => { e.currentTarget.muted = true; e.currentTarget.play?.().catch(() => {}); }} />}
-          {i === 1 && <span className="absolute bottom-1.5 right-1.5 grid h-5 w-5 place-items-center rounded-full bg-white text-black shadow-lg"><Icon name="check" className="h-3 w-3" /></span>}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-// "How it works", between the hero and the gallery: three cards, each with a
-// small drawn mock-up of the step above its title. Drawn in markup, so nothing
-// to load and nothing that pretends to be a screenshot.
-function HowItWorks() {
-  const steps = [
-    {
-      title: t("Pick a design.", "Choisis un design."),
-      text: t(`${availablePrompts.length} landing pages, heroes and portfolios, each with its preview playing.`, `${availablePrompts.length} landing pages, heros et portfolios, chacun avec son aperçu animé.`),
-      // Real previews from the catalogue, playing: the grid a visitor is
-      // about to scroll, in miniature. Mounted when the card nears the screen.
-      art: <StepPreviews />,
-    },
-    {
-      title: t("Copy the prompt.", "Copie le prompt."),
-      text: t("A full brief written for AI: layout, colours, motion, down to the timings.", "Un brief complet écrit pour l'IA : mise en page, couleurs, animations, jusqu'aux timings."),
-      art: (
-        <div className="flex h-full flex-col p-5">
-          <div className="flex-1 rounded-xl bg-black/50 p-3.5 font-mono text-[10px] leading-[1.7] text-white/45 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
-            <p><span className="text-[#C25BF5]">Build</span> the landing page for <span className="text-white/80">**Uvra**</span>…</p>
-            <p>## 1. Look</p>
-            <p>- Night <span className="text-white/75">#0b0705</span>, paper <span className="text-white/75">#f5efe8</span></p>
-            <p>## 2. Motion</p>
-          </div>
-          <span className="mt-3 inline-flex items-center gap-1.5 self-start rounded-full bg-emerald-400/15 px-3 py-1.5 text-[11px] font-semibold text-emerald-300"><Icon name="check" className="h-3 w-3" /> {t("Copied", "Copié")}</span>
-        </div>
-      ),
-    },
-    {
-      title: t("Paste it, and sell the site.", "Colle-le, et vends le site."),
-      text: t("Lovable, Cursor or Claude builds it in an afternoon. A showcase site sells for €800 to €2,000.", "Lovable, Cursor ou Claude le construit dans l'après-midi. Un site vitrine se vend entre 800 et 2 000 €."),
-      art: (
-        <div className="flex h-full flex-col justify-between p-5">
-          <div className="rounded-xl bg-black/50 p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
-            <div className="flex items-center justify-between text-[10px] text-white/50"><span>{t("Building your site", "Création du site")}</span><span className="text-white/75">100 %</span></div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-full rounded-full bg-[linear-gradient(90deg,#FF6A7D,#C25BF5,#7C8CFF)]" /></div>
-          </div>
-          <div className="flex items-center justify-between rounded-xl bg-white px-3.5 py-2.5 text-black shadow-[0_14px_30px_-14px_rgba(255,255,255,0.4)]">
-            <span className="text-[11px] font-semibold">{t("Showcase site · invoice", "Site vitrine · facture")}</span>
-            <span className="text-[13px] font-bold text-emerald-600">+900 €</span>
-          </div>
-          <p className="text-center text-[10px] text-white/30">{t("example", "exemple")}</p>
-        </div>
-      ),
-    },
-  ];
-  return (
-    <section className="relative z-10 mx-auto max-w-6xl px-4 pb-6 pt-10 sm:px-6">
-      <div className="flex flex-col items-center text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[12.5px] font-medium text-white/75">
-          <span className="h-1.5 w-1.5 rounded-full bg-white/70" /> {t("How it works", "Comment ça marche")}
-        </span>
-        <h2 className="mt-5 text-[clamp(2rem,5.4vw,3.4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
-          {t("From zero to a sold site,", "De zéro à un site vendu,")} <span className="text-white/45">{t("in an afternoon.", "en un après-midi.")}</span>
-        </h2>
-      </div>
-      <ol className="mt-10 grid gap-3 md:grid-cols-3">
-        {steps.map((step, i) => (
-          <motion.li key={step.title} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.55, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col overflow-hidden rounded-[24px] bg-[#0c0c0e] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
-            <div aria-hidden="true" className="h-44 bg-[radial-gradient(120%_90%_at_50%_0%,rgba(124,140,255,0.16),transparent_70%)]">{step.art}</div>
-            <div className="flex flex-1 flex-col p-6 pt-5">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[12px] font-bold text-black">{i + 1}</span>
-              <h3 className="mt-4 text-[19px] font-semibold tracking-[-0.02em] text-[#FAFAFA]">{step.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-white/55">{step.text}</p>
-            </div>
-          </motion.li>
-        ))}
-      </ol>
-    </section>
   );
 }
 
