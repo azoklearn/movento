@@ -1154,7 +1154,16 @@ const CATALOGUE_FEATURES = [
 // How a feature row is marked on the card: a "new" tag on what was added
 // lately, bold on the line a buyer is looking for before paying.
 const NEW_FEATURES = new Set([FEATURE_APPS, FEATURE_BACKGROUNDS]);
-const STRONG_FEATURES = new Set([FEATURE_CLIENT_WORK]);
+// What lifetime + options holds beyond the catalogue, written as rows of the
+// card like everything else it includes (the four options of ADDONS, granted
+// with it; keep the wording in step with them).
+const PLUS_FEATURES = [
+  t("Prompts adapted for you by AI (50)", "Prompts adaptés pour toi par l'IA (50)"),
+  t("Freelance kit: quote, contract, messages", "Kit freelance : devis, contrat, messages"),
+  t("Agency licence: you + 4 teammates", "Licence agence : toi + 4 personnes"),
+  t("Local businesses to contact, message ready", "Entreprises à démarcher, message prêt"),
+];
+const STRONG_FEATURES = new Set([FEATURE_CLIENT_WORK, ...PLUS_FEATURES]);
 
 // The subscriptions renew, so they can be stopped. Lifetime is paid once and
 // has nothing to cancel, which is why it does not share this list.
@@ -1313,7 +1322,7 @@ const plans = [
     // Sold on Mollie only, the one checkout that grants the options.
     hidden: LIFETIME_RETIRED || !LIFETIME_PLUS_ON_SALE,
     name: t("Lifetime + options", "À vie + options"),
-    subtitle: t("Every prompt and every option, for life", "Tous les prompts et toutes les options, à vie"),
+    subtitle: t("Every prompt, and the tools to sell your sites", "Tous les prompts, et les outils pour vendre tes sites"),
     price: eur(PRICE_LIFETIME_PLUS),
     period: t("forever", "à vie"),
     billedNote: BLACK_FRIDAY
@@ -1322,7 +1331,7 @@ const plans = [
     cta: t("Take it all, for life", "Tout prendre, à vie"),
     badge: t("All included", "Tout compris"),
     featured: true,
-    features: CATALOGUE_FEATURES,
+    features: [...PLUS_FEATURES, ...CATALOGUE_FEATURES],
     extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés")],
     perk: t("Direct support included", "Support direct inclus"),
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
@@ -1421,10 +1430,9 @@ function PlanCard({ plan, onBuy, loading, featured }) {
   // One list, one tick per row, in the order a buyer reads it: the catalogue,
   // support and the ebook, then what only this plan adds.
   const rows = [...(plan.features || []), plan.perk, plan.bonus, ...(plan.extras || [])].filter(Boolean);
-  // The options: listed as included on lifetime + options. On the month they
-  // are offered after the payment, on /success (PostPurchaseOptions), not
-  // here: four of them on the card made the choice heavier than the plan.
-  const included = plan.id === "lifetime_plus" ? ADDONS : [];
+  // The options are rows of the lifetime + options card (PLUS_FEATURES). On
+  // the month they are offered after the payment, on /success
+  // (PostPurchaseOptions), not here.
   return (
     // The site's own card: a near-black panel with a hairline. The plan the
     // page puts forward is lit from the top in the accent colours.
@@ -1446,28 +1454,6 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         <span className="text-[40px] font-semibold leading-none tracking-[-0.045em] text-[#FAFAFA] sm:text-[52px]">{plan.price}</span>
       </div>
       {plan.billedNote && <p className="mt-3 text-sm text-white/50">{plan.billedNote}</p>}
-
-      {/* The four options as one panel: a short name and one line of what it
-          does each, and their value once, instead of four boxed rows. */}
-      {included.length > 0 && (
-        <div data-addons-included className="mt-6 rounded-2xl bg-[linear-gradient(135deg,rgba(255,106,125,0.08),rgba(194,91,245,0.07)_50%,rgba(124,140,255,0.08))] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="text-[13.5px] font-semibold text-[#FAFAFA]">{t(`+ ${included.length} options included`, `+ ${included.length} options comprises`)}</p>
-            <p className="text-[12.5px] text-white/50">{t("worth", "valeur")} <span className="font-semibold text-emerald-300">{eur(ADDONS_VALUE)}</span></p>
-          </div>
-          <ul className="mt-3.5 space-y-3">
-            {included.map((addon) => (
-              <li key={addon.id} className="flex min-w-0 items-start gap-3">
-                <span aria-hidden="true" className={`mt-0.5 grid h-7 w-7 flex-none place-items-center rounded-lg bg-gradient-to-br ${addon.tint} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]`}><Icon name={addon.icon} className="h-3.5 w-3.5" /></span>
-                <span className="min-w-0">
-                  <span className="block text-[13.5px] font-semibold leading-5 text-[#FAFAFA]">{addon.short || addon.name}</span>
-                  <span className="block text-[12.5px] leading-[1.4] text-white/50">{addon.blurb || addon.desc}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       <button
         onClick={() => onBuy(plan)}
