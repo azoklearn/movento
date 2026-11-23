@@ -1421,17 +1421,10 @@ function PlanCard({ plan, onBuy, loading, featured }) {
   // One list, one tick per row, in the order a buyer reads it: the catalogue,
   // support and the ebook, then what only this plan adds.
   const rows = [...(plan.features || []), plan.perk, plan.bonus, ...(plan.extras || [])].filter(Boolean);
-  // The options: included with lifetime, offered on top of the month (paid
-  // once with the first month, in plan.addons).
-  const bumps = ADDONS_ON_SALE && plan.id === "m1" ? ADDONS : [];
+  // The options: listed as included on lifetime + options. On the month they
+  // are offered after the payment, on /success (PostPurchaseOptions), not
+  // here: four of them on the card made the choice heavier than the plan.
   const included = plan.id === "lifetime_plus" ? ADDONS : [];
-  const [picked, setPicked] = useState([]);
-  const extra = addonsTotal(picked);
-  const toggle = (id) => {
-    const on = !picked.includes(id);
-    track("addon_toggled", { addon: id, on });
-    setPicked((list) => (on ? [...list, id] : list.filter((x) => x !== id)));
-  };
   return (
     // The site's own card: a near-black panel with a hairline. The plan the
     // page puts forward is lit from the top in the accent colours.
@@ -1474,29 +1467,14 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         </div>
       )}
 
-      {bumps.length > 0 && (
-        <fieldset className="mt-6">
-          <legend className="flex w-full items-center gap-3 text-[12.5px] font-medium text-white/75">
-            <span>{t("Add to your order", "Ajoute à ta commande")}</span>
-            <span className="h-px flex-1 bg-white/[0.08]" />
-            <span className="text-white/35">{t("Optional", "Optionnel")}</span>
-          </legend>
-          <div className="mt-3 space-y-2.5">
-            {bumps.map((addon) => <AddonOption key={addon.id} addon={addon} on={picked.includes(addon.id)} onToggle={() => toggle(addon.id)} />)}
-          </div>
-        </fieldset>
-      )}
-
       <button
-        onClick={() => onBuy(picked.length ? { ...plan, addons: picked } : plan)}
+        onClick={() => onBuy(plan)}
         disabled={loading}
         className={`group mt-6 flex h-14 w-full flex-none items-center gap-3 rounded-full pl-14 pr-2 text-[15px] font-semibold transition duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${primary ? "bg-white text-black shadow-[0_24px_70px_-22px_rgba(194,91,245,0.75)] hover:-translate-y-0.5" : "bg-white/[0.06] text-[#FAFAFA] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] hover:bg-white/[0.1]"}`}
       >
-        <span className="flex-1 text-center">{loading ? t("Loading…", "Chargement…") : extra ? t(`Pay ${eur(money(planBasePrice(plan) + extra))} today`, `Payer ${eur(money(planBasePrice(plan) + extra))} aujourd'hui`) : plan.cta}</span>
+        <span className="flex-1 text-center">{loading ? t("Loading…", "Chargement…") : plan.cta}</span>
         <span className={`grid h-10 w-10 flex-none place-items-center rounded-full ${primary ? "bg-black text-white" : "bg-white/10 text-white"}`}><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
       </button>
-
-      {extra > 0 && plan.id === "m1" && <p className="mt-2.5 text-center text-[12.5px] text-white/45">{t(`The options are paid once, then ${eur(planBasePrice(plan))} a month.`, `Les options sont payées une fois, puis ${eur(planBasePrice(plan))} par mois.`)}</p>}
 
       <ul className="mt-7 space-y-3">
         {rows.map((feat) => (
@@ -2229,7 +2207,7 @@ const ADDONS = [
     open: t("Find my prospects", "Trouver mes prospects"),
   },
 ];
-// One option to tick, on the monthly card and on the account page: its own
+// One option to tick, after a subscription is paid and on the account page: its own
 // coloured mark, what it is, its price, and a round check that fills when it
 // is taken. The real checkbox is kept for the keyboard and screen readers.
 function AddonOption({ addon, on, onToggle, disabled = false }) {
@@ -2261,6 +2239,61 @@ function AddonOption({ addon, on, onToggle, disabled = false }) {
 // Sold on Mollie only: it is the one checkout that adds them to the payment.
 const ADDONS_ON_SALE = CHECKOUT_PROVIDER_PUBLIC === "mollie";
 const addonsTotal = (ids) => ADDONS.filter((a) => (ids || []).includes(a.id)).reduce((sum, a) => sum + a.price, 0);
+// Right after a subscription is paid, on /success: the options, offered once
+// the access is open, each paid once. The payment goes through the account
+// page's checkout (plan "addons") and comes back to /account, which confirms
+// it.
+function PostPurchaseOptions({ email, held = [], className = "" }) {
+  const offer = ADDONS.filter((a) => !held.includes(a.id));
+  const [picked, setPicked] = useState([]);
+  const [hidden, setHidden] = useState(false);
+  const [pay, setPay] = useState({ loading: false, error: "" });
+  useEffect(() => { track("post_purchase_options_shown", { count: offer.length }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  if (hidden || !offer.length) return null;
+  const total = addonsTotal(picked);
+  const toggle = (id) => {
+    const on = !picked.includes(id);
+    track("addon_toggled", { addon: id, on, where: "success" });
+    setPicked((list) => (on ? [...list, id] : list.filter((x) => x !== id)));
+    setPay({ loading: false, error: "" });
+  };
+  const buy = async () => {
+    if (!picked.length || pay.loading) return;
+    setPay({ loading: true, error: "" });
+    track("addons_checkout_after_purchase", { addons: picked.join("+") });
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/mollie-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "addons", email, addons: picked }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.checkoutUrl) throw new Error(apiError(d, t("The payment could not start. Try again in a moment.", "Le paiement n'a pas pu démarrer. Réessaie dans un instant.")));
+      window.location.assign(d.checkoutUrl);
+    } catch (err) {
+      setPay({ loading: false, error: err.message });
+    }
+  };
+  return (
+    <motion.div data-post-purchase initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }} className={`relative overflow-hidden rounded-[24px] bg-[#0c0c0e] p-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] sm:p-6 ${className}`}>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(85%_100%_at_50%_0%,rgba(194,91,245,0.16),transparent_75%)]" />
+      <div className="relative">
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[12.5px] font-medium text-white/75"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {t("Your access is open", "Ton accès est ouvert")}</span>
+        <h2 className="mt-4 text-[24px] font-semibold leading-tight tracking-[-0.035em] text-[#FAFAFA]">{t("Go further,", "Va plus loin,")} <span className="text-white/45">{t("right now.", "dès maintenant.")}</span></h2>
+        <p className="mt-2 text-sm leading-6 text-white/55">{t("Options for your subscription, each paid once. Tick the ones you want.", "Des options pour ton abonnement, chacune payée une seule fois. Coche celles qui t'intéressent.")}</p>
+        <div className="mt-5 space-y-2.5">
+          {offer.map((addon) => <AddonOption key={addon.id} addon={addon} on={picked.includes(addon.id)} onToggle={() => toggle(addon.id)} />)}
+        </div>
+        <button type="button" onClick={buy} disabled={!picked.length || pay.loading} className="group mt-5 flex h-14 w-full items-center gap-3 rounded-full bg-white pl-14 pr-2 text-[15px] font-semibold text-black shadow-[0_24px_70px_-22px_rgba(194,91,245,0.75)] transition duration-300 hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50">
+          <span className="flex-1 text-center">{pay.loading ? t("Taking you to the payment…", "Redirection vers le paiement…") : picked.length ? t(`Add for ${eur(money(total))}`, `Ajouter pour ${eur(money(total))}`) : t("Tick an option", "Coche une option")}</span>
+          <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
+        </button>
+        {pay.error && <p className="mt-3 text-sm text-red-300">{pay.error}</p>}
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/40">
+          <span>{t("Secure payment by Mollie · no change to your subscription", "Paiement sécurisé par Mollie · ton abonnement ne change pas")}</span>
+          <button type="button" onClick={() => { track("post_purchase_options_declined"); setHidden(true); }} className="flex-none font-medium text-white/55 underline decoration-white/25 underline-offset-4 transition hover:text-white">{t("No thanks", "Non merci")}</button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // What every option costs bought one by one: what lifetime includes.
 const ADDONS_VALUE = ADDONS.reduce((sum, a) => sum + a.price, 0);
 // A plan's own price, before any option: lifetime, or the term's price.
@@ -6180,6 +6213,8 @@ function SuccessPage() {
   const [supportEarned, setSupportEarned] = useState(false);
   // The add-ons paid with the access (freelance kit, agency licence).
   const [addons, setAddons] = useState([]);
+  // What was bought: a subscription is offered the options once it is open.
+  const [accessInfo, setAccessInfo] = useState(null);
 
   // What Whop says happened. The embedded checkout sends every finished
   // checkout here, not only the paid ones: an off-site step that was declined
@@ -6311,6 +6346,7 @@ function SuccessPage() {
           const subData = await sub.json().catch(() => ({}));
           setEbookEarned(earnedEbook(subData));
           setSupportEarned(earnedSupport(subData));
+          setAccessInfo(subData);
         } catch { setEbookEarned(true); }
       } else if (Number(data.credits) > 0) {
         // A pack: nothing to unlock here, prompts to pick. Straight to the
@@ -6400,6 +6436,10 @@ function SuccessPage() {
         </div>
 
         {status.ok && <AddonCards addons={addons} email={clean(email)} className="mt-4" />}
+
+        {status.ok && ADDONS_ON_SALE && accessInfo && accessInfo.type !== "lifetime" && ADDONS.some((a) => !addons.includes(a.id)) && (
+          <PostPurchaseOptions email={clean(email)} held={addons} className="mt-4" />
+        )}
 
         {/* Bonus ebook — on the plans EBOOK_KINDS grants it to */}
         {status.ok && ebookEarned && <EbookCard className="mt-4" />}
