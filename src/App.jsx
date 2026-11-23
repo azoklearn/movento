@@ -3294,6 +3294,22 @@ function MoventoPages() {
   // Seeded from ?q= so the nav's search, submitted from another page, lands on
   // the gallery already filtered.
   const [query, setQuery] = useState(() => (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("q") || "" : ""));
+  // Arriving on /#prompts (or any anchor) from another page: the browser looks
+  // for the anchor before the page has rendered it, so nothing scrolls. Look
+  // again once it exists, for up to two seconds.
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id) return undefined;
+    let tries = 0;
+    let frame = 0;
+    const find = () => {
+      const el = document.getElementById(id);
+      if (el) { el.scrollIntoView({ block: "start" }); return; }
+      if (tries++ < 120) frame = requestAnimationFrame(find);
+    };
+    frame = requestAnimationFrame(find);
+    return () => cancelAnimationFrame(frame);
+  }, []);
   const [copiedCard, setCopiedCard] = useState("");
   const [copyError, setCopyError] = useState("");
   const [unlockNotice, setUnlockNotice] = useState("");
@@ -5506,10 +5522,10 @@ function StartQuiz() {
         {heading(t("Let's get to know you", "Faisons connaissance"), t("Who do you want", "Pour qui veux-tu"), t("to build sites for?", "créer des sites ?"), t("The rest adapts to your answer.", "La suite s'adapte à ta réponse."))}
         <div className="mt-9 space-y-2.5">{goals.map((o, i) => <QuizOption key={o.id} index={i} {...o} selected={answers.goal === o.id} onClick={() => choose("goal", o.id)} />)}</div>
         {/* No questionnaire for someone who came for the prompts: straight to
-            the offers. */}
+            the gallery. */}
         <div className="mt-5 flex items-center gap-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30"><span className="h-px flex-1 bg-white/[0.08]" />{t("or", "ou")}<span className="h-px flex-1 bg-white/[0.08]" /></div>
         <div className="mt-5">
-          <QuizOption index={goals.length} icon="arrow" label={t("I just want the prompts", "Je veux juste les prompts")} hint={t("No questions: straight to the offers", "Pas de questions : direct aux offres")} selected={false} onClick={() => { track("quiz_skipped", { at: "start" }); window.location.assign("/pricing"); }} />
+          <QuizOption index={goals.length} icon="arrow" label={t("I just want the prompts", "Je veux juste les prompts")} hint={t("No questions: straight to the gallery", "Pas de questions : direct à la galerie")} selected={false} onClick={() => { track("quiz_skipped", { at: "start" }); window.location.assign("/#prompts"); }} />
         </div>
       </>
     );
