@@ -520,7 +520,7 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 //
 //   MOLLIE_API_KEY          test_… to try, live_… to sell
 //   MOLLIE_M1_PRICE         default 29.99, every month
-//   lifetime                89.00 until 30 November, 149.00 from 1 December
+//   lifetime                69.00 until 30 November, 129.00 from 1 December
 //                           (LIFETIME_PRICE_RISE below; no environment
 //                           variable, so the page and the checkout cannot
 //                           quote two different prices)
@@ -530,13 +530,13 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
 export const mollieTestMode = () => String(process.env.MOLLIE_API_KEY || "").startsWith("test_");
 // Two lifetime offers. Black Friday until 30 November: the prompts alone at
-// 89 € and the prompts with every option at 149 €; from 1 December, midnight
+// 69 € and the prompts with every option at 149 €; from 1 December, midnight
 // in Paris, 129 € and 199 €. Read at the moment of each checkout, so the rise
 // needs no deploy. Keep in step with LIFETIME_RISE_AT in src/App.jsx and the
 // JSON-LD offers in index.html.
 export const LIFETIME_PRICE_RISE = {
   at: Date.parse("2026-12-01T00:00:00+01:00"),
-  lifetime: { before: 89, after: 129 },
+  lifetime: { before: 69, after: 129 },
   lifetime_plus: { before: 149, after: 199 },
 };
 export const lifetimeRisen = (now = Date.now()) => now >= LIFETIME_PRICE_RISE.at;
@@ -660,7 +660,7 @@ export async function teamOwnerFor(email) {
 // Mollie's page only shows the payment's description and amount, so the struck
 // figure is written into the description with combining long strokes (U+0336).
 // No struck price by default: lifetime was sold at 49 € in the last 30 days,
-// so no figure above 89 € is a lawful reference (art. L112-1-1, Code de la
+// so no figure above 49 € is a lawful reference (art. L112-1-1, Code de la
 // consommation). Set MOLLIE_LIFETIME_ANCHOR only to a price really charged
 // over the 30 days before a reduction. The label names the offer while it
 // runs, and goes with the rise.
@@ -841,7 +841,7 @@ export function bestCheckoutUrl(plan) {
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
 //
-// On sale: the month (29,99 €), lifetime (89 €, then 129 €) and lifetime +
+// On sale: the month (29,99 €), lifetime (69 €, then 129 €) and lifetime +
 // options (149 €, then 199 €). 3 months, the year and
 // the prompt packs are off sale; their subscribers keep their access and
 // their renewals.
