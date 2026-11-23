@@ -52,7 +52,8 @@ function lifetimeDescription(amount, offer) {
   // The win-back is struck against the regular lifetime price, which is real.
   const regular = `${Number(MOLLIE_PRICES.lifetime).toFixed(2).replace(/\.00$/, "").replace(".", ",")}€`;
   if (offer) return `Movento — Accès à vie · offre spéciale ${strikeText(anchor ? `${anchor}€` : regular)} → ${paid}`;
-  return anchor ? `Movento — Accès à vie · ${label} ${strikeText(`${anchor}€`)} → ${paid}` : "Movento — Accès à vie";
+  if (anchor) return `Movento — Accès à vie · ${label} ${strikeText(`${anchor}€`)} → ${paid}`;
+  return label ? `Movento — Accès à vie · ${label}` : "Movento — Accès à vie";
 }
 
 // Options added to an account that already has the lifetime access.

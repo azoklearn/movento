@@ -51,7 +51,8 @@ async function signOut() {
 // it costs more than the urgency is worth.
 // No offer is running: lifetime is sold at its regular price, with no struck
 // price and no countdown. A future offer sets a real, fixed end date here.
-const LAUNCH_OFFER_ENDS_AT = null;
+// Black Friday: the day lifetime goes from 89 € to 149 € (LIFETIME_RISE_AT).
+const LAUNCH_OFFER_ENDS_AT = "2026-12-01T00:00:00+01:00";
 
 // Support address, shown wherever a visitor is told to write to us.
 const SUPPORT_EMAIL = "movento.dev@gmail.com";
@@ -1013,21 +1014,19 @@ const discountOf = (id) => {
 // On sale with every processor. Off sale, lifetime members
 // keep their access, their ebook and their support.
 const LIFETIME_RETIRED = false;
-const PRICE_LIFETIME = 49;
-// A year of the subscription — a real figure a visitor can check against the
-// card beside it, not a reference price invented to print a bigger reduction.
-// Rounded because binary floating point does not keep cents: 29.9 * 12 came
-// out as 358.79999999999995. 29.99 * 12 happens to land on 359.88, which is
-// luck, not a reason to drop the rounding.
-// Struck against two years of the annual, the plan it is weighed against.
-// The struck price: 89 €, the lowest price lifetime was actually sold at in the
-// 30 days before this reduction (it was charged until 19 November 2026). That
-// is the reference French and EU law asks for, so the reduction shown is real.
-// Remove the struck price when the offer stops being presented as a reduction.
-// Keep in step with MOLLIE_PRICES.lifetime and MOLLIE_LIFETIME_PROMO in
-// api/_shared.js, and the JSON-LD offer in index.html.
-const PRICE_LIFETIME_REFERENCE = 89;
-const LIFETIME_DISCOUNT = Math.round((1 - PRICE_LIFETIME / PRICE_LIFETIME_REFERENCE) * 100);
+// Black Friday: lifetime at 89 € until 30 November, then 149 € from
+// 1 December, midnight in Paris. No struck price: lifetime was sold at 49 €
+// over the last 30 days, so a figure struck above 89 € would be a false
+// reference price (art. L112-1-1, Code de la consommation). The offer is the
+// rise announced ahead, and the rise is real: past the date the page quotes
+// 149 € by itself, and api/_shared.js charges it (LIFETIME_PRICE_RISE there,
+// keep both in step).
+const LIFETIME_RISE_AT = "2026-12-01T00:00:00+01:00";
+const LIFETIME_RISEN = Date.now() >= Date.parse(LIFETIME_RISE_AT);
+const PRICE_LIFETIME = LIFETIME_RISEN ? 149 : 89;
+// The price it goes up to, while the offer runs; null once it has.
+const PRICE_LIFETIME_NEXT = LIFETIME_RISEN ? null : 149;
+const BLACK_FRIDAY = !LIFETIME_RISEN;
 
 // The figure the page leads with — the best of everything a button actually
 // offers, so it can never promise a reduction no card gives. Lifetime counts
@@ -1044,7 +1043,7 @@ const BEST_DISCOUNT = LIVE_DISCOUNTS.length ? Math.max(...LIVE_DISCOUNTS) : 0;
 // is null in that case rather than pointing at a retired plan — nothing should
 // have to guess which of the plans nobody can buy is the "featured" one.
 // The month is on sale but is not what the page pushes while lifetime is: at
-// 49 € once, lifetime costs less than two months, and the hero, the featured
+// 89 € once, lifetime costs three months, and the hero, the featured
 // card and the anchor all lead with it.
 const FEATURED_TERM = LIVE_TERMS.find((term) => term.id === "m12") || (LIFETIME_RETIRED ? LIVE_TERMS[0] : null) || null;
 // Falls back to the lifetime only because something has to be quoted when no
@@ -1084,6 +1083,10 @@ const eur = (n) => {
   const s = Number.isInteger(Number(n)) ? String(Number(n)) : Number(n).toFixed(2);
   return t(`${s}€`, `${s.replace(".", ",")}€`);
 };
+// "then 149 € from 1 December", or the plain terms once the offer is over.
+const LIFETIME_TERMS_LINE = BLACK_FRIDAY
+  ? t(`then ${eur(PRICE_LIFETIME_NEXT)} from 1 December`, `puis ${eur(PRICE_LIFETIME_NEXT)} dès le 1er décembre`)
+  : t("one payment, no subscription", "un seul paiement, sans abonnement");
 // "soit 0,63€ par jour" — the smallest way to read a price, and the reason a
 // three-month term reads as cheaper than a monthly one at a glance.
 const perDayOf = (id) => {
@@ -1269,20 +1272,21 @@ const plans = [
     name: t("Lifetime access", "Accès à vie"),
     subtitle: t("Unlimited prompts, access for life", "Prompts illimités, accès à vie"),
     price: eur(PRICE_LIFETIME),
-    // Struck against PRICE_LIFETIME_REFERENCE, a price really charged.
-    originalPrice: eur(PRICE_LIFETIME_REFERENCE),
+    // No struck price: see LIFETIME_RISE_AT.
     // No chip: struck against two years of the annual its reduction is small
     // beside the terms', and the card sells on "paid once" instead.
     period: t("forever", "à vie"),
     // No per-day figure: the term it would divide by is the rest of your life.
     // The line the other cards use for their renewal says so instead.
-    billedNote: t("Black Friday deal · one-time payment, no subscription", "Offre Black Friday · paiement unique, sans abonnement"),
+    billedNote: BLACK_FRIDAY
+      ? t(`Black Friday · one payment, then ${eur(PRICE_LIFETIME_NEXT)} from 1 December`, `Black Friday · paiement unique, puis ${eur(PRICE_LIFETIME_NEXT)} dès le 1er décembre`)
+      : t("One payment, no subscription", "Paiement unique, sans abonnement"),
     cta: t("Pay once, enjoy for life", "Paie une fois, profite à vie"),
     // Only one ribbon per row. It is the lifetime's: of the two offers it is
     // the one worth steering a buyer to, and "best value" is arithmetic anyone
     // can check against the card beside it — unlike "most chosen", which would
     // be a claim about other buyers that nothing here measures.
-    badge: "Black Friday",
+    badge: BLACK_FRIDAY ? "Black Friday" : t("Best value", "Meilleure offre"),
     featured: true,
     // The comparison stated as a line of its own, derived from both prices so
     // it cannot outlive either of them.
@@ -2207,7 +2211,7 @@ function AddonOption({ addon, on, onToggle, disabled = false }) {
 const ADDONS_ON_SALE = CHECKOUT_PROVIDER_PUBLIC === "mollie";
 const addonsTotal = (ids) => ADDONS.filter((a) => (ids || []).includes(a.id)).reduce((sum, a) => sum + a.price, 0);
 
-// Off sale: with lifetime at 49 € a pack of prompts costs about as much as the
+// Off sale: with lifetime at 89 € a pack of prompts costs about as much as the
 // whole catalogue. Past buyers keep their prompts and their unused credits.
 // Mirrored by RETIRED_PLANS in api/_shared.js.
 const PROMPT_PACKS_ON_SALE = false;
@@ -3081,8 +3085,8 @@ function runSelfTests() {
   console.assert(["m1", "lifetime"].every(validatePlanId) && visiblePlans.length === 2, "the month and lifetime are the offers and must be purchasable");
   console.assert(["m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
   console.assert(FEATURED_TERM === null && FEATURED_OFFER.price === PRICE_LIFETIME, "while lifetime is the offer pushed, the bar and the anchor quote it, not the month");
-  console.assert(termOf("m1").price === 29.99 && PRICE_LIFETIME < 2 * termOf("m1").price, "the month is 29,99 €, and lifetime costs less than two of them");
-  console.assert(PRICE_LIFETIME < PRICE_LIFETIME_REFERENCE && LIFETIME_DISCOUNT > 0 && LIFETIME_DISCOUNT < 100, "the struck price is above the price charged");
+  console.assert(termOf("m1").price === 29.99, "the month is 29,99 €");
+  console.assert(PRICE_LIFETIME === (LIFETIME_RISEN ? 149 : 89) && (PRICE_LIFETIME_NEXT === null || PRICE_LIFETIME_NEXT > PRICE_LIFETIME), "lifetime is 89 € until the rise, 149 € after it");
   console.assert(visiblePlans.some((plan) => plan.id === "lifetime") && visiblePlans.filter((plan) => plan.featured).length === 1, "lifetime is on sale, and exactly one card is featured");
   // A card may not promise an extra its kind is not granted: the card is the
   // promise, EBOOK_KINDS and SUPPORT_KINDS are what keep it, and the two going
@@ -5110,8 +5114,8 @@ function HeroTiles() {
 
 // The landing hero: on plain black, a small pill naming the offer, a very
 // large title whose last line steps back in grey, one line of what to do, and
-// a single white button. The Black Friday price sits under the button, against
-// PRICE_LIFETIME_REFERENCE, the price really charged before this reduction.
+// a single white button. The lifetime price sits under the button, with the
+// day it goes up while the Black Friday offer runs.
 function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
   // The pointer's place over the page, from -1 to 1 each way, handed to the
   // tiles as --mx / --my. Written straight to the element: no render per move.
@@ -5136,7 +5140,9 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
 
       <motion.a href="/pricing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-3 pr-3.5 text-[12.5px] font-medium text-white/80 transition-colors hover:border-white/25 hover:text-white">
         <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" /></span>
-        Black Friday <span className="text-white/40">·</span> {t(`${LIFETIME_DISCOUNT}% off lifetime access`, `−${LIFETIME_DISCOUNT} % sur l'accès à vie`)}
+        {BLACK_FRIDAY
+          ? <>Black Friday <span className="text-white/40">·</span> {t(`lifetime access ${eur(PRICE_LIFETIME)} until 30 Nov.`, `l'accès à vie à ${eur(PRICE_LIFETIME)} jusqu'au 30 nov.`)}</>
+          : t(`Lifetime access · ${eur(PRICE_LIFETIME)} once`, `Accès à vie · ${eur(PRICE_LIFETIME)} une fois`)}
       </motion.a>
 
       <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.06, ease: [0.22, 1, 0.36, 1] }} className="mt-7 text-[clamp(2.45rem,9.2vw,5.4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
@@ -5161,7 +5167,7 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
               <span className="grid h-10 w-10 place-items-center rounded-full bg-black text-white sm:h-12 sm:w-12"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
             </a>
             <p className="text-[13px] text-white/50">
-              <a href="/pricing" className="transition hover:text-white/80"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="text-white/30">·</span> {t("one payment, no subscription", "un seul paiement, sans abonnement")}</a>
+              <a href="/pricing" className="transition hover:text-white/80"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("for life", "à vie")} <span className="text-white/30">·</span> {LIFETIME_TERMS_LINE}</a>
             </p>
             <div className="mt-1 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
               <a href="#prompts" className="text-sm font-semibold text-white/80 underline decoration-white/30 underline-offset-4 transition hover:text-white">
@@ -5488,7 +5494,7 @@ function StartQuiz() {
             <span className="flex-1 text-center">{t(`Unlock the ${availablePrompts.length} prompts`, `Débloquer les ${availablePrompts.length} prompts`)}</span>
             <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
           </a>
-          <p className="mt-3 text-center text-[13px] text-white/45"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> · {t("one payment, no subscription", "un seul paiement, sans abonnement")}</p>
+          <p className="mt-3 text-center text-[13px] text-white/45"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("for life", "à vie")} · {LIFETIME_TERMS_LINE}</p>
           <p className="mt-4 text-center"><a href="/#prompts" className="text-sm font-semibold text-white/70 underline decoration-white/25 underline-offset-4 transition hover:text-white">{t("Browse the prompts first", "Voir d'abord les prompts")}</a></p>
         </div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative">
@@ -5671,7 +5677,7 @@ function ClosingOffer() {
       <div className="relative isolate overflow-hidden rounded-[32px] bg-[#0c0c0e] px-6 py-16 text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)] sm:py-20">
         <div aria-hidden="true" className="absolute inset-x-0 bottom-[-40%] -z-10 mx-auto h-[90%] w-[85%] rounded-full bg-[radial-gradient(closest-side,rgba(194,91,245,0.5),rgba(255,106,125,0.22)_55%,transparent)] blur-2xl" />
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[12.5px] font-medium text-white/75">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Black Friday <span className="text-white/40">·</span> {t(`${LIFETIME_DISCOUNT}% off`, `−${LIFETIME_DISCOUNT} %`)}
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {BLACK_FRIDAY ? <>Black Friday <span className="text-white/40">·</span> {t("until 30 Nov.", "jusqu'au 30 nov.")}</> : t("Lifetime access", "Accès à vie")}
         </span>
         <h2 className="mx-auto mt-6 max-w-3xl text-[clamp(2.1rem,6vw,4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
           {t("Your next client", "Ton prochain client")} <span className="bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_48%,#7C8CFF_100%)] bg-clip-text text-transparent">{t("is waiting for a site.", "attend un site.")}</span>
@@ -5681,7 +5687,7 @@ function ClosingOffer() {
           {t("Unlock everything", "Tout débloquer")}
           <span className="grid h-10 w-10 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
         </a>
-        <p className="mt-4 text-[13px] text-white/45"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("instead of", "au lieu de")} <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> · {t("one payment", "un seul paiement")}</p>
+        <p className="mt-4 text-[13px] text-white/45"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("for life", "à vie")} · {LIFETIME_TERMS_LINE}</p>
       </div>
     </section>
   );
@@ -5704,7 +5710,7 @@ function StickyOffer({ hidden }) {
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }} className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-3">
           <div className="pointer-events-auto flex w-full max-w-[560px] items-center gap-3 rounded-full bg-[#0c0c0e]/85 py-2 pl-5 pr-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_24px_60px_-20px_rgba(0,0,0,1)] backdrop-blur-xl">
             <p className="min-w-0 flex-1 truncate text-[13px] text-white/60">
-              <span className="font-semibold text-white">{t(`${availablePrompts.length} prompts`, `${availablePrompts.length} prompts`)}</span> <span className="hidden sm:inline">· {t("lifetime access", "accès à vie")}</span> · <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span>
+              <span className="font-semibold text-white">{t(`${availablePrompts.length} prompts`, `${availablePrompts.length} prompts`)}</span> <span className="hidden sm:inline">· {t("lifetime access", "accès à vie")}</span> · <span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span>{BLACK_FRIDAY && <span className="hidden sm:inline"> · {t(`${eur(PRICE_LIFETIME_NEXT)} from 1 Dec.`, `${eur(PRICE_LIFETIME_NEXT)} dès le 1er déc.`)}</span>}
             </p>
             <a href="/pricing" onClick={() => track("sticky_offer_clicked")} className="group inline-flex flex-none items-center gap-2 rounded-full bg-white py-1.5 pl-4 pr-1.5 text-[13px] font-semibold text-black transition hover:bg-white/90">
               {t("Unlock", "Débloquer")} <span className="grid h-7 w-7 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span>
@@ -7330,7 +7336,7 @@ function PricingBanner({ onPick }) {
           <div className="pointer-events-auto flex w-full max-w-[600px] items-center gap-3 rounded-full bg-[#0c0c0e]/85 py-2 pl-5 pr-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_24px_60px_-20px_rgba(0,0,0,1)] backdrop-blur-xl">
             <p className="min-w-0 flex-1 truncate text-[13px] text-white/60">
               {/* The plan the page puts forward, priced exactly as its card is. */}
-              <span className="font-semibold text-white">Black Friday</span> <span className="hidden sm:inline">· {t("lifetime access", "accès à vie")}</span> · <span className="line-through decoration-white/40">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span>{tail ? <span className="hidden sm:inline"> · {tail}</span> : null}
+              {BLACK_FRIDAY && <><span className="font-semibold text-white">Black Friday</span> · </>}<span className={BLACK_FRIDAY ? "hidden sm:inline" : ""}>{t("lifetime access", "accès à vie")} · </span><span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span>{BLACK_FRIDAY && <span className="hidden sm:inline"> · {t(`${eur(PRICE_LIFETIME_NEXT)} from 1 Dec.`, `${eur(PRICE_LIFETIME_NEXT)} dès le 1er déc.`)}</span>}{tail ? <> · {tail}</> : null}
             </p>
             <button
               onClick={() => {
@@ -7599,7 +7605,9 @@ function PricingPage() {
               reading. */}
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-3 pr-3.5 text-[12.5px] font-medium text-white/80">
             <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" /></span>
-            Black Friday <span className="text-white/40">·</span> <span className="text-white/45 line-through">{eur(PRICE_LIFETIME_REFERENCE)}</span> <span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span> {t("for lifetime access", "l'accès à vie")}
+            {BLACK_FRIDAY
+              ? <>Black Friday <span className="text-white/40">·</span> <span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span> {t(`for life, ${eur(PRICE_LIFETIME_NEXT)} from 1 Dec.`, `à vie, ${eur(PRICE_LIFETIME_NEXT)} dès le 1er déc.`)}</>
+              : <><span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span> {t("for lifetime access", "l'accès à vie")}</>}
           </span>
           <h1 className="mt-6 text-[clamp(2.4rem,6.6vw,4.2rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
             {/* Nothing to choose between with one offer on sale, so the

@@ -520,17 +520,25 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 //
 //   MOLLIE_API_KEY          test_… to try, live_… to sell
 //   MOLLIE_M1_PRICE         default 29.99, every month
-//   MOLLIE_LIFETIME_PRICE   default 49.00, once (-45 % on 89)
+//   lifetime                89.00 until 30 November, 149.00 from 1 December
+//                           (LIFETIME_PRICE_RISE below; no environment
+//                           variable, so the page and the checkout cannot
+//                           quote two different prices)
 // (3 months, 109.00, and the year, 239.00, are off sale; MOLLIE_M3_PRICE and
 // MOLLIE_M12_PRICE stay for their renewals.)
 // The site switches to Mollie with CHECKOUT_PROVIDER=mollie.
 export const mollieReady = () => Boolean(process.env.MOLLIE_API_KEY);
 export const mollieTestMode = () => String(process.env.MOLLIE_API_KEY || "").startsWith("test_");
+// Black Friday: lifetime at 89 € until the rise, then 149 €. Read at the
+// moment of each checkout, so the rise needs no deploy. Keep in step with
+// LIFETIME_RISE_AT in src/App.jsx and the JSON-LD offer in index.html.
+export const LIFETIME_PRICE_RISE = { at: Date.parse("2026-12-01T00:00:00+01:00"), before: 89, after: 149 };
+export const lifetimeRisen = (now = Date.now()) => now >= LIFETIME_PRICE_RISE.at;
 export const MOLLIE_PRICES = {
   m1: Number(process.env.MOLLIE_M1_PRICE || 29.99).toFixed(2),
   m3: Number(process.env.MOLLIE_M3_PRICE || 109).toFixed(2),
   m12: Number(process.env.MOLLIE_M12_PRICE || 239).toFixed(2),
-  lifetime: Number(process.env.MOLLIE_LIFETIME_PRICE || 49).toFixed(2),
+  get lifetime() { return (lifetimeRisen() ? LIFETIME_PRICE_RISE.after : LIFETIME_PRICE_RISE.before).toFixed(2); },
   // Packs of prompts, paid once: the buyer picks the prompts after paying
   // (/choose) and keeps them. Sizes in MOLLIE_PACK_SIZES.
   pack2: Number(process.env.MOLLIE_PACK2_PRICE || 49).toFixed(2),
@@ -616,12 +624,14 @@ export async function teamOwnerFor(email) {
 // A struck price in Mollie's checkout for lifetime, and the name of the offer.
 // Mollie's page only shows the payment's description and amount, so the struck
 // figure is written into the description with combining long strokes (U+0336).
-// The anchor is 89 €, the price lifetime was really sold at before this
-// reduction (PRICE_LIFETIME_REFERENCE in src/App.jsx). An empty
-// MOLLIE_LIFETIME_ANCHOR turns the struck price off.
+// No struck price by default: lifetime was sold at 49 € in the last 30 days,
+// so no figure above 89 € is a lawful reference (art. L112-1-1, Code de la
+// consommation). Set MOLLIE_LIFETIME_ANCHOR only to a price really charged
+// over the 30 days before a reduction. The label names the offer while it
+// runs, and goes with the rise.
 export const MOLLIE_LIFETIME_PROMO = {
-  anchor: process.env.MOLLIE_LIFETIME_ANCHOR === undefined ? "89" : String(process.env.MOLLIE_LIFETIME_ANCHOR).trim(),
-  label: process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Black Friday",
+  anchor: String(process.env.MOLLIE_LIFETIME_ANCHOR || "").trim(),
+  get label() { return lifetimeRisen() ? "" : process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Black Friday"; },
 };
 export const strikeText = (text) => [...String(text)].map((c) => `${c}\u0336`).join("");
 export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", addons: "Options", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
@@ -643,7 +653,7 @@ export const FAIR_USE_KINDS = new Set(["m3"]);
 // never on a payment that was itself the offer.
 export const MOLLIE_WINBACK = {
   plan: "lifetime",
-  // Off by default: at 49 € there is little room for a lower price. Set
+  // Off by default. Set
   // MOLLIE_WINBACK_LIFETIME_PRICE below the lifetime price to turn it on.
   price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 0).toFixed(2),
   windowHours: 48,
@@ -796,7 +806,7 @@ export function bestCheckoutUrl(plan) {
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
 //
-// On sale: the month (29,99 €) and lifetime (49 €). 3 months, the year and
+// On sale: the month (29,99 €) and lifetime (89 €, then 149 €). 3 months, the year and
 // the prompt packs are off sale; their subscribers keep their access and
 // their renewals.
 export const RETIRED_PLANS = new Set(["m3", "m12", "monthly", "yearly", "pack2", "pack5", "pack10"]);
