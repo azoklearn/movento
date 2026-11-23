@@ -5716,10 +5716,9 @@ function StartQuiz() {
             ))}
           </ol>
           <a href={`/pricing?${new URLSearchParams({ from: "quiz", income: String(answers.income), ...(answers.type ? { type: answers.type } : {}), ...(answers.goal ? { goal: answers.goal } : {}) })}`} onClick={() => track("quiz_cta_clicked")} className="group mt-8 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-white pl-6 pr-2 text-[16px] font-semibold text-black shadow-[0_24px_70px_-18px_rgba(194,91,245,0.7)] transition duration-300 hover:-translate-y-0.5">
-            <span className="flex-1 text-center">{t("See the plan made for me", "Voir ma formule")}</span>
+            <span className="flex-1 text-center">{t("See the plans", "Voir les formules")}</span>
             <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
           </a>
-          <p className="mt-3 text-center text-[13px] text-white/45"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("for life", "à vie")} · {LIFETIME_TERMS_LINE}</p>
           <p className="mt-4 text-center"><a href="/#prompts" className="text-sm font-semibold text-white/70 underline decoration-white/25 underline-offset-4 transition hover:text-white">{t("Browse the prompts first", "Voir d'abord les prompts")}</a></p>
         </div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative">
