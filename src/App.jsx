@@ -5249,9 +5249,10 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
 
       <motion.a href="/pricing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-3 pr-3.5 text-[12.5px] font-medium text-white/80 transition-colors hover:border-white/25 hover:text-white">
         <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" /></span>
+        {/* No price on the landing page: the figures live on /pricing. */}
         {BLACK_FRIDAY
-          ? <>Black Friday <span className="text-white/40">·</span> {t(`lifetime access ${eur(PRICE_LIFETIME)} until 30 Nov.`, `l'accès à vie à ${eur(PRICE_LIFETIME)} jusqu'au 30 nov.`)}</>
-          : t(`Lifetime access · ${eur(PRICE_LIFETIME)} once`, `Accès à vie · ${eur(PRICE_LIFETIME)} une fois`)}
+          ? <>Black Friday <span className="text-white/40">·</span> {t("offer until 30 Nov.", "offre jusqu'au 30 nov.")}</>
+          : t("Lifetime access · one payment", "Accès à vie · paiement unique")}
       </motion.a>
 
       <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.06, ease: [0.22, 1, 0.36, 1] }} className="mt-7 text-[clamp(2.45rem,9.2vw,5.4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
@@ -5281,9 +5282,6 @@ function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
               {t("Want to sell sites?", "Tu veux vendre des sites ?")} <span className="font-semibold text-white">{t("Take the test (1 min)", "Fais le test (1 min)")}</span>
               <span className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-white"><Icon name="arrow" className="h-3 w-3 transition group-hover:translate-x-0.5" /></span>
             </a>
-            <p className="text-[13px] text-white/50">
-              <a href="/pricing" className="transition hover:text-white/80"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("for life", "à vie")} <span className="text-white/30">·</span> {LIFETIME_TERMS_LINE}</a>
-            </p>
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
               {!trialActive && (
                 <button onClick={onUnlock} className="text-sm font-medium text-white/45 transition hover:text-white/80">
@@ -5914,7 +5912,6 @@ function ClosingOffer() {
           {t("Unlock everything", "Tout débloquer")}
           <span className="grid h-10 w-10 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
         </a>
-        <p className="mt-4 text-[13px] text-white/45"><strong className="font-semibold text-white">{eur(PRICE_LIFETIME)}</strong> {t("for life", "à vie")} · {LIFETIME_TERMS_LINE}</p>
       </div>
     </section>
   );
@@ -5937,7 +5934,7 @@ function StickyOffer({ hidden }) {
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }} className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-3">
           <div className="pointer-events-auto flex w-full max-w-[560px] items-center gap-3 rounded-full bg-[#0c0c0e]/85 py-2 pl-5 pr-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_24px_60px_-20px_rgba(0,0,0,1)] backdrop-blur-xl">
             <p className="min-w-0 flex-1 truncate text-[13px] text-white/60">
-              <span className="font-semibold text-white">{t(`${availablePrompts.length} prompts`, `${availablePrompts.length} prompts`)}</span> <span className="hidden sm:inline">· {t("lifetime access", "accès à vie")}</span> · <span className="font-semibold text-white">{eur(PRICE_LIFETIME)}</span>{BLACK_FRIDAY && <span className="hidden sm:inline"> · {t(`${eur(PRICE_LIFETIME_NEXT)} from 1 Dec.`, `${eur(PRICE_LIFETIME_NEXT)} dès le 1er déc.`)}</span>}
+              <span className="font-semibold text-white">{t(`${availablePrompts.length} prompts`, `${availablePrompts.length} prompts`)}</span> · {t("lifetime access", "accès à vie")}{BLACK_FRIDAY && <span className="hidden sm:inline"> · {t("Black Friday until 30 Nov.", "Black Friday jusqu'au 30 nov.")}</span>}
             </p>
             <a href="/pricing" onClick={() => track("sticky_offer_clicked")} className="group inline-flex flex-none items-center gap-2 rounded-full bg-white py-1.5 pl-4 pr-1.5 text-[13px] font-semibold text-black transition hover:bg-white/90">
               {t("Unlock", "Débloquer")} <span className="grid h-7 w-7 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span>
