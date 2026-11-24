@@ -519,7 +519,10 @@ export async function findPaddleSubscriber(normalizedEmail, opts) {
 // Lifetime is one payment.
 //
 //   MOLLIE_API_KEY          test_… to try, live_… to sell
-//   MOLLIE_M1_PRICE         default 29.99, every month
+//   m1                      29.00, every month (no environment variable, so
+//                           the page and the checkout cannot disagree;
+//                           subscriptions already running keep the amount
+//                           they were created with)
 //   lifetime                69.00 until 30 November, 129.00 from 1 December
 //                           (LIFETIME_PRICE_RISE below; no environment
 //                           variable, so the page and the checkout cannot
@@ -551,7 +554,7 @@ export const LIFETIME_PLANS = new Set(["lifetime", "lifetime_plus"]);
 // them all).
 export const LIFETIME_ALL_OPTIONS_BEFORE = Date.parse("2026-11-23T05:00:00Z");
 export const MOLLIE_PRICES = {
-  m1: Number(process.env.MOLLIE_M1_PRICE || 29.99).toFixed(2),
+  m1: (29).toFixed(2),
   m3: Number(process.env.MOLLIE_M3_PRICE || 109).toFixed(2),
   m12: Number(process.env.MOLLIE_M12_PRICE || 239).toFixed(2),
   get lifetime() { return lifetimePrice("lifetime"); },
@@ -841,7 +844,7 @@ export function bestCheckoutUrl(plan) {
 // This mirrors `hidden: true` in the front-end plan list; the button is gone
 // there, and this is what stops a hand-made request from reaching the old one.
 //
-// On sale: the month (29,99 €), lifetime (69 €, then 129 €) and lifetime +
+// On sale: the month (29 €), lifetime (69 €, then 129 €) and lifetime +
 // options (149 €, then 199 €). 3 months, the year and
 // the prompt packs are off sale; their subscribers keep their access and
 // their renewals.

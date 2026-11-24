@@ -994,7 +994,7 @@ const freePromptItems = prompts.filter((item) => FREE_PROMPT_FILES.has(item.file
 const PLAN_TERMS = [
   // On sale: the month, beside lifetime. 3 months and the year are off sale;
   // their subscribers keep renewing on the terms they took.
-  { id: "m1", price: 29.99, anchor: 29.99, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
+  { id: "m1", price: 29, anchor: 29, days: 30, retired: false, banner: t("a month", "le mois"), every: t("every month.", "chaque mois.") },
   // Anchors: the same span bought quarter by quarter at the 3-month price.
   { id: "m3", price: 109, anchor: 109, days: 90, retired: true, banner: t("for 3 months", "les 3 mois"), every: t("every 3 months.", "tous les 3 mois.") },
   { id: "m12", price: 239, anchor: 436, days: 365, retired: true, banner: t("for a year", "l'année"), every: t("every year.", "chaque année.") },
@@ -3174,7 +3174,7 @@ function runSelfTests() {
   console.assert(["m1", "lifetime"].every(validatePlanId) && validatePlanId("lifetime_plus") === LIFETIME_PLUS_ON_SALE && visiblePlans.length === (LIFETIME_PLUS_ON_SALE ? 3 : 2), "the month and the lifetime offers must be purchasable");
   console.assert(["m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
   console.assert(FEATURED_TERM === null && FEATURED_OFFER.price === PRICE_LIFETIME, "while lifetime is the offer pushed, the bar and the anchor quote it, not the month");
-  console.assert(termOf("m1").price === 29.99, "the month is 29,99 €");
+  console.assert(termOf("m1").price === 29, "the month is 29 €");
   console.assert(PRICE_LIFETIME === (LIFETIME_RISEN ? 129 : 69) && PRICE_LIFETIME_PLUS === (LIFETIME_RISEN ? 199 : 149) && (PRICE_LIFETIME_NEXT === null || PRICE_LIFETIME_NEXT > PRICE_LIFETIME), "lifetime is 69 € and 149 € until the rise, 129 € and 199 € after it");
   console.assert(visiblePlans.some((plan) => plan.id === "lifetime") && visiblePlans.filter((plan) => plan.featured).length === 1, "lifetime is on sale, and exactly one card is featured");
   // A card may not promise an extra its kind is not granted: the card is the
@@ -3883,7 +3883,7 @@ function MoventoPages() {
       </AnimatePresence>
       <SiteNav query={query} setQuery={setQuery} />
 
-      <LandingHero hasPremiumAccess={hasPremiumAccess} trialActive={trialActive} onUnlock={() => setShowUnlockModal(true)} />
+      <LandingHero hasPremiumAccess={hasPremiumAccess} />
 
       {/* Full width, no max: the gallery is the page, and a capped row left a
           band of empty background down each side on anything above 1560. */}
@@ -3934,14 +3934,6 @@ function MoventoPages() {
             </p>
           </div>
         )}
-        <div className="mb-9 flex flex-col items-center text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[12.5px] font-medium text-white/75">
-            <span className="h-1.5 w-1.5 rounded-full bg-white/70" /> {t(`The catalogue · ${availablePrompts.length} prompts`, `Le catalogue · ${availablePrompts.length} prompts`)}
-          </span>
-          <h2 className="mt-5 text-[clamp(2rem,5.4vw,3.4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
-            {t("Every design,", "Tous les designs,")} <span className="text-white/45">{t("ready to copy.", "prêts à copier.")}</span>
-          </h2>
-        </div>
         {/* Two groups on one line: how the cards are ordered, then which
             category, in its own capsule that scrolls sideways (with an arrow
             on a mouse). Stacked on a phone. */}
@@ -4067,7 +4059,6 @@ function MoventoPages() {
         })()}
       </section>
 
-      {!hasPremiumAccess && <ClosingOffer />}
       {!hasPremiumAccess && <StickyOffer hidden={Boolean(previewItem)} />}
       <SiteFooter className="pb-24" />
     </main>
@@ -5112,94 +5103,30 @@ const TOOL_LOGOS = [
   { name: "Shopify", d: "M15.337 23.979l7.216-1.561s-2.604-17.613-2.625-17.73c-.018-.116-.114-.192-.211-.192s-1.929-.136-1.929-.136-1.275-1.274-1.439-1.411c-.045-.037-.075-.057-.121-.074l-.914 21.104h.023zM11.71 11.305s-.81-.424-1.774-.424c-1.447 0-1.504.906-1.504 1.141 0 1.232 3.24 1.715 3.24 4.629 0 2.295-1.44 3.76-3.406 3.76-2.354 0-3.54-1.465-3.54-1.465l.646-2.086s1.245 1.066 2.28 1.066c.675 0 .975-.545.975-.932 0-1.619-2.654-1.694-2.654-4.359-.034-2.237 1.571-4.416 4.827-4.416 1.257 0 1.875.361 1.875.361l-.945 2.715-.02.01zM11.17.83c.136 0 .271.038.405.135-.984.465-2.064 1.639-2.508 3.992-.656.213-1.293.405-1.889.578C7.697 3.75 8.951.84 11.17.84V.83zm1.235 2.949v.135c-.754.232-1.583.484-2.394.736.466-1.777 1.333-2.645 2.085-2.971.193.501.309 1.176.309 2.1zm.539-2.234c.694.074 1.141.867 1.429 1.755-.349.114-.735.231-1.158.366v-.252c0-.752-.096-1.371-.271-1.871v.002zm2.992 1.289c-.02 0-.06.021-.078.021s-.289.075-.714.21c-.423-1.233-1.176-2.37-2.508-2.37h-.115C12.135.209 11.669 0 11.265 0 8.159 0 6.675 3.877 6.21 5.846c-1.194.365-2.063.636-2.16.674-.675.213-.694.232-.772.87-.075.462-1.83 14.063-1.83 14.063L15.009 24l.927-21.166z" },
 ];
 
-function ToolLogo({ tool, className = "" }) {
+// The landing hero, kept minimal: a title in two tones, one line, the button
+// to the gallery and a quiet link to the guided start. Nothing else: the
+// gallery right under it shows what is sold.
+function LandingHero({ hasPremiumAccess }) {
   return (
-    <span className={`inline-flex flex-none items-center gap-2.5 ${className}`}>
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-[22px] w-[22px] flex-none" fill="currentColor" fillRule="evenodd"><path d={tool.d} /></svg>
-      <span className="text-[19px] font-semibold tracking-[-0.03em]">{tool.name}</span>
-    </span>
-  );
-}
-
-// "Works with": the tools' marks passing in a slow, endless row, fading out at
-// both edges. The list is rendered twice so the loop has no seam; the second
-// copy is hidden from readers. Still, and centred, for reduced motion.
-function ToolsMarquee() {
-  return (
-    <div className="mt-14 flex w-full flex-col items-center gap-5">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">{t("Works with", "Fonctionne avec")}</p>
-      <div className="mv-marquee-mask relative w-full max-w-3xl overflow-hidden">
-        <div className="mv-marquee flex w-max items-center">
-          {[0, 1].map((copy) => (
-            <ul key={copy} aria-hidden={copy === 1 ? "true" : undefined} className="flex flex-none items-center">
-              {TOOL_LOGOS.map((tool) => (
-                <li key={tool.name} className="px-7 text-white/45 transition-colors duration-300 hover:text-white sm:px-9"><ToolLogo tool={tool} /></li>
-              ))}
-            </ul>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// The landing hero: on plain black, a small pill naming the offer, a very
-// large title whose last line steps back in grey, one line of what to do, and
-// a single white button to the gallery. No illustration: the gallery right
-// under it shows what is sold.
-function LandingHero({ hasPremiumAccess, trialActive, onUnlock }) {
-  return (
-    <header className="relative isolate z-10 mx-auto flex max-w-6xl flex-col items-center px-5 pb-10 pt-14 text-center sm:pt-20">
-
-      <motion.a href="/pricing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-3 pr-3.5 text-[12.5px] font-medium text-white/80 transition-colors hover:border-white/25 hover:text-white">
-        <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" /></span>
-        {/* No price on the landing page: the figures live on /pricing. */}
-        {BLACK_FRIDAY
-          ? <>Black Friday <span className="text-white/40">·</span> {t("offer until 30 Nov.", "offre jusqu'au 30 nov.")}</>
-          : t("Lifetime access · one payment", "Accès à vie · paiement unique")}
-      </motion.a>
-
-      <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.06, ease: [0.22, 1, 0.36, 1] }} className="mt-7 text-[clamp(2.45rem,9.2vw,5.4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
-        <span className="block">{t("Premium websites,", "Des sites premium,")}</span>
-        <span className="block">{t("built with AI,", "créés avec l'IA,")}</span>
-        <span className="block bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_48%,#7C8CFF_100%)] bg-clip-text pb-[0.06em] text-transparent">{t("ready to sell.", "prêts à vendre.")}</span>
+    <header className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-5 pb-8 pt-16 text-center sm:pb-10 sm:pt-24">
+      <motion.h1 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-[clamp(2.1rem,6.4vw,3.9rem)] font-semibold leading-[1.04] tracking-[-0.045em] text-[#FAFAFA]">
+        {t("Premium websites,", "Des sites premium,")} <span className="text-white/45">{t("built with AI.", "créés avec l'IA.")}</span>
       </motion.h1>
-
-      <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.14 }} className="mt-7 max-w-md text-[17px] leading-7 text-white/55 sm:text-lg">
-        {t("Copy a prompt, paste it into Lovable, Cursor or Claude: your site is ready this afternoon.", "Copie un prompt, colle-le dans Lovable, Cursor ou Claude : ton site est prêt dans l'après-midi.")}
+      <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.08 }} className="mt-5 max-w-md text-[16px] leading-7 text-white/50 sm:text-[17px]">
+        {t(`${availablePrompts.length} prompts to paste into Lovable, Cursor or Claude.`, `${availablePrompts.length} prompts à coller dans Lovable, Cursor ou Claude.`)}
       </motion.p>
-
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.22 }} className="mt-9 flex flex-col items-center gap-4">
-        {hasPremiumAccess ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/[0.08] px-4 py-2 text-sm font-semibold text-emerald-200">
-            <Icon name="check" className="h-4 w-4" /> {t("Premium access active", "Accès premium actif")}
-          </span>
-        ) : (
-          <>
-            <a href="#prompts" onClick={() => track("hero_cta_gallery")} className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-white pl-8 pr-2 text-base font-semibold tracking-[-0.005em] text-black shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_24px_70px_-18px_rgba(194,91,245,0.55)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.3),0_30px_80px_-18px_rgba(194,91,245,0.75)] sm:h-16 sm:pl-10 sm:text-lg">
-              {t("See the prompts", "Voir les prompts")}
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-black text-white sm:h-12 sm:w-12"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
-            </a>
-            {/* The guided start, offered rather than imposed: for those who
-                came to sell sites, not just to browse designs. */}
-            <a href="/commencer" onClick={() => track("hero_quiz_link")} className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-4 pr-1.5 text-[13.5px] text-white/65 transition hover:border-white/25 hover:text-white">
-              {t("Want to sell sites?", "Tu veux vendre des sites ?")} <span className="font-semibold text-white">{t("Take the test (1 min)", "Fais le test (1 min)")}</span>
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-white"><Icon name="arrow" className="h-3 w-3 transition group-hover:translate-x-0.5" /></span>
-            </a>
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-              {!trialActive && (
-                <button onClick={onUnlock} className="text-sm font-medium text-white/45 transition hover:text-white/80">
-                  {t("Already a customer? Sign in", "Déjà client ? Connecte-toi")}
-                </button>
-              )}
-            </div>
-          </>
-        )}
-      </motion.div>
-
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.4 }} className="w-full">
-        <ToolsMarquee />
-      </motion.div>
+      {!hasPremiumAccess && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.16 }} className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+          <a href="#prompts" onClick={() => track("hero_cta_gallery")} className="group inline-flex h-12 items-center gap-3 rounded-full bg-white pl-6 pr-1.5 text-[15px] font-semibold text-black transition duration-300 hover:-translate-y-0.5">
+            {t("See the prompts", "Voir les prompts")}
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></span>
+          </a>
+          {/* The guided start, offered rather than imposed. */}
+          <a href="/commencer" onClick={() => track("hero_quiz_link")} className="text-[14px] font-medium text-white/55 underline decoration-white/20 underline-offset-4 transition hover:text-white">
+            {t("Want to sell sites? Take the test", "Tu veux vendre des sites ? Fais le test")}
+          </a>
+        </motion.div>
+      )}
     </header>
   );
 }
@@ -5700,29 +5627,6 @@ function StartQuiz() {
         </AnimatePresence>
       </div>
     </main>
-  );
-}
-
-// At the foot of the gallery, for those who scrolled it all: one dark panel
-// lit from below, the offer once more, the button.
-function ClosingOffer() {
-  return (
-    <section className="relative z-10 mx-auto max-w-6xl px-4 pb-4 pt-16 sm:px-6">
-      <div className="relative isolate overflow-hidden rounded-[32px] bg-[#0c0c0e] px-6 py-16 text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)] sm:py-20">
-        <div aria-hidden="true" className="absolute inset-x-0 bottom-[-40%] -z-10 mx-auto h-[90%] w-[85%] rounded-full bg-[radial-gradient(closest-side,rgba(194,91,245,0.5),rgba(255,106,125,0.22)_55%,transparent)] blur-2xl" />
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[12.5px] font-medium text-white/75">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {BLACK_FRIDAY ? <>Black Friday <span className="text-white/40">·</span> {t("until 30 Nov.", "jusqu'au 30 nov.")}</> : t("Lifetime access", "Accès à vie")}
-        </span>
-        <h2 className="mx-auto mt-6 max-w-3xl text-[clamp(2.1rem,6vw,4rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#FAFAFA]">
-          {t("Your next client", "Ton prochain client")} <span className="bg-[linear-gradient(100deg,#FF6A7D_0%,#C25BF5_48%,#7C8CFF_100%)] bg-clip-text text-transparent">{t("is waiting for a site.", "attend un site.")}</span>
-        </h2>
-        <p className="mx-auto mt-5 max-w-md text-[16px] leading-7 text-white/55">{t(`All ${availablePrompts.length} prompts and every one added next, for life.`, `Les ${availablePrompts.length} prompts et tous ceux à venir, à vie.`)}</p>
-        <a href="/pricing" className="group mt-8 inline-flex h-14 items-center justify-center gap-3 rounded-full bg-white pl-8 pr-2 text-base font-semibold text-black shadow-[0_24px_70px_-18px_rgba(194,91,245,0.7)] transition duration-300 hover:-translate-y-0.5">
-          {t("Unlock everything", "Tout débloquer")}
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
-        </a>
-      </div>
-    </section>
   );
 }
 
@@ -7183,7 +7087,7 @@ const SITE_PRICE_HIGH = 2000;
 
 function PriceAnchor({ onPick }) {
   // What a year on the featured term costs — not what the term costs, which is
-  // only the same thing when the term is a year. At 29,99 € a month the raw
+  // only the same thing when the term is a year. At 29 € a month the raw
   // division reads 26, and the sentence below would call it 26 years.
   const yearOfFeatured = FEATURED_TERM ? (FEATURED_TERM.price * 365) / FEATURED_TERM.days : FEATURED_OFFER.price;
   // How many times over the cheapest site a freelancer would quote covers what
@@ -7789,7 +7693,7 @@ const MONTHLY_EQUIV = {
 const GRANT_PLAN_LABELS = { m1: "mensuel", m3: "3 mois", m12: "annuel", lifetime: "à vie" };
 
 const KIND_LABELS = {
-  m1: "Mensuel 29,99€",
+  m1: "Mensuel",
   m3: "3 mois",
   m12: "Annuel",
   monthly: "Mensuel 18,99€ (ancien)",
