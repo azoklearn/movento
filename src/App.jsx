@@ -1466,6 +1466,11 @@ function PlanCard({ plan, onBuy, loading, featured }) {
         <span className="flex-1 text-center">{loading ? t("Loading…", "Chargement…") : plan.cta}</span>
         <span className={`grid h-10 w-10 flex-none place-items-center rounded-full ${primary ? "bg-black text-white" : "bg-white/10 text-white"}`}><Icon name="arrow" className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" /></span>
       </button>
+      {/* The guarantee the refund policy (/remboursement) already gives,
+          said where the decision is made. */}
+      <a href="/remboursement" className="mt-3 inline-flex items-center justify-center gap-1.5 self-center text-[12.5px] font-medium text-white/60 transition hover:text-white">
+        <Icon name="shield" className="h-3.5 w-3.5 text-emerald-300" /> {t(`Money back within ${LEGAL.refundDays} days`, `Satisfait ou remboursé ${LEGAL.refundDays} jours`)}
+      </a>
 
       <ul className="mt-7 space-y-3">
         {rows.map((feat) => (
@@ -1868,6 +1873,7 @@ function OrderSummary({ plan, totals, provider, priceNote }) {
             <dd className="text-lg font-bold">{total || (addons.length ? eur(money(planBasePrice(plan) + addonsTotal(plan.addons))) : plan.price)}</dd>
           </div>
           {!total && <p className="text-xs text-white/40">{priceNote || t("VAT included, worked out for your country.", "TVA incluse, calculée selon ton pays.")}</p>}
+          <p className="flex items-center gap-1.5 pt-1 text-xs font-medium text-emerald-300/90"><Icon name="shield" className="h-3.5 w-3.5" /> {t(`Money back within ${LEGAL.refundDays} days, no questions asked`, `Satisfait ou remboursé ${LEGAL.refundDays} jours, sans justification`)}</p>
         </dl>
 
         <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-white/45 md:mt-5">
@@ -6832,7 +6838,7 @@ function CgvPage() {
         <ul>
           <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
           <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
-          <li><strong className="text-white/75">Options de l'accès à vie</strong>, à prendre au moment de la commande ou plus tard depuis la page <a href="/account" className="underline underline-offset-4">Mon compte</a> : l'option « On adapte le prompt directement pour toi » ({eur(ADDONS.find((a) => a.id === "ai").price)}, qui fait réécrire un prompt du catalogue par une intelligence artificielle à partir d'une courte demande, dans la limite de {AI_EDITS_INCLUDED} adaptations au total ; le texte est généré automatiquement, doit être relu avant usage, et une adaptation qui échoue n'est pas décomptée), le Kit freelance ({eur(ADDONS.find((a) => a.id === "kit").price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) la Licence agence ({eur(ADDONS.find((a) => a.id === "team").price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email) et l'option « On trouve tes clients » ({eur(ADDONS.find((a) => a.id === "leads").price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial). Chaque option est payée une seule fois. Elles suivent le sort de l'accès à vie : si celui-ci est remboursé, elles sont retirées avec lui.</li>
+          <li><strong className="text-white/75">Options</strong>, proposées juste après le paiement d'un accès (mensuel ou à vie) ou plus tard depuis la page <a href="/account" className="underline underline-offset-4">Mon compte</a> : l'option « On adapte le prompt directement pour toi » ({eur(ADDONS.find((a) => a.id === "ai").price)}, qui fait réécrire un prompt du catalogue par une intelligence artificielle à partir d'une courte demande, dans la limite de {AI_EDITS_INCLUDED} adaptations au total ; le texte est généré automatiquement, doit être relu avant usage, et une adaptation qui échoue n'est pas décomptée), le Kit freelance ({eur(ADDONS.find((a) => a.id === "kit").price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) la Licence agence ({eur(ADDONS.find((a) => a.id === "team").price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email) et l'option « On trouve tes clients » ({eur(ADDONS.find((a) => a.id === "leads").price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial). Chaque option est payée une seule fois. Elles ne fonctionnent qu'avec un accès actif, et sont retirées avec lui s'il est remboursé.</li>
           <li>Les abonnements de 3 mois et annuel, ainsi que les packs de prompts, ne sont plus proposés à l'achat. Ceux déjà souscrits restent valables aux conditions de leur souscription : les abonnements se renouvellent jusqu'à résiliation, et les prompts d'un pack restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
@@ -6878,7 +6884,7 @@ function RefundPage() {
     <LegalPage title="Politique de remboursement">
       <div>
         <h2>Satisfait ou remboursé {LEGAL.refundDays} jours</h2>
-        <p>Si Movento ne te convient pas, tu peux demander le remboursement de ton premier achat (mensuel ou à vie) dans les <strong className="text-white/75">{LEGAL.refundDays} jours</strong> qui suivent le paiement, sans avoir à te justifier.</p>
+        <p>Si Movento ne te convient pas, tu peux demander le remboursement de ton premier achat (mensuel ou à vie) dans les <strong className="text-white/75">{LEGAL.refundDays} jours</strong> qui suivent le paiement, sans avoir à te justifier. Une option achetée à part se rembourse de la même façon, dans les {LEGAL.refundDays} jours qui suivent son paiement.</p>
       </div>
       <div>
         <h2>Comment demander</h2>
