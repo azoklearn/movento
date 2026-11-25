@@ -2166,11 +2166,11 @@ const ADDONS = [
   {
     id: "ai",
     short: t("AI adaptation", "Adaptation IA"),
-    blurb: t("The AI rewrites a prompt for your brand or your client, 50 times.", "L'IA réécrit un prompt pour ta marque ou ton client, 50 fois."),
+    blurb: t("Same design, rewritten by the AI for your brand or your client, 50 times.", "Même design, réécrit par l'IA pour ta marque ou ton client, 50 fois."),
     price: 29,
     href: "/ai",
     name: t("We adapt the prompt for you", "On adapte le prompt directement pour toi"),
-    desc: t(`Your brand, your business, your colours: the AI rewrites the prompt, ready to paste. ${AI_EDITS_INCLUDED} adaptations included.`, `Ta marque, ton activité, tes couleurs : l'IA réécrit le prompt, prêt à coller. ${AI_EDITS_INCLUDED} adaptations incluses.`),
+    desc: t(`The base design stays the same. The AI changes everything else but the images and videos: your brand, your business, your copy, your colours. ${AI_EDITS_INCLUDED} adaptations included.`, `Le design de base reste le même. L'IA change tout le reste sauf les images et vidéos : ta marque, ton activité, tes textes, tes couleurs. ${AI_EDITS_INCLUDED} adaptations incluses.`),
     icon: "zap",
     tint: "from-[#F0566B] to-[#B04BF0]",
     open: t("Adapt a prompt", "Adapter un prompt"),
@@ -4368,7 +4368,13 @@ function AiCustomizer({ item, email, onClose }) {
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
           {phase === "form" && (
             <form onSubmit={run} className="space-y-4">
-              <p className="text-sm leading-6 text-white/60">{t("Say what changes. Leave empty whatever stays as it is: the AI rewrites the whole prompt for you and keeps the design and the animations.", "Dis ce qui change. Laisse vide ce qui reste pareil : l'IA réécrit tout le prompt pour toi et garde le design et les animations.")}</p>
+              <p className="text-sm leading-6 text-white/60">{t("Say what changes. Leave empty whatever stays as it is.", "Dis ce qui change. Laisse vide ce qui reste pareil.")}</p>
+              {/* What the option can and cannot touch, said before the brief
+                  is written: the server's instructions hold the same line. */}
+              <ul className="grid gap-2 rounded-xl bg-white/[0.03] p-3 text-[13px] leading-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.07)] sm:grid-cols-2">
+                <li className="flex items-start gap-2 text-white/75"><Icon name="check" className="mt-0.5 h-3.5 w-3.5 flex-none text-emerald-300" /><span><strong className="font-semibold text-white">{t("Changes:", "Ça change :")}</strong> {t("brand, business, copy, colours, language, section content.", "marque, activité, textes, couleurs, langue, contenu des sections.")}</span></li>
+                <li className="flex items-start gap-2 text-white/75"><Icon name="lock" className="mt-0.5 h-3.5 w-3.5 flex-none text-white/45" /><span><strong className="font-semibold text-white">{t("Stays the same:", "Ça reste pareil :")}</strong> {t("the base design (layout, animations) and the assets (images, videos).", "le design de base (mise en page, animations) et les assets (images, vidéos).")}</span></li>
+              </ul>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block"><span className={label}>{t("Brand name", "Nom de ta marque")}</span><input value={brief.brand} onChange={set("brand")} maxLength={80} placeholder={t("e.g. Maison Lune", "ex. Maison Lune")} className={field} /></label>
                 <label className="block"><span className={label}>{t("Language of the site", "Langue du site")}</span>
@@ -4377,7 +4383,7 @@ function AiCustomizer({ item, email, onClose }) {
               </div>
               <label className="block"><span className={label}>{t("Your business", "Ton activité")}</span><input value={brief.business} onChange={set("business")} maxLength={200} placeholder={t("e.g. hair salon in Lyon, for women, high-end", "ex. salon de coiffure à Lyon, pour femmes, haut de gamme")} className={field} /></label>
               <label className="block"><span className={label}>{t("Colours", "Couleurs")}</span><input value={brief.colours} onChange={set("colours")} maxLength={160} placeholder={t("e.g. midnight blue and gold, or #0b1f3a and #d4af37", "ex. bleu nuit et or, ou #0b1f3a et #d4af37")} className={field} /></label>
-              <label className="block"><span className={label}>{t("Anything else", "Autre demande")}</span><textarea value={brief.request} onChange={set("request")} maxLength={800} rows={3} placeholder={t("e.g. replace the pricing section with my three services, add my phone number in the footer", "ex. remplace la section tarifs par mes trois prestations, ajoute mon téléphone dans le pied de page")} className={`${field} resize-y`} /></label>
+              <label className="block"><span className={label}>{t("Anything else", "Autre demande")}</span><textarea value={brief.request} onChange={set("request")} maxLength={800} rows={3} placeholder={t("e.g. put my three services in the pricing section, add my phone number in the footer", "ex. mets mes trois prestations dans la section tarifs, ajoute mon téléphone dans le pied de page")} className={`${field} resize-y`} /></label>
               {error && <p className="rounded-xl border border-red-400/25 bg-red-400/[0.07] px-3.5 py-2.5 text-sm text-red-200">{error}</p>}
             </form>
           )}
@@ -4490,7 +4496,7 @@ function AiContent({ email }) {
 
 function AiPage() {
   return (
-    <AddonPage title={t("We adapt the prompt for you", "On adapte le prompt pour toi")} lede={t("Any prompt of the catalogue, rewritten for your brand by the AI.", "N'importe quel prompt du catalogue, réécrit pour ta marque par l'IA.")}>
+    <AddonPage title={t("We adapt the prompt for you", "On adapte le prompt pour toi")} lede={t("Any prompt of the catalogue, rewritten for your brand by the AI. The base design stays the same, and so do the images and videos: everything else can change.", "N'importe quel prompt du catalogue, réécrit pour ta marque par l'IA. Le design de base reste le même, les images et vidéos aussi : tout le reste peut changer.")}>
       {(email) => <AiContent email={email} />}
     </AddonPage>
   );
