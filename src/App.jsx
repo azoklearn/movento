@@ -1017,7 +1017,7 @@ const discountOf = (id) => {
 // keep their access, their ebook and their support.
 const LIFETIME_RETIRED = false;
 // Two lifetime offers, Black Friday until 30 November: the prompts alone at
-// 69 €, the prompts with every option at 149 €; from 1 December, midnight in
+// 89 €, the prompts with every option at 149 €; from 1 December, midnight in
 // Paris, 129 € and 199 €. No struck price: lifetime was sold at 49 € over the
 // last 30 days, so a figure struck above it would be a false reference price
 // (art. L112-1-1, Code de la consommation). The offer is the rise announced
@@ -1026,7 +1026,7 @@ const LIFETIME_RETIRED = false;
 // keep both in step).
 const LIFETIME_RISE_AT = "2026-12-01T00:00:00+01:00";
 const LIFETIME_RISEN = Date.now() >= Date.parse(LIFETIME_RISE_AT);
-const PRICE_LIFETIME = LIFETIME_RISEN ? 129 : 69;
+const PRICE_LIFETIME = LIFETIME_RISEN ? 129 : 89;
 const PRICE_LIFETIME_PLUS = LIFETIME_RISEN ? 199 : 149;
 // The prices they go up to, while the offer runs; null once they have.
 const PRICE_LIFETIME_NEXT = LIFETIME_RISEN ? null : 129;
@@ -1048,7 +1048,7 @@ const BEST_DISCOUNT = LIVE_DISCOUNTS.length ? Math.max(...LIVE_DISCOUNTS) : 0;
 // is null in that case rather than pointing at a retired plan — nothing should
 // have to guess which of the plans nobody can buy is the "featured" one.
 // The month is on sale but is not what the page pushes while lifetime is: at
-// 69 € once, lifetime costs less than three months, and the hero, the featured
+// 89 € once, lifetime costs about three months, and the hero, the featured
 // card and the anchor all lead with it.
 const FEATURED_TERM = LIVE_TERMS.find((term) => term.id === "m12") || (LIFETIME_RETIRED ? LIVE_TERMS[0] : null) || null;
 // Falls back to the lifetime only because something has to be quoted when no
@@ -2306,7 +2306,7 @@ const planBasePrice = (plan) => (plan.id === "lifetime" ? PRICE_LIFETIME : plan.
 // A sum in euros with at most two decimals, so 29.99 + 19 is never 48.989999.
 const money = (n) => Math.round(n * 100) / 100;
 
-// Off sale: with lifetime at 69 € a pack of prompts costs about as much as the
+// Off sale: with lifetime at 89 € a pack of prompts costs about as much as the
 // whole catalogue. Past buyers keep their prompts and their unused credits.
 // Mirrored by RETIRED_PLANS in api/_shared.js.
 const PROMPT_PACKS_ON_SALE = false;
@@ -3181,7 +3181,7 @@ function runSelfTests() {
   console.assert(["m3", "m12", "monthly", "yearly"].every((id) => !validatePlanId(id)), "every other plan is retired and none should be purchasable");
   console.assert(FEATURED_TERM === null && FEATURED_OFFER.price === PRICE_LIFETIME, "while lifetime is the offer pushed, the bar and the anchor quote it, not the month");
   console.assert(termOf("m1").price === 29, "the month is 29 €");
-  console.assert(PRICE_LIFETIME === (LIFETIME_RISEN ? 129 : 69) && PRICE_LIFETIME_PLUS === (LIFETIME_RISEN ? 199 : 149) && (PRICE_LIFETIME_NEXT === null || PRICE_LIFETIME_NEXT > PRICE_LIFETIME), "lifetime is 69 € and 149 € until the rise, 129 € and 199 € after it");
+  console.assert(PRICE_LIFETIME === (LIFETIME_RISEN ? 129 : 89) && PRICE_LIFETIME_PLUS === (LIFETIME_RISEN ? 199 : 149) && (PRICE_LIFETIME_NEXT === null || PRICE_LIFETIME_NEXT > PRICE_LIFETIME), "lifetime is 89 € and 149 € until the rise, 129 € and 199 € after it");
   console.assert(visiblePlans.some((plan) => plan.id === "lifetime") && visiblePlans.filter((plan) => plan.featured).length === 1, "lifetime is on sale, and exactly one card is featured");
   // A card may not promise an extra its kind is not granted: the card is the
   // promise, EBOOK_KINDS and SUPPORT_KINDS are what keep it, and the two going
