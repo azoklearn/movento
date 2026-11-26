@@ -147,11 +147,11 @@ export default async function handler(req, res) {
       method: "POST",
       body: {
         amount: { currency: "EUR", value: amount },
-        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? lifetimeDescription(base, offer) : plan === "lifetime_plus" ? lifetimeDescription(base, offer).replace("Accès à vie", "Accès à vie + options") : `Movento — ${MOLLIE_PLAN_LABELS[plan]}${addonText}`,
+        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? lifetimeDescription(base, offer) : plan === "lifetime_plus" ? lifetimeDescription(base, offer).replace("Accès à vie", "Accès à vie + options") : plan === "lifetime_exit" ? `Movento — Accès à vie · offre dernière minute` : `Movento — ${MOLLIE_PLAN_LABELS[plan]}${addonText}`,
         customerId,
         // A subscription (3 months, the year) stores the card for the charges
-        // that follow; lifetime is charged once.
-        sequenceType: plan === "lifetime" || plan === "lifetime_plus" || MOLLIE_PACK_SIZES[plan] ? "oneoff" : "first",
+        // that follow; lifetime (and exit) is charged once.
+        sequenceType: plan === "lifetime" || plan === "lifetime_plus" || plan === "lifetime_exit" || MOLLIE_PACK_SIZES[plan] ? "oneoff" : "first",
         redirectUrl: `${site}/success?provider=mollie&claim=${claim}${knownEmail ? `&email=${encodeURIComponent(knownEmail)}` : ""}`,
         // Back on the pricing page with the claim, which is what lets the page
         // offer the year at the win-back price to someone who left.

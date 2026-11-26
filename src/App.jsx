@@ -1027,6 +1027,7 @@ const LIFETIME_RETIRED = false;
 const LIFETIME_RISE_AT = "2026-12-01T00:00:00+01:00";
 const LIFETIME_RISEN = Date.now() >= Date.parse(LIFETIME_RISE_AT);
 const PRICE_LIFETIME = LIFETIME_RISEN ? 129 : 89;
+const PRICE_LIFETIME_EXIT = 59;
 const PRICE_LIFETIME_PLUS = LIFETIME_RISEN ? 199 : 149;
 // The prices they go up to, while the offer runs; null once they have.
 const PRICE_LIFETIME_NEXT = LIFETIME_RISEN ? null : 129;
@@ -1338,6 +1339,17 @@ const plans = [
     extras: [t("Lifetime updates", "Mises à jour à vie"), t("Early access to new prompts", "Accès anticipé aux nouveautés")],
     perk: t("Direct support included", "Support direct inclus"),
     bonus: t("Free bonus ebook included", "Ebook offert inclus"),
+  },
+  {
+    id: "lifetime_exit",
+    hidden: true,
+    name: t("Lifetime access", "Accès à vie"),
+    price: eur(PRICE_LIFETIME_EXIT),
+    period: t("forever", "à vie"),
+    billedNote: t("One payment, no subscription", "Paiement unique, sans abonnement"),
+    cta: t("Take it", "Je prends"),
+    featured: false,
+    features: CATALOGUE_FEATURES,
   },
   {
     id: "pack",
@@ -2428,10 +2440,59 @@ function MollieCheckout({ cfg, plan, prefillEmail }) {
   );
 }
 
+// Shown when a buyer closes the checkout overlay on a lifetime plan without
+// paying. Offers the prompts-only lifetime at a lower exit price.
+function DownsellModal({ onAccept, onDecline }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onDecline(); }}
+    >
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.94, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 340, damping: 30 }}
+        className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#121214] p-7 text-center shadow-2xl shadow-black/70"
+      >
+        <p className="mb-1 text-2xl">✋</p>
+        <h2 className="text-lg font-bold text-[#FAFAFA]">{t("Wait — a last-minute offer", "Attends — une offre de dernière minute")}</h2>
+        <p className="mt-3 text-sm leading-6 text-white/60">
+          {t(
+            `Get lifetime access to all prompts for ${eur(PRICE_LIFETIME_EXIT)} — instead of ${eur(PRICE_LIFETIME)}.`,
+            `Accès à vie à tous les prompts pour ${eur(PRICE_LIFETIME_EXIT)} — au lieu de ${eur(PRICE_LIFETIME)}.`
+          )}
+        </p>
+        <div className="mt-6 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={onAccept}
+            className="rounded-full bg-[#FAFAFA] px-6 py-3 text-sm font-bold text-[#0A0A0B] transition hover:bg-white"
+          >
+            {t(`Take it — ${eur(PRICE_LIFETIME_EXIT)}`, `Prendre à ${eur(PRICE_LIFETIME_EXIT)}`)}
+          </button>
+          <button
+            type="button"
+            onClick={onDecline}
+            className="text-xs text-white/35 underline underline-offset-4 transition hover:text-white/55"
+          >
+            {t("No thanks, I'll pass", "Non merci, je passe")}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // Full-screen overlay that runs the whole purchase ON-SITE: fetch the plan id,
 // mount the embedded Whop checkout, then confirm access — never leaving the page.
 // Falls back to the hosted redirect only when no plan_xxx id is configured.
-function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
+function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked, onDownsell }) {
   const [load, setLoad] = useState({ loading: true, planId: "", promoCode: "", checkoutUrl: "", gumroadUrl: "", paddle: null, error: "" });
   const [done, setDone] = useState(false);
   // The address Paddle took the payment from, handed to the unlock step so the
@@ -2442,6 +2503,19 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
   const [embed, setEmbed] = useState("loading");
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const onDownsellRef = useRef(onDownsell);
+  onDownsellRef.current = onDownsell;
+
+  const isLifetimePlan = plan.id === "lifetime";
+
+  const handleClose = useCallback(() => {
+    if (!done && isLifetimePlan && onDownsellRef.current) {
+      track("downsell_shown", { plan: plan.id });
+      onDownsellRef.current();
+    } else {
+      onCloseRef.current?.();
+    }
+  }, [done, isLifetimePlan, plan.id]);
 
   // The layer scrolls on its own; the page under it must not, or a swipe
   // that overshoots the form drags the gallery instead. Escape closes, like
@@ -2449,10 +2523,10 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e) => { if (e.key === "Escape") onCloseRef.current?.(); };
+    const onKey = (e) => { if (e.key === "Escape") handleClose(); };
     window.addEventListener("keydown", onKey);
     return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
-  }, []);
+  }, [handleClose]);
 
   useEffect(() => {
     if (embed === "failed") track("checkout_embed_failed", { plan: plan.id, ...refProps() });
@@ -2514,7 +2588,7 @@ function CheckoutOverlay({ plan, prefillEmail, onClose, onUnlocked }) {
             <p className="truncate text-sm font-semibold text-[#FAFAFA]">{plan.name}</p>
             <p className="text-xs text-white/55">{plan.price} <span className="text-white/40">{plan.period}</span></p>
           </div>
-          <button onClick={onClose} aria-label={t("Close", "Fermer")} className="grid h-10 w-10 flex-none place-items-center rounded-full border border-white/10 bg-[#121214] text-white/55 transition hover:border-white/25 hover:text-[#FAFAFA]"><Icon name="close" className="h-4 w-4" /></button>
+          <button onClick={handleClose} aria-label={t("Close", "Fermer")} className="grid h-10 w-10 flex-none place-items-center rounded-full border border-white/10 bg-[#121214] text-white/55 transition hover:border-white/25 hover:text-[#FAFAFA]"><Icon name="close" className="h-4 w-4" /></button>
         </div>
       </div>
       {/* Wider for Paddle's step: its summary and form sit side by side. */}
@@ -3397,6 +3471,7 @@ function MoventoPages() {
   const [myAddons, setMyAddons] = useState([]);
   const [accessStatus, setAccessStatus] = useState({ loading: false, message: "", error: "" });
   const [checkoutPlan, setCheckoutPlan] = useState(null); // plan being purchased in the embedded overlay
+  const [showDownsell, setShowDownsell] = useState(false);
   const [leadEmail, setLeadEmail] = useState(getStoredLeadEmail);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [pendingFreeItem, setPendingFreeItem] = useState(null);
@@ -3838,10 +3913,24 @@ function MoventoPages() {
           <CheckoutOverlay
             plan={checkoutPlan}
             prefillEmail={leadEmail || accessEmail}
-            onClose={() => setCheckoutPlan(null)}
+            onClose={() => { setCheckoutPlan(null); setShowDownsell(false); }}
             onUnlocked={handleUnlocked}
+            onDownsell={() => setShowDownsell(true)}
           />
         )}
+        <AnimatePresence>
+          {showDownsell && (
+            <DownsellModal
+              onAccept={() => {
+                track("downsell_accepted", { from: checkoutPlan?.id });
+                const exitPlan = plans.find((p) => p.id === "lifetime_exit");
+                setShowDownsell(false);
+                if (exitPlan) setCheckoutPlan(exitPlan);
+              }}
+              onDecline={() => { setShowDownsell(false); setCheckoutPlan(null); track("downsell_declined", { from: checkoutPlan?.id }); }}
+            />
+          )}
+        </AnimatePresence>
         {showUnlockModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowUnlockModal(false)}>
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -7504,6 +7593,7 @@ function BusinessLadder({ onPick }) {
 
 function PricingPage() {
   const [checkoutPlan, setCheckoutPlan] = useState(null); // plan being purchased in the embedded overlay
+  const [showDownsell, setShowDownsell] = useState(false);
   // The prompt the visitor was trying to copy, carried over in ?from= so the
   // page answers the click they actually made rather than starting from zero.
   const [fromPrompt] = useState(() => {
@@ -7555,8 +7645,20 @@ function PricingPage() {
           <CheckoutOverlay
             plan={checkoutPlan}
             prefillEmail={getStoredLeadEmail() || getStoredAccessEmail()}
-            onClose={() => setCheckoutPlan(null)}
+            onClose={() => { setCheckoutPlan(null); setShowDownsell(false); }}
             onUnlocked={onUnlocked}
+            onDownsell={() => setShowDownsell(true)}
+          />
+        )}
+        {showDownsell && (
+          <DownsellModal
+            onAccept={() => {
+              track("downsell_accepted", { from: checkoutPlan?.id });
+              const exitPlan = plans.find((p) => p.id === "lifetime_exit");
+              setShowDownsell(false);
+              if (exitPlan) setCheckoutPlan(exitPlan);
+            }}
+            onDecline={() => { setShowDownsell(false); setCheckoutPlan(null); track("downsell_declined", { from: checkoutPlan?.id }); }}
           />
         )}
       </AnimatePresence>

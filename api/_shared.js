@@ -545,8 +545,9 @@ export const LIFETIME_PRICE_RISE = {
 export const lifetimeRisen = (now = Date.now()) => now >= LIFETIME_PRICE_RISE.at;
 const lifetimePrice = (plan) => (lifetimeRisen() ? LIFETIME_PRICE_RISE[plan].after : LIFETIME_PRICE_RISE[plan].before).toFixed(2);
 // The two lifetime plans: both open the catalogue for life; lifetime_plus
-// also grants every option.
-export const LIFETIME_PLANS = new Set(["lifetime", "lifetime_plus"]);
+// also grants every option. lifetime_exit is a discounted exit offer shown
+// when a buyer closes the checkout overlay without paying.
+export const LIFETIME_PLANS = new Set(["lifetime", "lifetime_plus", "lifetime_exit"]);
 // Lifetime access granted before this moment includes every option: it was
 // sold or given while lifetime included them all (and members kept them when
 // the prompts-only lifetime came in). Granted after it, lifetime is the
@@ -559,6 +560,7 @@ export const MOLLIE_PRICES = {
   m12: Number(process.env.MOLLIE_M12_PRICE || 239).toFixed(2),
   get lifetime() { return lifetimePrice("lifetime"); },
   get lifetime_plus() { return lifetimePrice("lifetime_plus"); },
+  lifetime_exit: (59).toFixed(2),
   // Packs of prompts, paid once: the buyer picks the prompts after paying
   // (/choose) and keeps them. Sizes in MOLLIE_PACK_SIZES.
   pack2: Number(process.env.MOLLIE_PACK2_PRICE || 49).toFixed(2),
@@ -672,7 +674,7 @@ export const MOLLIE_LIFETIME_PROMO = {
   get label() { return lifetimeRisen() ? "" : process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Black Friday"; },
 };
 export const strikeText = (text) => [...String(text)].map((c) => `${c}\u0336`).join("");
-export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", lifetime_plus: "À vie + options", addons: "Options", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
+export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", lifetime_plus: "À vie + options", lifetime_exit: "À vie", addons: "Options", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
 // How many months one payment of each subscription pays for: the Mollie
 // subscription's interval, and how far a paid payment opens the catalogue.
 export const MOLLIE_PLAN_MONTHS = { m1: 1, m3: 3, m12: 12 };
