@@ -545,9 +545,8 @@ export const LIFETIME_PRICE_RISE = {
 export const lifetimeRisen = (now = Date.now()) => now >= LIFETIME_PRICE_RISE.at;
 const lifetimePrice = (plan) => (lifetimeRisen() ? LIFETIME_PRICE_RISE[plan].after : LIFETIME_PRICE_RISE[plan].before).toFixed(2);
 // The two lifetime plans: both open the catalogue for life; lifetime_plus
-// also grants every option. lifetime_exit is a discounted exit offer shown
-// when a buyer closes the checkout overlay without paying.
-export const LIFETIME_PLANS = new Set(["lifetime", "lifetime_plus", "lifetime_exit"]);
+// also grants every option.
+export const LIFETIME_PLANS = new Set(["lifetime", "lifetime_plus"]);
 // Lifetime access granted before this moment includes every option: it was
 // sold or given while lifetime included them all (and members kept them when
 // the prompts-only lifetime came in). Granted after it, lifetime is the
@@ -560,7 +559,6 @@ export const MOLLIE_PRICES = {
   m12: Number(process.env.MOLLIE_M12_PRICE || 239).toFixed(2),
   get lifetime() { return lifetimePrice("lifetime"); },
   get lifetime_plus() { return lifetimePrice("lifetime_plus"); },
-  lifetime_exit: (59).toFixed(2),
   // Packs of prompts, paid once: the buyer picks the prompts after paying
   // (/choose) and keeps them. Sizes in MOLLIE_PACK_SIZES.
   pack2: Number(process.env.MOLLIE_PACK2_PRICE || 49).toFixed(2),
@@ -674,7 +672,7 @@ export const MOLLIE_LIFETIME_PROMO = {
   get label() { return lifetimeRisen() ? "" : process.env.MOLLIE_LIFETIME_PROMO_LABEL || "Black Friday"; },
 };
 export const strikeText = (text) => [...String(text)].map((c) => `${c}\u0336`).join("");
-export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", lifetime_plus: "À vie + options", lifetime_exit: "À vie", addons: "Options", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
+export const MOLLIE_PLAN_LABELS = { m1: "Mensuel", m3: "3 mois", m12: "Annuel", lifetime: "À vie", lifetime_plus: "À vie + options", addons: "Options", pack2: "Pack 2 prompts", pack5: "Pack 5 prompts", pack10: "Pack 10 prompts" };
 // How many months one payment of each subscription pays for: the Mollie
 // subscription's interval, and how far a paid payment opens the catalogue.
 export const MOLLIE_PLAN_MONTHS = { m1: 1, m3: 3, m12: 12 };
@@ -693,15 +691,17 @@ export const FAIR_USE_KINDS = new Set(["m3"]);
 // never on a payment that was itself the offer.
 export const MOLLIE_WINBACK = {
   plan: "lifetime",
-  // Off by default. Set
-  // MOLLIE_WINBACK_LIFETIME_PRICE below the lifetime price to turn it on.
-  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 0).toFixed(2),
+  // On at 59 €. MOLLIE_WINBACK_LIFETIME_PRICE overrides it; a figure at or
+  // above the lifetime price turns the offer off.
+  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 59).toFixed(2),
   windowHours: 48,
 };
 
 // Whether the payment behind a claim code still earns the offer. Returns the
 // reason when it does not, so the endpoint can say nothing more than "no".
-export async function mollieWinbackEligibility(claim, { now = Date.now() } = {}) {
+// `left`: the browser holding the claim is back on the site without having
+// paid, so a payment still open counts as left without the wait.
+export async function mollieWinbackEligibility(claim, { now = Date.now(), left = false } = {}) {
   // No offer unless it is a real reduction on the price charged today.
   if (!(Number(MOLLIE_WINBACK.price) > 0 && Number(MOLLIE_WINBACK.price) < Number(MOLLIE_PRICES[MOLLIE_WINBACK.plan]))) return { eligible: false, reason: "no reduction" };
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(String(claim || ""))) return { eligible: false, reason: "bad claim" };
@@ -717,8 +717,10 @@ export async function mollieWinbackEligibility(claim, { now = Date.now() } = {})
   const age = now - new Date(payment.createdAt || 0).getTime();
   // Only a payment that is over: cancelled, expired or failed, or still open
   // after a quarter of an hour (the tab was closed). A payment open for less
-  // than that may be paid any second, and its buyer must not see an offer.
-  const over = ["canceled", "expired", "failed"].includes(payment.status) || (payment.status === "open" && age > 15 * 60 * 1000);
+  // than that may be paid any second, and its buyer must not see an offer:
+  // unless the page says they came back from it (`left`), which /success
+  // never does, since a payment just made can read "open" for a moment.
+  const over = ["canceled", "expired", "failed"].includes(payment.status) || (payment.status === "open" && (left || age > 15 * 60 * 1000));
   if (!over) return { eligible: false, reason: `status ${payment.status}` };
   if (!(age >= 0 && age <= MOLLIE_WINBACK.windowHours * 3600 * 1000)) return { eligible: false, reason: "expired" };
   return { eligible: true, payment, expiresAt: new Date(new Date(payment.createdAt).getTime() + MOLLIE_WINBACK.windowHours * 3600 * 1000).toISOString() };

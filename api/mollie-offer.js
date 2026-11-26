@@ -1,5 +1,6 @@
 // Does the payment someone left without paying still earn the win-back offer?
-// GET ?claim=… → { eligible, plan, price, regular, expiresAt }.
+// GET ?claim=…[&left=1] → { eligible, plan, price, regular, expiresAt }.
+// left=1: the buyer is back on the site from a payment still open.
 //
 // The claim code is the one their abandoned Mollie payment was created with
 // (it comes back in the cancel URL, and the page keeps it). The answer says
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (checkoutProviderFor(MOLLIE_WINBACK.plan) !== "mollie") return res.json({ eligible: false });
   try {
-    const check = await mollieWinbackEligibility(String(req.query?.claim || ""));
+    const check = await mollieWinbackEligibility(String(req.query?.claim || ""), { left: req.query?.left === "1" });
     if (!check.eligible) return res.json({ eligible: false });
     return res.json({ eligible: true, plan: MOLLIE_WINBACK.plan, price: MOLLIE_WINBACK.price, regular: MOLLIE_PRICES[MOLLIE_WINBACK.plan], expiresAt: check.expiresAt });
   } catch (error) {
