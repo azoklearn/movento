@@ -718,24 +718,25 @@ export const FAIR_USE_DAILY_COPIES = 3;
 export const FAIR_USE_KINDS = new Set(["m3"]);
 
 // The win-back offer: someone who opened a Mollie payment and left without
-// paying is offered lifetime at a lower price, paid once. Valid for
-// WINDOW_HOURS after the payment they left, once per abandoned payment, and
-// never on a payment that was itself the offer.
+// paying is offered the same plan at a lower price when they come back to
+// the site. It can first be shown up to `windowHours` after the payment they
+// left, and from that moment it stands for `minutes`, counted here and not on
+// the page: the timer the buyer sees is a real one. Never on a payment that
+// was itself the offer. A plan with no price here gets no offer; for the
+// month, the price is the price of every month, not of the first only.
 export const MOLLIE_WINBACK = {
-  plan: "lifetime",
-  // Off: no offer is made to a buyer who leaves the payment. A price below
-  // the lifetime price here turns it back on.
-  price: (0).toFixed(2),
+  prices: { m1: (24.99).toFixed(2), lifetime: (79).toFixed(2) },
   windowHours: 48,
+  minutes: 5,
 };
 
 // Whether the payment behind a claim code still earns the offer. Returns the
 // reason when it does not, so the endpoint can say nothing more than "no".
 // `left`: the browser holding the claim is back on the site without having
 // paid, so a payment still open counts as left without the wait.
-export async function mollieWinbackEligibility(claim, { now = Date.now(), left = false } = {}) {
-  // No offer unless it is a real reduction on the price charged today.
-  if (!(Number(MOLLIE_WINBACK.price) > 0 && Number(MOLLIE_WINBACK.price) < Number(MOLLIE_PRICES[MOLLIE_WINBACK.plan]))) return { eligible: false, reason: "no reduction" };
+// `grace`: milliseconds past the end still accepted, for the click made on
+// the last second to reach the checkout.
+export async function mollieWinbackEligibility(claim, { now = Date.now(), left = false, grace = 0 } = {}) {
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(String(claim || ""))) return { eligible: false, reason: "bad claim" };
   let entry = null;
   try {
@@ -746,6 +747,12 @@ export async function mollieWinbackEligibility(claim, { now = Date.now(), left =
   const payment = await mollieApi(`/payments/${encodeURIComponent(entry.paymentId)}`);
   if (payment.metadata?.claim !== claim) return { eligible: false, reason: "claim mismatch" };
   if (payment.metadata?.offer) return { eligible: false, reason: "already the offer" };
+  // The plan they left, at its offer price: no offer unless that is a real
+  // reduction on the price charged today.
+  const plan = String(payment.metadata?.plan || "");
+  const price = Object.hasOwn(MOLLIE_WINBACK.prices, plan) ? MOLLIE_WINBACK.prices[plan] : null;
+  const regular = MOLLIE_PRICES[plan];
+  if (!(Number(price) > 0 && Number(price) < Number(regular)) || RETIRED_PLANS.has(plan)) return { eligible: false, reason: "no reduction" };
   const age = now - new Date(payment.createdAt || 0).getTime();
   // Only a payment that is over: cancelled, expired or failed, or still open
   // after a quarter of an hour (the tab was closed). A payment open for less
@@ -755,7 +762,14 @@ export async function mollieWinbackEligibility(claim, { now = Date.now(), left =
   const over = ["canceled", "expired", "failed"].includes(payment.status) || (payment.status === "open" && (left || age > 15 * 60 * 1000));
   if (!over) return { eligible: false, reason: `status ${payment.status}` };
   if (!(age >= 0 && age <= MOLLIE_WINBACK.windowHours * 3600 * 1000)) return { eligible: false, reason: "expired" };
-  return { eligible: true, payment, expiresAt: new Date(new Date(payment.createdAt).getTime() + MOLLIE_WINBACK.windowHours * 3600 * 1000).toISOString() };
+  // The first time it is asked for is when it is shown: the minutes run from
+  // there, whatever the page does afterwards.
+  const redis = Redis.fromEnv();
+  const shownKey = `mollie:offer-shown:${claim}`;
+  await redis.set(shownKey, now, { nx: true, ex: 7 * 86400 });
+  const endsAt = (Number(await redis.get(shownKey)) || now) + MOLLIE_WINBACK.minutes * 60 * 1000;
+  if (now > endsAt + grace) return { eligible: false, reason: "offer ended" };
+  return { eligible: true, payment, plan, price, regular, expiresAt: new Date(endsAt).toISOString(), endsIn: Math.max(0, Math.round((endsAt - now) / 1000)) };
 }
 
 export async function mollieApi(path, { method = "GET", body, fetchImpl = fetch } = {}) {

@@ -21,7 +21,7 @@
 // to /account.
 import { randomBytes } from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { CHECKOUT_PROVIDER, customerAccessLevel, mollieReady, redisGetAccessRecord, redisGetAddons, checkoutProviderFor, methodNotAllowed, MOLLIE_ADDONS, INCLUDED_ADDONS, parseAddons, MOLLIE_LIFETIME_PROMO, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, strikeText, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
+import { CHECKOUT_PROVIDER, customerAccessLevel, mollieReady, redisGetAccessRecord, redisGetAddons, checkoutProviderFor, methodNotAllowed, MOLLIE_ADDONS, INCLUDED_ADDONS, parseAddons, MOLLIE_LIFETIME_PROMO, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, strikeText, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
 
 const looksLikeEmail = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 
@@ -118,19 +118,21 @@ export default async function handler(req, res) {
   // Optional: used when known, never required.
   const knownEmail = looksLikeEmail(email) ? email : "";
 
-  // The win-back price, only on the plan it is for and only while the
-  // payment the buyer left still earns it (api/_shared.js). Anything else in
-  // `offer` is ignored and the normal price is charged.
+  // The win-back price, only on the plan the buyer left and only while that
+  // payment still earns it (api/_shared.js).
   let offer = null;
-  if (req.body?.offer && plan === MOLLIE_WINBACK.plan) {
+  if (req.body?.offer) {
     try {
-      const check = await mollieWinbackEligibility(String(req.body.offer), { left: req.body?.left === true });
-      if (check.eligible) offer = { from: String(req.body.offer) };
+      const check = await mollieWinbackEligibility(String(req.body.offer), { left: req.body?.left === true, grace: 30 * 1000 });
+      if (check.eligible && check.plan === plan) offer = { from: String(req.body.offer), price: check.price };
     } catch (error) {
       console.error("Mollie win-back check failed:", error);
     }
+    // Asked for at the offer's price and no longer owed it: refused, rather
+    // than sent to pay the full price behind a button that named another.
+    if (!offer) return res.status(409).json({ error: "Cette offre est terminée. Les formules restent disponibles au prix affiché.", errorEn: "This offer has ended. The plans are still available at the price shown.", offerEnded: true });
   }
-  const base = offer ? MOLLIE_WINBACK.price : MOLLIE_PRICES[plan];
+  const base = offer ? offer.price : MOLLIE_PRICES[plan];
   // Add-ons ticked on the card: on the month only, at the server's prices,
   // paid once with the first month. Lifetime + options carries them all; the
   // prompts-only lifetime none.
@@ -148,7 +150,7 @@ export default async function handler(req, res) {
       method: "POST",
       body: {
         amount: { currency: "EUR", value: amount },
-        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? lifetimeDescription(base, offer) : plan === "lifetime_plus" ? lifetimeDescription(base, offer).replace("Accès à vie", "Accès à vie + options") : `Movento — ${MOLLIE_PLAN_LABELS[plan]}${addonText}`,
+        description: MOLLIE_PACK_SIZES[plan] ? `Movento — Pack de ${MOLLIE_PACK_SIZES[plan]} prompts` : plan === "lifetime" ? lifetimeDescription(base, offer) : plan === "lifetime_plus" ? lifetimeDescription(base, offer).replace("Accès à vie", "Accès à vie + options") : `Movento — ${MOLLIE_PLAN_LABELS[plan]}${offer ? " · offre spéciale" : ""}${addonText}`,
         customerId,
         // A subscription (3 months, the year) stores the card for the charges
         // that follow; lifetime is charged once.

@@ -2044,12 +2044,15 @@ function forgetStartedPayment() {
   try { window.localStorage.removeItem(PENDING_PAYMENT_KEY); } catch {}
 }
 
-// "Tu pars déjà ?" — lifetime at the win-back price, offered to someone who
-// opened a payment and left it. Which payment: `claim` when the page knows it
-// (the success page), else ?left= (Mollie's cancel button lands there), else
-// the one this browser last opened. The server decides whether it still
-// qualifies (api/mollie-offer.js) and is what charges the price; this only
-// shows it. Shown once per abandoned payment.
+// "Attends !" — the plan a buyer left, at its win-back price, offered when
+// they come back to the site without having paid. Which payment: `claim`
+// when the page knows it (the success page), else ?left= (Mollie's cancel
+// button lands there), else the one this browser last opened. The server
+// decides whether it still qualifies, what it costs and when it ends
+// (api/mollie-offer.js), and is what charges the price; this only shows it.
+// The timer is the server's: the offer stands five minutes from the first
+// time it is shown, and a reload inside them shows what is left. "No thanks"
+// closes it for good for that payment.
 function WinbackOffer({ claim: explicit = "" }) {
   const [offer, setOffer] = useState(null);
   const [claim, setClaim] = useState("");
@@ -2092,28 +2095,36 @@ function WinbackOffer({ claim: explicit = "" }) {
       try {
         const r = await fetch(`${API_BASE_URL}/api/mollie-offer?claim=${encodeURIComponent(candidate)}${cameBack ? "&left=1" : ""}`);
         const d = await r.json().catch(() => ({}));
-        if (!alive || !d.eligible) return;
+        if (!alive || !d.eligible || !(Number(d.endsIn) > 0)) return;
         setClaim(candidate);
-        setOffer(d);
-        try { window.localStorage.setItem(WINBACK_SEEN_KEY, candidate); } catch {}
+        // The end, on this device's clock: the server says how long is left.
+        setOffer({ plan: d.plan, price: d.price, regular: d.regular, endsAt: Date.now() + Number(d.endsIn) * 1000 });
+        setNow(Date.now());
         track("winback_shown", { plan: d.plan });
       } catch {}
     }, 900);
     return () => { alive = false; clearTimeout(timer); };
   }, [explicit, cameBack, returns]);
 
+  const forget = useCallback(() => { try { if (claim) window.localStorage.setItem(WINBACK_SEEN_KEY, claim); } catch {} }, [claim]);
+
   useEffect(() => {
     if (!offer) return undefined;
-    const id = setInterval(() => setNow(Date.now()), 30000);
+    const id = setInterval(() => {
+      const t0 = Date.now();
+      setNow(t0);
+      // Time is up: the offer goes, as the server will now refuse it.
+      if (t0 >= offer.endsAt) { forget(); setOffer(null); track("winback_expired", { plan: offer.plan }); }
+    }, 250);
     return () => clearInterval(id);
-  }, [offer]);
+  }, [offer, forget]);
 
   if (!offer) return null;
-  const close = () => { setOffer(null); track("winback_dismissed", {}); };
-  const left = Math.max(0, new Date(offer.expiresAt).getTime() - now);
-  const hours = Math.floor(left / 3600000);
-  const minutes = Math.floor((left % 3600000) / 60000);
-  const percent = Math.round((1 - Number(offer.price) / Number(offer.regular)) * 100);
+  const close = () => { forget(); setOffer(null); track("winback_dismissed", { plan: offer.plan }); };
+  const left = Math.max(0, Math.ceil((offer.endsAt - now) / 1000));
+  const monthly = offer.plan !== "lifetime";
+  const price = eur(offer.price);
+  const regular = eur(offer.regular);
 
   const take = async () => {
     setBusy(true);
@@ -2133,8 +2144,8 @@ function WinbackOffer({ claim: explicit = "" }) {
 
   return (
     <AnimatePresence>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[90] flex items-end justify-center px-3 pb-3 sm:items-center sm:px-4 sm:pb-0" onClick={close}>
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+      <motion.div data-winback={offer.plan} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[90] flex items-end justify-center px-3 pb-3 sm:items-center sm:px-4 sm:pb-0" onClick={close}>
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
         <motion.div
           initial={{ opacity: 0, y: 30, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -2142,30 +2153,27 @@ function WinbackOffer({ claim: explicit = "" }) {
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
-          aria-label={t("Offer on lifetime access", "Offre sur l'accès à vie")}
-          className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-[#B9A4FF]/40 bg-[#141218] p-7 text-center shadow-[0_0_80px_-12px_rgba(150,120,255,0.55)] sm:p-8"
+          aria-label={monthly ? t("Offer on the monthly plan", "Offre sur le mensuel") : t("Offer on lifetime access", "Offre sur l'accès à vie")}
+          className="relative w-full max-w-[460px] overflow-hidden rounded-[30px] bg-[#0c0c0e] px-6 pb-7 pt-9 text-center shadow-[inset_0_0_0_1px_rgba(194,91,245,0.4),0_0_90px_-14px_rgba(150,120,255,0.55)] sm:px-9 sm:pb-8 sm:pt-10"
         >
-          <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#7C5CFF]/25 to-transparent" />
-          <button onClick={close} aria-label={t("Close", "Fermer")} className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full border border-white/10 text-white/50 transition hover:text-white"><Icon name="close" className="h-4 w-4" /></button>
-          <span className="relative inline-block rounded-full bg-gradient-to-r from-[#F0566B] via-[#B04BF0] to-[#7C8CFF] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-white">{t(`−${percent}% just for you`, `−${percent}% rien que pour toi`)}</span>
-          <h2 className="relative mt-4 text-[26px] font-black leading-tight tracking-[-0.03em] text-white">{t("Leaving already?", "Tu pars déjà ?")}</h2>
-          <p className="relative mt-2 text-sm leading-6 text-white/60">{t("Here is lifetime access at a price we don't show anywhere else. Paid once, yours for good.", "Voici l'accès à vie à un prix qu'on n'affiche nulle part ailleurs. Payé une fois, à toi pour toujours.")}</p>
-          <div className="relative mt-6 flex items-baseline justify-center gap-3">
-            <span className="text-xl text-white/35 line-through">{eur(offer.regular)}</span>
-            <span className="text-[52px] font-black leading-none tracking-[-0.04em] text-white">{eur(offer.price)}</span>
-          </div>
-          <p className="relative mt-1.5 text-[13px] text-white/50">{t("one-time payment · no subscription", "paiement unique · sans abonnement")}</p>
-          <ul className="relative mx-auto mt-5 max-w-xs space-y-1.5 text-left text-[13px] text-white/70">
-            {[t(`Unlimited access to ${CATALOGUE_COUNT} prompts, for life`, `Accès illimité à ${CATALOGUE_COUNT} prompts, à vie`), FEATURE_BACKGROUNDS, t("Lifetime updates + early access", "Mises à jour à vie + accès anticipé"), t("Direct support + free ebook", "Support direct + ebook offert")].map((line) => (
-              <li key={line} className="flex items-start gap-2"><Icon name="tick" className="mt-[5px] h-[13px] w-[13px] flex-none text-[#C9B8FF]" /> {line}</li>
-            ))}
-          </ul>
-          <button type="button" onClick={take} disabled={busy} className="relative mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-white to-[#D3D8FF] px-5 py-4 text-[15px] font-bold text-[#0A0A0B] shadow-[0_10px_40px_-12px_rgba(190,195,255,0.7)] transition hover:brightness-105 disabled:opacity-60">
-            {busy ? t("Loading…", "Chargement…") : t(`Get lifetime for ${eur(offer.price)}`, `Prendre l'accès à vie à ${eur(offer.price)}`)} {!busy && <Icon name="arrow" className="h-4 w-4" />}
+          <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-[radial-gradient(85%_100%_at_50%_0%,rgba(194,91,245,0.22),rgba(124,140,255,0.08)_55%,transparent_78%)]" />
+          <p className="relative text-[12px] font-bold uppercase tracking-[0.34em] text-[#C9B8FF]">{t("Wait!", "Attends !")}</p>
+          <h2 className="relative mt-4 text-[clamp(1.9rem,7.4vw,2.6rem)] font-semibold leading-[1.04] tracking-[-0.045em] text-[#FAFAFA]">
+            {monthly ? t("The whole catalogue", "Tout le catalogue") : t("Lifetime access", "L'accès à vie")}<br />
+            {t("for", "à")} <span className="bg-gradient-to-r from-[#FF6A7D] via-[#C25BF5] to-[#7C8CFF] bg-clip-text text-transparent">{price}</span>{monthly && <span className="text-[0.5em] font-medium tracking-[-0.02em] text-white/50"> {t("a month", "par mois")}</span>}
+          </h2>
+          <p className="relative mx-auto mt-4 max-w-[340px] text-[15px] leading-7 text-white/60">
+            {monthly
+              ? t(`Right now only: the same subscription, all ${availablePrompts.length} prompts, for ${price} a month instead of ${regular}. Every month, and you stop whenever you want.`, `Juste maintenant : le même abonnement, les ${availablePrompts.length} prompts, pour ${price} par mois au lieu de ${regular}. Chaque mois, et tu arrêtes quand tu veux.`)
+              : t(`Right now only: the same access for life, all ${availablePrompts.length} prompts and every new one, for ${price} instead of ${regular}. Paid once.`, `Juste maintenant : le même accès à vie, les ${availablePrompts.length} prompts et tous ceux à venir, pour ${price} au lieu de ${regular}. Payé une seule fois.`)}
+          </p>
+          <p className="relative mt-6 text-[11.5px] font-medium uppercase tracking-[0.2em] text-white/40">{t("The offer ends in", "L'offre se termine dans")}</p>
+          <p data-winback-timer role="timer" className="relative mt-1.5 text-[52px] font-bold leading-none tracking-[-0.04em] tabular-nums text-[#FAFAFA]">{Math.floor(left / 60)}:{pad2(left % 60)}</p>
+          <button type="button" onClick={take} disabled={busy} className="relative mt-7 flex h-14 w-full items-center justify-center rounded-full bg-white px-5 text-[15.5px] font-semibold text-black shadow-[0_24px_70px_-22px_rgba(194,91,245,0.85)] transition duration-300 hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-60">
+            {busy ? t("Taking you to the payment…", "Redirection vers le paiement…") : monthly ? t(`Take the offer at ${price} a month`, `Profiter de l'offre à ${price} par mois`) : t(`Take the offer at ${price}`, `Profiter de l'offre à ${price}`)}
           </button>
-          {error && <p className="relative mt-3 text-xs text-red-300">{error}</p>}
-          {left > 0 && <p className="relative mt-3 text-xs text-white/40"><Icon name="clock" className="mr-1 inline h-3.5 w-3.5 -translate-y-px" />{t(`Offer valid for ${hours} h ${String(minutes).padStart(2, "0")} min`, `Offre valable encore ${hours} h ${String(minutes).padStart(2, "0")} min`)}</p>}
-          <button type="button" onClick={close} className="relative mt-2 text-xs font-medium text-white/40 underline-offset-4 transition hover:text-white/70 hover:underline">{t("No thanks", "Non merci")}</button>
+          {error && <p className="relative mt-3 text-xs leading-5 text-red-300">{error}</p>}
+          <button type="button" onClick={close} className="relative mt-4 text-sm font-medium text-white/50 underline decoration-white/25 underline-offset-4 transition hover:text-white">{t("No thanks", "Non merci")}</button>
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -5316,7 +5324,7 @@ function nextDropAt(now = Date.now()) {
 }
 // The time left before the next drop, a second at a time. At zero it starts
 // again for the next day's.
-function NextDrop() {
+function useNextDrop() {
   const [at, setAt] = useState(() => nextDropAt());
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -5328,23 +5336,80 @@ function NextDrop() {
     return () => window.clearInterval(id);
   }, []);
   const total = Math.max(0, Math.ceil((at - now) / 1000));
-  const clock = `${pad2(Math.floor(total / 3600))}:${pad2(Math.floor((total % 3600) / 60))}:${pad2(total % 60)}`;
+  return { h: pad2(Math.floor(total / 3600)), m: pad2(Math.floor((total % 3600) / 60)), s: pad2(total % 60) };
+}
+const DROP_EDGE = "bg-[linear-gradient(120deg,rgba(255,106,125,0.85),rgba(194,91,245,0.85)_50%,rgba(124,140,255,0.85))]";
+const DropDot = () => (
+  <span aria-hidden="true" className="relative flex h-2 w-2 flex-none">
+    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70 motion-reduce:hidden" />
+    <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
+  </span>
+);
+// The countdown as the first thing on the home page: three lit tiles in the
+// site's own gradient, and what they count to.
+function NextDropHero() {
+  const { h, m, s } = useNextDrop();
+  const cells = [[h, t("hours", "heures")], [m, "min"], [s, "sec"]];
   return (
-    <motion.p data-next-drop role="timer" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-3 pr-3.5 text-[12.5px] font-medium text-white/60">
-      <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:hidden" />
-        <span className="relative h-1.5 w-1.5 rounded-full bg-emerald-400" />
+    <motion.a href="#prompts" data-next-drop onClick={() => track("next_drop_clicked", { where: "hero" })} initial={{ opacity: 0, y: 14, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className={`group relative mb-10 block rounded-[30px] p-px shadow-[0_34px_100px_-34px_rgba(194,91,245,0.9)] transition duration-300 hover:-translate-y-0.5 ${DROP_EDGE}`}>
+      <span className="relative flex flex-col items-center gap-4 overflow-hidden rounded-[29px] bg-[#08080a] px-6 py-5 sm:flex-row sm:gap-8 sm:py-5 sm:pl-7 sm:pr-6">
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_120%_at_50%_0%,rgba(194,91,245,0.2),transparent_70%)]" />
+        <span className="relative text-center sm:text-left">
+          <span className="flex items-center justify-center gap-2.5 text-[12px] font-bold uppercase tracking-[0.22em] text-[#D9CCFF] sm:justify-start"><DropDot /> {t("Next prompt in", "Prochain prompt dans")}</span>
+          <span className="mt-1.5 block text-[13.5px] text-white/50">{t("A new one every day at 7 pm, Paris time", "Un nouveau prompt chaque jour à 19 h")}</span>
+        </span>
+        <span role="timer" className="relative flex items-start gap-1.5 sm:gap-2">
+          {cells.flatMap(([value, label], i) => [
+            i > 0 && <span key={`sep${i}`} aria-hidden="true" className="pt-[13px] text-[28px] font-semibold leading-none text-white/25 sm:pt-[14px] sm:text-[30px]">:</span>,
+            <span key={label} className="flex flex-col items-center">
+              <span className="grid h-[60px] w-[66px] place-items-center rounded-[18px] bg-white/[0.07] text-[34px] font-semibold tabular-nums leading-none tracking-[-0.04em] text-[#FAFAFA] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12),inset_0_1px_0_rgba(255,255,255,0.14)] sm:h-[64px] sm:w-[72px] sm:text-[38px]">{value}</span>
+              <span className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">{label}</span>
+            </span>,
+          ])}
+        </span>
       </span>
-      <span>{t("Next prompt in", "Prochain prompt dans")} <span className="font-semibold tabular-nums text-[#FAFAFA]">{clock}</span></span>
-      <span className="hidden text-white/35 min-[400px]:inline">· {t("every day at 7 pm, Paris time", "chaque jour à 19 h")}</span>
-    </motion.p>
+    </motion.a>
+  );
+}
+// The same countdown, small, hung under the bar on every page: it stays on
+// screen down the gallery and across the site. Hidden while the big one is in
+// view, so the two never show together.
+const NO_DROP_CHIP = new Set(["/commencer", "/success", "/admin", "/subscription", "/cgv", "/remboursement", "/confidentialite", "/mentions-legales"]);
+function NextDropChip({ path }) {
+  const { h, m, s } = useNextDrop();
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const big = document.querySelector("[data-next-drop]");
+      setShow(!big || big.getBoundingClientRect().bottom < 76);
+    };
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    return () => { window.removeEventListener("scroll", check); window.removeEventListener("resize", check); };
+  }, []);
+  if (NO_DROP_CHIP.has(path)) return null;
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-[78px] z-30 flex justify-center px-3">
+      <AnimatePresence>
+        {show && (
+          <motion.a href="/#prompts" data-next-drop-chip onClick={() => track("next_drop_clicked", { where: "bar" })} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className={`pointer-events-auto rounded-full p-px shadow-[0_14px_40px_-14px_rgba(194,91,245,0.9)] ${DROP_EDGE}`}>
+            <span className="flex items-center gap-2.5 rounded-full bg-[#0a0a0c] py-1.5 pl-3 pr-3.5">
+              <DropDot />
+              <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-white/65">{t("Next prompt in", "Prochain prompt dans")}</span>
+              <span role="timer" className="text-[13.5px] font-semibold tabular-nums tracking-[-0.01em] text-[#FAFAFA]">{h}:{m}:{s}</span>
+            </span>
+          </motion.a>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
 function LandingHero({ hasPremiumAccess }) {
   return (
     <header className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-5 pb-8 pt-16 text-center sm:pb-10 sm:pt-24">
-      <NextDrop />
+      <NextDropHero />
       <motion.h1 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-[clamp(2.1rem,6.4vw,3.9rem)] font-semibold leading-[1.04] tracking-[-0.045em] text-[#FAFAFA]">
         {t("Premium websites,", "Des sites premium,")} <span className="text-white/45">{t("built with AI.", "créés avec l'IA.")}</span>
       </motion.h1>
@@ -5983,7 +6048,9 @@ function SiteNav({ query, setQuery, searchLabel }) {
         </div>
       </div>
     </header>
-    <div aria-hidden="true" className="h-[84px]" />
+    <NextDropChip path={path} />
+    {/* Room for the countdown hung under the bar, where no big one opens the page. */}
+    <div aria-hidden="true" className={path === "/" || NO_DROP_CHIP.has(path) ? "h-[84px]" : "h-[116px]"} />
 
       {/* Full-height panel from the right on a phone: the links get room and
           the call to action sits where the thumb already is. */}
@@ -7067,6 +7134,7 @@ function CgvPage() {
         <h2>3. Offres et prix</h2>
         <ul>
           <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
+          <li>Une offre ponctuelle peut proposer l'une de ces formules à un prix inférieur, indiqué avant le paiement et valable pendant la durée affichée avec l'offre. Pour le mensuel, ce prix est alors celui de chaque mois, jusqu'à résiliation.</li>
           <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
           <li><strong className="text-white/75">Options</strong>, proposées juste après le paiement d'un accès (mensuel ou à vie) ou plus tard depuis la page <a href="/account" className="underline underline-offset-4">Mon compte</a> : l'option « On adapte le prompt directement pour toi » ({eur(ADDONS.find((a) => a.id === "ai").price)}, qui fait réécrire un prompt du catalogue par une intelligence artificielle à partir d'une courte demande, dans la limite de {AI_EDITS_INCLUDED} adaptations au total ; le texte est généré automatiquement, doit être relu avant usage, et une adaptation qui échoue n'est pas décomptée), le Kit freelance ({eur(ADDONS.find((a) => a.id === "kit").price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique), la Licence agence ({eur(ADDONS.find((a) => a.id === "team").price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email), l'option « On trouve tes clients » ({eur(ADDONS.find((a) => a.id === "leads").price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial) et l'option « {CUSTOM_PROMPTS_INCLUDED} prompts sur mesure » ({eur(ADDONS.find((a) => a.id === "custom").price)}, qui donne droit à {CUSTOM_PROMPTS_INCLUDED} demandes et peut être achetée plusieurs fois : pour chaque demande, tu indiques l'adresse d'une page web publique et nous rédigeons le prompt qui la recrée, mis à ta disposition sur la page <a href="/sur-mesure" className="underline underline-offset-4">Sur mesure</a> dans les {CUSTOM_PROMPT_HOURS} heures qui suivent la demande ; une demande que nous ne pouvons pas traiter, par exemple une page inaccessible ou protégée par un mot de passe, t'est rendue ; tu restes responsable de l'usage du prompt, notamment du respect des droits sur les textes, images et marques du site d'origine). Chaque option est payée une seule fois. Elles ne fonctionnent qu'avec un accès actif, et sont retirées avec lui s'il est remboursé.</li>
           <li>Les abonnements de 3 mois et annuel, ainsi que les packs de prompts, ne sont plus proposés à l'achat. Ceux déjà souscrits restent valables aux conditions de leur souscription : les abonnements se renouvellent jusqu'à résiliation, et les prompts d'un pack restent accessibles sans limite de durée.</li>

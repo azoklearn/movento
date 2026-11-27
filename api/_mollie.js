@@ -117,9 +117,9 @@ export async function ensureSubscription(payment, email) {
       method: "POST",
       body: {
         // The plan's price the first payment was made at, so the renewals
-        // charge the same — without the options paid once with it, and
-        // without the win-back offer, which is the first year only.
-        amount: { currency: "EUR", value: payment.metadata?.offer ? MOLLIE_PRICES[plan] : payment.metadata?.base ? Number(payment.metadata.base).toFixed(2) : payment.metadata?.addons ? MOLLIE_PRICES[plan] : payment.amount?.value || MOLLIE_PRICES[plan] },
+        // charge the same, without the options paid once with it. A month
+        // taken at the win-back price keeps that price every month.
+        amount: { currency: "EUR", value: payment.metadata?.base ? Number(payment.metadata.base).toFixed(2) : payment.metadata?.addons ? MOLLIE_PRICES[plan] : payment.amount?.value || MOLLIE_PRICES[plan] },
         interval: months === 1 ? "1 month" : `${months} months`,
         startDate: nextChargeDate(payment.paidAt, months),
         description: `Movento — ${MOLLIE_PLAN_LABELS[plan]}`,
