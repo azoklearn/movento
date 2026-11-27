@@ -144,6 +144,8 @@ const prompts = [
   // Fictional placeholder, visible only to the team address (onlyFor): not in
   // the public gallery or any count.
   { title: "GTA 6 — Vice Coast Teaser", category: "Hero Section", type: "Hero", file: "GTA_6_Vice_Teaser_Hero.md", pinned: true, onlyFor: "teammoventoino1@gmail.com", preview: "https://res.cloudinary.com/klc0oxsz/image/upload/v1795056214/Capture_d_e%CC%81cran_2026-11-19_a%CC%80_03.41.46.png", tags: ["Synthwave Sun", "Parallax", "Fan Concept"], gradient: "from-[#ff2e88] via-[#ff8a3d] to-[#0b0614]" },
+  { title: "OMBRY — 3D Ring of Prints Portfolio", category: "Portfolio", type: "Landing", file: "Ombry_Print_Ring_Portfolio.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/ombry-print-ring.mp4", tags: ["WebGL2 Ring", "Paper Physics", "Ink-Soak Transition"], gradient: "from-[#fcf7fc] via-[#8a6689] to-[#4a1448]" },
+  { title: "Gelato Lab — Marble Flavour Carousel", category: "Hero Section", type: "Hero", file: "Gelato_Lab_Flavour_Carousel.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/gelato-lab-recording.mp4", tags: ["Auto Carousel", "Colour Crossfade", "Flat-Lay"], gradient: "from-[#9C8FD0] via-[#E8A0B4] to-[#F5D4BA]" },
   { title: "Embers Foundry — Two-State Courtyard Gate", category: "Landing Page", type: "Landing", file: "Embers_Foundry_Two_State_Gate.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/sanctum-gate-scroll.mp4", tags: ["Camera Scrub", "Masked Text", "Two-State Scroll"], gradient: "from-[#C5794B] via-[#5D3827] to-[#121110]" },
   { title: "SUNFIZZ — Fruit Soda Bottle Story", category: "E-commerce", type: "Landing", file: "Sunfizz_Soda_Bottle_Story.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/sunfizz-soda-bottle-story.mp4", tags: ["Three.js Bottles", "Drag Carousel", "Back-Label Story"], gradient: "from-[#FCD9C8] via-[#E25B45] to-[#4A1E17]" },
   { title: "Reshoot — AI Beauty Photography", category: "AI / SaaS", type: "Landing", file: "Reshoot_AI_Beauty_Photography.md", pinned: true, preview: "https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/aaaf/reshoot-landing.mp4", tags: ["Orbiting Photo Ring", "Preloader", "Pinned 3D Steps"], gradient: "from-[#f9f0f5] via-[#cbb6ea] to-[#3a1d43]" },
@@ -498,6 +500,8 @@ const AVAILABLE_FILES = new Set([
   "Sunfizz_Soda_Bottle_Story.md",
   "Reshoot_AI_Beauty_Photography.md",
   "Embers_Foundry_Two_State_Gate.md",
+  "Gelato_Lab_Flavour_Carousel.md",
+  "Ombry_Print_Ring_Portfolio.md",
   "Vaultline_Crystal_Cube_Scroll.md",
   "Keel_Chrome_Pear_Scroll_Film.md",
   "Uvra_Scroll_Harvest_Film.md",
