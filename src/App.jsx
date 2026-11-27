@@ -5299,9 +5299,52 @@ const TOOL_LOGOS = [
 // The landing hero, kept minimal: a title in two tones, one line, the button
 // to the gallery and a quiet link to the guided start. Nothing else: the
 // gallery right under it shows what is sold.
+// A new prompt is published every day at this hour, Paris time.
+const DROP_HOUR_PARIS = 19;
+const parisSecondsOfDay = (ms) => {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(new Date(ms)).map((x) => [x.type, Number(x.value)]));
+  return p.hour * 3600 + p.minute * 60 + p.second;
+};
+// The next drop, as an instant: today's 19:00 in Paris, or tomorrow's once it
+// has passed, wherever the visitor's own clock is set.
+function nextDropAt(now = Date.now()) {
+  const base = Math.floor(now / 1000) * 1000;
+  const wait = (DROP_HOUR_PARIS * 3600 - parisSecondsOfDay(base) + 86400) % 86400 || 86400;
+  const at = base + wait * 1000;
+  // A clock change in between moves Paris by an hour: land on 19:00 all the same.
+  return at - (parisSecondsOfDay(at) - DROP_HOUR_PARIS * 3600) * 1000;
+}
+// The time left before the next drop, a second at a time. At zero it starts
+// again for the next day's.
+function NextDrop() {
+  const [at, setAt] = useState(() => nextDropAt());
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const t0 = Date.now();
+      setNow(t0);
+      setAt((current) => (t0 >= current ? nextDropAt(t0) : current));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const total = Math.max(0, Math.ceil((at - now) / 1000));
+  const clock = `${pad2(Math.floor(total / 3600))}:${pad2(Math.floor((total % 3600) / 60))}:${pad2(total % 60)}`;
+  return (
+    <motion.p data-next-drop role="timer" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-3 pr-3.5 text-[12.5px] font-medium text-white/60">
+      <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:hidden" />
+        <span className="relative h-1.5 w-1.5 rounded-full bg-emerald-400" />
+      </span>
+      <span>{t("Next prompt in", "Prochain prompt dans")} <span className="font-semibold tabular-nums text-[#FAFAFA]">{clock}</span></span>
+      <span className="hidden text-white/35 min-[400px]:inline">· {t("every day at 7 pm, Paris time", "chaque jour à 19 h")}</span>
+    </motion.p>
+  );
+}
+
 function LandingHero({ hasPremiumAccess }) {
   return (
     <header className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-5 pb-8 pt-16 text-center sm:pb-10 sm:pt-24">
+      <NextDrop />
       <motion.h1 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-[clamp(2.1rem,6.4vw,3.9rem)] font-semibold leading-[1.04] tracking-[-0.045em] text-[#FAFAFA]">
         {t("Premium websites,", "Des sites premium,")} <span className="text-white/45">{t("built with AI.", "créés avec l'IA.")}</span>
       </motion.h1>
