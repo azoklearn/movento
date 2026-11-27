@@ -2173,10 +2173,30 @@ function WinbackOffer({ claim: explicit = "" }) {
 // Adaptations the AI option includes, in all. Keep in step with
 // AI_EDITS_INCLUDED in api/_shared.js, which is what counts them.
 const AI_EDITS_INCLUDED = 50;
+// Prompts made to order: requests per purchase, and hours to deliver one.
+// Keep in step with MOLLIE_ADDONS.custom.credits and CUSTOM_PROMPT_HOURS in
+// api/_shared.js.
+const CUSTOM_PROMPTS_INCLUDED = 2;
+const CUSTOM_PROMPT_HOURS = 24;
 // Add-ons ticked on the lifetime card and charged in the same Mollie payment.
 // What is charged is the server's (MOLLIE_ADDONS in api/_shared.js); these are
 // what the card shows. Keep the two in step.
 const ADDONS = [
+  {
+    id: "custom",
+    // Counted in requests, so it can be bought again and is never part of
+    // "every option".
+    repeat: true,
+    short: t("Made to order", "Sur mesure"),
+    blurb: t("Name a site, we write its prompt in under 24 h.", "Donne un site, on écrit son prompt en moins de 24 h."),
+    price: 49,
+    href: "/sur-mesure",
+    name: t(`${CUSTOM_PROMPTS_INCLUDED} prompts made to order`, `${CUSTOM_PROMPTS_INCLUDED} prompts sur mesure`),
+    desc: t(`Give us the address of a site you would like to recreate: we write its prompt, by hand, in under ${CUSTOM_PROMPT_HOURS} h. ${CUSTOM_PROMPTS_INCLUDED} sites of your choice.`, `Donne-nous l'adresse d'un site que tu aimerais recréer : on écrit son prompt, à la main, en moins de ${CUSTOM_PROMPT_HOURS} h. ${CUSTOM_PROMPTS_INCLUDED} sites de ton choix.`),
+    icon: "code",
+    tint: "from-[#38BDF8] to-[#6366F1]",
+    open: t("Ask for a prompt", "Demander un prompt"),
+  },
   {
     id: "ai",
     short: t("AI adaptation", "Adaptation IA"),
@@ -2255,6 +2275,11 @@ function AddonOption({ addon, on, onToggle, disabled = false }) {
   );
 }
 
+// The options held once and for all: what an admin can give with lifetime.
+const GIFT_ADDONS = ADDONS.filter((a) => !a.repeat);
+// The options an email can still buy: those it does not hold, and those
+// counted in requests, bought again at will.
+const addonsToOffer = (held) => ADDONS.filter((a) => a.repeat || !(held || []).includes(a.id));
 // Sold on Mollie only: it is the one checkout that adds them to the payment.
 const ADDONS_ON_SALE = CHECKOUT_PROVIDER_PUBLIC === "mollie";
 const addonsTotal = (ids) => ADDONS.filter((a) => (ids || []).includes(a.id)).reduce((sum, a) => sum + a.price, 0);
@@ -2263,7 +2288,7 @@ const addonsTotal = (ids) => ADDONS.filter((a) => (ids || []).includes(a.id)).re
 // page's checkout (plan "addons") and comes back to /account, which confirms
 // it.
 function PostPurchaseOptions({ email, held = [], className = "" }) {
-  const offer = ADDONS.filter((a) => !held.includes(a.id));
+  const offer = addonsToOffer(held);
   const [picked, setPicked] = useState([]);
   const [hidden, setHidden] = useState(false);
   const [pay, setPay] = useState({ loading: false, error: "" });
@@ -2314,7 +2339,7 @@ function PostPurchaseOptions({ email, held = [], className = "" }) {
 }
 
 // What every option costs bought one by one: what lifetime includes.
-const ADDONS_VALUE = ADDONS.reduce((sum, a) => sum + a.price, 0);
+const ADDONS_VALUE = GIFT_ADDONS.reduce((sum, a) => sum + a.price, 0);
 // A plan's own price, before any option: lifetime, or the term's price.
 const planBasePrice = (plan) => (plan.id === "lifetime" ? PRICE_LIFETIME : plan.id === "lifetime_plus" ? PRICE_LIFETIME_PLUS : termOf(plan.id)?.price || 0);
 // A sum in euros with at most two decimals, so 29.99 + 19 is never 48.989999.
@@ -3471,6 +3496,7 @@ function MoventoPages() {
   const isTeamPage = typeof window !== "undefined" && window.location.pathname === "/team";
   const isLeadsPage = typeof window !== "undefined" && window.location.pathname === "/leads";
   const isAiPage = typeof window !== "undefined" && window.location.pathname === "/ai";
+  const isCustomPage = typeof window !== "undefined" && window.location.pathname === "/sur-mesure";
   const isAccountPage = typeof window !== "undefined" && window.location.pathname === "/account";
   const isStartPage = typeof window !== "undefined" && window.location.pathname === "/commencer";
 
@@ -3824,6 +3850,7 @@ function MoventoPages() {
   if (isTeamPage) return <TeamPage />;
   if (isLeadsPage) return <LeadsPage />;
   if (isAiPage) return <AiPage />;
+  if (isCustomPage) return <CustomPage />;
   if (isAccountPage) return <AccountPage />;
   if (isStartPage) return <StartQuiz />;
 
@@ -4525,6 +4552,131 @@ function AiPage() {
   );
 }
 
+// Prompts made to order (api/_custom.js): the buyer names a site, its prompt
+// is written by hand and shows on this page when it is ready. Each purchase
+// gives CUSTOM_PROMPTS_INCLUDED requests.
+const customDate = (iso) => new Intl.DateTimeFormat(lang === "fr" ? "fr-FR" : "en-GB", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+function CustomContent({ email }) {
+  const [state, load] = useAddons(email, "custom");
+  const [data, setData] = useState(null);
+  const [url, setUrl] = useState("");
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState("");
+  useEffect(() => { load().then((d) => { if (d) setData(d); }); }, [load]);
+
+  const send = async (e) => {
+    e.preventDefault();
+    if (busy || !url.trim()) return;
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/addons`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, action: "custom-request", url: url.trim(), notes }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(apiError(d, t("Not possible right now. Try again in a moment.", "Impossible pour le moment. Réessaie dans un instant.")));
+      setData(d);
+      setUrl("");
+      setNotes("");
+      track("custom_prompt_requested");
+    } catch (err) {
+      setError(err.message);
+    }
+    setBusy(false);
+  };
+  const copy = async (id, text) => {
+    if (await copyTextToClipboard(text)) { setCopied(id); setTimeout(() => setCopied(""), 1600); track("custom_prompt_copied"); }
+  };
+
+  if (state.loading && !data) return <p className="mt-8 text-sm text-white/50">{t("Loading…", "Chargement…")}</p>;
+  if (!data) {
+    return <AddonMissing message={state.status === 403
+      ? t(`Prompts made to order are not on ${email}. You can add them from your account.`, `Les prompts sur mesure ne sont pas sur ${email}. Tu peux les ajouter depuis ton compte.`)
+      : state.error} addon={state.status === 403 ? "custom" : undefined} email={email} />;
+  }
+  const hours = data.hours || CUSTOM_PROMPT_HOURS;
+  const panel = "rounded-[26px] bg-[#0a0a0c] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09)]";
+  const field = "w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-[#FAFAFA] outline-none placeholder:text-white/35 focus:border-white/35";
+  return (
+    <div className="mt-9 space-y-8">
+      <div data-custom-form className={`${panel} p-6 md:p-7`}>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-semibold text-[#FAFAFA]">{t("Ask for a prompt", "Demander un prompt")}</h2>
+          <p data-custom-credits className="text-sm text-white/55">{t(`${data.credits} request(s) left`, `${data.credits} demande(s) restante(s)`)}</p>
+        </div>
+        {data.credits > 0 ? (
+          <form onSubmit={send} className="mt-5 space-y-3">
+            <label className="block">
+              <span className="text-xs font-medium text-white/55">{t("Address of the page to recreate", "Adresse de la page à recréer")}</span>
+              <input value={url} onChange={(e) => setUrl(e.target.value)} type="text" inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} required maxLength={300} placeholder="https://exemple.com" className={`mt-1.5 ${field}`} />
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-white/55">{t("Anything to add? (optional)", "Une précision ? (facultatif)")}</span>
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} maxLength={800} placeholder={t("For example: only the top of the page, with its scroll animation.", "Par exemple : seulement le haut de la page, avec son animation au défilement.")} className={`mt-1.5 resize-y ${field}`} />
+            </label>
+            <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs leading-5 text-white/40">{t(`One page per request. Your prompt shows on this page in under ${hours} h.`, `Une page par demande. Ton prompt apparaît sur cette page en moins de ${hours} h.`)}</p>
+              <button type="submit" disabled={busy || !url.trim()} className="group inline-flex flex-none items-center justify-center gap-2.5 rounded-full bg-white py-1.5 pl-6 pr-1.5 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-40">
+                {busy ? t("Sending…", "Envoi…") : t("Send my request", "Envoyer ma demande")}
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-black text-white"><Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-0.5" /></span>
+              </button>
+            </div>
+            {error && <p className="flex items-start gap-2 text-xs leading-5 text-amber-300"><Icon name="alert" className="mt-0.5 h-3.5 w-3.5 flex-none" />{error}</p>}
+          </form>
+        ) : (
+          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-white/55">{t("You have used all your requests.", "Tu as utilisé toutes tes demandes.")}</p>
+            {ADDONS_ON_SALE && <a href={accountUrl(email, "custom")} className="inline-flex flex-none items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90">{t(`Add ${CUSTOM_PROMPTS_INCLUDED} more`, `En ajouter ${CUSTOM_PROMPTS_INCLUDED}`)} · {eur(ADDONS.find((a) => a.id === "custom").price)}</a>}
+          </div>
+        )}
+      </div>
+
+      {data.requests.length > 0 && (
+        <div>
+          <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-[#FAFAFA]">{t("Your requests", "Tes demandes")}</h2>
+          <div className="mt-4 space-y-3">
+            {data.requests.map((req) => (
+              <div key={req.id} data-custom-request={req.status} className={`${panel} p-5 md:p-6`}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  {/^https?:\/\//.test(req.url)
+                    ? <a href={req.url} target="_blank" rel="noopener noreferrer nofollow" className="min-w-0 break-all text-sm font-semibold text-[#FAFAFA] underline decoration-white/25 underline-offset-4 transition hover:decoration-white">{req.url}</a>
+                    : <span className="min-w-0 break-all text-sm font-semibold text-[#FAFAFA]">{req.url}</span>}
+                  <span className={`inline-flex flex-none items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${req.status === "done" ? "bg-emerald-400/10 text-emerald-300" : req.status === "refused" ? "bg-white/[0.06] text-white/55" : "bg-amber-400/10 text-amber-200"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${req.status === "done" ? "bg-emerald-400" : req.status === "refused" ? "bg-white/40" : "bg-amber-300"}`} />
+                    {req.status === "done" ? t("Ready", "Prêt") : req.status === "refused" ? t("Not done", "Non réalisé") : t("Being written", "En cours d'écriture")}
+                  </span>
+                </div>
+                {req.notes && <p className="mt-2 text-xs leading-5 text-white/45">{req.notes}</p>}
+                {req.status === "pending" && <p className="mt-3 text-sm leading-6 text-white/60">{t(`Asked on ${customDate(req.createdAt)}. Your prompt will be here before ${customDate(req.dueAt)}: come back to this page.`, `Demandé le ${customDate(req.createdAt)}. Ton prompt sera ici avant le ${customDate(req.dueAt)} : reviens sur cette page.`)}</p>}
+                {req.status === "refused" && <p className="mt-3 text-sm leading-6 text-white/60">{req.reason} {t("This request was given back to you.", "Cette demande t'a été rendue.")}</p>}
+                {req.status === "done" && (
+                  <>
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <p className="text-xs text-white/40">{t(`Delivered on ${customDate(req.deliveredAt)}`, `Livré le ${customDate(req.deliveredAt)}`)}</p>
+                      <button type="button" onClick={() => copy(req.id, req.prompt)} className={`inline-flex flex-none items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${copied === req.id ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300" : "border-white/15 text-white/75 hover:border-white/35 hover:text-white"}`}>
+                        <Icon name={copied === req.id ? "check" : "copy"} className="h-3.5 w-3.5" /> {copied === req.id ? t("Copied", "Copié") : t("Copy the prompt", "Copier le prompt")}
+                      </button>
+                    </div>
+                    <pre className="mt-3 max-h-80 overflow-y-auto whitespace-pre-wrap break-words rounded-2xl bg-black p-4 font-sans text-[13px] leading-6 text-white/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.07)]">{req.prompt}</pre>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CustomPage() {
+  return (
+    <AddonPage title={t("Prompts made to order", "Prompts sur mesure")} lede={t(`Give us the address of a site you would like to recreate. We write its prompt by hand and deliver it here in under ${CUSTOM_PROMPT_HOURS} h.`, `Donne-nous l'adresse d'un site que tu aimerais recréer. On écrit son prompt à la main et on te le livre ici en moins de ${CUSTOM_PROMPT_HOURS} h.`)}>
+      {(email) => <CustomContent email={email} />}
+    </AddonPage>
+  );
+}
+
 // /account — one page for what an email holds: its access, the options it
 // has (each opening its own page) and the ones it can still add. Options are
 // sold with the lifetime access, so only its holder can add one here; the
@@ -4582,7 +4734,7 @@ function AccountContent({ email }) {
 
   const held = data.addons || [];
   const lifetime = data.kind === "lifetime";
-  const toAdd = ADDONS.filter((a) => !held.includes(a.id));
+  const toAdd = addonsToOffer(held);
   // Options are bought on top of an access of one's own: the month, or the
   // prompts-only lifetime. Those already held are not offered.
   const canBuy = data.hasAccess && !data.memberOf;
@@ -6182,7 +6334,7 @@ function SuccessPage() {
 
         {status.ok && <AddonCards addons={addons} email={clean(email)} className="mt-4" />}
 
-        {status.ok && ADDONS_ON_SALE && accessInfo && ADDONS.some((a) => !addons.includes(a.id)) && (
+        {status.ok && ADDONS_ON_SALE && accessInfo && addonsToOffer(addons).length > 0 && (
           <PostPurchaseOptions email={clean(email)} held={addons} className="mt-4" />
         )}
 
@@ -6867,7 +7019,7 @@ function CgvPage() {
         <ul>
           <li><strong className="text-white/75">Mensuel : {eur(termOf("m1").price)} par mois</strong>, renouvelé automatiquement chaque mois jusqu'à résiliation.</li>
           <li><strong className="text-white/75">À vie : {eur(PRICE_LIFETIME)}</strong>, en un seul paiement, sans abonnement.</li>
-          <li><strong className="text-white/75">Options</strong>, proposées juste après le paiement d'un accès (mensuel ou à vie) ou plus tard depuis la page <a href="/account" className="underline underline-offset-4">Mon compte</a> : l'option « On adapte le prompt directement pour toi » ({eur(ADDONS.find((a) => a.id === "ai").price)}, qui fait réécrire un prompt du catalogue par une intelligence artificielle à partir d'une courte demande, dans la limite de {AI_EDITS_INCLUDED} adaptations au total ; le texte est généré automatiquement, doit être relu avant usage, et une adaptation qui échoue n'est pas décomptée), le Kit freelance ({eur(ADDONS.find((a) => a.id === "kit").price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique) la Licence agence ({eur(ADDONS.find((a) => a.id === "team").price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email) et l'option « On trouve tes clients » ({eur(ADDONS.find((a) => a.id === "leads").price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial). Chaque option est payée une seule fois. Elles ne fonctionnent qu'avec un accès actif, et sont retirées avec lui s'il est remboursé.</li>
+          <li><strong className="text-white/75">Options</strong>, proposées juste après le paiement d'un accès (mensuel ou à vie) ou plus tard depuis la page <a href="/account" className="underline underline-offset-4">Mon compte</a> : l'option « On adapte le prompt directement pour toi » ({eur(ADDONS.find((a) => a.id === "ai").price)}, qui fait réécrire un prompt du catalogue par une intelligence artificielle à partir d'une courte demande, dans la limite de {AI_EDITS_INCLUDED} adaptations au total ; le texte est généré automatiquement, doit être relu avant usage, et une adaptation qui échoue n'est pas décomptée), le Kit freelance ({eur(ADDONS.find((a) => a.id === "kit").price)}, modèles de devis, de contrat et de messages de prospection, fournis à titre de base de travail et sans valeur de conseil juridique), la Licence agence ({eur(ADDONS.find((a) => a.id === "team").price)}, qui ouvre l'accès à quatre personnes de plus, chacune avec sa propre adresse email), l'option « On trouve tes clients » ({eur(ADDONS.find((a) => a.id === "leads").price)}, un outil de recherche qui liste des entreprises locales à démarcher à partir des données publiques d'OpenStreetMap, dans la limite de 10 nouvelles recherches par jour ; les fiches peuvent être incomplètes et l'option ne garantit aucun résultat commercial) et l'option « {CUSTOM_PROMPTS_INCLUDED} prompts sur mesure » ({eur(ADDONS.find((a) => a.id === "custom").price)}, qui donne droit à {CUSTOM_PROMPTS_INCLUDED} demandes et peut être achetée plusieurs fois : pour chaque demande, tu indiques l'adresse d'une page web publique et nous rédigeons le prompt qui la recrée, mis à ta disposition sur la page <a href="/sur-mesure" className="underline underline-offset-4">Sur mesure</a> dans les {CUSTOM_PROMPT_HOURS} heures qui suivent la demande ; une demande que nous ne pouvons pas traiter, par exemple une page inaccessible ou protégée par un mot de passe, t'est rendue ; tu restes responsable de l'usage du prompt, notamment du respect des droits sur les textes, images et marques du site d'origine). Chaque option est payée une seule fois. Elles ne fonctionnent qu'avec un accès actif, et sont retirées avec lui s'il est remboursé.</li>
           <li>Les abonnements de 3 mois et annuel, ainsi que les packs de prompts, ne sont plus proposés à l'achat. Ceux déjà souscrits restent valables aux conditions de leur souscription : les abonnements se renouvellent jusqu'à résiliation, et les prompts d'un pack restent accessibles sans limite de durée.</li>
         </ul>
         <p>Les prix sont indiqués en euros, toutes taxes comprises{PAYMENT_PROVIDER.name === "Mollie B.V." ? " (TVA non applicable, art. 293 B du CGI)" : ""}. Le prix applicable est celui affiché au moment de la commande ; un changement de prix ne s'applique pas à une période déjà payée.</p>
@@ -7740,6 +7892,92 @@ const KIND_LABELS = {
 // The business, above the per-email tools. The access list answers "did this
 // person pay"; this answers "how is the shop doing" — which the dashboard had
 // no way to ask at all.
+// Prompts made to order, for the owner: the requests waiting, each with the
+// box to paste its prompt in. Delivering shows it to the buyer on /sur-mesure;
+// refusing gives them the request back, with the reason.
+function AdminCustomPrompts({ token }) {
+  const [state, setState] = useState({ loading: false, error: "", pending: [], recent: [] });
+  const [drafts, setDrafts] = useState({});
+  const [refusing, setRefusing] = useState("");
+  const [busy, setBusy] = useState("");
+  const call = async (body) => {
+    setState((s) => ({ ...s, loading: true, error: "" }));
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin-custom`, body
+        ? { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) }
+        : { headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 401) throw new Error("Token refusé.");
+      if (!response.ok || !Array.isArray(data.pending)) throw new Error(data.error || "Lecture des demandes impossible.");
+      setState({ loading: false, error: "", pending: data.pending, recent: Array.isArray(data.recent) ? data.recent : [] });
+      return true;
+    } catch (error) {
+      setState((s) => ({ ...s, loading: false, error: error.message }));
+      return false;
+    }
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (token) call(); }, [token]);
+  if (!token) return null;
+
+  const when = (iso) => new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+  const draft = (id) => drafts[id] || { prompt: "", reason: "" };
+  const edit = (id, patch) => setDrafts((d) => ({ ...d, [id]: { ...draft(id), ...patch } }));
+  const act = async (id, body) => {
+    setBusy(id);
+    if (await call({ id, ...body })) { setDrafts((d) => { const next = { ...d }; delete next[id]; return next; }); setRefusing(""); }
+    setBusy("");
+  };
+  const mailto = (req) => `mailto:${req.email}?subject=${encodeURIComponent("Ton prompt sur mesure est prêt")}&body=${encodeURIComponent(`Bonjour,\n\nTon prompt pour ${req.url} est prêt. Tu le trouves ici :\nhttps://movento.dev/sur-mesure\n\nL'équipe movento.dev`)}`;
+  const box = "w-full rounded-xl border border-white/10 bg-black px-3 py-2.5 text-sm text-[#FAFAFA] outline-none placeholder:text-white/35 focus:border-white/35";
+  return (
+    <section data-admin-custom className="mt-6 rounded-2xl border border-white/10 bg-[#121214] p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Prompts sur mesure · {state.pending.length} à livrer</p>
+        <button type="button" onClick={() => call()} disabled={state.loading} className="text-xs font-semibold text-white/60 transition hover:text-white disabled:opacity-50">{state.loading ? "…" : "Actualiser"}</button>
+      </div>
+      {state.error && <p className="mt-3 text-sm text-red-300">{state.error}</p>}
+      {!state.pending.length && !state.error && <p className="mt-3 text-sm text-white/45">Aucune demande en attente.</p>}
+      {state.pending.map((req) => {
+        const late = Date.now() > Date.parse(req.dueAt);
+        return (
+          <div key={req.id} data-admin-request className="mt-4 rounded-xl border border-white/[0.08] bg-black/40 p-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-sm font-semibold text-[#FAFAFA]">{req.email}</p>
+              <p className={`text-xs font-semibold ${late ? "text-red-300" : "text-amber-200"}`}>{late ? "En retard, promis pour le" : "À livrer avant le"} {when(req.dueAt)}</p>
+            </div>
+            {/^https?:\/\//.test(req.url)
+              ? <a href={req.url} target="_blank" rel="noopener noreferrer nofollow" className="mt-1.5 block break-all text-sm text-emerald-300 underline underline-offset-4">{req.url}</a>
+              : <p className="mt-1.5 break-all text-sm text-white/70">{req.url}</p>}
+            {req.notes && <p className="mt-2 whitespace-pre-wrap text-xs leading-5 text-white/55">{req.notes}</p>}
+            <textarea value={draft(req.id).prompt} onChange={(e) => edit(req.id, { prompt: e.target.value })} rows={6} placeholder="Colle ici le prompt écrit pour ce site." className={`mt-3 resize-y ${box}`} />
+            {refusing === req.id && <input value={draft(req.id).reason} onChange={(e) => edit(req.id, { reason: e.target.value })} maxLength={400} placeholder="Pourquoi cette demande ne peut pas être faite (le client lira cette phrase)." className={`mt-2 ${box}`} />}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button type="button" disabled={busy === req.id || draft(req.id).prompt.trim().length < 200} onClick={() => act(req.id, { action: "deliver", prompt: draft(req.id).prompt })} className="rounded-full bg-emerald-400 px-4 py-2 text-xs font-bold text-[#04150d] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-40">{busy === req.id ? "…" : "Livrer au client"}</button>
+              {refusing === req.id
+                ? <button type="button" disabled={busy === req.id || draft(req.id).reason.trim().length < 5} onClick={() => act(req.id, { action: "refuse", reason: draft(req.id).reason })} className="rounded-full border border-red-400/40 px-4 py-2 text-xs font-bold text-red-300 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-40">Confirmer le refus et rendre la demande</button>
+                : <button type="button" onClick={() => setRefusing(req.id)} className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/60 transition hover:text-white">Refuser</button>}
+            </div>
+          </div>
+        );
+      })}
+      {state.recent.length > 0 && (
+        <div className="mt-5 border-t border-white/[0.07] pt-4">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Dernières demandes traitées</p>
+          <ul className="mt-2 space-y-1.5">
+            {state.recent.map((req) => (
+              <li key={req.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs text-white/55">
+                <span className="min-w-0 break-all">{req.status === "done" ? "Livré" : "Refusé"} le {when(req.deliveredAt)} · {req.email} · {req.url}</span>
+                {req.status === "done" && <a href={mailto(req)} className="flex-none font-semibold text-emerald-300 underline underline-offset-4">Prévenir par email</a>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function AdminOverview({ token }) {
   const [state, setState] = useState({ loading: true, error: "", data: null });
   // Registers the bot's commands (/ventes, /derniers, /abonnes) with Telegram.
@@ -8365,6 +8603,7 @@ function AdminLeadsPage() {
         {state.error && <div className="mt-6 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-4 text-sm text-red-300">{state.error}</div>}
 
         <AdminOverview token={token} />
+        <AdminCustomPrompts token={token} />
 
         <form onSubmit={runLookup} className="mt-6 rounded-2xl border border-white/10 bg-[#121214] p-4">
           <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Pourquoi cet email a-t-il accès ?</p>
@@ -8483,7 +8722,7 @@ function AdminLeadsPage() {
                     email. Already-held options stay; a grant only adds. */}
                 {grantPlan === "lifetime" && (
                   <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2" role="group" aria-label="Options à donner">
-                    {ADDONS.map((addon) => (
+                    {GIFT_ADDONS.map((addon) => (
                       <label key={addon.id} className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-white/70">
                         <input
                           type="checkbox"
@@ -8494,8 +8733,8 @@ function AdminLeadsPage() {
                         {addon.name}
                       </label>
                     ))}
-                    <button type="button" onClick={() => { setGrantAddons(grantAddons.length === ADDONS.length ? [] : ADDONS.map((a) => a.id)); setGrant({ confirming: false, loading: false, error: "" }); }} className="text-xs font-semibold text-emerald-300 hover:text-emerald-200">
-                      {grantAddons.length === ADDONS.length ? "Aucune option" : "Toutes les options"}
+                    <button type="button" onClick={() => { setGrantAddons(grantAddons.length === GIFT_ADDONS.length ? [] : GIFT_ADDONS.map((a) => a.id)); setGrant({ confirming: false, loading: false, error: "" }); }} className="text-xs font-semibold text-emerald-300 hover:text-emerald-200">
+                      {grantAddons.length === GIFT_ADDONS.length ? "Aucune option" : "Toutes les options"}
                     </button>
                   </div>
                 )}

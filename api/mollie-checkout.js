@@ -21,7 +21,7 @@
 // to /account.
 import { randomBytes } from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { CHECKOUT_PROVIDER, customerAccessLevel, mollieReady, redisGetAccessRecord, redisGetAddons, checkoutProviderFor, methodNotAllowed, MOLLIE_ADDONS, parseAddons, MOLLIE_LIFETIME_PROMO, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, strikeText, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
+import { CHECKOUT_PROVIDER, customerAccessLevel, mollieReady, redisGetAccessRecord, redisGetAddons, checkoutProviderFor, methodNotAllowed, MOLLIE_ADDONS, INCLUDED_ADDONS, parseAddons, MOLLIE_LIFETIME_PROMO, MOLLIE_PACK_SIZES, MOLLIE_PLAN_LABELS, MOLLIE_PRICES, strikeText, MOLLIE_WINBACK, mollieApi, mollieWinbackEligibility, normalizeEmail, RETIRED_PLANS } from "./_shared.js";
 
 const looksLikeEmail = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 
@@ -73,7 +73,8 @@ async function addonsCheckout(req, res, email) {
     if (level !== "full" || !record) {
       return res.status(403).json({ error: "Les options s'ajoutent à un accès Movento. Cet email n'en a pas.", errorEn: "The options are added to a Movento access. This email has none.", needsAccess: true });
     }
-    const addons = wanted.filter((a) => !held.includes(a));
+    // Prompts made to order are counted in requests: bought again at will.
+    const addons = wanted.filter((a) => !held.includes(a) || MOLLIE_ADDONS[a].credits);
     if (!addons.length) return res.status(409).json({ error: "Tu as déjà ces options.", errorEn: "You already have these options." });
 
     const amount = addons.reduce((sum, a) => sum + Number(MOLLIE_ADDONS[a].price), 0).toFixed(2);
@@ -133,7 +134,7 @@ export default async function handler(req, res) {
   // Add-ons ticked on the card: on the month only, at the server's prices,
   // paid once with the first month. Lifetime + options carries them all; the
   // prompts-only lifetime none.
-  const addons = plan === "m1" ? parseAddons(req.body?.addons) : plan === "lifetime_plus" ? Object.keys(MOLLIE_ADDONS) : [];
+  const addons = plan === "m1" ? parseAddons(req.body?.addons) : plan === "lifetime_plus" ? INCLUDED_ADDONS : [];
   const amount = (Number(base) + (plan === "m1" ? addons.reduce((sum, a) => sum + Number(MOLLIE_ADDONS[a].price), 0) : 0)).toFixed(2);
   const addonText = addons.map((a) => ` + ${MOLLIE_ADDONS[a].label}`).join("");
 

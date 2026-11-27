@@ -576,6 +576,10 @@ export const MOLLIE_PACK_SIZES = { pack2: 2, pack5: 5, pack10: 10 };
 //         from a short questionnaire on /leads (api/_leads.js)
 //   ai    the AI adaptation: a prompt rewritten for the buyer's own brand from
 //         a short brief, AI_EDITS_INCLUDED times in all (api/customize.js)
+//   custom  prompts made to order: the buyer names a site, and its prompt is
+//         written by hand and delivered on /sur-mesure within
+//         CUSTOM_PROMPT_HOURS. `credits` requests per purchase, and it can be
+//         bought again: never part of "every option" (INCLUDED_ADDONS).
 // Prices come from here, never from the request. Keep in step with ADDONS in
 // src/App.jsx.
 export const MOLLIE_ADDONS = {
@@ -583,7 +587,13 @@ export const MOLLIE_ADDONS = {
   team: { price: Number(process.env.MOLLIE_ADDON_TEAM_PRICE || 29).toFixed(2), label: "Licence agence" },
   leads: { price: Number(process.env.MOLLIE_ADDON_LEADS_PRICE || 39).toFixed(2), label: "On trouve tes clients" },
   ai: { price: Number(process.env.MOLLIE_ADDON_AI_PRICE || 29).toFixed(2), label: "On adapte le prompt pour toi (IA)" },
+  custom: { price: (49).toFixed(2), label: "2 prompts sur mesure", credits: 2 },
 };
+// What "every option" means: lifetime members from before the prompts-only
+// lifetime, and lifetime + options. Options counted in requests stay out.
+export const INCLUDED_ADDONS = Object.keys(MOLLIE_ADDONS).filter((a) => !MOLLIE_ADDONS[a].credits);
+// A prompt made to order is delivered within this many hours of its request.
+export const CUSTOM_PROMPT_HOURS = 24;
 // Adaptations the AI option includes, in all and not per month: each one is a
 // paid call to the Claude API, and the option is paid once. A failed
 // adaptation is not counted.
@@ -610,7 +620,7 @@ export async function redisRemoveAddons(email, addons) {
 }
 export async function redisClearAddons(email) {
   try {
-    await Redis.fromEnv().del(`addons:${email}`);
+    await Redis.fromEnv().del(`addons:${email}`, `custom:credits:${email}`);
   } catch {
     // Redis unavailable — nothing to clear.
   }
@@ -625,7 +635,7 @@ export async function redisGetAddons(email) {
     const [stored, record] = await Promise.all([Redis.fromEnv().smembers(`addons:${email}`), redisGetAccessRecord(email)]);
     const granted = Date.parse(record?.grantedAt || "");
     const before = !Number.isFinite(granted) || granted < LIFETIME_ALL_OPTIONS_BEFORE;
-    if (record?.kind === "lifetime" && before && !(await redisIsBlocked(email))) return Object.keys(MOLLIE_ADDONS);
+    if (record?.kind === "lifetime" && before && !(await redisIsBlocked(email))) return [...new Set([...INCLUDED_ADDONS, ...parseAddons(stored)])];
     return parseAddons(stored);
   } catch {
     return [];
@@ -633,6 +643,28 @@ export async function redisGetAddons(email) {
 }
 // The options paid for, without those lifetime includes: what /admin shows as
 // bought, and what a refund can take back.
+// Prompts made to order (MOLLIE_ADDONS.custom). What an email may still ask
+// for is a counter: each purchase adds `credits` to it, once per payment
+// whoever confirms it first (the webhook or the claim), and a refund takes
+// them back, never below zero.
+export async function redisCreditCustomPrompts(email, addons, paymentId) {
+  if (!parseAddons(addons).includes("custom")) return;
+  const redis = Redis.fromEnv();
+  const first = await redis.set(`custom:paid:${paymentId}`, email, { nx: true });
+  if (first) await redis.incrby(`custom:credits:${email}`, MOLLIE_ADDONS.custom.credits);
+}
+export async function redisUncreditCustomPrompts(email, addons, paymentId) {
+  if (!parseAddons(addons).includes("custom")) return;
+  const redis = Redis.fromEnv();
+  // Only a payment that was credited, and only once.
+  if (!(await redis.del(`custom:paid:${paymentId}`))) return;
+  const left = await redis.decrby(`custom:credits:${email}`, MOLLIE_ADDONS.custom.credits);
+  if (left < 0) await redis.set(`custom:credits:${email}`, 0);
+}
+export async function redisGetCustomCredits(email) {
+  return Math.max(0, Number(await Redis.fromEnv().get(`custom:credits:${email}`)) || 0);
+}
+
 export async function redisGetPaidAddons(email) {
   try {
     return parseAddons(await Redis.fromEnv().smembers(`addons:${email}`));

@@ -25,6 +25,7 @@ import {
   mollieSubscriptionPlans,
   normalizeEmail,
   parseAddons,
+  redisCreditCustomPrompts,
   redisGrantAddons,
   redisAddPromptCredit,
   redisGetAccessRecord,
@@ -157,6 +158,7 @@ export async function grantPaid(payment, email) {
   if (plan === "addons") {
     const addons = parseAddons(payment.metadata?.addons);
     await redisGrantAddons(email, addons);
+    await redisCreditCustomPrompts(email, addons, payment.id);
     return { plan, renewal: false, addons };
   }
 
@@ -168,11 +170,15 @@ export async function grantPaid(payment, email) {
     // same as once).
     const addons = parseAddons(payment.metadata?.addons);
     await redisGrantAddons(email, addons);
+    await redisCreditCustomPrompts(email, addons, payment.id);
     return { plan, renewal, addons };
   }
   // Options paid with the first month: kept by the email (a set, so granting
   // twice is the same as once).
-  if (payment.metadata?.addons) await redisGrantAddons(email, parseAddons(payment.metadata.addons));
+  if (payment.metadata?.addons) {
+    await redisGrantAddons(email, parseAddons(payment.metadata.addons));
+    await redisCreditCustomPrompts(email, payment.metadata.addons, payment.id);
+  }
   const subscriptionId = payment.subscriptionId || (payment.sequenceType === "first" ? await ensureSubscription(payment, email) : previous?.subscriptionId || null);
   // A lifetime member keeps the lifetime; the month is still set up and paid.
   if (previous?.kind === "lifetime") return { plan, renewal, subscriptionId };

@@ -34,6 +34,8 @@ import {
   redisClearAccess,
   redisGetAccessRecord,
   redisRemoveAddons,
+  redisUncreditCustomPrompts,
+  redisGetCustomCredits,
 } from "./_shared.js";
 import { Redis } from "@upstash/redis";
 
@@ -86,7 +88,13 @@ export default async function handler(req, res) {
       await Redis.fromEnv().set(`mollierefund:${payment.id}`, new Date().toISOString()).catch(() => {});
       // Options bought afterwards: only those go, the access stays.
       if (plan === "addons") {
-        if (email) await redisRemoveAddons(email, payment.metadata?.addons);
+        if (email) {
+          await redisUncreditCustomPrompts(email, payment.metadata?.addons, payment.id);
+          // Prompts made to order go only when this was the last purchase of
+          // them: the requests of another payment stay to be asked.
+          const keepCustom = (await redisGetCustomCredits(email)) > 0;
+          await redisRemoveAddons(email, parseAddons(payment.metadata?.addons).filter((a) => !(a === "custom" && keepCustom)));
+        }
         const sent = await notifyTelegramOnce(`mollie:${payment.id}:${chargedBack ? "chargeback" : "refund"}`, `${test}${chargedBack ? "⚠️ Litige bancaire (chargeback)" : "↩️ Remboursement"} Mollie — ${label}\n${money(chargedBack ? payment.amountChargedBack : payment.amountRefunded)}\n${who}\nOptions retirées.`);
         return done(200, "remboursé : options retirées", sent ? "envoyé" : "non envoyé");
       }
@@ -98,7 +106,7 @@ export default async function handler(req, res) {
         }
         await redisClearAccess(email);
         // The add-ons paid in the same payment go with it.
-        if (parseAddons(payment.metadata?.addons).length) await Redis.fromEnv().del(`addons:${email}`).catch(() => {});
+        if (parseAddons(payment.metadata?.addons).length) await Redis.fromEnv().del(`addons:${email}`, `custom:credits:${email}`).catch(() => {});
       }
       const sent = await notifyTelegramOnce(`mollie:${payment.id}:${chargedBack ? "chargeback" : "refund"}`, `${test}${chargedBack ? "⚠️ Litige bancaire (chargeback)" : "↩️ Remboursement"} Mollie — ${label}\n${money(chargedBack ? payment.amountChargedBack : payment.amountRefunded)}\n${who}`);
       return done(200, ours ? "remboursé : accès retiré" : "remboursé : aucun accès lié", sent ? "envoyé" : "non envoyé");

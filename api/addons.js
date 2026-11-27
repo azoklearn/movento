@@ -8,6 +8,8 @@
 //   team-remove   take `member` off the team
 //   leads-form    the questionnaire's choices, past searches, searches left
 //   leads         businesses to contact for { trade, city, country }
+//   custom        prompts made to order: requests left, and those made
+//   custom-request  ask for the prompt of { url }, with optional { notes }
 //
 // The email is the key, as everywhere on the site: there is no password. An
 // add-on only counts while its buyer still has the catalogue, so a refunded
@@ -16,7 +18,8 @@ import { Redis } from "@upstash/redis";
 import { requireSession } from "./_auth.js";
 import { FREELANCE_KIT } from "./_kit.js";
 import { LEAD_COUNTRIES, LEAD_TRADES, LEADS_MAX, cityKey, findPlace, searchLeads, tradeById } from "./_leads.js";
-import { LEADS_DAILY_SEARCHES, TEAM_MAX_INVITES, TEAM_SEATS, customerAccessLevel, methodNotAllowed, normalizeEmail, redisGetAccessRecord, redisGetAddons, teamOwnerFor } from "./_shared.js";
+import { cleanSiteUrl, createCustomRequest, listCustomRequests, publicRequest } from "./_custom.js";
+import { CUSTOM_PROMPT_HOURS, LEADS_DAILY_SEARCHES, TEAM_MAX_INVITES, TEAM_SEATS, customerAccessLevel, methodNotAllowed, normalizeEmail, notifyTelegram, redisGetAccessRecord, redisGetAddons, redisGetCustomCredits, teamOwnerFor } from "./_shared.js";
 
 const looksLikeEmail = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 const parisDay = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
@@ -98,6 +101,22 @@ export default async function handler(req, res) {
       await redis.set(`teamof:${member}`, email);
       await redis.incr(`team:invites:${email}`);
       return res.json({ ok: true, team: await teamOf(redis, email) });
+    }
+
+    if (action === "custom" || action === "custom-request") {
+      if (!addons.includes("custom")) return res.status(403).json({ error: "Les prompts sur mesure ne sont pas sur ce compte.", errorEn: "Prompts made to order are not on this account." });
+      const answer = async () => ({ credits: await redisGetCustomCredits(email), hours: CUSTOM_PROMPT_HOURS, requests: (await listCustomRequests(redis, email)).map(publicRequest) });
+      if (action === "custom") return res.json(await answer());
+
+      const url = cleanSiteUrl(req.body?.url);
+      if (!url) return res.status(400).json({ error: "Entre l'adresse du site à recréer, par exemple https://exemple.com.", errorEn: "Enter the address of the site to recreate, for example https://example.com." });
+      const notes = String(req.body?.notes || "").trim().slice(0, 800);
+      const entry = await createCustomRequest(redis, email, url, notes);
+      if (!entry) return res.status(409).json({ error: "Tu as utilisé toutes tes demandes. Ajoute 2 prompts sur mesure depuis ton compte.", errorEn: "You have used all your requests. Add 2 prompts made to order from your account.", credits: 0 });
+      const due = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(entry.dueAt));
+      const host = req.headers["x-forwarded-host"] || req.headers.host;
+      await notifyTelegram(`🎯 Prompt sur mesure demandé\n${email}\n${url}${notes ? `\nPrécisions : ${notes}` : ""}\nÀ livrer avant le ${due} (heure de Paris)\nLivraison : https://${host}/admin`);
+      return res.json(await answer());
     }
 
     if (action === "leads-form" || action === "leads") {
