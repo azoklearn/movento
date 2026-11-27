@@ -4645,7 +4645,7 @@ function CustomContent({ email }) {
         )}
       </div>
 
-      {data.requests.length > 0 && (
+      {(data.requests || []).length > 0 && (
         <div>
           <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-[#FAFAFA]">{t("Your requests", "Tes demandes")}</h2>
           <div className="mt-4 space-y-3">
@@ -5345,63 +5345,27 @@ const DropDot = () => (
     <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
   </span>
 );
-// The countdown as the first thing on the home page: three lit tiles in the
-// site's own gradient, and what they count to.
-function NextDropHero() {
+// The countdown, floating under the bar on every page: it stays on screen at
+// the top of the home page, down the gallery and across the site.
+const NO_DROP_OVERLAY = new Set(["/commencer", "/success", "/admin", "/subscription", "/cgv", "/remboursement", "/confidentialite", "/mentions-legales"]);
+function NextDropOverlay({ path }) {
   const { h, m, s } = useNextDrop();
-  const cells = [[h, t("hours", "heures")], [m, "min"], [s, "sec"]];
-  return (
-    <motion.a href="#prompts" data-next-drop onClick={() => track("next_drop_clicked", { where: "hero" })} initial={{ opacity: 0, y: 14, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className={`group relative mb-10 block rounded-[30px] p-px shadow-[0_34px_100px_-34px_rgba(194,91,245,0.9)] transition duration-300 hover:-translate-y-0.5 ${DROP_EDGE}`}>
-      <span className="relative flex flex-col items-center gap-4 overflow-hidden rounded-[29px] bg-[#08080a] px-6 py-5 sm:flex-row sm:gap-8 sm:py-5 sm:pl-7 sm:pr-6">
-        <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_120%_at_50%_0%,rgba(194,91,245,0.2),transparent_70%)]" />
-        <span className="relative text-center sm:text-left">
-          <span className="flex items-center justify-center gap-2.5 text-[12px] font-bold uppercase tracking-[0.22em] text-[#D9CCFF] sm:justify-start"><DropDot /> {t("Next prompt in", "Prochain prompt dans")}</span>
-          <span className="mt-1.5 block text-[13.5px] text-white/50">{t("A new one every day at 7 pm, Paris time", "Un nouveau prompt chaque jour à 19 h")}</span>
-        </span>
-        <span role="timer" className="relative flex items-start gap-1.5 sm:gap-2">
-          {cells.flatMap(([value, label], i) => [
-            i > 0 && <span key={`sep${i}`} aria-hidden="true" className="pt-[13px] text-[28px] font-semibold leading-none text-white/25 sm:pt-[14px] sm:text-[30px]">:</span>,
-            <span key={label} className="flex flex-col items-center">
-              <span className="grid h-[60px] w-[66px] place-items-center rounded-[18px] bg-white/[0.07] text-[34px] font-semibold tabular-nums leading-none tracking-[-0.04em] text-[#FAFAFA] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12),inset_0_1px_0_rgba(255,255,255,0.14)] sm:h-[64px] sm:w-[72px] sm:text-[38px]">{value}</span>
-              <span className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">{label}</span>
-            </span>,
-          ])}
-        </span>
-      </span>
-    </motion.a>
-  );
-}
-// The same countdown, small, hung under the bar on every page: it stays on
-// screen down the gallery and across the site. Hidden while the big one is in
-// view, so the two never show together.
-const NO_DROP_CHIP = new Set(["/commencer", "/success", "/admin", "/subscription", "/cgv", "/remboursement", "/confidentialite", "/mentions-legales"]);
-function NextDropChip({ path }) {
-  const { h, m, s } = useNextDrop();
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const check = () => {
-      const big = document.querySelector("[data-next-drop]");
-      setShow(!big || big.getBoundingClientRect().bottom < 76);
-    };
-    check();
-    window.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check);
-    return () => { window.removeEventListener("scroll", check); window.removeEventListener("resize", check); };
-  }, []);
-  if (NO_DROP_CHIP.has(path)) return null;
+  if (NO_DROP_OVERLAY.has(path)) return null;
+  const tile = "grid h-[30px] min-w-[34px] place-items-center rounded-[10px] bg-white/[0.09] px-1 text-[15px] font-semibold tabular-nums leading-none tracking-[-0.02em] text-[#FAFAFA] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] sm:h-[34px] sm:min-w-[40px] sm:text-[17px]";
+  const colon = <span aria-hidden="true" className="text-[14px] font-semibold text-white/30">:</span>;
   return (
     <div className="pointer-events-none fixed inset-x-0 top-[78px] z-30 flex justify-center px-3">
-      <AnimatePresence>
-        {show && (
-          <motion.a href="/#prompts" data-next-drop-chip onClick={() => track("next_drop_clicked", { where: "bar" })} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className={`pointer-events-auto rounded-full p-px shadow-[0_14px_40px_-14px_rgba(194,91,245,0.9)] ${DROP_EDGE}`}>
-            <span className="flex items-center gap-2.5 rounded-full bg-[#0a0a0c] py-1.5 pl-3 pr-3.5">
-              <DropDot />
-              <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-white/65">{t("Next prompt in", "Prochain prompt dans")}</span>
-              <span role="timer" className="text-[13.5px] font-semibold tabular-nums tracking-[-0.01em] text-[#FAFAFA]">{h}:{m}:{s}</span>
-            </span>
-          </motion.a>
-        )}
-      </AnimatePresence>
+      <motion.a href="/#prompts" data-next-drop onClick={() => track("next_drop_clicked")} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.15, ease: [0.22, 1, 0.36, 1] }} className={`pointer-events-auto rounded-full p-px shadow-[0_18px_50px_-14px_rgba(194,91,245,0.95)] transition duration-300 hover:-translate-y-0.5 ${DROP_EDGE}`}>
+        <span className="flex items-center gap-2.5 rounded-full bg-[#0a0a0c] py-[6px] pl-3.5 pr-[7px] sm:gap-3.5 sm:pl-4">
+          <DropDot />
+          {/* One line at any width: the short form on a narrow phone. */}
+          <span className="whitespace-nowrap text-[10.5px] font-bold uppercase tracking-[0.1em] text-[#D9CCFF] sm:text-[12px] sm:tracking-[0.16em]">{t("New prompts", "Nouveaux prompts")}<span className="hidden min-[400px]:inline"> {t("in", "dans")}</span></span>
+          <span role="timer" className="flex items-center gap-1">
+            <span className={tile}>{h}</span>{colon}<span className={tile}>{m}</span>{colon}<span className={tile}>{s}</span>
+          </span>
+          <span className="hidden pr-2 text-[12px] text-white/45 md:inline">{t("every day at 7 pm, Paris time", "chaque jour à 19 h")}</span>
+        </span>
+      </motion.a>
     </div>
   );
 }
@@ -5409,7 +5373,6 @@ function NextDropChip({ path }) {
 function LandingHero({ hasPremiumAccess }) {
   return (
     <header className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-5 pb-8 pt-16 text-center sm:pb-10 sm:pt-24">
-      <NextDropHero />
       <motion.h1 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-[clamp(2.1rem,6.4vw,3.9rem)] font-semibold leading-[1.04] tracking-[-0.045em] text-[#FAFAFA]">
         {t("Premium websites,", "Des sites premium,")} <span className="text-white/45">{t("built with AI.", "créés avec l'IA.")}</span>
       </motion.h1>
@@ -6048,9 +6011,9 @@ function SiteNav({ query, setQuery, searchLabel }) {
         </div>
       </div>
     </header>
-    <NextDropChip path={path} />
-    {/* Room for the countdown hung under the bar, where no big one opens the page. */}
-    <div aria-hidden="true" className={path === "/" || NO_DROP_CHIP.has(path) ? "h-[84px]" : "h-[116px]"} />
+    <NextDropOverlay path={path} />
+    {/* Room for the countdown floating under the bar. */}
+    <div aria-hidden="true" className={NO_DROP_OVERLAY.has(path) ? "h-[84px]" : "h-[128px]"} />
 
       {/* Full-height panel from the right on a phone: the links get room and
           the call to action sits where the thumb already is. */}
