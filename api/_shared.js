@@ -691,9 +691,9 @@ export const FAIR_USE_KINDS = new Set(["m3"]);
 // never on a payment that was itself the offer.
 export const MOLLIE_WINBACK = {
   plan: "lifetime",
-  // On at 59 €. MOLLIE_WINBACK_LIFETIME_PRICE overrides it; a figure at or
-  // above the lifetime price turns the offer off.
-  price: Number(process.env.MOLLIE_WINBACK_LIFETIME_PRICE || 59).toFixed(2),
+  // Off: no offer is made to a buyer who leaves the payment. A price below
+  // the lifetime price here turns it back on.
+  price: (0).toFixed(2),
   windowHours: 48,
 };
 
